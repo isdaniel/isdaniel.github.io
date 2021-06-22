@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-tw">
+<head><meta name="generator" content="Hexo 3.8.0">
+  
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+    
+    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+
+  <meta name="description" content="前言稍微有經驗的.net工程師一定聽過或使用過Reflection,Reflection雖然好用(能動態處理很多事情)但對於效能會有些影響. 我能否擁有Reflection的動態彈性且兼顧效能呢? 有:就是我們這次要介紹的Expression. Expression vs Reflection performace我會準備一個範例來比較Expression和Reflection效能差異  Expr">
+<meta name="keywords" content="C#,OOP,Reflection,Expression">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Reflection在進化-淺談Expression表達式">
+<meta property="og:url" content="https://isdaniel.github.io/expression-vs-reflection/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="前言稍微有經驗的.net工程師一定聽過或使用過Reflection,Reflection雖然好用(能動態處理很多事情)但對於效能會有些影響. 我能否擁有Reflection的動態彈性且兼顧效能呢? 有:就是我們這次要介紹的Expression. Expression vs Reflection performace我會準備一個範例來比較Expression和Reflection效能差異  Expr">
+<meta property="og:locale" content="zh-tw">
+<meta property="og:updated_time" content="2021-06-22T08:15:31.331Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Reflection在進化-淺談Expression表達式">
+<meta name="twitter:description" content="前言稍微有經驗的.net工程師一定聽過或使用過Reflection,Reflection雖然好用(能動態處理很多事情)但對於效能會有些影響. 我能否擁有Reflection的動態彈性且兼顧效能呢? 有:就是我們這次要介紹的Expression. Expression vs Reflection performace我會準備一個範例來比較Expression和Reflection效能差異  Expr">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://isdaniel.github.io/expression-vs-reflection/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Reflection在進化-淺談Expression表達式 | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-course">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">79</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">20</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">86</span></a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+    <div class="reading-progress-bar"></div>
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/expression-vs-reflection/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Reflection在進化-淺談Expression表達式
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2021-04-06 22:30:11" itemprop="dateCreated datePublished" datetime="2021-04-06T22:30:11+00:00">2021-04-06</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-06-22 08:15:31" itemprop="dateModified" datetime="2021-06-22T08:15:31+00:00">2021-06-22</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/expression-vs-reflection/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="expression-vs-reflection/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">5.8k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">11 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>稍微有經驗的.net工程師一定聽過或使用過Reflection,Reflection雖然好用(能動態處理很多事情)但對於效能會有些影響.</p>
+<p>我能否擁有Reflection的動態彈性且兼顧效能呢?</p>
+<p>有:就是我們這次要介紹的Expression.</p>
+<h2 id="Expression-vs-Reflection-performace"><a href="#Expression-vs-Reflection-performace" class="headerlink" title="Expression vs Reflection performace"></a>Expression vs Reflection performace</h2><p>我會準備一個範例來比較<code>Expression</code>和<code>Reflection</code>效能差異</p>
+<ul>
+<li><code>Expression</code></li>
+<li><code>Activator.CreateInstance</code></li>
+</ul>
+<h3 id="Activator-CreateInstance-Code"><a href="#Activator-CreateInstance-Code" class="headerlink" title="Activator.CreateInstance Code"></a>Activator.CreateInstance Code</h3><p><code>Activator.CreateInstance</code>沒甚麼好說就是一個靜態方法傳入<code>Type</code>動態產生一個物件</p>
+<h3 id="Expression-code"><a href="#Expression-code" class="headerlink" title="Expression code"></a>Expression code</h3><p>Expression程式碼如下,能發現只是為了建立一個物件需要寫一大堆程式碼(但這些程式碼對於追求效能的你是必須的)</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">delegate</span> T Func&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args);</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//get a lambda method to create new object.</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Func&lt;T&gt; ExpressionCreator&lt;T&gt;()</span><br><span class="line">	&#123;</span><br><span class="line">		ConstructorInfo ctor = <span class="keyword">typeof</span>(T).GetConstructors().FirstOrDefault();</span><br><span class="line">		Type type = ctor.DeclaringType;</span><br><span class="line"></span><br><span class="line">		ParameterInfo[] paramsInfo = ctor.GetParameters();</span><br><span class="line"></span><br><span class="line">		ParameterExpression param =</span><br><span class="line">			Expression.Parameter(<span class="keyword">typeof</span>(<span class="keyword">object</span>[]), <span class="string">"args"</span>);</span><br><span class="line"></span><br><span class="line">		Expression[] argsExp =</span><br><span class="line">			<span class="keyword">new</span> Expression[paramsInfo.Length];</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; paramsInfo.Length; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			Expression index = Expression.Constant(i);</span><br><span class="line">			Type paramType = paramsInfo[i].ParameterType;</span><br><span class="line"></span><br><span class="line">			Expression paramAccessorExp =</span><br><span class="line">				Expression.ArrayIndex(param, index);</span><br><span class="line"></span><br><span class="line">			Expression paramCastExp =</span><br><span class="line">				Expression.Convert(paramAccessorExp, paramType);</span><br><span class="line"></span><br><span class="line">			argsExp[i] = paramCastExp;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		NewExpression newExp = Expression.New(ctor, argsExp);</span><br><span class="line"></span><br><span class="line">		LambdaExpression lambda = Expression.Lambda(<span class="keyword">typeof</span>(Func&lt;T&gt;), newExp, param);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> (Func&lt;T&gt;)lambda.Compile();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>產生出來Lambda程式碼如下,之後我們就可以透過此lambda來產生我們要物件摟</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">.Lambda <span class="meta">#Lambda1&lt;ConsoleWeb.Func`1[ConsoleWeb.A]&gt;(System.Object[] $args) &#123;</span></span><br><span class="line">    .New ConsoleWeb.A()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="BenchmarkDotNet分析"><a href="#BenchmarkDotNet分析" class="headerlink" title="BenchmarkDotNet分析"></a>BenchmarkDotNet分析</h2><p>Sample Project放在<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvRXhwcmVzc2lvblZzUmVmbGVjdGlvbg==" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/ExpressionVsReflection">GitHub ExpressionVsReflection<i class="fa fa-external-link"></i></span></p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">delegate</span> T Func&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args);</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ObjectProvider</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> ConcurrentDictionary&lt;<span class="keyword">string</span>,Delegate&gt; _mapFunc = <span class="keyword">new</span> ConcurrentDictionary&lt;<span class="keyword">string</span>, Delegate&gt;();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> T ReflectionCreator&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args)</span><br><span class="line">		<span class="keyword">where</span> T : <span class="keyword">class</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> Activator.CreateInstance(<span class="keyword">typeof</span>(T), args) <span class="keyword">as</span> T;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Func&lt;T&gt; ExpressionCreator&lt;T&gt;()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">var</span> key = <span class="keyword">typeof</span>(T).Name;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (!_mapFunc.TryGetValue(key, <span class="keyword">out</span> Delegate result))</span><br><span class="line">		&#123;</span><br><span class="line">			ConstructorInfo ctor = <span class="keyword">typeof</span>(T).GetConstructors().FirstOrDefault();</span><br><span class="line"></span><br><span class="line">			ParameterInfo[] paramsInfo = ctor.GetParameters();</span><br><span class="line"></span><br><span class="line">			ParameterExpression param =</span><br><span class="line">				Expression.Parameter(<span class="keyword">typeof</span>(<span class="keyword">object</span>[]), <span class="string">"args"</span>);</span><br><span class="line"></span><br><span class="line">			Expression[] argsExp =</span><br><span class="line">				<span class="keyword">new</span> Expression[paramsInfo.Length];</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; paramsInfo.Length; i++)</span><br><span class="line">			&#123;</span><br><span class="line">				Expression index = Expression.Constant(i);</span><br><span class="line">				Type paramType = paramsInfo[i].ParameterType;</span><br><span class="line"></span><br><span class="line">				Expression paramAccessorExp =</span><br><span class="line">					Expression.ArrayIndex(param, index);</span><br><span class="line"></span><br><span class="line">				Expression paramCastExp =</span><br><span class="line">					Expression.Convert(paramAccessorExp, paramType);</span><br><span class="line"></span><br><span class="line">				argsExp[i] = paramCastExp;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			NewExpression newExp = Expression.New(ctor, argsExp);</span><br><span class="line"></span><br><span class="line">			LambdaExpression lambda = Expression.Lambda(<span class="keyword">typeof</span>(Func&lt;T&gt;), newExp, param);</span><br><span class="line"></span><br><span class="line">			result = lambda.Compile();</span><br><span class="line"></span><br><span class="line">			_mapFunc.GetOrAdd(key, result);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> (Func&lt;T&gt;)result;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">BenchmarkDotNet</span>=v0.<span class="number">12.1</span>, OS=Windows <span class="number">10.0</span>.<span class="number">18363.1440</span> (<span class="number">1909</span>/November2018Update/<span class="number">19</span>H2)</span><br><span class="line">Intel Core i7-9700 CPU 3.00GHz, 1 CPU, 8 logical and 8 physical cores</span><br><span class="line">  [Host]     : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT DEBUG  [AttachedDebugger]</span><br><span class="line">  ShortRun   : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT</span><br><span class="line">  Job-ZMUHMP : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT</span><br><span class="line"></span><br><span class="line">|                            Method |         Mean |    StdDev |      Error |  Gen 0 | Gen 1 | Gen 2 | Allocated |</span><br><span class="line">|---------------------------------- |-------------:|----------:|-----------:|-------:|------:|------:|----------:|</span><br><span class="line">|  &amp;#39;ExpressionCreator no parameter&amp;#39; |     54.87 ns |  0.111 ns |   2.021 ns |      - |     - |     - |         - |</span><br><span class="line">| &amp;#39;ExpressionCreator had parameter&amp;#39; |     77.08 ns |  0.511 ns |   9.314 ns | 0.0076 |     - |     - |      40 B |</span><br><span class="line">|  &amp;#39;ReflectionCreator no parameter&amp;#39; |    463.32 ns |  2.229 ns |  40.667 ns | 0.0318 |     - |     - |     168 B |</span><br><span class="line">| &amp;#39;ReflectionCreator had parameter&amp;#39; |    604.89 ns | 13.413 ns | 244.710 ns | 0.0426 |     - |     - |     224 B |</span><br></pre></td></tr></table></figure>
+<p>上面顯示使用Expression效能比起使用Reflection有明顯提升.</p>
+<h3 id="Expression小提醒"><a href="#Expression小提醒" class="headerlink" title="Expression小提醒"></a>Expression小提醒</h3><blockquote>
+<p>如果使用Expression或Emit技術時,產生的程式碼(委派)記得使用Cache存放起來,因為如果每次執行都運算Compile效能反而會比Reflection還要更差.</p>
+</blockquote>
+<p>如果沒有使用Cache來執行Expression效率就大大降低甚至比Reflection還要差.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="GHERKIN"><figure class="iseeu highlight /gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">|<span class="string">                            Method </span>|<span class="string">         Mean </span>|<span class="string">    StdDev </span>|<span class="string">       Error </span>|<span class="string">  Gen 0 </span>|<span class="string">  Gen 1 </span>|<span class="string"> Gen 2 </span>|<span class="string"> Allocated </span>|</span><br><span class="line">|<span class="string">---------------------------------- </span>|<span class="string">-------------:</span>|<span class="string">----------:</span>|<span class="string">------------:</span>|<span class="string">-------:</span>|<span class="string">-------:</span>|<span class="string">------:</span>|<span class="string">----------:</span>|</span><br><span class="line">|<span class="string">  &amp;#39;ReflectionCreator no parameter&amp;#39; </span>|<span class="string">     464.3 ns </span>|<span class="string">   5.30 ns </span>|<span class="string">    96.70 ns </span>|<span class="string"> 0.0318 </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">     168 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ReflectionCreator had parameter&amp;#39; </span>|<span class="string">     586.2 ns </span>|<span class="string">   0.40 ns </span>|<span class="string">     7.25 ns </span>|<span class="string"> 0.0426 </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">     224 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ReflectionCreator had parameter&amp;#39; </span>|<span class="string">  10,000.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ReflectionCreator no parameter&amp;#39; </span>|<span class="string">  11,500.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ExpressionCreator no parameter&amp;#39; </span>|<span class="string">  45,225.3 ns </span>|<span class="string">  64.40 ns </span>|<span class="string"> 1,174.88 ns </span>|<span class="string"> 0.4883 </span>|<span class="string"> 0.4069 </span>|<span class="string">     - </span>|<span class="string">    2909 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ExpressionCreator had parameter&amp;#39; </span>|<span class="string">  67,297.9 ns </span>|<span class="string"> 522.99 ns </span>|<span class="string"> 9,541.35 ns </span>|<span class="string"> 0.5697 </span>|<span class="string"> 0.4883 </span>|<span class="string">     - </span>|<span class="string">    3324 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ExpressionCreator had parameter&amp;#39; </span>|<span class="string"> 339,900.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ExpressionCreator no parameter&amp;#39; </span>|<span class="string"> 352,500.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br></pre></td></tr></table></figure></div>
+<h3 id="常用Expression解說"><a href="#常用Expression解說" class="headerlink" title="常用Expression解說"></a>常用Expression解說</h3><p>透過上面範例,能發現Expression核心概念是用來產生Delegate程式碼並呼叫使用.</p>
+<blockquote>
+<p>因為動作最小單位是<strong>方法</strong>,委派可以視做<strong>方法</strong></p>
+</blockquote>
+<ul>
+<li>Expression.Call 呼叫委派方法<ul>
+<li>Note:如果呼叫static方法第一個參數是null</li>
+</ul>
+</li>
+<li>Expression.Assign 對於Expression給值 ex: expression1 = expression2</li>
+<li>Expression.Block  大括號區域 ex:<code>{}</code></li>
+<li>Expression.Convert 轉型</li>
+<li>Expression.Multiply 乘法</li>
+<li>Expression.Bind 綁定物件屬性,成員</li>
+<li>Expression.MemberInit 建構子成員初始化</li>
+<li>(BinaryExpression)<ul>
+<li>Expression.GreaterThanOrEqual:大於等於</li>
+<li>Expression.GreaterThan:大於</li>
+<li>Expression.LessThanOrEqual:小於等於</li>
+<li>Expression.LessThan:小於</li>
+</ul>
+</li>
+<li>Expression.Lambda 封裝成方法</li>
+<li>Expression.New 建立New語法</li>
+</ul>
+<h4 id="ArrayAccess-vs-ArrayIndex"><a href="#ArrayAccess-vs-ArrayIndex" class="headerlink" title="ArrayAccess vs ArrayIndex"></a>ArrayAccess vs ArrayIndex</h4><ul>
+<li>ArrayIndex 是只讀Index</li>
+<li>ArrayAccess 可讀可寫</li>
+</ul>
+<blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS9xdWVzdGlvbnMvMTQ5NzM4MTMvYXJyYXlhY2Nlc3MtdnMtYXJyYXlpbmRleC1pbi1leHByZXNzaW9uLXRyZWU=" title="https://stackoverflow.com/questions/14973813/arrayaccess-vs-arrayindex-in-expression-tree">https://stackoverflow.com/questions/14973813/arrayaccess-vs-arrayindex-in-expression-tree<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Expression和Emit雖然難寫,但寫的好可以讓程式碼更有彈性且比Reflection更有效能,Expression在許多知名架構都有使用(包含微軟MVC框架也是使用Reflection + Expression來優化),舉一個例子動態代理就很適合使用<code>Expression</code>或<code>Emit</code>來優化.</p>
+<blockquote>
+<p>知名動態代理框架<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2Nhc3RsZXByb2plY3QvQ29yZQ==" title="https://github.com/castleproject/Core">castle<i class="fa fa-external-link"></i></span>有使用到Emit.</p>
+</blockquote>
+<p>Emit想要解決的問題和Expression類似,只是Emit提供更多底層API讓我們呼叫(比Expression可以控制更多細節)</p>
+<blockquote>
+<p>Emit可以寫類似IL程式語法</p>
+</blockquote>
+<p>想必然Emit寫起來也更繁瑣更容易出錯.</p>
+<p>所以了解Expression是前往.net進階工程師必經之路.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/expression-vs-reflection/">https://isdaniel.github.io/expression-vs-reflection/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\invoicetw-framework\" rel="bookmark">【財政部查詢類電子發票API】框架解說 C#</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\modify-sourcecode\" rel="bookmark">沒有Source Code 如何修改程式??</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\nosourcecode-modifycode\" rel="bookmark">沒有Source Code 如何修改程式??</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day2\" rel="bookmark">Asp.Net支柱 IHttpMoudle & IHttphandler (第2天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\automapperinit\" rel="bookmark">(AutoMapper)反射自動註冊AutoMapper Profile</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C#</a>
+          
+            <a href="/tags/OOP/" rel="tag"># OOP</a>
+          
+            <a href="/tags/Reflection/" rel="tag"># Reflection</a>
+          
+            <a href="/tags/Expression/" rel="tag"># Expression</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/docker-deepknow-1/" rel="next" title="Docker深入淺出(一)">
+                <i class="fa fa-chevron-left"></i> Docker深入淺出(一)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/sqlserver-create-column-tips/" rel="prev" title="資料庫新增欄造成Page split">
+                資料庫新增欄造成Page split <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+  <br>
+  <div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
+            
+              <p class="site-author-name" itemprop="name">Daniel Shih</p>
+              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">86</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">20</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">79</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Expression-vs-Reflection-performace"><span class="nav-number">2.</span> <span class="nav-text">Expression vs Reflection performace</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Activator-CreateInstance-Code"><span class="nav-number">2.1.</span> <span class="nav-text">Activator.CreateInstance Code</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Expression-code"><span class="nav-number">2.2.</span> <span class="nav-text">Expression code</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BenchmarkDotNet分析"><span class="nav-number">3.</span> <span class="nav-text">BenchmarkDotNet分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Expression小提醒"><span class="nav-number">3.1.</span> <span class="nav-text">Expression小提醒</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#常用Expression解說"><span class="nav-number">3.2.</span> <span class="nav-text">常用Expression解說</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ArrayAccess-vs-ArrayIndex"><span class="nav-number">3.2.1.</span> <span class="nav-text">ArrayAccess vs ArrayIndex</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">4.</span> <span class="nav-text">小結</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+    <span title="Symbols count total">361k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+    <span title="Reading time total">10:56</span>
+  
+</div>
+
+
+
+  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+  
+  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/reading_progress/reading_progress.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-141257985-1');
+</script>
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+  <script src="/js/exturl.js?v=7.1.1"></script>
+
+
+  
+
+  
+  
+  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/expression-vs-reflection/";
+    this.page.identifier = "expression-vs-reflection/";
+    this.page.title = 'Reflection在進化-淺談Expression表達式';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    $(function() {
+      var offsetTop = $('#comments').offset().top - $(window).height();
+      if (offsetTop <= 0) {
+        // load directly when there's no a scrollbar
+        loadComments();
+      } else {
+        $(window).on('scroll.disqus_scroll', function() {
+          // offsetTop may changes because of manually resizing browser window or lazy loading images.
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          var scrollTop = $(window).scrollTop();
+
+          // pre-load comments a bit? (margin or anything else)
+          if (offsetTop - scrollTop < 60) {
+            $(window).off('.disqus_scroll');
+            loadComments();
+          }
+        });
+      }
+    });
+  
+</script>
+
+
+
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '',
+    clientSecret: '',
+    repo: '',
+    owner: '',
+    admin: [''],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+<script>
+  $('.highlight').not('.gist .highlight').each(function(i, e) {
+    var $wrap = $('<div>').addClass('highlight-wrap');
+    $(e).after($wrap);
+    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
+      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+        return $(e).text();
+      }).toArray().join('\n');
+      var ta = document.createElement('textarea');
+      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+      ta.style.top = yPosition + 'px'; // Prevent page scroll
+      ta.style.position = 'absolute';
+      ta.style.opacity = '0';
+      ta.readOnly = true;
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, code.length);
+      ta.readOnly = false;
+      var result = document.execCommand('copy');
+      
+        if (result) $(this).text('Copied');
+        else $(this).text('Copy failed');
+      
+      ta.blur(); // For iOS
+      $(this).blur();
+    })).on('mouseleave', function(e) {
+      var $b = $(this).find('.copy-btn');
+      setTimeout(function() {
+        $b.text('Copy');
+      }, 300);
+    }).append(e);
+  })
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

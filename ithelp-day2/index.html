@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-tw">
+<head><meta name="generator" content="Hexo 3.8.0">
+  
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+    
+    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+
+  <meta name="description" content="Agenda 前言： IHttpHandler和HttpModule關係   Asp.net_Application_Event生命週期 Event事件名稱： 事件方法說明：   IHttpHandler IHttpModule 自己建立一個 IHttpHandler Web.Config註冊上面撰寫的IHttpHandler   自己建立一個 IHttpModule 建立一個類別實現IHttpM">
+<meta name="keywords" content="C#,Asp.net,Asp.net-MVC,SourceCode,11th鐵人賽">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Asp.Net支柱 IHttpMoudle &amp; IHttphandler (第2天)">
+<meta property="og:url" content="https://isdaniel.github.io/ithelp-day2/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="Agenda 前言： IHttpHandler和HttpModule關係   Asp.net_Application_Event生命週期 Event事件名稱： 事件方法說明：   IHttpHandler IHttpModule 自己建立一個 IHttpHandler Web.Config註冊上面撰寫的IHttpHandler   自己建立一個 IHttpModule 建立一個類別實現IHttpM">
+<meta property="og:locale" content="zh-tw">
+<meta property="og:image" content="https://1.bp.blogspot.com/--nEyvA5pGLk/WXn6YudHYzI/AAAAAAACWLg/7N81JLv5SfYPMvYmGdUnNHg4_p3Shb5DACLcBGAs/s1600/overview.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IISModule_Hanlder.PNG">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/Handler.PNG">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/Module.PNG">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IISExpress.gif">
+<meta property="og:updated_time" content="2021-06-22T08:15:31.331Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Asp.Net支柱 IHttpMoudle &amp; IHttphandler (第2天)">
+<meta name="twitter:description" content="Agenda 前言： IHttpHandler和HttpModule關係   Asp.net_Application_Event生命週期 Event事件名稱： 事件方法說明：   IHttpHandler IHttpModule 自己建立一個 IHttpHandler Web.Config註冊上面撰寫的IHttpHandler   自己建立一個 IHttpModule 建立一個類別實現IHttpM">
+<meta name="twitter:image" content="https://1.bp.blogspot.com/--nEyvA5pGLk/WXn6YudHYzI/AAAAAAACWLg/7N81JLv5SfYPMvYmGdUnNHg4_p3Shb5DACLcBGAs/s1600/overview.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://isdaniel.github.io/ithelp-day2/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Asp.Net支柱 IHttpMoudle & IHttphandler (第2天) | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-course">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">79</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">20</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">86</span></a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+    <div class="reading-progress-bar"></div>
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ithelp-day2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">Asp.Net支柱 IHttpMoudle & IHttphandler (第2天)
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-09-13 10:00:00" itemprop="dateCreated datePublished" datetime="2019-09-13T10:00:00+00:00">2019-09-13</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-06-22 08:15:31" itemprop="dateModified" datetime="2021-06-22T08:15:31+00:00">2021-06-22</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/11th鐵人賽/" itemprop="url" rel="index"><span itemprop="name">11th鐵人賽</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/ithelp-day2/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ithelp-day2/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">6.5k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">12 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言：</a><ul>
+<li><a href="#ihttphandler%e5%92%8chttpmodule%e9%97%9c%e4%bf%82">IHttpHandler和HttpModule關係</a></li>
+</ul>
+</li>
+<li><a href="#aspnetapplicationevent%e7%94%9f%e5%91%bd%e9%80%b1%e6%9c%9f">Asp.net_Application_Event生命週期</a><ul>
+<li><a href="#event%e4%ba%8b%e4%bb%b6%e5%90%8d%e7%a8%b1">Event事件名稱：</a></li>
+<li><a href="#%e4%ba%8b%e4%bb%b6%e6%96%b9%e6%b3%95%e8%aa%aa%e6%98%8e">事件方法說明：</a></li>
+</ul>
+</li>
+<li><a href="#ihttphandler">IHttpHandler</a></li>
+<li><a href="#ihttpmodule">IHttpModule</a></li>
+<li><a href="#%e8%87%aa%e5%b7%b1%e5%bb%ba%e7%ab%8b%e4%b8%80%e5%80%8b-ihttphandler">自己建立一個 IHttpHandler</a><ul>
+<li><a href="#webconfig%e8%a8%bb%e5%86%8a%e4%b8%8a%e9%9d%a2%e6%92%b0%e5%af%ab%e7%9a%84ihttphandler">Web.Config註冊上面撰寫的IHttpHandler</a></li>
+</ul>
+</li>
+<li><a href="#%e8%87%aa%e5%b7%b1%e5%bb%ba%e7%ab%8b%e4%b8%80%e5%80%8b-ihttpmodule">自己建立一個 IHttpModule</a><ul>
+<li><a href="#%e5%bb%ba%e7%ab%8b%e4%b8%80%e5%80%8b%e9%a1%9e%e5%88%a5%e5%af%a6%e7%8f%beihttpmodule">建立一個類別實現IHttpModule</a></li>
+<li><a href="#webconfig%e8%a8%bb%e5%86%8a%e4%b8%8a%e9%9d%a2%e6%92%b0%e5%af%ab%e7%9a%84ihttpmodule">Web.Config註冊上面撰寫的IHttpModule</a><ul>
+<li><a href="#%e7%a8%8b%e5%bc%8f%e7%a2%bc">程式碼</a></li>
+</ul>
+</li>
+<li><a href="#%e5%bb%ba%e7%ab%8b%e4%b8%80%e5%80%8b%e9%a1%9e%e5%88%a5%e5%af%a6%e7%8f%beihttphander">建立一個類別實現IHttpHander</a></li>
+</ul>
+</li>
+<li><a href="#applicationhostconfig-%e8%a8%ad%e5%ae%9a%e6%93%8b">ApplicationHost.config 設定擋</a><ul>
+<li><a href="#iis%e9%a0%90%e8%a8%ad%e8%a8%ad%e5%ae%9amodule%e5%9c%a8%e5%93%aa%e9%82%8a">IIS預設設定Module在哪邊?</a><ul>
+<li><a href="#iis">IIS</a></li>
+<li><a href="#iisexpress">IISExpress</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結</a></li>
+<li><a href="#%e5%8f%83%e8%80%83%e8%b3%87%e6%96%99">參考資料：</a></li>
+</ul>
+<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>上一篇文章我們有說 Asp.net 有兩個核心組件 <code>IHttpMoudle &amp; IHttphandler</code></p>
+<p><code>Asp.net</code> 是一個<code>pipeline</code>的模型，理解這些管道除了可以讓我們節省許多不必要的資源浪費也可讓我們程式架構更加有條理.</p>
+<p>就像我們在<code>Asp.net MVC</code>如果要寫權限驗證程式碼,雖然可以寫在<code>Controller</code>的<code>Action</code>中</p>
+<p>但更好做法是我可以寫一個類別繼承<code>AuthorizeAttribute</code>並<code>override</code> <code>OnAuthorization</code>方法並掛上此標籤.</p>
+<p>更了解這些原理可以讓我們寫程式事半功倍.</p>
+<h3 id="IHttpHandler和HttpModule關係"><a href="#IHttpHandler和HttpModule關係" class="headerlink" title="IHttpHandler和HttpModule關係"></a>IHttpHandler和HttpModule關係</h3><p>Http請求像是一個旅客身上帶著行李拿著票來搭火車.</p>
+<ul>
+<li><code>HttpHandler</code> 是火車的終點站.</li>
+<li><code>HttpModule</code> 是火車中途停靠的各站.</li>
+</ul>
+<h2 id="Asp-net-Application-Event生命週期"><a href="#Asp-net-Application-Event生命週期" class="headerlink" title="Asp.net_Application_Event生命週期"></a>Asp.net_Application_Event生命週期</h2><p>我們已經知道<code>Asp.net</code>是一個請求處理響應的管道而這個管道中微軟有提供許多點可以讓我們進行客製化的擴充程式撰寫</p>
+<blockquote>
+<p>事件可藉由<code>IHttpModule</code>來擴充註冊</p>
+</blockquote>
+<h3 id="Event事件名稱："><a href="#Event事件名稱：" class="headerlink" title="Event事件名稱："></a>Event事件名稱：</h3><p>官網列出可用事件很多，下面列出我有用過的幾個事件和其功用.</p>
+<ul>
+<li>BeginRequest</li>
+<li>AuthorizeRequest</li>
+<li>PostResolveRequestCache</li>
+<li>MapRequestHandler</li>
+<li>AcquireRequestState</li>
+<li>PreRequestHandlerExecute</li>
+<li>PostRequestHandlerExecute</li>
+<li>EndRequest</li>
+</ul>
+<h3 id="事件方法說明："><a href="#事件方法說明：" class="headerlink" title="事件方法說明："></a>事件方法說明：</h3><ul>
+<li><code>BeginRequest</code>: 已經啟動要求。如果要在要求前執行某個動作 (例如, 在每頁頁首顯示廣告橫幅), 請同步處理這個事件。</li>
+<li><code>AuthorizeRequest</code>: 您可以在內部使用這個事件, 以實作授權機制 (例如, 將存取控制清單 (ACL) 儲存在資料庫, 而非存入檔案系統)。您也可以覆寫這個事件, 但無此必要。</li>
+<li><code>PostResolveRequestCache</code>：當 ASP.NET 略過目前事件處理常式的執行並允許快取模組從快取中服務要求時發生。</li>
+<li><code>MapRequestHandler</code>：ASP.NET 基礎結構會使用事件來判斷目前要求的要求處理常式。 如需詳細資訊</li>
+<li><code>AcquireRequestState</code>: 工作階段狀態是擷取自狀態儲存區。如果要建置自已的狀態管理模組, 則可以同步處理這個事件, 以便從狀態儲存區擷取「工作階段」狀態。</li>
+<li><code>PreRequestHandlerExecute</code>: 這個事件會在執行 HTTP 處理常式之前產生。</li>
+<li>在介於<code>PreRequestHandlerExecute</code>和<code>PostRequestHandlerExecute</code>事件之間會執行<code>HttpHandler</code>程式碼.</li>
+<li><code>PostRequestHandlerExecute</code>: 這個事件會在執行 HTTP 處理常式之後產生。</li>
+<li><code>EndRequest</code>: 要求已完成。您可能想要建置偵錯模組, 以便收集要求的全部資訊, 然後再將資訊寫入網頁中。</li>
+</ul>
+<p><code>IHttpHandler</code>和<code>IHttpModule</code>關係如 <span class="exturl" data-url="aHR0cHM6Ly93d3cuY29kZXByb2plY3QuY29tL0FydGljbGVzLzMzNTk2OC9JbXBsZW1lbnRpbmctSFRUUEhhbmRsZXItYW5kLUhUVFBNb2R1bGUtaW4tQVNQLU5FVA==" title="https://www.codeproject.com/Articles/335968/Implementing-HTTPHandler-and-HTTPModule-in-ASP-NET">Implementing HTTPHandler and HTTPModule in ASP.NET<i class="fa fa-external-link"></i></span> 文章提到</p>
+<p><img src="https://1.bp.blogspot.com/--nEyvA5pGLk/WXn6YudHYzI/AAAAAAACWLg/7N81JLv5SfYPMvYmGdUnNHg4_p3Shb5DACLcBGAs/s1600/overview.jpg" alt="img"></p>
+<p>每個請求一定會通過所有被註冊的<code>IHttpModule</code>,而最終會執行一個<code>IHttpHandler</code>後進行返回.</p>
+<p>我們常聽到的<code>Asp.net</code> <code>Webform</code>，<code>MVC</code>都是經過管道<code>Module</code>並執行相對應的<code>Handler</code>.</p>
+<blockquote>
+<p>所以HttpHanlder 和 HttpMoudule 搭配使用達到更強大的功能.</p>
+</blockquote>
+<h2 id="IHttpHandler"><a href="#IHttpHandler" class="headerlink" title="IHttpHandler"></a>IHttpHandler</h2><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0ud2ViLmlodHRwaGFuZGxlcj92aWV3PW5ldGZyYW1ld29yay00Ljg=" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.web.ihttphandler?view=netframework-4.8">MSDN<i class="fa fa-external-link"></i></span>說明</p>
+<blockquote>
+<p>您可以撰寫自訂的 HTTP 處理常式來處理特定的預先定義的任何 Common Language Specification (CLS) 標準的語言中的 HTTP 要求的類型。 可執行程式碼中定義HttpHandler類別，而不是傳統的 ASP 或 ASP.NET Web 網頁，這些特定的要求回應。 HTTP 處理常式提供您一種低層級的要求和回應服務的 IIS Web 伺服器互動，以及大部分 ISAPI 擴充程式類似，但使用簡單的程式設計模型提供的功能。</p>
+</blockquote>
+<p><code>IHttpHandler</code>是一個可以讓我們實現的介面<br>裡面包含：</p>
+<p><strong>屬性:</strong></p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>取得值，指出另一個要求是否可以使用 <code>IHttpHandler</code> 執行個體。</p>
+</blockquote>
+<p><strong>方法:</strong></p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>以實作 IHttpHandler 介面的自訂 HttpHandler 來啟用 HTTP Web 要求的處理。</p>
+</blockquote>
+<h2 id="IHttpModule"><a href="#IHttpModule" class="headerlink" title="IHttpModule"></a>IHttpModule</h2><p><span class="exturl" data-url="aHR0cHM6Ly9zdXBwb3J0Lm1pY3Jvc29mdC5jb20vZW4tdXMvaGVscC8zMDc5ODUvaW5mby1hc3AtbmV0LWh0dHAtbW9kdWxlcy1hbmQtaHR0cC1oYW5kbGVycy1vdmVydmlldw==" title="https://support.microsoft.com/en-us/help/307985/info-asp-net-http-modules-and-http-handlers-overview">MSDN<i class="fa fa-external-link"></i></span>說明</p>
+<blockquote>
+<p>Modules are called before and after the handler executes. Modules enable developers to intercept, participate in, or modify each individual request. Modules implement the IHttpModule interface, which is located in the System.Web namespace.</p>
+</blockquote>
+<p>處理常式 (Handler) 在執行前後，會呼叫模組 (Module)。 模組可以讓開發人員攔截、參與或修改每個要求。</p>
+<p>更印證了</p>
+<blockquote>
+<p>　如果把Http請求當作火車那</p>
+<ul>
+<li><code>IHttpHandler</code>是火車的終點</li>
+<li><code>IHttpModule</code>是沿路經過的站點</li>
+</ul>
+</blockquote>
+<p>要查看有哪寫<code>IHttpModule</code>或<code>IHttpHandler</code>被註冊可以看<code>applicationhost.config</code>檔案</p>
+<blockquote>
+<p>路徑：C:\Users[user]\Documents\IISExpress\config\applicationhost.config</p>
+</blockquote>
+<h2 id="自己建立一個-IHttpHandler"><a href="#自己建立一個-IHttpHandler" class="headerlink" title="自己建立一個 IHttpHandler"></a>自己建立一個 IHttpHandler</h2><p>在前面有說到每個Http請求的最終是為了給一個<code>HttpHander</code>來執行處理.</p>
+<p>像我們常看到的</p>
+<ul>
+<li>ASP.NET page (*.aspx)</li>
+<li>Web service (*.asmx)</li>
+<li>Generic Web  (*.ashx)</li>
+</ul>
+<p>甚至是<code>MVC (MvcHandler)</code>都是實現於<code>IHttpHander</code>介面</p>
+<p>這邊介紹如果要如何建立自己<code>HttpHander</code>.</p>
+<h4 id="Web-Config註冊上面撰寫的IHttpHandler"><a href="#Web-Config註冊上面撰寫的IHttpHandler" class="headerlink" title="Web.Config註冊上面撰寫的IHttpHandler"></a>Web.Config註冊上面撰寫的IHttpHandler</h4><p>我們要在<code>Web.Config</code>中設定我們撰寫的<code>HttpHandler</code></p>
+<p>這是一個範例:</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">system.webServer</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">handlers</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">add</span> <span class="attr">verb</span>=<span class="string">"*"</span> <span class="attr">name</span>=<span class="string">"MyHttpHandler"</span> <span class="attr">path</span>=<span class="string">"*.cspx"</span>  <span class="attr">type</span>=<span class="string">"HttpHandler_HttpModule.MyHttpHandler"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">handlers</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">system.webServer</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<p>把<code>handlers</code>加入在<code>system.webServer</code>結點中.</p>
+<p>裡面有幾個<code>Attribute</code></p>
+<ul>
+<li><code>verb</code>：請求動作 <code>GET,POST,PUT...</code>如果是<code>*</code>代表全部請請動作都合用.</li>
+<li><code>path</code>：請求那些副檔名會執行此<code>HttpHandler</code></li>
+<li><code>type</code>：註冊的<code>HttpHandler</code>類型.</li>
+</ul>
+<p>其中最要注意的是type Attribute.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">add</span> <span class="attr">verb</span>=<span class="string">"*"</span> <span class="attr">name</span>=<span class="string">"MyHttpHandler"</span> <span class="attr">path</span>=<span class="string">"*.cspx"</span>  <span class="attr">type</span>=<span class="string">"(namespace).(classname)"</span>/&gt;</span></span><br></pre></td></tr></table></figure></div>
+<p>最後我們就可以請求 <code>http://xxxx/Mypage.cspx</code> 來試試看我們的結果.</p>
+<p>我們將請求<code>*.cspx</code>副檔名的所有請求都當作要透過<code>CLR</code>來執行.</p>
+<h2 id="自己建立一個-IHttpModule"><a href="#自己建立一個-IHttpModule" class="headerlink" title="自己建立一個 IHttpModule"></a>自己建立一個 IHttpModule</h2><p>每個被註冊的<code>HttpModule</code>是Http請求必經之路.</p>
+<ul>
+<li><code>Asp.net MVC</code> 是透過<code>System.Web.Routing.UrlRoutingModule</code> 這個<code>HttpModule</code>來完成切入的.</li>
+</ul>
+<p>使用<code>IHttpModule</code>須完成幾個步驟:</p>
+<ol>
+<li>建立一個類別實現<code>IHttpModule</code></li>
+<li><code>Web.Config</code>註冊上面撰寫的<code>IHttpModule</code></li>
+</ol>
+<h4 id="建立一個類別實現IHttpModule"><a href="#建立一個類別實現IHttpModule" class="headerlink" title="建立一個類別實現IHttpModule"></a>建立一個類別實現IHttpModule</h4><p>這個範例會在頁面上顯示 IIS Pipeline Event的執行順序.</p>
+<ol>
+<li><code>public void Init(HttpApplication context)</code> 把 <code>HttpApplication</code> 中的event做擴充.</li>
+</ol>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpModule</span>:<span class="title">IHttpModule</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Init</span>(<span class="params">HttpApplication context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        context.BeginRequest += (sender, args) =&gt; ShowStep(sender, <span class="string">"BeginRequest"</span>);</span><br><span class="line"></span><br><span class="line">        context.AuthorizeRequest += (sender, args) =&gt; ShowStep(sender, <span class="string">"AuthorizeRequest"</span>);</span><br><span class="line"></span><br><span class="line">        context.PostResolveRequestCache += (sender, args) =&gt; ShowStep(sender, <span class="string">"PostResolveRequestCache"</span>);</span><br><span class="line"></span><br><span class="line">        context.MapRequestHandler += (sender, args) =&gt; ShowStep(sender, <span class="string">"MapRequestHandler"</span>);</span><br><span class="line"></span><br><span class="line">        context.AcquireRequestState += (sender, args) =&gt; ShowStep(sender, <span class="string">"AcquireRequestState"</span>);</span><br><span class="line"></span><br><span class="line">        context.PreRequestHandlerExecute += (sender, args) =&gt; ShowStep(sender, <span class="string">"PreRequestHandlerExecute"</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//這中間執行IHttpHandler.</span></span><br><span class="line"></span><br><span class="line">        context.PostRequestHandlerExecute += (sender, args) =&gt; ShowStep(sender, <span class="string">"PostRequestHandlerExecute"</span>);</span><br><span class="line"></span><br><span class="line">        context.EndRequest += (sender, args) =&gt; ShowStep(sender, <span class="string">"EndRequest"</span>);</span><br><span class="line"></span><br><span class="line">        context.PreSendRequestHeaders += (sender, args) =&gt; ShowStep(sender, <span class="string">"PreSendRequestHeaders"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ShowStep</span>(<span class="params"><span class="keyword">object</span> app,<span class="keyword">string</span> eventName</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> http = (HttpApplication)app;</span><br><span class="line">        http.Response.Write(<span class="string">$"Step <span class="subst">&#123;eventName&#125;</span>&lt;br/&gt;"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Dispose</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h4 id="Web-Config註冊上面撰寫的IHttpModule"><a href="#Web-Config註冊上面撰寫的IHttpModule" class="headerlink" title="Web.Config註冊上面撰寫的IHttpModule"></a>Web.Config註冊上面撰寫的IHttpModule</h4><p>註冊方法和<code>IHttpHander</code>很類似,一樣在<code>system.webServer</code>節點下加入<code>modules</code></p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">system.webServer</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">modules</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">add</span> <span class="attr">name</span>=<span class="string">"MyHttpModule"</span> <span class="attr">type</span>=<span class="string">"HttpHandler_HttpModule.MyHttpModule"</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">modules</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">system.webServer</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<hr>
+<h3 id="程式碼"><a href="#程式碼" class="headerlink" title="程式碼"></a>程式碼</h3><p>使用<code>IHttpHandler</code>須完成幾個步驟:</p>
+<ol>
+<li>建立一個類別實現<code>IHttpHander</code></li>
+<li><code>Web.Config</code>註冊上面撰寫的<code>IHttpHandler</code></li>
+</ol>
+<h4 id="建立一個類別實現IHttpHander"><a href="#建立一個類別實現IHttpHander" class="headerlink" title="建立一個類別實現IHttpHander"></a>建立一個類別實現IHttpHander</h4><p>繼承完<code>IHttpHandler</code>我們會實現兩個方法.</p>
+<ol>
+<li><code>ProcessRequest(HttpContext context)</code> 執行此次請求動作.</li>
+<li><code>bool IsReusable { get; }</code> 是否要將此次請求加入快取中重用.</li>
+</ol>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpHandler</span> : <span class="title">IHttpHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        context.Response.ContentType = <span class="string">"text/html"</span>;</span><br><span class="line">        context.Response.Write(<span class="string">"==================&lt;br/&gt;"</span>);</span><br><span class="line">        context.Response.Write(<span class="string">"Hello World&lt;br/&gt;"</span>);</span><br><span class="line">        context.Response.Write(<span class="string">"==================&lt;br/&gt;"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="ApplicationHost-config-設定擋"><a href="#ApplicationHost-config-設定擋" class="headerlink" title="ApplicationHost.config 設定擋"></a>ApplicationHost.config 設定擋</h2><p>前面有說到<code>aspnet_isapi.dll</code>會去判斷此次請求要怎麼處理,她會去讀取<code>handlers</code>註冊節點的對應表來判斷是否要透過<code>CLR</code>處理此次請求.</p>
+<h3 id="IIS預設設定Module在哪邊"><a href="#IIS預設設定Module在哪邊" class="headerlink" title="IIS預設設定Module在哪邊?"></a>IIS預設設定Module在哪邊?</h3><p>她是透過 <code>ApplicationHost.config</code> 來抓取，<code>HttpHandler</code> 和 <code>HttpModule</code>設定.</p>
+<p>這邊分為兩個部分:</p>
+<h4 id="IIS"><a href="#IIS" class="headerlink" title="IIS"></a>IIS</h4><p>IIS可借由<code>HandlerMappings</code>和<code>Module</code>來設置</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IISModule_Hanlder.PNG" alt="瀏覽器請求IIS流程"></p>
+<hr>
+<ul>
+<li>HandlerMappings</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/Handler.PNG" alt="瀏覽器請求IIS流程"></p>
+<p>可以看到有許多預設要處理的附檔名(<code>.aspx</code>,<code>.svc</code>)在裡面都可以看到.</p>
+<ul>
+<li>Module</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/Module.PNG" alt="瀏覽器請求IIS流程"></p>
+<p>IIS預設幫忙載入許多<code>Moudle</code>我們自己客製化的<code>Module</code>也可以在這邊設定</p>
+<hr>
+<h4 id="IISExpress"><a href="#IISExpress" class="headerlink" title="IISExpress"></a>IISExpress</h4><p>基本上<code>IISExpress</code> 全域 config 會放在這個路徑</p>
+<blockquote>
+<p>C:\Users\%USERPROFILE%\Documents\IISExpress\config</p>
+</blockquote>
+<p>如果VS版本高於2015以上執行Web專案時，會在每個專案上建立一個<code>.vs</code>資料夾並把<code>ApplicationHost.config</code>複製一份放到下面影片的路徑中</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IISExpress.gif" alt="瀏覽器請求IIS流程"></p>
+<hr>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0h0dHBIYW5sZGVyX1ZzX0h0dHBNb2R1bGU=" title="https://github.com/isdaniel/HttpHanlder_Vs_HttpModule">範例原始碼下載<i class="fa fa-external-link"></i></span></p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們學到</p>
+<ol>
+<li>自己建立一個<code>Httpmodule</code></li>
+<li>自己建立一個<code>Httphandler</code> </li>
+<li><code>ApplicationHost.config</code>設定擋和<code>Httpmodule &amp; Httphandler</code>關係且如何設定.</li>
+</ol>
+<p>今天先丟一個問題給大家那，為什麼Asp.net可以依賴<code>IHttphandler</code>介面來完成請求這是怎麼實現的?</p>
+<p>下篇我們會來回答上面的答案.</p>
+<h2 id="參考資料："><a href="#參考資料：" class="headerlink" title="參考資料："></a>參考資料：</h2><ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvcHJldmlvdXMtdmVyc2lvbnMvYXNwbmV0L2JiMzk4OTg2KHY9dnMuMTAw" title="https://docs.microsoft.com/en-us/previous-versions/aspnet/bb398986(v=vs.100">HTTP Handlers and HTTP Modules Overview<i class="fa fa-external-link"></i></span>#Features)</li>
+<li><span class="exturl" data-url="aHR0cHM6Ly93d3cuY29kZXByb2plY3QuY29tL0FydGljbGVzLzMzNTk2OC9JbXBsZW1lbnRpbmctSFRUUEhhbmRsZXItYW5kLUhUVFBNb2R1bGUtaW4tQVNQLU5FVA==" title="https://www.codeproject.com/Articles/335968/Implementing-HTTPHandler-and-HTTPModule-in-ASP-NET">Implementing HTTPHandler and HTTPModule in ASP.NET<i class="fa fa-external-link"></i></span></li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day2/">https://isdaniel.github.io/ithelp-day2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day21\" rel="bookmark">探討Model驗證標籤(ValidationAttribute) (第21天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day19\" rel="bookmark">Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day9\" rel="bookmark">進入MVC原始碼世界 Route & RouteTable 原始碼解析 (第9天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day8\" rel="bookmark">揭密Mvc使用IHttpHandler by UrlRoutingModule-4.0 (第8天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day7\" rel="bookmark">Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler (第7天)</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C#</a>
+          
+            <a href="/tags/Asp-net/" rel="tag"># Asp.net</a>
+          
+            <a href="/tags/Asp-net-MVC/" rel="tag"># Asp.net-MVC</a>
+          
+            <a href="/tags/SourceCode/" rel="tag"># SourceCode</a>
+          
+            <a href="/tags/11th鐵人賽/" rel="tag"># 11th鐵人賽</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/ithelp-day1/" rel="next" title="(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)">
+                <i class="fa fa-chevron-left"></i> (開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/ithelp-day3/" rel="prev" title="啟動吧!Asp.Net IsapiRunTime & HttpRuntime (第3天)">
+                啟動吧!Asp.Net IsapiRunTime & HttpRuntime (第3天) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+  <br>
+  <div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
+            
+              <p class="site-author-name" itemprop="name">Daniel Shih</p>
+              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">86</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">20</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">79</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言："><span class="nav-number">1.1.</span> <span class="nav-text">前言：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#IHttpHandler和HttpModule關係"><span class="nav-number">1.1.1.</span> <span class="nav-text">IHttpHandler和HttpModule關係</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Asp-net-Application-Event生命週期"><span class="nav-number">1.2.</span> <span class="nav-text">Asp.net_Application_Event生命週期</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Event事件名稱："><span class="nav-number">1.2.1.</span> <span class="nav-text">Event事件名稱：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#事件方法說明："><span class="nav-number">1.2.2.</span> <span class="nav-text">事件方法說明：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IHttpHandler"><span class="nav-number">1.3.</span> <span class="nav-text">IHttpHandler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IHttpModule"><span class="nav-number">1.4.</span> <span class="nav-text">IHttpModule</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自己建立一個-IHttpHandler"><span class="nav-number">1.5.</span> <span class="nav-text">自己建立一個 IHttpHandler</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Web-Config註冊上面撰寫的IHttpHandler"><span class="nav-number">1.5.0.1.</span> <span class="nav-text">Web.Config註冊上面撰寫的IHttpHandler</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自己建立一個-IHttpModule"><span class="nav-number">1.6.</span> <span class="nav-text">自己建立一個 IHttpModule</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#建立一個類別實現IHttpModule"><span class="nav-number">1.6.0.1.</span> <span class="nav-text">建立一個類別實現IHttpModule</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Web-Config註冊上面撰寫的IHttpModule"><span class="nav-number">1.6.0.2.</span> <span class="nav-text">Web.Config註冊上面撰寫的IHttpModule</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#程式碼"><span class="nav-number">1.6.1.</span> <span class="nav-text">程式碼</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#建立一個類別實現IHttpHander"><span class="nav-number">1.6.1.1.</span> <span class="nav-text">建立一個類別實現IHttpHander</span></a></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#ApplicationHost-config-設定擋"><span class="nav-number">1.7.</span> <span class="nav-text">ApplicationHost.config 設定擋</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#IIS預設設定Module在哪邊"><span class="nav-number">1.7.1.</span> <span class="nav-text">IIS預設設定Module在哪邊?</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#IIS"><span class="nav-number">1.7.1.1.</span> <span class="nav-text">IIS</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#IISExpress"><span class="nav-number">1.7.1.2.</span> <span class="nav-text">IISExpress</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">1.8.</span> <span class="nav-text">小結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#參考資料："><span class="nav-number">1.9.</span> <span class="nav-text">參考資料：</span></a></li></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+    <span title="Symbols count total">361k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+    <span title="Reading time total">10:56</span>
+  
+</div>
+
+
+
+  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+  
+  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/reading_progress/reading_progress.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-141257985-1');
+</script>
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+  <script src="/js/exturl.js?v=7.1.1"></script>
+
+
+  
+
+  
+  
+  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/ithelp-day2/";
+    this.page.identifier = "ithelp-day2/";
+    this.page.title = 'Asp.Net支柱 IHttpMoudle & IHttphandler (第2天)';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    $(function() {
+      var offsetTop = $('#comments').offset().top - $(window).height();
+      if (offsetTop <= 0) {
+        // load directly when there's no a scrollbar
+        loadComments();
+      } else {
+        $(window).on('scroll.disqus_scroll', function() {
+          // offsetTop may changes because of manually resizing browser window or lazy loading images.
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          var scrollTop = $(window).scrollTop();
+
+          // pre-load comments a bit? (margin or anything else)
+          if (offsetTop - scrollTop < 60) {
+            $(window).off('.disqus_scroll');
+            loadComments();
+          }
+        });
+      }
+    });
+  
+</script>
+
+
+
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '',
+    clientSecret: '',
+    repo: '',
+    owner: '',
+    admin: [''],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+<script>
+  $('.highlight').not('.gist .highlight').each(function(i, e) {
+    var $wrap = $('<div>').addClass('highlight-wrap');
+    $(e).after($wrap);
+    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
+      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+        return $(e).text();
+      }).toArray().join('\n');
+      var ta = document.createElement('textarea');
+      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+      ta.style.top = yPosition + 'px'; // Prevent page scroll
+      ta.style.position = 'absolute';
+      ta.style.opacity = '0';
+      ta.readOnly = true;
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, code.length);
+      ta.readOnly = false;
+      var result = document.execCommand('copy');
+      
+        if (result) $(this).text('Copied');
+        else $(this).text('Copy failed');
+      
+      ta.blur(); // For iOS
+      $(this).blur();
+    })).on('mouseleave', function(e) {
+      var $b = $(this).find('.copy-btn');
+      setTimeout(function() {
+        $b.text('Copy');
+      }, 300);
+    }).append(e);
+  })
+</script>
+
+
+  
+
+  
+
+</body>
+</html>
