@@ -2,7 +2,7 @@
 <search>
   <entry>
     <title>ACID</title>
-    <url>/ACID/</url>
+    <url>/acid/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備</p>
 <ul>
 <li>原子性（atomicity，稱不可分割性）</li>
@@ -60,7 +60,7 @@
 <h2 id="Durability"><a href="#Durability" class="headerlink" title="Durability"></a>Durability</h2><p>當你完成<code>Transaction</code>後,不管發生什麼事情資料都會完整保留在DB中，一般來說<code>Transaction</code>完成前後都會寫<code>Transaction log</code></p>
 <p>假如DB遇到非預期錯誤(ex:停電),在DB Server重啟後，DB會依照之前紀錄嘗試Recovery.</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ACID/">https://isdaniel.github.io/ACID/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/acid/">https://isdaniel.github.io/acid/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>C#</category>
@@ -75,7 +75,7 @@
   </entry>
   <entry>
     <title>AOP Lock Architecture</title>
-    <url>/AOP-Lock-Mechanism/</url>
+    <url>/aop-lock-mechanism/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
 <p>在我們當前系統中有許多動作間需要互斥,不然會有DeadLock問題</p>
 <p>藉由已經分析DeadLock Report後,我開始構思如何讓建立Lock可以變得更容易且好理解.</p>
@@ -130,7 +130,7 @@
 <p>利用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnJlYWRlcndyaXRlcmxvY2tzbGltP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim<i class="fa fa-external-link"></i></span>就可以建立如DB lock,實在非常方便.</p>
 <p>假如想要細部了解<a href="https://isdaniel.github.io/Autofac-AOP/">Autofac + Interceptors(AOP) 動態代理</a>可以參考我之前寫文章,這裡我就不多敘述了.</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbC90cmVlL21hc3Rlci9zcmMvRXh0ZW5zaW9uVG9vbC9UaGlyZFBhcnR5RXh0ZW5zaW9uL0xvY2tTZXJ2aWNl" title="https://github.com/isdaniel/ExtenionTool/tree/master/src/ExtensionTool/ThirdPartyExtension/LockService">SourceCode LockService<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/AOP-Lock-Mechanism/">https://isdaniel.github.io/AOP-Lock-Mechanism/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/aop-lock-mechanism/">https://isdaniel.github.io/aop-lock-mechanism/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>C#</category>
@@ -142,43 +142,6 @@
         <tag>Autofac</tag>
         <tag>AOP</tag>
         <tag>Lock</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
-    <url>/AutoMapperInit/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
-<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
-<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
-<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
-<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
-<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
-<blockquote>
-<p>我們可以使用反射來完成</p>
-</blockquote>
-<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
-<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/AutoMapperInit/">https://isdaniel.github.io/AutoMapperInit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Automapper</tag>
-        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -389,6 +352,43 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>IOC</tag>
         <tag>Autofac</tag>
         <tag>AOP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
+    <url>/automapperinit/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
+<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
+<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
+<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
+<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
+<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
+<blockquote>
+<p>我們可以使用反射來完成</p>
+</blockquote>
+<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
+<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Automapper</tag>
+        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -2563,63 +2563,6 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
-    <title>建立自己Blog系列(一) 介紹 Github (hosting) + Hexo (Blog) + Appveyor(CICD)</title>
-    <url>/github-hexo-appveyor/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>網路上已經有許多Blog託管平台 例如:Google Blog，痞客邦….為何我還要自己寫這篇跟大家分享?</p>
-<p>因為上面提供的平台固然好用，但我並無法100%的去修改我想要的樣式或版面.</p>
-<p>如果我想要有100%彈性修改我的Blog我就必須建立自己的網站.</p>
-<p>但要給別人Hosting需要另外花一筆費用…</p>
-<p>就有本次系列文 <code>Github (hosting) + Hexo (Blog) + Appveyor(CICD)</code>．</p>
-<p>這個搭配有幾個優點：</p>
-<ol>
-<li>完全免費</li>
-<li>使用MarkDown撰寫Blog就是爽.</li>
-<li>練習使用CICD線上工具.</li>
-</ol>
-<p>撰寫發布流程大概如下圖</p>
-<p><img src="/images/blog_init.PNG" alt="img"></p>
-<h3 id="流程解說："><a href="#流程解說：" class="headerlink" title="流程解說："></a>流程解說：</h3><ol>
-<li>使用<code>Hexo</code>樣板撰寫<code>MarkDown</code> Blog</li>
-<li>寫完後<code>commit</code>和<code>push</code>至Github Blog Code Repository</li>
-<li><code>Appveyor(CI)</code>線上工具會偵測到我們有<code>code commit</code>並執行後續Blog佈版動作</li>
-<li>使用<code>Hexo-cli</code>將MarkDown build成html靜態檔案(因為github page只能Hosting靜態頁面)</li>
-<li><code>Appveyor(CI)</code> commit並push到hosting Repository.</li>
-</ol>
-<p>此流程的優點是只需在Code Repository上撰寫完Blog並commit就可以自動發佈到github page上.</p>
-<hr>
-<h2 id="GitHub-Hosting"><a href="#GitHub-Hosting" class="headerlink" title="GitHub (Hosting)"></a>GitHub (Hosting)</h2><p>GitHub並創建一個名為<strong>username</strong>.github.io Repository，其中username是您在GitHub上的用戶名（或組織名稱）。</p>
-<p>例如我的Github帳戶是isdaniel 就建立一個Repository 叫<br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL2lzZGFuaWVsLmdpdGh1Yi5pbw==" title="https://github.com/isdaniel/isdaniel.github.io">isdaniel.github.io<i class="fa fa-external-link"></i></span> 只要裡面有版控Html靜態頁面Github page 就可幫我們進行託管.</p>
-<p><a href="https://isdaniel.github.io/">https://isdaniel.github.io/</a> 這個網站的進入點在此Repository的index.html頁面.</p>
-<p>Note :</p>
-<blockquote>
-<p>GitHub有個設定，就是每個專案的gh-pages分支可以通過user-domain /項目名來訪問。</p>
-</blockquote>
-<p><span class="exturl" data-url="aHR0cHM6Ly9wYWdlcy5naXRodWIuY29tLw==" title="https://pages.github.com/">詳細資料<i class="fa fa-external-link"></i></span></p>
-<h2 id="Hexo-Blog"><a href="#Hexo-Blog" class="headerlink" title="Hexo (Blog)"></a>Hexo (Blog)</h2><p><code>Hexo</code> 是一個快速、簡單且強大的網誌框架。Hexo 使用 <code>Markdown</code>（或其他渲染引擎）解析您的文章，並在幾秒鐘內，透過漂亮的主題產生靜態檔案</p>
-<p>透過<code>Hexo-cli</code>可以簡單速建立一個blog page,而且<code>Hexo</code>社群活躍且文件支援中文.</p>
-<p><code>Hexo</code>提供豐富的插件程式來給使用者,甚至您如果懂Js css Html也可建立自己的Blog樣式或自行擴充.</p>
-<h2 id="Appveyor-CICD"><a href="#Appveyor-CICD" class="headerlink" title="Appveyor(CICD)"></a>Appveyor(CICD)</h2><p><span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tLw==" title="https://www.appveyor.com/">appveyor<i class="fa fa-external-link"></i></span>是一個支援Winodws&amp;Linux相關的持續部屬服務</p>
-<p>目前免費使用，可透過Github綁定Repository快速建立一套屬於自己的CICD流程.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>這篇跟大家簡單介紹一下會使用到的工具和撰寫blog佈署流程.</p>
-<p>日後會有其他篇文章來詳細說明細節.</p>
-<ul>
-<li><a href="/hexo-github-setting/" title="建立自己Blog系列(二) github Setting">建立自己Blog系列(二) github Setting</a></li>
-<li><a href="/hexo-blog-theme/" title="建立自己Blog系列(三) Hexo next theme 介紹">建立自己Blog系列(三) Hexo next theme 介紹</a></li>
-<li>建立自己Blog系列(四) Appveyor 介紹 yaml.</li>
-</ul>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/github-hexo-appveyor/">https://isdaniel.github.io/github-hexo-appveyor/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>WebDesign</tag>
-        <tag>Blog</tag>
-        <tag>Github</tag>
-        <tag>CICD</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>為什麼 Float和Double會有誤差 (浮點數儲存原理)</title>
     <url>/float-double/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>大家都知道float和double會有誤差 </p>
@@ -2756,6 +2699,63 @@ GROUP BY userName
         <tag>float</tag>
         <tag>double</tag>
         <tag>number</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>建立自己Blog系列(一) 介紹 Github (hosting) + Hexo (Blog) + Appveyor(CICD)</title>
+    <url>/github-hexo-appveyor/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>網路上已經有許多Blog託管平台 例如:Google Blog，痞客邦….為何我還要自己寫這篇跟大家分享?</p>
+<p>因為上面提供的平台固然好用，但我並無法100%的去修改我想要的樣式或版面.</p>
+<p>如果我想要有100%彈性修改我的Blog我就必須建立自己的網站.</p>
+<p>但要給別人Hosting需要另外花一筆費用…</p>
+<p>就有本次系列文 <code>Github (hosting) + Hexo (Blog) + Appveyor(CICD)</code>．</p>
+<p>這個搭配有幾個優點：</p>
+<ol>
+<li>完全免費</li>
+<li>使用MarkDown撰寫Blog就是爽.</li>
+<li>練習使用CICD線上工具.</li>
+</ol>
+<p>撰寫發布流程大概如下圖</p>
+<p><img src="/images/blog_init.PNG" alt="img"></p>
+<h3 id="流程解說："><a href="#流程解說：" class="headerlink" title="流程解說："></a>流程解說：</h3><ol>
+<li>使用<code>Hexo</code>樣板撰寫<code>MarkDown</code> Blog</li>
+<li>寫完後<code>commit</code>和<code>push</code>至Github Blog Code Repository</li>
+<li><code>Appveyor(CI)</code>線上工具會偵測到我們有<code>code commit</code>並執行後續Blog佈版動作</li>
+<li>使用<code>Hexo-cli</code>將MarkDown build成html靜態檔案(因為github page只能Hosting靜態頁面)</li>
+<li><code>Appveyor(CI)</code> commit並push到hosting Repository.</li>
+</ol>
+<p>此流程的優點是只需在Code Repository上撰寫完Blog並commit就可以自動發佈到github page上.</p>
+<hr>
+<h2 id="GitHub-Hosting"><a href="#GitHub-Hosting" class="headerlink" title="GitHub (Hosting)"></a>GitHub (Hosting)</h2><p>GitHub並創建一個名為<strong>username</strong>.github.io Repository，其中username是您在GitHub上的用戶名（或組織名稱）。</p>
+<p>例如我的Github帳戶是isdaniel 就建立一個Repository 叫<br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL2lzZGFuaWVsLmdpdGh1Yi5pbw==" title="https://github.com/isdaniel/isdaniel.github.io">isdaniel.github.io<i class="fa fa-external-link"></i></span> 只要裡面有版控Html靜態頁面Github page 就可幫我們進行託管.</p>
+<p><a href="https://isdaniel.github.io/">https://isdaniel.github.io/</a> 這個網站的進入點在此Repository的index.html頁面.</p>
+<p>Note :</p>
+<blockquote>
+<p>GitHub有個設定，就是每個專案的gh-pages分支可以通過user-domain /項目名來訪問。</p>
+</blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9wYWdlcy5naXRodWIuY29tLw==" title="https://pages.github.com/">詳細資料<i class="fa fa-external-link"></i></span></p>
+<h2 id="Hexo-Blog"><a href="#Hexo-Blog" class="headerlink" title="Hexo (Blog)"></a>Hexo (Blog)</h2><p><code>Hexo</code> 是一個快速、簡單且強大的網誌框架。Hexo 使用 <code>Markdown</code>（或其他渲染引擎）解析您的文章，並在幾秒鐘內，透過漂亮的主題產生靜態檔案</p>
+<p>透過<code>Hexo-cli</code>可以簡單速建立一個blog page,而且<code>Hexo</code>社群活躍且文件支援中文.</p>
+<p><code>Hexo</code>提供豐富的插件程式來給使用者,甚至您如果懂Js css Html也可建立自己的Blog樣式或自行擴充.</p>
+<h2 id="Appveyor-CICD"><a href="#Appveyor-CICD" class="headerlink" title="Appveyor(CICD)"></a>Appveyor(CICD)</h2><p><span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tLw==" title="https://www.appveyor.com/">appveyor<i class="fa fa-external-link"></i></span>是一個支援Winodws&amp;Linux相關的持續部屬服務</p>
+<p>目前免費使用，可透過Github綁定Repository快速建立一套屬於自己的CICD流程.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>這篇跟大家簡單介紹一下會使用到的工具和撰寫blog佈署流程.</p>
+<p>日後會有其他篇文章來詳細說明細節.</p>
+<ul>
+<li><a href="/hexo-github-setting/" title="建立自己Blog系列(二) github Setting">建立自己Blog系列(二) github Setting</a></li>
+<li><a href="/hexo-blog-theme/" title="建立自己Blog系列(三) Hexo next theme 介紹">建立自己Blog系列(三) Hexo next theme 介紹</a></li>
+<li>建立自己Blog系列(四) Appveyor 介紹 yaml.</li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/github-hexo-appveyor/">https://isdaniel.github.io/github-hexo-appveyor/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>WebDesign</tag>
+        <tag>Blog</tag>
+        <tag>Github</tag>
+        <tag>CICD</tag>
       </tags>
   </entry>
   <entry>
@@ -3102,6 +3102,64 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>【財政部查詢類電子發票API】框架解說 C#</title>
+    <url>/invoicetw-framework/</url>
+    <content><![CDATA[<p>小弟之前有分享過串接【財政部查詢類電子發票API】小框架使用文</p>
+<p>使用文連結 <span class="exturl" data-url="aHR0cHM6Ly9pdGhlbHAuaXRob21lLmNvbS50dy9hcnRpY2xlcy8xMDE4MzkwNA==" title="https://ithelp.ithome.com.tw/articles/10183904">快速使用財政部電子發票API 使用 C#<i class="fa fa-external-link"></i></span><br>串接文件下載 <span class="exturl" data-url="aHR0cHM6Ly93d3cuZWludm9pY2UubmF0Lmdvdi50dy9ob21lL0Rvd25Mb2FkP2ZpbGVOYW1lPTE0NzY4NTUzODc0NTVfMC40LjQucGRm" title="https://www.einvoice.nat.gov.tw/home/DownLoad?fileName=1476855387455_0.4.4.pdf">電子發票查詢API 1.4.4<i class="fa fa-external-link"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">程式原始碼連結<i class="fa fa-external-link"></i></span></p>
+<p>這次想跟大家分享我做出此框架的歷程..</p>
+<hr>
+<p>框架目的：希望可以做出方便日後維護擴展的API。</p>
+<p>串接API時發現他們有幾個共同之處</p>
+<ol>
+<li>API請求參數名稱需降冪排列</li>
+<li>請求參數最後會加上簽章</li>
+<li>都有時間戳記</li>
+<li>回應資料格式都是Json</li>
+<li>都是使用Http (Get or Post) </li>
+</ol>
+<p>我就想到可以使用 <strong>工廠模式來實作這系列產品</strong> (工廠模式主要是切割產品的使用和生產)</p>
+<h2 id="產品解說"><a href="#產品解說" class="headerlink" title="產品解說"></a>產品解說</h2><p>因為他們都有共同的能力<strong>傳入一組參數回傳一串Json </strong><br>我就先寫出一個API共同的介面簽章  <code>IApiRunner</code><br>這個介面為基礎來撰寫後面的程式碼</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行api的介面</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IApiRunner</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 執行api</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>傳入的參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span>回傳資料<span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我在中間多一個抽象泛型類別 ApiBase<t> (用泛型是為了給子類決定傳入參數的Model)<br>原因:</t></p>
+<ol>
+<li>中間使用泛型抽象類別讓子類決定要傳入哪組參數</li>
+<li>可以將一些共通的方法寫在裡面</li>
+<li>子類別只需要知道要提供哪些動作，所以在ApiBase中提供兩個方法來override<ul>
+<li>請求URL   目前預設讀取Config (GetApiURL)</li>
+<li>參數的組合 (SetParamter)</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 子類繼承提供參數</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">string</span> <span class="title">SetParamter</span>(<span class="params">T model</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 取得api的Url路徑</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">GetApiURL</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">string</span> apiname = <span class="keyword">this</span>.GetType().Name;</span><br><span class="line">    <span class="keyword">if</span> (!ConfigurationManager.AppSettings.AllKeys.Contains(apiname))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="keyword">string</span>.Format(<span class="string">"請確認Config的appsetting有無此參數 &#123;0&#125;"</span>,</span><br><span class="line">            apiname));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ConfigurationManager.AppSettings[apiname];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行Api</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//建立所需參數</span></span><br><span class="line">    <span class="keyword">string</span> result = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> postData = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> posturl = GetApiURL();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> data = ObjectToModel(model);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//取得加密後的參數</span></span><br><span class="line">    postData = GetInvoiceParamter(SetParamter(data));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        ServicePointManager.ServerCertificateValidationCallback</span><br><span class="line">            = HttpTool.ValidateServerCertificate;</span><br><span class="line">        result = HttpTool.HttpPost(posturl, postData);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex)</span><br><span class="line">    &#123;</span><br><span class="line">        result = GetSysErrorMsg();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>目前產品部分已經建構好了。</p>
+<h2 id="工廠解說"><a href="#工廠解說" class="headerlink" title="工廠解說"></a>工廠解說</h2><p>工廠部分這次我選擇使用【反射方式來實現工廠】</p>
+<p>工廠類別 <code>MoblieInvoiceApiFactroy</code> 其實最主要是使用GetInstance方法<br><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 提供api的工廠</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Model和Api命名要相關</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 例如:testModel 對 testApi</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>Model參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IApiRunner <span class="title">GetInstace</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (model == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"不能傳空的參數"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> modelName = model.GetType().Name;</span><br><span class="line">    <span class="keyword">return</span> (IApiRunner)Activator.CreateInstance</span><br><span class="line">        (GetInstanceType(model), <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其中我把決定使用哪個組API的決定權交給Model並寫在標籤上(Attirbute)<br>在執行時他可獲取此參數Model所註冊參數的型別，來動態產生產品</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 反射取得綁定Model上綁定的API型別</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Type <span class="title">GetInstanceType</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> modelType = model.GetType();</span><br><span class="line">    <span class="keyword">var</span> attr = modelType.GetCustomAttribute(<span class="keyword">typeof</span>(ApiTypeAttribute)) <span class="keyword">as</span> ApiTypeAttribute;</span><br><span class="line">    <span class="keyword">if</span> (attr != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetApiType(attr);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">"Model尚未賦予ApiTypeAttribute"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>EX:查詢中獎號碼API Model 可以很清楚知道這個Model隸屬於哪個API </p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">ApiType(ApiType = typeof(QryWinningListApi), MockApiType = typeof(QryWinningListMockApi))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QryWinningListModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> invTerm &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>值得一提的是它有多一個MockApiType 為什麼會有這個?<br>原因：如果財政部伺服器連不到我們可以改成假資料或是模擬資料(讀取資料庫或是其他方式)。</p>
+<p>以上就是此框架的解說</p>
+<p>外部只需要呼叫工廠的GetInstance方法並傳入參數Model就會回傳相對應的產品API類別<br>這樣就降低執行和產生產品的耦合度，因為外部不是直接強耦合於Api類別而是透過工廠<br>日後如需增加API產品只需擴展新的類別 <strong>符合OCP(開放封閉原則)</strong><br>已經達到目的：希望可以做出方便日後維護擴展的API。</p>
+<p>Ps:這次我除了使用 <strong>工廠模式,也有用到樣板模式,代理模式</strong> 剩下兩個模式讓大家來找看看吧^^</p>
+<blockquote>
+<p>一般來說很少只用一個模式就可以解決一個問題的，通常都是配合使用</p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/invoicetw-framework/">https://isdaniel.github.io/invoicetw-framework/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>SourceCode</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Design-Pattern</tag>
+        <tag>Open-Source</tag>
+        <tag>OOP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Asp.net HttpHandler vs HttpModule 詳細解說.</title>
     <url>/httphandler-httpmodule/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p><code>Asp.net</code> 是一個<code>pipeline</code>的模型</p>
@@ -3248,64 +3306,6 @@ email_url: dog830228@gmail.com
         <tag>Asp.net</tag>
         <tag>IHttpHanlder</tag>
         <tag>IHttpModule</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>【財政部查詢類電子發票API】框架解說 C#</title>
-    <url>/invoicetw-framework/</url>
-    <content><![CDATA[<p>小弟之前有分享過串接【財政部查詢類電子發票API】小框架使用文</p>
-<p>使用文連結 <span class="exturl" data-url="aHR0cHM6Ly9pdGhlbHAuaXRob21lLmNvbS50dy9hcnRpY2xlcy8xMDE4MzkwNA==" title="https://ithelp.ithome.com.tw/articles/10183904">快速使用財政部電子發票API 使用 C#<i class="fa fa-external-link"></i></span><br>串接文件下載 <span class="exturl" data-url="aHR0cHM6Ly93d3cuZWludm9pY2UubmF0Lmdvdi50dy9ob21lL0Rvd25Mb2FkP2ZpbGVOYW1lPTE0NzY4NTUzODc0NTVfMC40LjQucGRm" title="https://www.einvoice.nat.gov.tw/home/DownLoad?fileName=1476855387455_0.4.4.pdf">電子發票查詢API 1.4.4<i class="fa fa-external-link"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">程式原始碼連結<i class="fa fa-external-link"></i></span></p>
-<p>這次想跟大家分享我做出此框架的歷程..</p>
-<hr>
-<p>框架目的：希望可以做出方便日後維護擴展的API。</p>
-<p>串接API時發現他們有幾個共同之處</p>
-<ol>
-<li>API請求參數名稱需降冪排列</li>
-<li>請求參數最後會加上簽章</li>
-<li>都有時間戳記</li>
-<li>回應資料格式都是Json</li>
-<li>都是使用Http (Get or Post) </li>
-</ol>
-<p>我就想到可以使用 <strong>工廠模式來實作這系列產品</strong> (工廠模式主要是切割產品的使用和生產)</p>
-<h2 id="產品解說"><a href="#產品解說" class="headerlink" title="產品解說"></a>產品解說</h2><p>因為他們都有共同的能力<strong>傳入一組參數回傳一串Json </strong><br>我就先寫出一個API共同的介面簽章  <code>IApiRunner</code><br>這個介面為基礎來撰寫後面的程式碼</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行api的介面</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IApiRunner</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 執行api</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>傳入的參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span>回傳資料<span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我在中間多一個抽象泛型類別 ApiBase<t> (用泛型是為了給子類決定傳入參數的Model)<br>原因:</t></p>
-<ol>
-<li>中間使用泛型抽象類別讓子類決定要傳入哪組參數</li>
-<li>可以將一些共通的方法寫在裡面</li>
-<li>子類別只需要知道要提供哪些動作，所以在ApiBase中提供兩個方法來override<ul>
-<li>請求URL   目前預設讀取Config (GetApiURL)</li>
-<li>參數的組合 (SetParamter)</li>
-</ul>
-</li>
-</ol>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 子類繼承提供參數</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">string</span> <span class="title">SetParamter</span>(<span class="params">T model</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 取得api的Url路徑</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">GetApiURL</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">string</span> apiname = <span class="keyword">this</span>.GetType().Name;</span><br><span class="line">    <span class="keyword">if</span> (!ConfigurationManager.AppSettings.AllKeys.Contains(apiname))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="keyword">string</span>.Format(<span class="string">"請確認Config的appsetting有無此參數 &#123;0&#125;"</span>,</span><br><span class="line">            apiname));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ConfigurationManager.AppSettings[apiname];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行Api</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//建立所需參數</span></span><br><span class="line">    <span class="keyword">string</span> result = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> postData = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> posturl = GetApiURL();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> data = ObjectToModel(model);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//取得加密後的參數</span></span><br><span class="line">    postData = GetInvoiceParamter(SetParamter(data));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        ServicePointManager.ServerCertificateValidationCallback</span><br><span class="line">            = HttpTool.ValidateServerCertificate;</span><br><span class="line">        result = HttpTool.HttpPost(posturl, postData);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex)</span><br><span class="line">    &#123;</span><br><span class="line">        result = GetSysErrorMsg();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>目前產品部分已經建構好了。</p>
-<h2 id="工廠解說"><a href="#工廠解說" class="headerlink" title="工廠解說"></a>工廠解說</h2><p>工廠部分這次我選擇使用【反射方式來實現工廠】</p>
-<p>工廠類別 <code>MoblieInvoiceApiFactroy</code> 其實最主要是使用GetInstance方法<br><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 提供api的工廠</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Model和Api命名要相關</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 例如:testModel 對 testApi</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>Model參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IApiRunner <span class="title">GetInstace</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (model == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"不能傳空的參數"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> modelName = model.GetType().Name;</span><br><span class="line">    <span class="keyword">return</span> (IApiRunner)Activator.CreateInstance</span><br><span class="line">        (GetInstanceType(model), <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>其中我把決定使用哪個組API的決定權交給Model並寫在標籤上(Attirbute)<br>在執行時他可獲取此參數Model所註冊參數的型別，來動態產生產品</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 反射取得綁定Model上綁定的API型別</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Type <span class="title">GetInstanceType</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> modelType = model.GetType();</span><br><span class="line">    <span class="keyword">var</span> attr = modelType.GetCustomAttribute(<span class="keyword">typeof</span>(ApiTypeAttribute)) <span class="keyword">as</span> ApiTypeAttribute;</span><br><span class="line">    <span class="keyword">if</span> (attr != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetApiType(attr);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">"Model尚未賦予ApiTypeAttribute"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>EX:查詢中獎號碼API Model 可以很清楚知道這個Model隸屬於哪個API </p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">ApiType(ApiType = typeof(QryWinningListApi), MockApiType = typeof(QryWinningListMockApi))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QryWinningListModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> invTerm &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>值得一提的是它有多一個MockApiType 為什麼會有這個?<br>原因：如果財政部伺服器連不到我們可以改成假資料或是模擬資料(讀取資料庫或是其他方式)。</p>
-<p>以上就是此框架的解說</p>
-<p>外部只需要呼叫工廠的GetInstance方法並傳入參數Model就會回傳相對應的產品API類別<br>這樣就降低執行和產生產品的耦合度，因為外部不是直接強耦合於Api類別而是透過工廠<br>日後如需增加API產品只需擴展新的類別 <strong>符合OCP(開放封閉原則)</strong><br>已經達到目的：希望可以做出方便日後維護擴展的API。</p>
-<p>Ps:這次我除了使用 <strong>工廠模式,也有用到樣板模式,代理模式</strong> 剩下兩個模式讓大家來找看看吧^^</p>
-<blockquote>
-<p>一般來說很少只用一個模式就可以解決一個問題的，通常都是配合使用</p>
-</blockquote>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/invoicetw-framework/">https://isdaniel.github.io/invoicetw-framework/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>SourceCode</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Design-Pattern</tag>
-        <tag>Open-Source</tag>
-        <tag>OOP</tag>
       </tags>
   </entry>
   <entry>
@@ -4907,94 +4907,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>6個基本(ActionResult) View是如何被建立(二) (第23天)</title>
-    <url>/ithelp-day23/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#6%e7%a8%ae%e5%9f%ba%e6%9c%ac%e7%9a%84actionresult">6種基本的ActionResult</a></li>
-<li><a href="#contentresult">ContentResult</a></li>
-<li><a href="#redirectresult--redirecttorouteresult">RedirectResult &amp; RedirectToRouteResult</a></li>
-<li><a href="#emptyresult">EmptyResult</a></li>
-<li><a href="#fileresult">FileResult</a><ul>
-<li><a href="#filecontentresult">FileContentResult</a></li>
-<li><a href="#filepathresult">FilePathResult</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇介紹到<code>CreateActionResult</code>方法會產生一個<code>ActionResult</code>物件利用<code>MethodInfo</code>資訊.</p>
-<p>最後透過<code>InvokeActionResult</code>來呼叫<code>ExecuteResult</code>方法來執行<code>ActionResult</code>的<code>ExecuteResult</code>方法,基本上<strong>MVC</strong>找到且執行<strong>Action</strong>方法後面就沒再做甚麼特別的事情了(後面做資源釋放…)</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">InvokeActionResult</span>(<span class="params">ControllerContext controllerContext, ActionResult actionResult</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	actionResult.ExecuteResult(controllerContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>本篇來介紹常用的<code>ActionResult</code>其內部運作程式碼</p>
-<blockquote>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="6種基本的ActionResult"><a href="#6種基本的ActionResult" class="headerlink" title="6種基本的ActionResult"></a>6種基本的ActionResult</h2><p>下面這六個類別是直接繼承於<code>ActionResult</code>的類別(其中有標註<strong>Base class</strong>代表這是抽象類別另外有類別繼承它)</p>
-<ul>
-<li><code>ContentResult</code>:回傳一組字串,利用<code>response.Write</code>方法</li>
-<li><code>EmptyResult</code>:什麼都不動作(當<code>Action</code>回傳<code>void</code>使用)</li>
-<li><code>FileResult(Base class)</code>:把檔案當作回傳</li>
-<li><code>HttpStatusCodeResult</code>:回傳<strong>HTTP</strong>狀態碼</li>
-<li><code>RedirectResult &amp; RedirectToRouteResult</code>:使用<code>Response.Redirect</code>轉導到其他頁面</li>
-<li><code>ViewResultBase(Base class)</code>:會找尋相對應<code>View</code>檔案(<code>cshtml</code>會編譯成一個<code>DLL</code>)來執行</li>
-</ul>
-<blockquote>
-<p><code>ViewResultBase</code>會在另一篇介紹(因為機制比較複雜)</p>
-</blockquote>
-<h2 id="ContentResult"><a href="#ContentResult" class="headerlink" title="ContentResult"></a>ContentResult</h2><p>在<code>ContentResult</code>有三個屬性</p>
-<ul>
-<li><code>Content</code>:響應內容.</li>
-<li><code>ContentType</code>:設置Http <code>Header</code>攔位<code>ContentType</code></li>
-<li><code>ContentEncoding</code>:設置<code>Encoding</code>方式</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ContentResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Content &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Encoding ContentEncoding &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!String.IsNullOrEmpty(ContentType))</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ContentEncoding != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentEncoding = ContentEncoding;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (Content != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.Write(Content);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><code>ContentResult</code>操作很簡單透過<code>response.Write</code>把內容<code>Print</code>出來</p>
-<h2 id="RedirectResult-amp-RedirectToRouteResult"><a href="#RedirectResult-amp-RedirectToRouteResult" class="headerlink" title="RedirectResult &amp; RedirectToRouteResult"></a>RedirectResult &amp; RedirectToRouteResult</h2><p><code>RedirectResult</code>這個<code>ActionResult</code>如其名就是導轉頁面.</p>
-<ul>
-<li><code>Permanent</code>:屬性判斷是否需要<code>Permanently</code>導轉頁面(<strong>Http-Code</strong>:<code>RedirectPermanent=301</code>,<code>Redirect=302</code>)</li>
-<li><code>Url</code>:轉導的<code>URL</code>透過<code>UrlHelper.GenerateContentUrl</code>產生<code>URL</code>.(在<code>GenerateContentUrl</code>會判斷第一個字元是否是<code>~</code>波浪號,如果是代表站內導轉.)</li>
-</ul>
-<p>最後利用<code>Permanent</code>布林判斷使用<code>RedirectPermanent</code>還是<code>Redirect</code>方法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedirectResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> Permanent &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (context.IsChildAction)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.RedirectAction_CannotRedirectInChildAction);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">string</span> destinationUrl = UrlHelper.GenerateContentUrl(Url, context.HttpContext);</span><br><span class="line">		context.Controller.TempData.Keep();</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (Permanent)</span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.RedirectPermanent(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.Redirect(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p><code>RedirectToRouteResult</code>基本流程跟上面一樣只是透過<code>UrlHelper.GenerateUrl</code>產生要導轉URL</p>
-</blockquote>
-<h2 id="EmptyResult"><a href="#EmptyResult" class="headerlink" title="EmptyResult"></a>EmptyResult</h2><p><code>EmptyResult</code>這個類別很有趣,只有override <code>ExecuteResult</code>方法但沒有實做,上篇小結有提到這裡使用一個設計模式<span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvTnVsbF9vYmplY3RfcGF0dGVybg==" title="https://en.wikipedia.org/wiki/Null_object_pattern">null object pattern<i class="fa fa-external-link"></i></span>.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">EmptyResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> EmptyResult _singleton = <span class="keyword">new</span> EmptyResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">internal</span> <span class="keyword">static</span> EmptyResult Instance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _singleton; &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="FileResult"><a href="#FileResult" class="headerlink" title="FileResult"></a>FileResult</h2><p><code>FileResult</code>是一個抽象類別,提供一個抽象方法給<code>abstract void WriteFile(HttpResponseBase response)</code>子類提供覆寫.</p>
-<p>有兩個類別繼承於<code>FileResult</code>抽象類別</p>
-<ul>
-<li><code>FilePathResult</code></li>
-<li><code>FileContentResult</code></li>
-</ul>
-<p><code>FileResult</code>抽象類別在<code>ExecuteResult</code>設置傳輸檔案需要的前置作業(設置<code>Content-Type</code>…),最後的資料傳輸透過各個子類別去實現.</p>
-<blockquote>
-<p>其中<code>headerValue</code>實做Http回應擋頭對於<code>RFC</code>規範.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// From RFC 2183, Sec. 2.3:</span></span><br><span class="line"><span class="comment">// The sender may want to suggest a filename to be used if the entity is</span></span><br><span class="line"><span class="comment">// detached and stored in a separate file. If the receiving MUA writes</span></span><br><span class="line"><span class="comment">// the entity to a file, the suggested filename should be used as a</span></span><br><span class="line"><span class="comment">// basis for the actual filename, where possible.</span></span><br><span class="line"><span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br></pre></td></tr></table></figure></div>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">FileResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">string</span> _fileDownloadName;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">FileResult</span>(<span class="params"><span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (String.IsNullOrEmpty(contentType))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"contentType"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ContentType = contentType;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> FileDownloadName</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">get</span> &#123; <span class="keyword">return</span> _fileDownloadName ?? String.Empty; &#125;</span><br><span class="line">            <span class="keyword">set</span> &#123; _fileDownloadName = <span class="keyword">value</span>; &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!String.IsNullOrEmpty(FileDownloadName))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br><span class="line">                context.HttpContext.Response.AddHeader(<span class="string">"Content-Disposition"</span>, headerValue);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            WriteFile(response);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="FileContentResult"><a href="#FileContentResult" class="headerlink" title="FileContentResult"></a>FileContentResult</h3><p><code>FileContentResult</code>將檔案已位元組方式轉存給<code>Client</code>端.</p>
-<p>透過<code>HttpResponseBase.OutputStream.Write</code>方法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FileContentResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FileContentResult</span>(<span class="params"><span class="keyword">byte</span>[] fileContents, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (fileContents == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"fileContents"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileContents = fileContents;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">byte</span>[] FileContents &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.OutputStream.Write(FileContents, <span class="number">0</span>, FileContents.Length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="FilePathResult"><a href="#FilePathResult" class="headerlink" title="FilePathResult"></a>FilePathResult</h3><p><code>FilePathResult</code>透過檔案名稱<code>FileName</code>將檔案提供給<code>Client</code></p>
-<p>藉由<code>HttpResponseBase.TransmitFile</code>方法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FilePathResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FilePathResult</span>(<span class="params"><span class="keyword">string</span> fileName, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrEmpty(fileName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"fileName"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileName = fileName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> FileName &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.TransmitFile(FileName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>本篇介紹了幾個實現<code>ActionResult</code>類別,跟其內部程式碼,這裡能了解到<strong>MVC</strong>返回結果機於<code>ActionResult</code>方法.(這個概念我運用在<code>Web Api</code>服務,建立<code>ResponseBase</code>共同簽章,因為在做服務串接每個服務都有自己的加解密,回傳格式攔位.我可以統一透過一個<code>ResponseBase</code>類別裝載資料再藉由過濾器來幫忙組成相對應的資料回傳….)</p>
-<p>下篇會來介紹繼承<code>ActionResult</code>最複雜的<code>ViewResultBase</code>相關程式碼.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day23/">https://isdaniel.github.io/ithelp-day23/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>View是如何被建立(一) (第22天)</title>
     <url>/ithelp-day22/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5125,6 +5037,94 @@ email_url: dog830228@gmail.com
 </blockquote>
 <p>至於有那些<code>ActionResult</code>可以呼叫我們在下篇會再詳細介紹</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day22/">https://isdaniel.github.io/ithelp-day22/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>6個基本(ActionResult) View是如何被建立(二) (第23天)</title>
+    <url>/ithelp-day23/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#6%e7%a8%ae%e5%9f%ba%e6%9c%ac%e7%9a%84actionresult">6種基本的ActionResult</a></li>
+<li><a href="#contentresult">ContentResult</a></li>
+<li><a href="#redirectresult--redirecttorouteresult">RedirectResult &amp; RedirectToRouteResult</a></li>
+<li><a href="#emptyresult">EmptyResult</a></li>
+<li><a href="#fileresult">FileResult</a><ul>
+<li><a href="#filecontentresult">FileContentResult</a></li>
+<li><a href="#filepathresult">FilePathResult</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇介紹到<code>CreateActionResult</code>方法會產生一個<code>ActionResult</code>物件利用<code>MethodInfo</code>資訊.</p>
+<p>最後透過<code>InvokeActionResult</code>來呼叫<code>ExecuteResult</code>方法來執行<code>ActionResult</code>的<code>ExecuteResult</code>方法,基本上<strong>MVC</strong>找到且執行<strong>Action</strong>方法後面就沒再做甚麼特別的事情了(後面做資源釋放…)</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">InvokeActionResult</span>(<span class="params">ControllerContext controllerContext, ActionResult actionResult</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	actionResult.ExecuteResult(controllerContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>本篇來介紹常用的<code>ActionResult</code>其內部運作程式碼</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="6種基本的ActionResult"><a href="#6種基本的ActionResult" class="headerlink" title="6種基本的ActionResult"></a>6種基本的ActionResult</h2><p>下面這六個類別是直接繼承於<code>ActionResult</code>的類別(其中有標註<strong>Base class</strong>代表這是抽象類別另外有類別繼承它)</p>
+<ul>
+<li><code>ContentResult</code>:回傳一組字串,利用<code>response.Write</code>方法</li>
+<li><code>EmptyResult</code>:什麼都不動作(當<code>Action</code>回傳<code>void</code>使用)</li>
+<li><code>FileResult(Base class)</code>:把檔案當作回傳</li>
+<li><code>HttpStatusCodeResult</code>:回傳<strong>HTTP</strong>狀態碼</li>
+<li><code>RedirectResult &amp; RedirectToRouteResult</code>:使用<code>Response.Redirect</code>轉導到其他頁面</li>
+<li><code>ViewResultBase(Base class)</code>:會找尋相對應<code>View</code>檔案(<code>cshtml</code>會編譯成一個<code>DLL</code>)來執行</li>
+</ul>
+<blockquote>
+<p><code>ViewResultBase</code>會在另一篇介紹(因為機制比較複雜)</p>
+</blockquote>
+<h2 id="ContentResult"><a href="#ContentResult" class="headerlink" title="ContentResult"></a>ContentResult</h2><p>在<code>ContentResult</code>有三個屬性</p>
+<ul>
+<li><code>Content</code>:響應內容.</li>
+<li><code>ContentType</code>:設置Http <code>Header</code>攔位<code>ContentType</code></li>
+<li><code>ContentEncoding</code>:設置<code>Encoding</code>方式</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ContentResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Content &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Encoding ContentEncoding &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!String.IsNullOrEmpty(ContentType))</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ContentEncoding != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentEncoding = ContentEncoding;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (Content != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.Write(Content);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><code>ContentResult</code>操作很簡單透過<code>response.Write</code>把內容<code>Print</code>出來</p>
+<h2 id="RedirectResult-amp-RedirectToRouteResult"><a href="#RedirectResult-amp-RedirectToRouteResult" class="headerlink" title="RedirectResult &amp; RedirectToRouteResult"></a>RedirectResult &amp; RedirectToRouteResult</h2><p><code>RedirectResult</code>這個<code>ActionResult</code>如其名就是導轉頁面.</p>
+<ul>
+<li><code>Permanent</code>:屬性判斷是否需要<code>Permanently</code>導轉頁面(<strong>Http-Code</strong>:<code>RedirectPermanent=301</code>,<code>Redirect=302</code>)</li>
+<li><code>Url</code>:轉導的<code>URL</code>透過<code>UrlHelper.GenerateContentUrl</code>產生<code>URL</code>.(在<code>GenerateContentUrl</code>會判斷第一個字元是否是<code>~</code>波浪號,如果是代表站內導轉.)</li>
+</ul>
+<p>最後利用<code>Permanent</code>布林判斷使用<code>RedirectPermanent</code>還是<code>Redirect</code>方法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedirectResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> Permanent &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (context.IsChildAction)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.RedirectAction_CannotRedirectInChildAction);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">string</span> destinationUrl = UrlHelper.GenerateContentUrl(Url, context.HttpContext);</span><br><span class="line">		context.Controller.TempData.Keep();</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (Permanent)</span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.RedirectPermanent(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.Redirect(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><code>RedirectToRouteResult</code>基本流程跟上面一樣只是透過<code>UrlHelper.GenerateUrl</code>產生要導轉URL</p>
+</blockquote>
+<h2 id="EmptyResult"><a href="#EmptyResult" class="headerlink" title="EmptyResult"></a>EmptyResult</h2><p><code>EmptyResult</code>這個類別很有趣,只有override <code>ExecuteResult</code>方法但沒有實做,上篇小結有提到這裡使用一個設計模式<span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvTnVsbF9vYmplY3RfcGF0dGVybg==" title="https://en.wikipedia.org/wiki/Null_object_pattern">null object pattern<i class="fa fa-external-link"></i></span>.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">EmptyResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> EmptyResult _singleton = <span class="keyword">new</span> EmptyResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">internal</span> <span class="keyword">static</span> EmptyResult Instance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _singleton; &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="FileResult"><a href="#FileResult" class="headerlink" title="FileResult"></a>FileResult</h2><p><code>FileResult</code>是一個抽象類別,提供一個抽象方法給<code>abstract void WriteFile(HttpResponseBase response)</code>子類提供覆寫.</p>
+<p>有兩個類別繼承於<code>FileResult</code>抽象類別</p>
+<ul>
+<li><code>FilePathResult</code></li>
+<li><code>FileContentResult</code></li>
+</ul>
+<p><code>FileResult</code>抽象類別在<code>ExecuteResult</code>設置傳輸檔案需要的前置作業(設置<code>Content-Type</code>…),最後的資料傳輸透過各個子類別去實現.</p>
+<blockquote>
+<p>其中<code>headerValue</code>實做Http回應擋頭對於<code>RFC</code>規範.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// From RFC 2183, Sec. 2.3:</span></span><br><span class="line"><span class="comment">// The sender may want to suggest a filename to be used if the entity is</span></span><br><span class="line"><span class="comment">// detached and stored in a separate file. If the receiving MUA writes</span></span><br><span class="line"><span class="comment">// the entity to a file, the suggested filename should be used as a</span></span><br><span class="line"><span class="comment">// basis for the actual filename, where possible.</span></span><br><span class="line"><span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">FileResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">string</span> _fileDownloadName;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">FileResult</span>(<span class="params"><span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (String.IsNullOrEmpty(contentType))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"contentType"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ContentType = contentType;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> FileDownloadName</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">get</span> &#123; <span class="keyword">return</span> _fileDownloadName ?? String.Empty; &#125;</span><br><span class="line">            <span class="keyword">set</span> &#123; _fileDownloadName = <span class="keyword">value</span>; &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!String.IsNullOrEmpty(FileDownloadName))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br><span class="line">                context.HttpContext.Response.AddHeader(<span class="string">"Content-Disposition"</span>, headerValue);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            WriteFile(response);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="FileContentResult"><a href="#FileContentResult" class="headerlink" title="FileContentResult"></a>FileContentResult</h3><p><code>FileContentResult</code>將檔案已位元組方式轉存給<code>Client</code>端.</p>
+<p>透過<code>HttpResponseBase.OutputStream.Write</code>方法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FileContentResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FileContentResult</span>(<span class="params"><span class="keyword">byte</span>[] fileContents, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (fileContents == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"fileContents"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileContents = fileContents;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">byte</span>[] FileContents &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.OutputStream.Write(FileContents, <span class="number">0</span>, FileContents.Length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="FilePathResult"><a href="#FilePathResult" class="headerlink" title="FilePathResult"></a>FilePathResult</h3><p><code>FilePathResult</code>透過檔案名稱<code>FileName</code>將檔案提供給<code>Client</code></p>
+<p>藉由<code>HttpResponseBase.TransmitFile</code>方法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FilePathResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FilePathResult</span>(<span class="params"><span class="keyword">string</span> fileName, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrEmpty(fileName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"fileName"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileName = fileName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> FileName &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.TransmitFile(FileName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>本篇介紹了幾個實現<code>ActionResult</code>類別,跟其內部程式碼,這裡能了解到<strong>MVC</strong>返回結果機於<code>ActionResult</code>方法.(這個概念我運用在<code>Web Api</code>服務,建立<code>ResponseBase</code>共同簽章,因為在做服務串接每個服務都有自己的加解密,回傳格式攔位.我可以統一透過一個<code>ResponseBase</code>類別裝載資料再藉由過濾器來幫忙組成相對應的資料回傳….)</p>
+<p>下篇會來介紹繼承<code>ActionResult</code>最複雜的<code>ViewResultBase</code>相關程式碼.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day23/">https://isdaniel.github.io/ithelp-day23/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -6675,6 +6675,40 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Null Object Pattern</title>
+    <url>/nullobjectpattern/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
+<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure></div>
+<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
+<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
+<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
+<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
+<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
+<blockquote>
+<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Rlc2lnblBhdHRlcm4vdHJlZS9tYXN0ZXIvRGVzaWduUGF0dGVybi9OdWxsT2JqZWN0UGF0dGVybg==" title="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/nullobjectpattern/">https://isdaniel.github.io/nullobjectpattern/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>DesignPattern</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>DesignPattern</tag>
+        <tag>NullObjectPattern</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Oracle [CONNECT BY]</title>
     <url>/oracle-connect-by/</url>
     <content><![CDATA[<p>之前有介紹  在<code>Oracle</code> 有提供一個精簡的語法產生階層資料 <code>CONNECT BY</code></p>
@@ -6747,40 +6781,6 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       <tags>
         <tag>SQL</tag>
         <tag>Oracle</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Null Object Pattern</title>
-    <url>/nullobjectpattern/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
-<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure></div>
-<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
-<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
-<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
-<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
-<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
-<blockquote>
-<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Rlc2lnblBhdHRlcm4vdHJlZS9tYXN0ZXIvRGVzaWduUGF0dGVybi9OdWxsT2JqZWN0UGF0dGVybg==" title="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/nullobjectpattern/">https://isdaniel.github.io/nullobjectpattern/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>DesignPattern</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>DesignPattern</tag>
-        <tag>NullObjectPattern</tag>
       </tags>
   </entry>
   <entry>
@@ -7621,7 +7621,7 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
-    <title>Restcountries</title>
+    <title>串接 Restcountries By Vue.js</title>
     <url>/vue-first-Restcountries/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>最近面試有一間公司要求使用<span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1Lw==" title="https://restcountries.eu/">Restcountries API<i class="fa fa-external-link"></i></span>使用CRUD前端Html串接API，有看我文章的夥伴應該知道我大多是研究後端或CI/CD相關技術，對於前端技術較少研究，這次我打算使用vue.js來完成此次需求.</p>
 <p>需求如下</p>
