@@ -445,6 +445,86 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
       </tags>
   </entry>
   <entry>
+    <title>【深入淺出】Base編碼 (Base64為例子)</title>
+    <url>/base64-principle/</url>
+    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
+<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
+<p>此篇和大家分享Base家族的秘密</p>
+<hr>
+<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
+<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
+<blockquote>
+<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
+</blockquote>
+<p>它使用下面表中所使用的字符與編碼。</p>
+<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
+<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
+<p><code>Base64</code> 中的64其實是有含意的</p>
+<p>他會把資料轉成</p>
+<pre><code>a~z (26)
+A~Z (26)
+0~9 (10)
++ (1)
+/ (1)
+</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
+<blockquote>
+<p>64 = 26+26+10+1+1</p>
+</blockquote>
+<hr>
+<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
+<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
+<blockquote>
+<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
+</blockquote>
+<p>這邊有幾個重點</p>
+<ol>
+<li>會把資料分割成每 3 byte (24bit) 為單位</li>
+<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
+<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
+<li>直到全部輸入資料轉換完成</li>
+</ol>
+<p>下面有個例子方便大家了解！</p>
+<hr>
+<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
+<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
+<ol>
+<li>將字元轉換成二進制</li>
+</ol>
+<ul>
+<li>B (66) = 0    1    0    0    0    0    1    0</li>
+<li>C (67) = 0    1    0    0    0    0    1    1</li>
+</ul>
+<ol start="2">
+<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
+</li>
+<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
+</li>
+<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
+</li>
+</ol>
+<p><img src="/images/Base64_1.PNG" alt="img"></p>
+<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
+<blockquote>
+<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
+</blockquote>
+<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
+<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
+<p><code>Base32 : a~z , 2~7</code></p>
+<p>原理其實都是一樣的</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>WebDesign</tag>
+        <tag>Base64</tag>
+        <tag>Encoding</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>C# Boxing vs UnBoxing</title>
     <url>/boxing-unboxing/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p><code>Boxing</code>跟<code>UnBoxing</code>在.net中,我們可能在無意識使用到但這個事情確會造成一些效能影響…</p>
@@ -891,86 +971,6 @@ public abstract class MoveBase
         <tag>C#</tag>
         <tag>DesignPattern</tag>
         <tag>BridgePattern</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>【深入淺出】Base編碼 (Base64為例子)</title>
-    <url>/base64-principle/</url>
-    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
-<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
-<p>此篇和大家分享Base家族的秘密</p>
-<hr>
-<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
-<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
-<blockquote>
-<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
-</blockquote>
-<p>它使用下面表中所使用的字符與編碼。</p>
-<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
-<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
-<p><code>Base64</code> 中的64其實是有含意的</p>
-<p>他會把資料轉成</p>
-<pre><code>a~z (26)
-A~Z (26)
-0~9 (10)
-+ (1)
-/ (1)
-</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
-<blockquote>
-<p>64 = 26+26+10+1+1</p>
-</blockquote>
-<hr>
-<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
-<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
-<blockquote>
-<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
-</blockquote>
-<p>這邊有幾個重點</p>
-<ol>
-<li>會把資料分割成每 3 byte (24bit) 為單位</li>
-<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
-<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
-<li>直到全部輸入資料轉換完成</li>
-</ol>
-<p>下面有個例子方便大家了解！</p>
-<hr>
-<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
-<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
-<ol>
-<li>將字元轉換成二進制</li>
-</ol>
-<ul>
-<li>B (66) = 0    1    0    0    0    0    1    0</li>
-<li>C (67) = 0    1    0    0    0    0    1    1</li>
-</ul>
-<ol start="2">
-<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
-</li>
-<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
-</li>
-<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
-</li>
-</ol>
-<p><img src="/images/Base64_1.PNG" alt="img"></p>
-<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
-<blockquote>
-<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
-</blockquote>
-<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
-<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
-<p><code>Base32 : a~z , 2~7</code></p>
-<p>原理其實都是一樣的</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>WebDesign</tag>
-        <tag>Base64</tag>
-        <tag>Encoding</tag>
       </tags>
   </entry>
   <entry>
@@ -2241,6 +2241,53 @@ class Program
       </tags>
   </entry>
   <entry>
+    <title>發布自己的Nuget專案</title>
+    <url>/deploy-ownnuget/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>前陣子在被面試官說：我有電子發票開源專案，是否有上到Nuget上</p>
+<p>我回答:沒有.</p>
+<p>我就突然想到我也可以把我的專案放到Nuget上讓更多人方便使用</p>
+<p>我就查詢資料去了解整個上板流程,並打成文章跟大家分享</p>
+<hr>
+<h3 id="下載Nuget-Commandline-Tool"><a href="#下載Nuget-Commandline-Tool" class="headerlink" title="下載Nuget Commandline Tool"></a>下載Nuget Commandline Tool</h3><p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL2Rvd25sb2Fkcw==" title="https://www.nuget.org/downloads">下載Nuget Commandline Tool<i class="fa fa-external-link"></i></span></p>
+<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152784_97518.png" alt></p>
+<p>之後你會取得 <code>nuget.exe</code> 這個檔案</p>
+<p>把它放到你要打包Nuget的專案資料夾中</p>
+<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152541_67261.png" alt></p>
+<p>之後打開cmd 並在專案資料夾打上 <code>nuget spce</code></p>
+<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152985_63932.png" alt></p>
+<p>之後在你資料夾中會出現 <code>xxxx.nuspec</code>的XML檔案,這個檔案是描述你要打包的專案</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">code</span> <span class="attr">class</span>=<span class="string">"language-xml"</span>&gt;</span><span class="meta">&lt;?xml version="1.0"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">package</span> &gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">metadata</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">id</span>&gt;</span><span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span><span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">authors</span>&gt;</span><span class="tag">&lt;/<span class="name">authors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">owners</span>&gt;</span><span class="tag">&lt;/<span class="name">owners</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">licenseUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">licenseUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">projectUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">projectUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">iconUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">iconUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">requireLicenseAcceptance</span>&gt;</span>false<span class="tag">&lt;/<span class="name">requireLicenseAcceptance</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">description</span>&gt;</span>This is a AOP framework<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">releaseNotes</span>&gt;</span>Summary of changes made in this release of the package.<span class="tag">&lt;/<span class="name">releaseNotes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">copyright</span>&gt;</span>Copyright 2018<span class="tag">&lt;/<span class="name">copyright</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tags</span>&gt;</span>c# AOP<span class="tag">&lt;/<span class="name">tags</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">metadata</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<h3 id="必填欄位"><a href="#必填欄位" class="headerlink" title="必填欄位"></a>必填欄位</h3><ul>
+<li>ID：不區分大小寫的套件識別碼，在整個 nuget.org 或套件所在的任何組件庫中都必須是唯一的。 識別碼可能不包含對 URL 而言無效的空格或字元，而且通常會遵循 .NET 命名空間規則。 如需指導方針，請參閱<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvY3JlYXRlLXBhY2thZ2VzL2NyZWF0aW5nLWEtcGFja2FnZSNjaG9vc2luZy1hLXVuaXF1ZS1wYWNrYWdlLWlkZW50aWZpZXItYW5kLXNldHRpbmctdGhlLXZlcnNpb24tbnVtYmVy" title="https://docs.microsoft.com/zh-tw/nuget/create-packages/creating-a-package#choosing-a-unique-package-identifier-and-setting-the-version-number">選擇唯一的套件識別碼<i class="fa fa-external-link"></i></span>。</li>
+<li>Version：套件版本，遵循 <em>major.minor.patch</em> 模式。 版本號碼可以包含預先發行版本的後置詞，如<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL3BhY2thZ2UtdmVyc2lvbmluZyNwcmUtcmVsZWFzZS12ZXJzaW9ucw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/package-versioning#pre-release-versions">套件版本控制<i class="fa fa-external-link"></i></span>中所述。</li>
+<li>Description：UI 顯示中的套件詳細描述。</li>
+</ul>
+<blockquote>
+<p>Authors：以逗號分隔的套件作者清單，與 nuget.org 上的設定檔名稱相符。這些名稱會顯示在 nuget.org 的 NuGet 組件庫中，並用來交互參照相同作者的其他套件。</p>
+</blockquote>
+<h3 id="打包Nuget"><a href="#打包Nuget" class="headerlink" title="打包Nuget"></a>打包Nuget</h3><p>填完資料後就可以回到commandline 並打另一個指令<code>nuget pack</code>將專案打包成 <code>xxx.nupkg</code> 檔案 以提供上傳</p>
+<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153426_68079.png" alt></p>
+<p>之後申辦一個Nuget帳號,並產生一個API Key</p>
+<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153601_8669.png" alt></p>
+<p>產生完後在上面的選單選擇 <code>Upload</code> 按鈕</p>
+<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153522_96047.png" alt>之後按下Browse按鈕並上傳你的 <code>xxxx.nupkg</code>檔案,上傳完畢後就按下Submit按鈕 將此專案提交上去</p>
+<p>上傳完畢後Nuget他會審核你的專案,等審核完後大家就可以下載使用你的專案摟^^</p>
+<h3 id="石頭已經打包專案"><a href="#石頭已經打包專案" class="headerlink" title="石頭已經打包專案"></a>石頭已經打包專案</h3><p>這兩個是我已經發布的專案</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0F3ZXNvbWVQcm94eS5OZXQv" title="https://www.nuget.org/packages/AwesomeProxy.Net/">AwesomeProxy.Net<i class="fa fa-external-link"></i></span></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span></p>
+<h3 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h3><p>如果要查nuget指令可以打 <code>nuget ?</code></p>
+<h3 id="參考連結："><a href="#參考連結：" class="headerlink" title="參考連結："></a>參考連結：</h3><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL251c3BlYw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/nuspec">.nuspec 參考<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/deploy-ownnuget/">https://isdaniel.github.io/deploy-ownnuget/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Nuget</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Docker深入淺出(一)</title>
     <url>/docker-deepknow-1/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>docker透過指令能快速建立相同執行環境並比起VM減少電腦資源消耗.</p>
@@ -2310,53 +2357,6 @@ class Program
       <tags>
         <tag>Docker</tag>
         <tag>Container</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>發布自己的Nuget專案</title>
-    <url>/deploy-ownnuget/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>前陣子在被面試官說：我有電子發票開源專案，是否有上到Nuget上</p>
-<p>我回答:沒有.</p>
-<p>我就突然想到我也可以把我的專案放到Nuget上讓更多人方便使用</p>
-<p>我就查詢資料去了解整個上板流程,並打成文章跟大家分享</p>
-<hr>
-<h3 id="下載Nuget-Commandline-Tool"><a href="#下載Nuget-Commandline-Tool" class="headerlink" title="下載Nuget Commandline Tool"></a>下載Nuget Commandline Tool</h3><p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL2Rvd25sb2Fkcw==" title="https://www.nuget.org/downloads">下載Nuget Commandline Tool<i class="fa fa-external-link"></i></span></p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152784_97518.png" alt></p>
-<p>之後你會取得 <code>nuget.exe</code> 這個檔案</p>
-<p>把它放到你要打包Nuget的專案資料夾中</p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152541_67261.png" alt></p>
-<p>之後打開cmd 並在專案資料夾打上 <code>nuget spce</code></p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152985_63932.png" alt></p>
-<p>之後在你資料夾中會出現 <code>xxxx.nuspec</code>的XML檔案,這個檔案是描述你要打包的專案</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">code</span> <span class="attr">class</span>=<span class="string">"language-xml"</span>&gt;</span><span class="meta">&lt;?xml version="1.0"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">package</span> &gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">metadata</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">id</span>&gt;</span><span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span><span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">authors</span>&gt;</span><span class="tag">&lt;/<span class="name">authors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">owners</span>&gt;</span><span class="tag">&lt;/<span class="name">owners</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">licenseUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">licenseUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">projectUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">projectUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">iconUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">iconUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">requireLicenseAcceptance</span>&gt;</span>false<span class="tag">&lt;/<span class="name">requireLicenseAcceptance</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">description</span>&gt;</span>This is a AOP framework<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">releaseNotes</span>&gt;</span>Summary of changes made in this release of the package.<span class="tag">&lt;/<span class="name">releaseNotes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">copyright</span>&gt;</span>Copyright 2018<span class="tag">&lt;/<span class="name">copyright</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tags</span>&gt;</span>c# AOP<span class="tag">&lt;/<span class="name">tags</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">metadata</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
-<h3 id="必填欄位"><a href="#必填欄位" class="headerlink" title="必填欄位"></a>必填欄位</h3><ul>
-<li>ID：不區分大小寫的套件識別碼，在整個 nuget.org 或套件所在的任何組件庫中都必須是唯一的。 識別碼可能不包含對 URL 而言無效的空格或字元，而且通常會遵循 .NET 命名空間規則。 如需指導方針，請參閱<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvY3JlYXRlLXBhY2thZ2VzL2NyZWF0aW5nLWEtcGFja2FnZSNjaG9vc2luZy1hLXVuaXF1ZS1wYWNrYWdlLWlkZW50aWZpZXItYW5kLXNldHRpbmctdGhlLXZlcnNpb24tbnVtYmVy" title="https://docs.microsoft.com/zh-tw/nuget/create-packages/creating-a-package#choosing-a-unique-package-identifier-and-setting-the-version-number">選擇唯一的套件識別碼<i class="fa fa-external-link"></i></span>。</li>
-<li>Version：套件版本，遵循 <em>major.minor.patch</em> 模式。 版本號碼可以包含預先發行版本的後置詞，如<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL3BhY2thZ2UtdmVyc2lvbmluZyNwcmUtcmVsZWFzZS12ZXJzaW9ucw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/package-versioning#pre-release-versions">套件版本控制<i class="fa fa-external-link"></i></span>中所述。</li>
-<li>Description：UI 顯示中的套件詳細描述。</li>
-</ul>
-<blockquote>
-<p>Authors：以逗號分隔的套件作者清單，與 nuget.org 上的設定檔名稱相符。這些名稱會顯示在 nuget.org 的 NuGet 組件庫中，並用來交互參照相同作者的其他套件。</p>
-</blockquote>
-<h3 id="打包Nuget"><a href="#打包Nuget" class="headerlink" title="打包Nuget"></a>打包Nuget</h3><p>填完資料後就可以回到commandline 並打另一個指令<code>nuget pack</code>將專案打包成 <code>xxx.nupkg</code> 檔案 以提供上傳</p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153426_68079.png" alt></p>
-<p>之後申辦一個Nuget帳號,並產生一個API Key</p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153601_8669.png" alt></p>
-<p>產生完後在上面的選單選擇 <code>Upload</code> 按鈕</p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153522_96047.png" alt>之後按下Browse按鈕並上傳你的 <code>xxxx.nupkg</code>檔案,上傳完畢後就按下Submit按鈕 將此專案提交上去</p>
-<p>上傳完畢後Nuget他會審核你的專案,等審核完後大家就可以下載使用你的專案摟^^</p>
-<h3 id="石頭已經打包專案"><a href="#石頭已經打包專案" class="headerlink" title="石頭已經打包專案"></a>石頭已經打包專案</h3><p>這兩個是我已經發布的專案</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0F3ZXNvbWVQcm94eS5OZXQv" title="https://www.nuget.org/packages/AwesomeProxy.Net/">AwesomeProxy.Net<i class="fa fa-external-link"></i></span></p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span></p>
-<h3 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h3><p>如果要查nuget指令可以打 <code>nuget ?</code></p>
-<h3 id="參考連結："><a href="#參考連結：" class="headerlink" title="參考連結："></a>參考連結：</h3><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL251c3BlYw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/nuspec">.nuspec 參考<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/deploy-ownnuget/">https://isdaniel.github.io/deploy-ownnuget/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Nuget</tag>
       </tags>
   </entry>
   <entry>
@@ -5347,78 +5347,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>動手DIY改造 Asp.net MVC- Route解析機制 (第26天)</title>
-    <url>/ithelp-day26/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#routedata">RouteData</a></li>
-<li><a href="#%e5%bb%ba%e7%ab%8b%e8%87%aa%e5%b7%b1route%e6%a9%9f%e5%88%b6">建立自己Route機制</a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>UrlRoutingModule</code>對於<code>OnPostResolveRequestCache</code>事件添加一個對於<strong>MVC</strong>很重要的動作,透過<code>RouteCollection</code>取得此次請求匹配<code>RouteData</code>物件.</p>
-<p>利用此<code>RouteData</code>取得要使用的<code>IHttpHandler</code>來執行它.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">RouteData routeData = RouteCollection.GetRouteData(context);</span><br></pre></td></tr></table></figure></div>
-<p><code>RouteCollection</code>是全域路由註冊表.我們在一開始使用<code>MapRoute</code>註冊與之匹配<code>Controller</code>和<code>Action</code></p>
-<blockquote>
-<p><code>RouteCollection</code>是基於<code>RouteBase</code>物件集合,所以它可以存放所有繼承<code>RouteBase</code>物件,<code>RouteBase</code>這個類別有一個重要的方法來取得<code>RouteData</code>,<code>RouteData</code>封裝此次<code>Http</code>請求的<code>Controller</code>,<code>Action</code>…等資訊</p>
-</blockquote>
-<p>對於每個<code>Http</code>請求依序找尋第一個匹配路由規則</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;controller&#125;/&#123;action&#125;/&#123;id&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, id = UrlParameter.Optional &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure></div>
-<h2 id="RouteData"><a href="#RouteData" class="headerlink" title="RouteData"></a>RouteData</h2><p>在<code>RouteData</code>類別中有幾個重要屬性.</p>
-<ul>
-<li><code>RouteHandler</code>:存放<code>IRouteHandler</code>物件(提供<code>IHttpHander</code>並呼叫執行物件)</li>
-<li><code>Values</code>: 一個字典集合,存放Key為<code>Controller</code>和<code>Action</code>,<code>Value</code>是<code>URL</code>參數值相對位置參數</li>
-<li><code>GetRequiredString</code>:利用傳入<code>string</code>參數對於<code>Values</code>字典取匹配名稱.</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RouteData</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _values = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _dataTokens = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> IRouteHandler _routeHandler;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   使用指定的路由及路由處理常式，初始化 <span class="doctag">&lt;see cref="T:System.Web.Routing.RouteData" /&gt;</span> 類別的新執行個體。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="route"&gt;</span>此物件會定義路由。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="routeHandler"&gt;</span>處理要求的物件。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RouteData</span>(<span class="params">RouteBase route, IRouteHandler routeHandler</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">this</span>.Route = route;</span><br><span class="line">      <span class="keyword">this</span>.RouteHandler = routeHandler;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   取得自訂值集合，當 ASP.NET 路由判斷路由是否符合要求時，會將這些值傳遞至路由處理常式但不會使用。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary DataTokens</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._dataTokens;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定代表路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteBase Route &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定處理要求路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> IRouteHandler RouteHandler</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._routeHandler;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">set</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">this</span>._routeHandler = <span class="keyword">value</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得 URL 參數值和預設路由值的集合。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary Values</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._values;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>擷取具有指定識別項的值。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetRequiredString</span>(<span class="params"><span class="keyword">string</span> valueName</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">object</span> obj;</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">this</span>.Values.TryGetValue(valueName, <span class="keyword">out</span> obj))</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">string</span> str = obj <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="keyword">string</span>.IsNullOrEmpty(str))</span><br><span class="line">          <span class="keyword">return</span> str;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(<span class="keyword">string</span>.Format((IFormatProvider) CultureInfo.CurrentUICulture, System.Web.SR.GetString(<span class="string">"RouteData_RequiredValue"</span>), <span class="keyword">new</span> <span class="keyword">object</span>[<span class="number">1</span>]</span><br><span class="line">      &#123;</span><br><span class="line">        (<span class="keyword">object</span>) valueName</span><br><span class="line">      &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><code>RouteData</code>主要把<code>Client</code>傳送<strong>Http</strong>請求資訊經解析後存放在<code>Values</code>中.</p>
-<p><code>RouteBase</code>中有個<code>GetRouteData</code>方法，藉由我們的路由設定去解析當前是否匹配到路由規則，如果有就回傳一個<code>RouteData</code>物件，否則回傳<code>Null</code></p>
-<h2 id="建立自己Route機制"><a href="#建立自己Route機制" class="headerlink" title="建立自己Route機制"></a>建立自己Route機制</h2><p>一般使用<code>Route</code>這個物件是使用<code>/</code>當作註冊對應的規則</p>
-<p><code>{Controller}/{Action}</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
-<p>第一個區塊字串被當作<code>ControllerName</code></p>
-<p>第二個區塊字串被當作<code>ActionName</code></p>
-<blockquote>
-<p>因為在<strong>Asp.net MVC</strong>透過<code>RouteData.GetRequiredString</code>傳入<code>ControllerName</code>或<code>ActionName</code>取得相對應的值.</p>
-</blockquote>
-<p>這次例子我們希望可以透過<code>QueryString</code>來製作<code>Route</code>對應規則</p>
-<blockquote>
-<p><code>{domain}?controller=home&amp;action=about</code></p>
-</blockquote>
-<p>透過上面<code>URL</code>期望呼叫<code>HomeController.About</code>方法</p>
-<p>廢話不多說我們來看一下這個<code>QueryStringRoute</code>是如何被實現</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QueryStringRoute</span> : <span class="title">RouteBase</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">bool</span> <span class="title">Match</span>(<span class="params">NameValueCollection queryString, <span class="keyword">out</span> IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; variables</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        variables = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> para = Url.Split(<span class="string">'&amp;'</span>);</span><br><span class="line">        <span class="keyword">if</span> (!para.All(x=&gt;queryString.AllKeys.Contains(x)))</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">        variables = para.ToDictionary(x =&gt; x, y =&gt; queryString[y]);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> RouteData <span class="title">GetRouteData</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; <span class="keyword">value</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (Match(httpContext.Request.QueryString,<span class="keyword">out</span> <span class="keyword">value</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            RouteData routeData = <span class="keyword">new</span> RouteData(<span class="keyword">this</span>, <span class="keyword">new</span> MvcRouteHandler());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> dict <span class="keyword">in</span> <span class="keyword">value</span>)</span><br><span class="line">                routeData.Values.Add(dict.Key,dict.Value);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> routeData;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> VirtualPathData <span class="title">GetVirtualPath</span>(<span class="params">RequestContext requestContext, RouteValueDictionary values</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>我們實現<code>RouteBase</code>抽象類別兩個方法</p>
-<ul>
-<li><code>GetRouteData</code></li>
-<li><code>GetVirtualPath</code></li>
-</ul>
-<p>其中<code>GetRouteData</code>是我們主要要實作方法</p>
-<p><code>Request.QueryString</code>這個集合封裝<strong>Http</strong> <code>QueryString</code>的資訊.</p>
-<p>首先我們先判斷此次請求<code>QueryString</code>是否由傳<code>Controller</code>,<code>Action</code>資料過來,如果有把值填入<code>RouteData.Values</code>字典集合中,反之不匹配此<code>Route</code>規則就回傳<code>NULL</code>.</p>
-<blockquote>
-<p><strong>MVC</strong>從<code>RouteData.Values</code>取得對應的資料.</p>
-</blockquote>
-<p>使用上就可透過<code>RouteCollection.Add</code>將<code>Route</code>添加到集合中</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">RegisterRoutes</span>(<span class="params">RouteCollection routes</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    routes.Add(<span class="string">"customer"</span>,<span class="keyword">new</span> QueryStringRoute()</span><br><span class="line">    &#123;</span><br><span class="line">        Url = <span class="string">"controller&amp;action"</span></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><strong>Http</strong>請求就會依序找尋第一個匹配<code>Route</code>來執行.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>透過繼承<code>RouteBase</code>抽象類別並實現<code>GetRouteData</code>方法透過返回<code>RouteData</code>物件對於<code>Http</code>請求資訊封裝到<code>RouteData.Values</code>字典集合.(在<strong>MVC</strong>框架中會對於<code>Values</code>字典中取<code>Key</code>為<code>Controller</code>和<code>Action</code>的值.)</p>
-<p>最後再把新建立<code>RouteBase</code>物件加入到全域<code>RouteCollection</code>中.</p>
-<p>希望大家看完這篇後可以了解並自行擴充自己<code>Route</code>機制.</p>
-<p>本次範例程式碼<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyUm91dGU=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerRoute">Git Sample<i class="fa fa-external-link"></i></span>(CustomerRoute Branch)</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day26/">https://isdaniel.github.io/ithelp-day26/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>動手DIY改造 Asp.net MVC- 自己動作建立一個DependencyResolver解析器(Autofac) (第27天)</title>
     <url>/ithelp-day27/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5479,6 +5407,78 @@ email_url: dog830228@gmail.com
 <p>最後會把<code>Controller</code>依賴物件藉由<strong>依賴注入容器</strong>注入進去.</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyQ29udGFpbmVy" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerContainer">Github範例程式原始碼<i class="fa fa-external-link"></i></span> <code>CustomerContainer</code>分支上</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day27/">https://isdaniel.github.io/ithelp-day27/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>動手DIY改造 Asp.net MVC- Route解析機制 (第26天)</title>
+    <url>/ithelp-day26/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#routedata">RouteData</a></li>
+<li><a href="#%e5%bb%ba%e7%ab%8b%e8%87%aa%e5%b7%b1route%e6%a9%9f%e5%88%b6">建立自己Route機制</a></li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>UrlRoutingModule</code>對於<code>OnPostResolveRequestCache</code>事件添加一個對於<strong>MVC</strong>很重要的動作,透過<code>RouteCollection</code>取得此次請求匹配<code>RouteData</code>物件.</p>
+<p>利用此<code>RouteData</code>取得要使用的<code>IHttpHandler</code>來執行它.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">RouteData routeData = RouteCollection.GetRouteData(context);</span><br></pre></td></tr></table></figure></div>
+<p><code>RouteCollection</code>是全域路由註冊表.我們在一開始使用<code>MapRoute</code>註冊與之匹配<code>Controller</code>和<code>Action</code></p>
+<blockquote>
+<p><code>RouteCollection</code>是基於<code>RouteBase</code>物件集合,所以它可以存放所有繼承<code>RouteBase</code>物件,<code>RouteBase</code>這個類別有一個重要的方法來取得<code>RouteData</code>,<code>RouteData</code>封裝此次<code>Http</code>請求的<code>Controller</code>,<code>Action</code>…等資訊</p>
+</blockquote>
+<p>對於每個<code>Http</code>請求依序找尋第一個匹配路由規則</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;controller&#125;/&#123;action&#125;/&#123;id&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, id = UrlParameter.Optional &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure></div>
+<h2 id="RouteData"><a href="#RouteData" class="headerlink" title="RouteData"></a>RouteData</h2><p>在<code>RouteData</code>類別中有幾個重要屬性.</p>
+<ul>
+<li><code>RouteHandler</code>:存放<code>IRouteHandler</code>物件(提供<code>IHttpHander</code>並呼叫執行物件)</li>
+<li><code>Values</code>: 一個字典集合,存放Key為<code>Controller</code>和<code>Action</code>,<code>Value</code>是<code>URL</code>參數值相對位置參數</li>
+<li><code>GetRequiredString</code>:利用傳入<code>string</code>參數對於<code>Values</code>字典取匹配名稱.</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RouteData</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _values = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _dataTokens = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> IRouteHandler _routeHandler;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   使用指定的路由及路由處理常式，初始化 <span class="doctag">&lt;see cref="T:System.Web.Routing.RouteData" /&gt;</span> 類別的新執行個體。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="route"&gt;</span>此物件會定義路由。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="routeHandler"&gt;</span>處理要求的物件。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RouteData</span>(<span class="params">RouteBase route, IRouteHandler routeHandler</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">this</span>.Route = route;</span><br><span class="line">      <span class="keyword">this</span>.RouteHandler = routeHandler;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   取得自訂值集合，當 ASP.NET 路由判斷路由是否符合要求時，會將這些值傳遞至路由處理常式但不會使用。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary DataTokens</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._dataTokens;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定代表路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteBase Route &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定處理要求路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> IRouteHandler RouteHandler</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._routeHandler;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">set</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">this</span>._routeHandler = <span class="keyword">value</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得 URL 參數值和預設路由值的集合。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary Values</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._values;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>擷取具有指定識別項的值。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetRequiredString</span>(<span class="params"><span class="keyword">string</span> valueName</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">object</span> obj;</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">this</span>.Values.TryGetValue(valueName, <span class="keyword">out</span> obj))</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">string</span> str = obj <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="keyword">string</span>.IsNullOrEmpty(str))</span><br><span class="line">          <span class="keyword">return</span> str;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(<span class="keyword">string</span>.Format((IFormatProvider) CultureInfo.CurrentUICulture, System.Web.SR.GetString(<span class="string">"RouteData_RequiredValue"</span>), <span class="keyword">new</span> <span class="keyword">object</span>[<span class="number">1</span>]</span><br><span class="line">      &#123;</span><br><span class="line">        (<span class="keyword">object</span>) valueName</span><br><span class="line">      &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><code>RouteData</code>主要把<code>Client</code>傳送<strong>Http</strong>請求資訊經解析後存放在<code>Values</code>中.</p>
+<p><code>RouteBase</code>中有個<code>GetRouteData</code>方法，藉由我們的路由設定去解析當前是否匹配到路由規則，如果有就回傳一個<code>RouteData</code>物件，否則回傳<code>Null</code></p>
+<h2 id="建立自己Route機制"><a href="#建立自己Route機制" class="headerlink" title="建立自己Route機制"></a>建立自己Route機制</h2><p>一般使用<code>Route</code>這個物件是使用<code>/</code>當作註冊對應的規則</p>
+<p><code>{Controller}/{Action}</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
+<p>第一個區塊字串被當作<code>ControllerName</code></p>
+<p>第二個區塊字串被當作<code>ActionName</code></p>
+<blockquote>
+<p>因為在<strong>Asp.net MVC</strong>透過<code>RouteData.GetRequiredString</code>傳入<code>ControllerName</code>或<code>ActionName</code>取得相對應的值.</p>
+</blockquote>
+<p>這次例子我們希望可以透過<code>QueryString</code>來製作<code>Route</code>對應規則</p>
+<blockquote>
+<p><code>{domain}?controller=home&amp;action=about</code></p>
+</blockquote>
+<p>透過上面<code>URL</code>期望呼叫<code>HomeController.About</code>方法</p>
+<p>廢話不多說我們來看一下這個<code>QueryStringRoute</code>是如何被實現</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QueryStringRoute</span> : <span class="title">RouteBase</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">bool</span> <span class="title">Match</span>(<span class="params">NameValueCollection queryString, <span class="keyword">out</span> IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; variables</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        variables = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> para = Url.Split(<span class="string">'&amp;'</span>);</span><br><span class="line">        <span class="keyword">if</span> (!para.All(x=&gt;queryString.AllKeys.Contains(x)))</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">        variables = para.ToDictionary(x =&gt; x, y =&gt; queryString[y]);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> RouteData <span class="title">GetRouteData</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; <span class="keyword">value</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (Match(httpContext.Request.QueryString,<span class="keyword">out</span> <span class="keyword">value</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            RouteData routeData = <span class="keyword">new</span> RouteData(<span class="keyword">this</span>, <span class="keyword">new</span> MvcRouteHandler());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> dict <span class="keyword">in</span> <span class="keyword">value</span>)</span><br><span class="line">                routeData.Values.Add(dict.Key,dict.Value);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> routeData;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> VirtualPathData <span class="title">GetVirtualPath</span>(<span class="params">RequestContext requestContext, RouteValueDictionary values</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>我們實現<code>RouteBase</code>抽象類別兩個方法</p>
+<ul>
+<li><code>GetRouteData</code></li>
+<li><code>GetVirtualPath</code></li>
+</ul>
+<p>其中<code>GetRouteData</code>是我們主要要實作方法</p>
+<p><code>Request.QueryString</code>這個集合封裝<strong>Http</strong> <code>QueryString</code>的資訊.</p>
+<p>首先我們先判斷此次請求<code>QueryString</code>是否由傳<code>Controller</code>,<code>Action</code>資料過來,如果有把值填入<code>RouteData.Values</code>字典集合中,反之不匹配此<code>Route</code>規則就回傳<code>NULL</code>.</p>
+<blockquote>
+<p><strong>MVC</strong>從<code>RouteData.Values</code>取得對應的資料.</p>
+</blockquote>
+<p>使用上就可透過<code>RouteCollection.Add</code>將<code>Route</code>添加到集合中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">RegisterRoutes</span>(<span class="params">RouteCollection routes</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    routes.Add(<span class="string">"customer"</span>,<span class="keyword">new</span> QueryStringRoute()</span><br><span class="line">    &#123;</span><br><span class="line">        Url = <span class="string">"controller&amp;action"</span></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><strong>Http</strong>請求就會依序找尋第一個匹配<code>Route</code>來執行.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>透過繼承<code>RouteBase</code>抽象類別並實現<code>GetRouteData</code>方法透過返回<code>RouteData</code>物件對於<code>Http</code>請求資訊封裝到<code>RouteData.Values</code>字典集合.(在<strong>MVC</strong>框架中會對於<code>Values</code>字典中取<code>Key</code>為<code>Controller</code>和<code>Action</code>的值.)</p>
+<p>最後再把新建立<code>RouteBase</code>物件加入到全域<code>RouteCollection</code>中.</p>
+<p>希望大家看完這篇後可以了解並自行擴充自己<code>Route</code>機制.</p>
+<p>本次範例程式碼<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyUm91dGU=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerRoute">Git Sample<i class="fa fa-external-link"></i></span>(CustomerRoute Branch)</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day26/">https://isdaniel.github.io/ithelp-day26/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -6616,6 +6616,40 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Null Object Pattern</title>
+    <url>/nullobjectpattern/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
+<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure></div>
+<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
+<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
+<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
+<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
+<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
+<blockquote>
+<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Rlc2lnblBhdHRlcm4vdHJlZS9tYXN0ZXIvRGVzaWduUGF0dGVybi9OdWxsT2JqZWN0UGF0dGVybg==" title="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/nullobjectpattern/">https://isdaniel.github.io/nullobjectpattern/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>DesignPattern</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>DesignPattern</tag>
+        <tag>NullObjectPattern</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>沒有Source Code 如何修改程式??</title>
     <url>/nosourcecode-modifycode/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>某些專案因為歷史久遠沒有Source Code,但有個需求需要異動裡面的程式該怎麼辦??</p>
@@ -6672,40 +6706,6 @@ email_url: dog830228@gmail.com
         <tag>C#</tag>
         <tag>Reflection</tag>
         <tag>Decompile</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Null Object Pattern</title>
-    <url>/nullobjectpattern/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
-<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure></div>
-<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
-<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
-<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
-<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
-<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
-<blockquote>
-<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Rlc2lnblBhdHRlcm4vdHJlZS9tYXN0ZXIvRGVzaWduUGF0dGVybi9OdWxsT2JqZWN0UGF0dGVybg==" title="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/nullobjectpattern/">https://isdaniel.github.io/nullobjectpattern/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>DesignPattern</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>DesignPattern</tag>
-        <tag>NullObjectPattern</tag>
       </tags>
   </entry>
   <entry>
@@ -7618,6 +7618,63 @@ using (var channel = connection.CreateModel())
         <tag>C#</tag>
         <tag>DesignPattern</tag>
         <tag>TemplatePattern</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Restcountries</title>
+    <url>/vue-first-Restcountries/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>最近面試有一間公司要求使用<span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1Lw==" title="https://restcountries.eu/">Restcountries API<i class="fa fa-external-link"></i></span>使用CRUD前端Html串接API，有看我文章的夥伴應該知道我大多是研究後端或CI/CD相關技術，對於前端技術較少研究，這次我打算使用vue.js來完成此次需求.</p>
+<p>需求如下</p>
+<ol>
+<li>分頁</li>
+<li>顯示國家相關資訊</li>
+<li>排序效果</li>
+<li>點選國家名稱進入Detail頁面</li>
+</ol>
+<p>因為以上幾點都是CRUD相關操作，關於CRUD相關操作使用三大框架就很適合(所以我選擇使用Vue)</p>
+<p>話不多說先給大家看看成品 <a href="https://isdaniel.github.io/RestcountriesSample/">RestcountriesSample</a></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL1Jlc3Rjb3VudHJpZXNTYW1wbGU=" title="https://github.com/isdaniel/RestcountriesSample">Source Code<i class="fa fa-external-link"></i></span></p>
+<h2 id="要使用的API介紹"><a href="#要使用的API介紹" class="headerlink" title="要使用的API介紹"></a>要使用的API介紹</h2><p>雖然官網對於API介紹雖少，但我相信只要有常串API的人應該可以很快猜出每個API作用.</p>
+<ul>
+<li><span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvYWxs" title="https://restcountries.eu/rest/v2/all">All<i class="fa fa-external-link"></i></span>:請求所有國家資訊</li>
+<li><span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvbmFtZS9hcnViYT9mdWxsVGV4dD10cnVl" title="https://restcountries.eu/rest/v2/name/aruba?fullText=true">FULL NAME<i class="fa fa-external-link"></i></span>:查找國家By名子.</li>
+</ul>
+<blockquote>
+<p>而且我發現大部分API都可以用GET來請求.</p>
+</blockquote>
+<p>只要用這兩個就可以完成我們的需求</p>
+<h2 id="Code解說與問題分析"><a href="#Code解說與問題分析" class="headerlink" title="Code解說與問題分析"></a>Code解說與問題分析</h2><p>一開始我在分析問題是要找尋合適的API後面經過塞選挑出上面兩個API.</p>
+<p>接下來我就考慮把畫面用Table + 分頁方式呈現,而Detail Page利用Query String方式傳Country Name來看明細資料.</p>
+<p>我用Pure前端串接API，所以我建立兩個Html頁面</p>
+<ul>
+<li>一個是Master Page</li>
+<li>一個是Detail Page</li>
+</ul>
+<h3 id="Master-page"><a href="#Master-page" class="headerlink" title="Master page"></a>Master page</h3><p>在Javascript code我主要介紹流程</p>
+<p>主要在一開始頁面建立時去Load <span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvYWxs" title="https://restcountries.eu/rest/v2/all">All<i class="fa fa-external-link"></i></span> 資料並把資料binding在<code>rows</code>陣列物件</p>
+<p><code>orderBy</code>方法，提供一個排序實現這邊可以讓Page呼叫時傳入要排的欄位名稱就可以不用HardCode(使用類似<code>@click=&quot;orderBy(&#39;name&#39;),ASC *= -1&quot;</code>)傳入Name就可以對於Name來排序，提高程式碼可用性</p>
+<p>因為API請求有時候會比較久，所以我這邊使用<span class="exturl" data-url="aHR0cHM6Ly93d3cubnBtanMuY29tL3BhY2thZ2UvdnVlLWxvYWRpbmctb3ZlcmxheQ==" title="https://www.npmjs.com/package/vue-loading-overlay">vue-loading-overlay<i class="fa fa-external-link"></i></span>來當Loading Page(有興趣的可以在查閱此連結的API)</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="HTML"><figure class="iseeu highlight /html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">"app"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"vld-parent"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">loading</span> <span class="attr">:active.sync</span>=<span class="string">"isLoading"</span> <span class="attr">:is-full-page</span>=<span class="string">"true"</span>&gt;</span><span class="tag">&lt;/<span class="name">loading</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span>&gt;</span><span class="tag">&lt;<span class="name">b</span>&gt;</span>Search Country Name:<span class="tag">&lt;/<span class="name">b</span>&gt;</span> <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"text"</span> <span class="attr">v-model</span>=<span class="string">"countryName"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">v-if</span>=<span class="string">"filteredRows.length === 0"</span>&gt;</span>No Data Display!!<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">table</span> <span class="attr">v-if</span>=<span class="string">"filteredRows.length &gt; 0"</span> <span class="attr">class</span>=<span class="string">"table table-condensed"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">thead</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tr</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>國旗<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span> @<span class="attr">click</span>=<span class="string">"orderBy('name'),ASC *= -1"</span>&gt;</span>國家名稱</span><br><span class="line">        <span class="tag">&lt;<span class="name">span</span> <span class="attr">class</span>=<span class="string">"icon"</span> <span class="attr">:class</span>=<span class="string">"&#123;'Reverse':ASC==1&#125;"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">i</span> <span class="attr">class</span>=<span class="string">"fa fa-angle-up"</span>&gt;</span><span class="tag">&lt;/<span class="name">i</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>2位國家代碼<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>3位國家代碼<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>母語名稱<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>替代國家名稱<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>國際電話區號<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">thead</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tr</span> <span class="attr">v-for</span>=<span class="string">"item in filteredRows.slice(pageStart, pageStart + pageSize)"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">v-bind:src</span>=<span class="string">item.flag</span> <span class="attr">style</span>=<span class="string">'height:150px'</span>&gt;</span><span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">a</span> <span class="attr">target</span>=<span class="string">"_blank"</span> <span class="attr">:href</span>=<span class="string">"'./CountryModel.html?countryName=' + item.name"</span>&gt;</span></span><br><span class="line">        &#123;&#123; item.name &#125;&#125;</span><br><span class="line">        <span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.alpha2Code &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.alpha3Code &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.nativeName &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.altSpellings[0] &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.callingCodes[0] &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"pagination"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'disabled': (currPage === 1)&#125;"</span> @<span class="attr">click.prevent</span>=<span class="string">"setPage(currPage-1)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>Prev<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-for</span>=<span class="string">"n in totalPage"</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'active': (currPage === (n))&#125;"</span> @<span class="attr">click.prevent</span>=<span class="string">"setPage(n)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span></span></span><br><span class="line"><span class="tag">        <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>&#123;&#123;n&#125;&#125;<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'disabled': (currPage === totalPage || totalPage === 0)&#125;"</span></span></span><br><span class="line"><span class="tag">        @<span class="attr">click.prevent</span>=<span class="string">"setPage(currPage+1)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>Next<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">    el: <span class="string">'#app'</span>,</span><br><span class="line">    data: &#123;</span><br><span class="line">      rows: [],</span><br><span class="line">      pageSize: <span class="number">25</span>,</span><br><span class="line">      currPage: <span class="number">1</span>,</span><br><span class="line">      countryName: <span class="string">''</span>,</span><br><span class="line">      ASC: <span class="number">1</span>,</span><br><span class="line">      isLoading: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    computed: &#123;</span><br><span class="line">      filteredRows: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">return</span> self.rows.filter(<span class="function"><span class="params">x</span>=&gt;</span> !self.countryName || x.name.search(self.countryName) != <span class="number">-1</span>);</span><br><span class="line">      &#125;,</span><br><span class="line">      pageStart: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="keyword">this</span>.currPage - <span class="number">1</span>) * <span class="keyword">this</span>.pageSize;</span><br><span class="line">      &#125;,</span><br><span class="line">      totalPage: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Math</span>.ceil(<span class="keyword">this</span>.filteredRows.length / <span class="keyword">this</span>.pageSize);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    methods: &#123;</span><br><span class="line">      setPage: <span class="function"><span class="keyword">function</span> (<span class="params">index</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (index &lt;= <span class="number">0</span> || index &gt; <span class="keyword">this</span>.totalPage) &#123;</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">this</span>.currPage = index;</span><br><span class="line">      &#125;,</span><br><span class="line">      orderBy: <span class="function"><span class="keyword">function</span> (<span class="params">item</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">return</span> self.rows.sort(<span class="function"><span class="keyword">function</span> (<span class="params">obj1, obj2</span>) </span>&#123;</span><br><span class="line">          <span class="keyword">var</span> obj1 = obj1[item]</span><br><span class="line">          <span class="keyword">var</span> obj2 = obj2[item]</span><br><span class="line"></span><br><span class="line">          <span class="keyword">if</span> (obj1 === obj2)</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">          <span class="keyword">else</span> <span class="keyword">if</span> (obj1 &gt; obj2)</span><br><span class="line">            <span class="keyword">return</span> self.ASC;</span><br><span class="line">          <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> self.ASC * <span class="number">-1</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    created: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">      $.<span class="keyword">get</span>('https://restcountries.eu/rest/v2/all', function (data) &#123;</span><br><span class="line">        self.rows = data;</span><br><span class="line">        self.isLoading = <span class="literal">false</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;,</span><br><span class="line">    watch:&#123;</span><br><span class="line">      countryName:<span class="function"><span class="keyword">function</span>(<span class="params">newValue</span>)</span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.currPage = <span class="number">1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></div>
+<h3 id="Detail-Page"><a href="#Detail-Page" class="headerlink" title="Detail Page"></a>Detail Page</h3><p>Detail我使用<span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvbmFtZS9hcnViYT9mdWxsVGV4dD10cnVl" title="https://restcountries.eu/rest/v2/name/aruba?fullText=true">FULL NAME<i class="fa fa-external-link"></i></span>來查找我要的國家明細</p>
+<p>Detail Html畫面，我就不多說可以看原始碼</p>
+<p>因為我在設計時想要使用QueryString來傳送CountryName，所以我利用<code>URLSearchParams</code>來取得QueryString <code>countryName</code>資料並使用Ajax查詢API</p>
+<p>如果查不到資料或使用者傳送一個不存在的資訊，我就會顯示<code>No Data Display!!</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">    el: <span class="string">'#app'</span>,</span><br><span class="line">    data: &#123;</span><br><span class="line">      vm: &#123;&#125;,</span><br><span class="line">      isLoading : <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    created: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">      <span class="keyword">let</span> urlParams = <span class="keyword">new</span> URLSearchParams(<span class="built_in">window</span>.location.search);</span><br><span class="line">      <span class="keyword">var</span> countryName = urlParams.has(<span class="string">'countryName'</span>) ? urlParams.get(<span class="string">'countryName'</span>) : <span class="string">''</span>;</span><br><span class="line">      <span class="keyword">var</span> url = <span class="string">'https://restcountries.eu/rest/v2/name/'</span>+<span class="built_in">encodeURI</span>(countryName)+<span class="string">'?fullText=true'</span></span><br><span class="line">      $.<span class="keyword">get</span>(url, function (data) &#123;</span><br><span class="line">        self.vm = data[<span class="number">0</span>];</span><br><span class="line">        self.isLoading = <span class="literal">false</span>;</span><br><span class="line">      &#125;).fail(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="built_in">document</span>.write(<span class="string">'No Data Display!!'</span>);</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>這次題目我前後大約花半天就把東西從無到有完成，個人覺得還算蠻順利的，但我寫的Front Code可能不太標準(因為我很少寫Js XDD)</p>
+<p>如果有寫得不好的地方在歡迎指教</p>
+<p>不得不說我覺得Vuejs寫起來真的蠻直覺，而且很多資源可以查閱學習來相對蠻容易的</p>
+<p>相是Loading Page就有很多不同的樣式可以挑選.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/vue-first-Restcountries/">https://isdaniel.github.io/vue-first-Restcountries/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>javascript</category>
+        <category>vue.js</category>
+      </categories>
+      <tags>
+        <tag>javascript</tag>
+        <tag>vue.js</tag>
+        <tag>Restcountries</tag>
       </tags>
   </entry>
 </search>
