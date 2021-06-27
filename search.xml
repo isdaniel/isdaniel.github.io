@@ -251,6 +251,43 @@ return builder.Build();
       </tags>
   </entry>
   <entry>
+    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
+    <url>/automapperinit/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
+<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
+<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
+<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
+<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
+<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
+<blockquote>
+<p>我們可以使用反射來完成</p>
+</blockquote>
+<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
+<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Automapper</tag>
+        <tag>Model</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Autofac (IOC)容器介紹</title>
     <url>/autofac-introduce/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>市面上有許多IoC容器 <span class="exturl" data-url="aHR0cDovL25pbmplY3Qub3JnLw==" title="http://ninject.org/">Ninject<i class="fa fa-external-link"></i></span>,<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3VuaXR5Y29udGFpbmVyL3VuaXR5" title="https://github.com/unitycontainer/unity">Unity<i class="fa fa-external-link"></i></span>….</p>
@@ -352,43 +389,6 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>IOC</tag>
         <tag>Autofac</tag>
         <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
-    <url>/automapperinit/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
-<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
-<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
-<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
-<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
-<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
-<blockquote>
-<p>我們可以使用反射來完成</p>
-</blockquote>
-<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
-<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Automapper</tag>
-        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -1017,153 +1017,6 @@ public abstract class MoveBase
       </tags>
   </entry>
   <entry>
-    <title>(C#) 委託delegate,Func&lt;&gt;,Action 解說系列(二)</title>
-    <url>/c-func-2/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
-<p>最後帶著大家來實現自己的<code>Linq Where</code></p>
-<p>先來看 <code>Func&lt;&gt; ，Action&lt;&gt;</code>原始定義</p>
-<p>我們發現<code>Func&lt;&gt; ，Action&lt;&gt;</code> 其實本質就是委託 ，雖然有十幾個重載 但大同小異</p>
-<pre><code>public delegate TResult Func&lt;out TResult&gt;();
-
-public delegate void Action&lt;in T&gt;(T obj);
-</code></pre><p><code>Func</code>固定最後一個泛型參數為方法回傳值，其餘是傳入參數</p>
-<pre><code>public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
-</code></pre><h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
-<pre><code>public class Person
-{
-    public int Age { get; set; }
-    public string Name { get; set; }
-}
-
-/// &lt;summary&gt;
-/// 年紀超過10歲算老人
-/// &lt;/summary&gt;
-/// &lt;param name=&quot;person&quot;&gt;&lt;/param&gt;
-/// &lt;returns&gt;&lt;/returns&gt;
-public static string CheckAge(Person person)
-{
-    string result = &quot;年紀剛剛好&quot;;
-    if (person.Age &gt;= 10)
-    {
-        result = &quot;老人&quot;;
-    }
-    return result;
-}
-static void Main(string[] args)
-{
-    //Init一個Person物件
-    Person p = new Person()
-    {
-        Age = 10,
-        Name = &quot;tom&quot;
-    };
-
-    #region Func
-    //宣告一個Func&lt;Person,string&gt;委託 _thunkCheckAge
-    Func&lt;Person, string&gt; _thunkCheckAge;
-
-    //_thunkCheckAge委託指向CheckAge方法
-    _thunkCheckAge = new Func&lt;Person, string&gt;(CheckAge);
-
-    //執行_thunkCheckAge委託 (執行CheckAge方法)
-    string result = _thunkCheckAge(p);
-
-    //最後將結果顯示出來
-    Console.WriteLine(result); 
-    #endregion
-    Console.ReadKey();
-}
-</code></pre><h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
-<pre><code>public delegate void Action&lt;in T&gt;(T obj);
-</code></pre><p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
-<pre><code>public class Person
-{
-    public int Age { get; set; }
-    public string Name { get; set; }
-}
-static void Main(string[] args)
-{
-    //宣告_thunkPerson為Action&lt;Person&gt;委託
-    //此Action傳入參數是Person由泛型來決定
-    Action&lt;Person&gt; _thunkPerson;
-    //Init一個Person物件
-    Person p = new Person()
-    {
-        Age = 10,
-        Name = &quot;tom&quot;
-    };
-    //將CallPersonInfo方法 賦予給_thunkPerson
-    _thunkPerson = new Action&lt;Person&gt;(CallPersonInfo);
-
-    //執行_thunkPerson (就是執行CallPersonInfo方法)
-    _thunkPerson(p);
-    Console.ReadKey();
-}
-
-public static void CallPersonInfo(Person person)
-{
-    Console.WriteLine($&quot;Age:{person.Age} Name:{person.Name}&quot;);
-}
-</code></pre><h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action<code></code>和<code>Func</code>差別是</p>
-<ul>
-<li><code>Action</code>是<code>void</code>不回傳值得委託</li>
-<li><code>Func</code>是有回傳值得委託</li>
-</ul>
-<p>有了以上的基礎，我們就來實現我們自己的<code>Linq Where</code> 和 <code>Linq Select</code></p>
-<p>先來分析 <code>Where</code> 方法簽章</p>
-<pre><code>public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source, Func&lt;TSource, bool&gt; predicate)
-</code></pre><h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
-<p>重點在於<strong>[執行塞選條件]</strong>這個動作</p>
-<pre><code>List&lt;Person&gt; pList = new List&lt;Person&gt;()
-{
-    new Person() { Age=100,Name=&quot;daniel&quot;},
-    new Person() { Age=20,Name=&quot;Tom&quot; },
-    new Person() { Age = 10,Name = &quot;Amy&quot;},
-    new Person() { Age=5,Name = &quot;rjo&quot;}
-};
-pList.Where(per =&gt; per.Age &gt; 10);
-</code></pre><p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
-<p>重點在<code>if(where(item))</code> 判斷物件是否符合條件，如符合就回傳此物件</p>
-<pre><code>public static class LinqExtension
-{
-    /// &lt;summary&gt;
-    /// 自訂一個Where 
-    /// &lt;/summary&gt;
-    /// &lt;typeparam name=&quot;TSource&quot;&gt;&lt;/typeparam&gt;
-    /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
-    /// &lt;param name=&quot;where&quot;&gt;&lt;/param&gt;
-    /// &lt;returns&gt;&lt;/returns&gt;
-    public static IEnumerable&lt;TSource&gt; MyWhere&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source
-        ,Func&lt;TSource, bool&gt; where)
-    {
-        foreach (var item in source)
-        {
-            if (where(item))
-            {
-                yield return item;
-            }
-        }
-    }
-}
-</code></pre><hr>
-<h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p>委託把不確定的動作，轉移給呼叫端來撰寫。  </p>
-<p>而不是寫死在程式中</p>
-<p>上面的<code>MyWhere</code>挖了一個洞，關於判斷是否符合條件，給呼叫端實現</p>
-<p>雖然在裡面一樣是一個一個判斷是否符合條件，符合再返回，但利用委託和泛型就可以對於任何條件和任何型別來做比較　大大提升了程式效率</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-2/">https://isdaniel.github.io/c-func-2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Delegate</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Func</tag>
-        <tag>Delegate</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(三)</title>
     <url>/c-func-3/</url>
     <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>在Func和Action泛型委託中 有 In , Out 兩個關鍵字</p>
@@ -1321,6 +1174,153 @@ class Program
 <p><span class="exturl" data-url="aHR0cHM6Ly9tc2RuLm1pY3Jvc29mdC5jb20vemgtdHcvbGlicmFyeS9kZDc5OTUxNyh2PXZzLjExMA==" title="https://msdn.microsoft.com/zh-tw/library/dd799517(v=vs.110">泛型中的共變數和反變數<i class="fa fa-external-link"></i></span>.aspx)</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2NzaGFycC9sYW5ndWFnZS1yZWZlcmVuY2Uva2V5d29yZHMvb3V0LWdlbmVyaWMtbW9kaWZpZXI=" title="https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/out-generic-modifier">out (generic modifier) (C# Reference)<i class="fa fa-external-link"></i></span></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-3/">https://isdaniel.github.io/c-func-3/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Delegate</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Func</tag>
+        <tag>Delegate</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(C#) 委託delegate,Func&lt;&gt;,Action 解說系列(二)</title>
+    <url>/c-func-2/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
+<p>最後帶著大家來實現自己的<code>Linq Where</code></p>
+<p>先來看 <code>Func&lt;&gt; ，Action&lt;&gt;</code>原始定義</p>
+<p>我們發現<code>Func&lt;&gt; ，Action&lt;&gt;</code> 其實本質就是委託 ，雖然有十幾個重載 但大同小異</p>
+<pre><code>public delegate TResult Func&lt;out TResult&gt;();
+
+public delegate void Action&lt;in T&gt;(T obj);
+</code></pre><p><code>Func</code>固定最後一個泛型參數為方法回傳值，其餘是傳入參數</p>
+<pre><code>public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
+</code></pre><h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
+<pre><code>public class Person
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
+
+/// &lt;summary&gt;
+/// 年紀超過10歲算老人
+/// &lt;/summary&gt;
+/// &lt;param name=&quot;person&quot;&gt;&lt;/param&gt;
+/// &lt;returns&gt;&lt;/returns&gt;
+public static string CheckAge(Person person)
+{
+    string result = &quot;年紀剛剛好&quot;;
+    if (person.Age &gt;= 10)
+    {
+        result = &quot;老人&quot;;
+    }
+    return result;
+}
+static void Main(string[] args)
+{
+    //Init一個Person物件
+    Person p = new Person()
+    {
+        Age = 10,
+        Name = &quot;tom&quot;
+    };
+
+    #region Func
+    //宣告一個Func&lt;Person,string&gt;委託 _thunkCheckAge
+    Func&lt;Person, string&gt; _thunkCheckAge;
+
+    //_thunkCheckAge委託指向CheckAge方法
+    _thunkCheckAge = new Func&lt;Person, string&gt;(CheckAge);
+
+    //執行_thunkCheckAge委託 (執行CheckAge方法)
+    string result = _thunkCheckAge(p);
+
+    //最後將結果顯示出來
+    Console.WriteLine(result); 
+    #endregion
+    Console.ReadKey();
+}
+</code></pre><h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
+<pre><code>public delegate void Action&lt;in T&gt;(T obj);
+</code></pre><p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
+<pre><code>public class Person
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
+static void Main(string[] args)
+{
+    //宣告_thunkPerson為Action&lt;Person&gt;委託
+    //此Action傳入參數是Person由泛型來決定
+    Action&lt;Person&gt; _thunkPerson;
+    //Init一個Person物件
+    Person p = new Person()
+    {
+        Age = 10,
+        Name = &quot;tom&quot;
+    };
+    //將CallPersonInfo方法 賦予給_thunkPerson
+    _thunkPerson = new Action&lt;Person&gt;(CallPersonInfo);
+
+    //執行_thunkPerson (就是執行CallPersonInfo方法)
+    _thunkPerson(p);
+    Console.ReadKey();
+}
+
+public static void CallPersonInfo(Person person)
+{
+    Console.WriteLine($&quot;Age:{person.Age} Name:{person.Name}&quot;);
+}
+</code></pre><h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action<code></code>和<code>Func</code>差別是</p>
+<ul>
+<li><code>Action</code>是<code>void</code>不回傳值得委託</li>
+<li><code>Func</code>是有回傳值得委託</li>
+</ul>
+<p>有了以上的基礎，我們就來實現我們自己的<code>Linq Where</code> 和 <code>Linq Select</code></p>
+<p>先來分析 <code>Where</code> 方法簽章</p>
+<pre><code>public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source, Func&lt;TSource, bool&gt; predicate)
+</code></pre><h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
+<p>重點在於<strong>[執行塞選條件]</strong>這個動作</p>
+<pre><code>List&lt;Person&gt; pList = new List&lt;Person&gt;()
+{
+    new Person() { Age=100,Name=&quot;daniel&quot;},
+    new Person() { Age=20,Name=&quot;Tom&quot; },
+    new Person() { Age = 10,Name = &quot;Amy&quot;},
+    new Person() { Age=5,Name = &quot;rjo&quot;}
+};
+pList.Where(per =&gt; per.Age &gt; 10);
+</code></pre><p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
+<p>重點在<code>if(where(item))</code> 判斷物件是否符合條件，如符合就回傳此物件</p>
+<pre><code>public static class LinqExtension
+{
+    /// &lt;summary&gt;
+    /// 自訂一個Where 
+    /// &lt;/summary&gt;
+    /// &lt;typeparam name=&quot;TSource&quot;&gt;&lt;/typeparam&gt;
+    /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
+    /// &lt;param name=&quot;where&quot;&gt;&lt;/param&gt;
+    /// &lt;returns&gt;&lt;/returns&gt;
+    public static IEnumerable&lt;TSource&gt; MyWhere&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source
+        ,Func&lt;TSource, bool&gt; where)
+    {
+        foreach (var item in source)
+        {
+            if (where(item))
+            {
+                yield return item;
+            }
+        }
+    }
+}
+</code></pre><hr>
+<h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p>委託把不確定的動作，轉移給呼叫端來撰寫。  </p>
+<p>而不是寫死在程式中</p>
+<p>上面的<code>MyWhere</code>挖了一個洞，關於判斷是否符合條件，給呼叫端實現</p>
+<p>雖然在裡面一樣是一個一個判斷是否符合條件，符合再返回，但利用委託和泛型就可以對於任何條件和任何型別來做比較　大大提升了程式效率</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-2/">https://isdaniel.github.io/c-func-2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>C#</category>
@@ -2484,52 +2484,59 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
-    <title>串接 Restcountries By Vue.js</title>
+    <title></title>
     <url>/easy-net-mq-introduce/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>最近面試有一間公司要求使用<span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1Lw==" title="https://restcountries.eu/">Restcountries API<i class="fa fa-external-link"></i></span>使用CRUD前端Html串接API，有看我文章的夥伴應該知道我大多是研究後端或CI/CD相關技術，對於前端技術較少研究，這次我打算使用vue.js來完成此次需求.</p>
-<p>需求如下</p>
-<ol>
-<li>分頁</li>
-<li>顯示國家相關資訊</li>
-<li>排序效果</li>
-<li>點選國家名稱進入Detail頁面</li>
-</ol>
-<p>因為以上幾點都是CRUD相關操作，關於CRUD相關操作使用三大框架就很適合(所以我選擇使用Vue)</p>
-<p>話不多說先給大家看看成品 <a href="https://isdaniel.github.io/RestcountriesSample/">RestcountriesSample</a></p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL1Jlc3Rjb3VudHJpZXNTYW1wbGU=" title="https://github.com/isdaniel/RestcountriesSample">Source Code<i class="fa fa-external-link"></i></span></p>
-<h2 id="要使用的API介紹"><a href="#要使用的API介紹" class="headerlink" title="要使用的API介紹"></a>要使用的API介紹</h2><p>雖然官網對於API介紹雖少，但我相信只要有常串API的人應該可以很快猜出每個API作用.</p>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現今越來越多系統使用MQ來達成非同步並來提升系統吞吐量，我今天想要介紹的是<span class="exturl" data-url="aHR0cHM6Ly9lYXN5bmV0cS5jb20v" title="https://easynetq.com/">EasyNetQ<i class="fa fa-external-link"></i></span>一個封裝RabbitMq Client .net框架</p>
 <ul>
-<li><span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvYWxs" title="https://restcountries.eu/rest/v2/all">All<i class="fa fa-external-link"></i></span>:請求所有國家資訊</li>
-<li><span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvbmFtZS9hcnViYT9mdWxsVGV4dD10cnVl" title="https://restcountries.eu/rest/v2/name/aruba?fullText=true">FULL NAME<i class="fa fa-external-link"></i></span>:查找國家By名子.</li>
+<li>小型DI容器</li>
+<li>對於RabbitMq封裝</li>
+<li>對於連接使用lazy connection連接RabbitMq</li>
 </ul>
 <blockquote>
-<p>而且我發現大部分API都可以用GET來請求.</p>
+<p>If the server disconnects for any reason (maybe a network fault, maybe the RabbitMQ server itself has been bounced), EasyNetQ will revert to polling the endpoint until it can reconnect.</p>
 </blockquote>
-<p>只要用這兩個就可以完成我們的需求</p>
-<h2 id="Code解說與問題分析"><a href="#Code解說與問題分析" class="headerlink" title="Code解說與問題分析"></a>Code解說與問題分析</h2><p>一開始我在分析問題是要找尋合適的API後面經過塞選挑出上面兩個API.</p>
-<p>接下來我就考慮把畫面用Table + 分頁方式呈現,而Detail Page利用Query String方式傳Country Name來看明細資料.</p>
-<p>我用Pure前端串接API，所以我建立兩個Html頁面</p>
-<ul>
-<li>一個是Master Page</li>
-<li>一個是Detail Page</li>
-</ul>
-<h3 id="Master-page"><a href="#Master-page" class="headerlink" title="Master page"></a>Master page</h3><p><img src="https://i.imgur.com/Sj52iBe.png" alt></p>
-<p>在Javascript code我主要介紹流程</p>
-<p>主要在一開始頁面建立時去Load <span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvYWxs" title="https://restcountries.eu/rest/v2/all">All<i class="fa fa-external-link"></i></span> 資料並把資料binding在<code>rows</code>陣列物件</p>
-<p><code>orderBy</code>方法，提供一個排序實現這邊可以讓Page呼叫時傳入要排的欄位名稱就可以不用HardCode(使用類似<code>@click=&quot;orderBy(&#39;name&#39;),ASC *= -1&quot;</code>)傳入Name就可以對於Name來排序，提高程式碼可用性</p>
-<p>因為API請求有時候會比較久，所以我這邊使用<span class="exturl" data-url="aHR0cHM6Ly93d3cubnBtanMuY29tL3BhY2thZ2UvdnVlLWxvYWRpbmctb3ZlcmxheQ==" title="https://www.npmjs.com/package/vue-loading-overlay">vue-loading-overlay<i class="fa fa-external-link"></i></span>來當Loading Page(有興趣的可以在查閱此連結的API)</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="HTML"><figure class="iseeu highlight /html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">"app"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"vld-parent"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">loading</span> <span class="attr">:active.sync</span>=<span class="string">"isLoading"</span> <span class="attr">:is-full-page</span>=<span class="string">"true"</span>&gt;</span><span class="tag">&lt;/<span class="name">loading</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span>&gt;</span><span class="tag">&lt;<span class="name">b</span>&gt;</span>Search Country Name:<span class="tag">&lt;/<span class="name">b</span>&gt;</span> <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"text"</span> <span class="attr">v-model</span>=<span class="string">"countryName"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">v-if</span>=<span class="string">"filteredRows.length === 0"</span>&gt;</span>No Data Display!!<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">table</span> <span class="attr">v-if</span>=<span class="string">"filteredRows.length &gt; 0"</span> <span class="attr">class</span>=<span class="string">"table table-condensed"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">thead</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tr</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>國旗<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span> @<span class="attr">click</span>=<span class="string">"orderBy('name'),ASC *= -1"</span>&gt;</span>國家名稱</span><br><span class="line">        <span class="tag">&lt;<span class="name">span</span> <span class="attr">class</span>=<span class="string">"icon"</span> <span class="attr">:class</span>=<span class="string">"&#123;'Reverse':ASC==1&#125;"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">i</span> <span class="attr">class</span>=<span class="string">"fa fa-angle-up"</span>&gt;</span><span class="tag">&lt;/<span class="name">i</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>2位國家代碼<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>3位國家代碼<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>母語名稱<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>替代國家名稱<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>國際電話區號<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">thead</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tr</span> <span class="attr">v-for</span>=<span class="string">"item in filteredRows.slice(pageStart, pageStart + pageSize)"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">v-bind:src</span>=<span class="string">item.flag</span> <span class="attr">style</span>=<span class="string">'height:150px'</span>&gt;</span><span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">a</span> <span class="attr">target</span>=<span class="string">"_blank"</span> <span class="attr">:href</span>=<span class="string">"'./CountryModel.html?countryName=' + item.name"</span>&gt;</span></span><br><span class="line">        &#123;&#123; item.name &#125;&#125;</span><br><span class="line">        <span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.alpha2Code &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.alpha3Code &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.nativeName &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.altSpellings[0] &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.callingCodes[0] &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"pagination"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'disabled': (currPage === 1)&#125;"</span> @<span class="attr">click.prevent</span>=<span class="string">"setPage(currPage-1)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>Prev<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-for</span>=<span class="string">"n in totalPage"</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'active': (currPage === (n))&#125;"</span> @<span class="attr">click.prevent</span>=<span class="string">"setPage(n)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span></span></span><br><span class="line"><span class="tag">        <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>&#123;&#123;n&#125;&#125;<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'disabled': (currPage === totalPage || totalPage === 0)&#125;"</span></span></span><br><span class="line"><span class="tag">        @<span class="attr">click.prevent</span>=<span class="string">"setPage(currPage+1)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>Next<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">    el: <span class="string">'#app'</span>,</span><br><span class="line">    data: &#123;</span><br><span class="line">      rows: [],</span><br><span class="line">      pageSize: <span class="number">25</span>,</span><br><span class="line">      currPage: <span class="number">1</span>,</span><br><span class="line">      countryName: <span class="string">''</span>,</span><br><span class="line">      ASC: <span class="number">1</span>,</span><br><span class="line">      isLoading: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    computed: &#123;</span><br><span class="line">      filteredRows: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">return</span> self.rows.filter(<span class="function"><span class="params">x</span>=&gt;</span> !self.countryName || x.name.search(self.countryName) != <span class="number">-1</span>);</span><br><span class="line">      &#125;,</span><br><span class="line">      pageStart: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="keyword">this</span>.currPage - <span class="number">1</span>) * <span class="keyword">this</span>.pageSize;</span><br><span class="line">      &#125;,</span><br><span class="line">      totalPage: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Math</span>.ceil(<span class="keyword">this</span>.filteredRows.length / <span class="keyword">this</span>.pageSize);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    methods: &#123;</span><br><span class="line">      setPage: <span class="function"><span class="keyword">function</span> (<span class="params">index</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (index &lt;= <span class="number">0</span> || index &gt; <span class="keyword">this</span>.totalPage) &#123;</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">this</span>.currPage = index;</span><br><span class="line">      &#125;,</span><br><span class="line">      orderBy: <span class="function"><span class="keyword">function</span> (<span class="params">item</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">return</span> self.rows.sort(<span class="function"><span class="keyword">function</span> (<span class="params">obj1, obj2</span>) </span>&#123;</span><br><span class="line">          <span class="keyword">var</span> obj1 = obj1[item]</span><br><span class="line">          <span class="keyword">var</span> obj2 = obj2[item]</span><br><span class="line"></span><br><span class="line">          <span class="keyword">if</span> (obj1 === obj2)</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">          <span class="keyword">else</span> <span class="keyword">if</span> (obj1 &gt; obj2)</span><br><span class="line">            <span class="keyword">return</span> self.ASC;</span><br><span class="line">          <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> self.ASC * <span class="number">-1</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    created: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">      $.<span class="keyword">get</span>('https://restcountries.eu/rest/v2/all', function (data) &#123;</span><br><span class="line">        self.rows = data;</span><br><span class="line">        self.isLoading = <span class="literal">false</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;,</span><br><span class="line">    watch:&#123;</span><br><span class="line">      countryName:<span class="function"><span class="keyword">function</span>(<span class="params">newValue</span>)</span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.currPage = <span class="number">1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></div>
-<h3 id="Detail-Page"><a href="#Detail-Page" class="headerlink" title="Detail Page"></a>Detail Page</h3><p><img src="https://i.imgur.com/PLnxUIn.png" alt></p>
-<p>Detail我使用<span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvbmFtZS9hcnViYT9mdWxsVGV4dD10cnVl" title="https://restcountries.eu/rest/v2/name/aruba?fullText=true">FULL NAME<i class="fa fa-external-link"></i></span>來查找我要的國家明細</p>
-<p>Detail Html畫面，我就不多說可以看原始碼</p>
-<p>因為我在設計時想要使用QueryString來傳送CountryName，所以我利用<code>URLSearchParams</code>來取得QueryString <code>countryName</code>資料並使用Ajax查詢API</p>
-<p>如果查不到資料或使用者傳送一個不存在的資訊，我就會顯示<code>No Data Display!!</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">    el: <span class="string">'#app'</span>,</span><br><span class="line">    data: &#123;</span><br><span class="line">      vm: &#123;&#125;,</span><br><span class="line">      isLoading : <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    created: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">      <span class="keyword">let</span> urlParams = <span class="keyword">new</span> URLSearchParams(<span class="built_in">window</span>.location.search);</span><br><span class="line">      <span class="keyword">var</span> countryName = urlParams.has(<span class="string">'countryName'</span>) ? urlParams.get(<span class="string">'countryName'</span>) : <span class="string">''</span>;</span><br><span class="line">      <span class="keyword">var</span> url = <span class="string">'https://restcountries.eu/rest/v2/name/'</span>+<span class="built_in">encodeURI</span>(countryName)+<span class="string">'?fullText=true'</span></span><br><span class="line">      $.<span class="keyword">get</span>(url, function (data) &#123;</span><br><span class="line">        self.vm = data[<span class="number">0</span>];</span><br><span class="line">        self.isLoading = <span class="literal">false</span>;</span><br><span class="line">      &#125;).fail(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="built_in">document</span>.write(<span class="string">'No Data Display!!'</span>);</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>這次題目我前後大約花半天就把東西從無到有完成，個人覺得還算蠻順利的，但我寫的Front Code可能不太標準(因為我很少寫Js XDD)</p>
-<p>如果有寫得不好的地方在歡迎指教</p>
-<p>不得不說我覺得Vuejs寫起來真的蠻直覺，而且很多資源可以查閱學習來相對蠻容易的</p>
-<p>相是Loading Page就有很多不同的樣式可以挑選.</p>
+<p>使用EasyNetQ來操作RabbitMq簡單很多，但在使用上有些地方需要注意</p>
+<p>本篇會再跟大家分享</p>
+<h2 id="RabbitMq-Client-vs-EasyNetQ程式碼比較"><a href="#RabbitMq-Client-vs-EasyNetQ程式碼比較" class="headerlink" title="RabbitMq Client vs EasyNetQ程式碼比較"></a>RabbitMq Client vs EasyNetQ程式碼比較</h2><p>我會使用之前使用RabbitMq Client寫的範例利用EasyNetQ來改寫一次.</p>
+<p>程式原始碼 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXM=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples">Sample Code<i class="fa fa-external-link"></i></span></p>
+<h3 id="Publisher程式碼"><a href="#Publisher程式碼" class="headerlink" title="Publisher程式碼"></a>Publisher程式碼</h3><p>這是使用RabbitMq Client寫的版本</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//建立連接工廠</span></span><br><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"localhost"</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())<span class="comment">//创建通道</span></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> 如果在RabbitMq手動建立可以忽略這段程式</span></span><br><span class="line">    <span class="comment">//建立一個Queue</span></span><br><span class="line">    channel.QueueDeclare(queueName, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//建立一個Exchange</span></span><br><span class="line">    channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//把Queue跟Exchange</span></span><br><span class="line">    channel.QueueBind(queueName, exchangeName, routeKey); </span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"\nRabbitMQ連接成功,如需離開請按下Escape鍵"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> input = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> messageBytes = Encoding.UTF8.GetBytes(input);</span><br><span class="line">        channel.BasicPublish(exchange: exchangeName,</span><br><span class="line">                              routingKey: routeKey,</span><br><span class="line">                              body: messageBytes);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我在利用EasyNetQ改寫後變的如下，是不是簡潔很多?</p>
+<blockquote>
+<p>因為EasyNetQ幫我們把一些程式封裝起來讓我們關注發送訊息</p>
+</blockquote>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>).Advanced)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">var</span> exchange = bus.ExchangeDeclare(exchangeName, ExchangeType.Direct);</span><br><span class="line">    <span class="keyword">var</span> queue = bus.QueueDeclare(queueName);</span><br><span class="line">    bus.Bind(exchange, queue, routeKey);</span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"請輸入訊息!"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        bus.Publish(exchange, <span class="string">"my.routing"</span>, <span class="literal">false</span>, <span class="keyword">new</span> Message&lt;<span class="keyword">string</span>&gt;(input));</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
+<p>稍後會跟大家揭密.</p>
+<h3 id="RabbitMQ-Consumer-程式碼"><a href="#RabbitMQ-Consumer-程式碼" class="headerlink" title="RabbitMQ Consumer 程式碼"></a>RabbitMQ Consumer 程式碼</h3><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"127.0.0.1"</span>,</span><br><span class="line">    Port = <span class="number">5672</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"DirectQueue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())</span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//channel.QueueBind</span></span><br><span class="line">    EventingBasicConsumer consumer = <span class="keyword">new</span> EventingBasicConsumer(channel);</span><br><span class="line">    channel.BasicQos(<span class="number">0</span>, <span class="number">1</span>, <span class="literal">false</span>);</span><br><span class="line">    <span class="comment">//接收到消息事件 consumer.IsRunning</span></span><br><span class="line">    consumer.Received += (ch, ea) =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> message = Encoding.UTF8.GetString(ea.Body);</span><br><span class="line"></span><br><span class="line">        Console.WriteLine(<span class="string">$"Queue:<span class="subst">&#123;queueName&#125;</span>收到資料： <span class="subst">&#123;message&#125;</span>"</span>);</span><br><span class="line">        channel.BasicAck(ea.DeliveryTag, <span class="literal">false</span>);</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    channel.BasicConsume(queueName, <span class="literal">false</span>, consumer); </span><br><span class="line">    Console.WriteLine(<span class="string">"接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我在利用EasyNetQ改寫後變如下</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>))</span><br><span class="line">&#123;</span><br><span class="line">    Task.Run(() =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            bus.SendReceive.Receive&lt;<span class="keyword">string</span>&gt;(queueName, (m) =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                Console.WriteLine(m);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    Console.WriteLine(<span class="string">"開始接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到EasyNetQ在API資料封裝幫我們做了些事情(原本RabbitMQ Client使用<code>byte[]</code>來傳輸資料，而EasyNetQ幫我們提供可以使用泛型或物件的方式傳遞)</p>
+<blockquote>
+<p>但EasyNetQ部分功能也不會平白產生，在MQ Header那邊有做些手腳.還記得我前面說的那個問題嗎?<br>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
+</blockquote>
+<h2 id="EasyNetQ小秘密"><a href="#EasyNetQ小秘密" class="headerlink" title="EasyNetQ小秘密"></a>EasyNetQ小秘密</h2><p>上面我有留一個問題</p>
+<blockquote>
+<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
+</blockquote>
+<p>如果你用EasyNetQ收RabbitMQ Client發送的訊息會發現Queue中會多出<code>EasyNetQ_Default_Error_Queue</code>(這個是收集<code>EasyNetQ</code>錯誤的Queue).</p>
+<p>錯誤訊息如下圖</p>
+<p><img src="https://i.imgur.com/FCB5JZp.png" alt></p>
+<p>如果知道的小夥伴可以忽略此節，但如果不知道的人我推薦你要來了解一下</p>
+<p>我們先利用EasyNetQ Publisher送一些訊息，再RabbitMq瀏覽畫面點選Queue</p>
+<p><img src="https://i.imgur.com/aVgYaQg.png" alt></p>
+<p>點選<strong>Get messages</strong>並按下Get Message按鈕，能看到<code>Properties</code>中有<code>type:System.String, System.Private.CoreLib</code>.</p>
+<p><img src="https://i.imgur.com/5xoyQ0E.png" alt="https://i.imgur.com/5xoyQ0E.png"></p>
+<p>聰明如你應該可以猜到原來EasyNetQ之所以可以在Publisher和Comsumer之間使用泛型是因為EasyNetQ在Property使用type來傳輸使用Type資訊.</p>
+<p>在Comsumer可以利用這些資訊來組裝物件.</p>
+<blockquote>
+<p>這邊有點要注意，因為她是傳送Type資訊，假如你兩個lib都有一個<code>Person</code>類別且裡面<code>Property</code>名稱,類型都一樣，但Publisher和Comsumer之間利用泛型轉換會報錯<br>因為兩個lib的<code>Person</code>類別Type的metadata資訊不一樣</p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>有了EasyNetQ操作RabbitMq就簡單許多，但我個人覺得目前API還可以再加強多封裝些不一樣的情境，目前提供API有點少.</p>
+<blockquote>
+<p>目前如果要用特別一點的需求可以利用<code>IAdvancedBus</code>來完成</p>
+</blockquote>
+<p>另外EasyNetQ也有DI Container只是我還沒研究，等之後研究在跟大家分享</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/easy-net-mq-introduce/">https://isdaniel.github.io/easy-net-mq-introduce/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
@@ -7664,67 +7671,60 @@ using (var channel = connection.CreateModel())
   <entry>
     <title>串接 Restcountries By Vue.js</title>
     <url>/vue-first-Restcountries/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現今越來越多系統使用MQ來達成非同步並來提升系統吞吐量，我今天想要介紹的是<span class="exturl" data-url="aHR0cHM6Ly9lYXN5bmV0cS5jb20v" title="https://easynetq.com/">EasyNetQ<i class="fa fa-external-link"></i></span>一個封裝RabbitMq Client .net框架</p>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>最近面試有一間公司要求使用<span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1Lw==" title="https://restcountries.eu/">Restcountries API<i class="fa fa-external-link"></i></span>使用CRUD前端Html串接API，有看我文章的夥伴應該知道我大多是研究後端或CI/CD相關技術，對於前端技術較少研究，這次我打算使用vue.js來完成此次需求.</p>
+<p>需求如下</p>
+<ol>
+<li>分頁</li>
+<li>顯示國家相關資訊</li>
+<li>排序效果</li>
+<li>點選國家名稱進入Detail頁面</li>
+</ol>
+<p>因為以上幾點都是CRUD相關操作，關於CRUD相關操作使用三大框架就很適合(所以我選擇使用Vue)</p>
+<p>話不多說先給大家看看成品 <a href="https://isdaniel.github.io/RestcountriesSample/">RestcountriesSample</a></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL1Jlc3Rjb3VudHJpZXNTYW1wbGU=" title="https://github.com/isdaniel/RestcountriesSample">Source Code<i class="fa fa-external-link"></i></span></p>
+<h2 id="要使用的API介紹"><a href="#要使用的API介紹" class="headerlink" title="要使用的API介紹"></a>要使用的API介紹</h2><p>雖然官網對於API介紹雖少，但我相信只要有常串API的人應該可以很快猜出每個API作用.</p>
 <ul>
-<li>小型DI容器</li>
-<li>對於RabbitMq封裝</li>
-<li>對於連接使用lazy connection連接RabbitMq</li>
+<li><span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvYWxs" title="https://restcountries.eu/rest/v2/all">All<i class="fa fa-external-link"></i></span>:請求所有國家資訊</li>
+<li><span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvbmFtZS9hcnViYT9mdWxsVGV4dD10cnVl" title="https://restcountries.eu/rest/v2/name/aruba?fullText=true">FULL NAME<i class="fa fa-external-link"></i></span>:查找國家By名子.</li>
 </ul>
 <blockquote>
-<p>If the server disconnects for any reason (maybe a network fault, maybe the RabbitMQ server itself has been bounced), EasyNetQ will revert to polling the endpoint until it can reconnect.</p>
+<p>而且我發現大部分API都可以用GET來請求.</p>
 </blockquote>
-<p>使用EasyNetQ來操作RabbitMq簡單很多，但在使用上有些地方需要注意</p>
-<p>本篇會再跟大家分享</p>
-<h2 id="RabbitMq-Client-vs-EasyNetQ程式碼比較"><a href="#RabbitMq-Client-vs-EasyNetQ程式碼比較" class="headerlink" title="RabbitMq Client vs EasyNetQ程式碼比較"></a>RabbitMq Client vs EasyNetQ程式碼比較</h2><p>我會使用之前使用RabbitMq Client寫的範例利用EasyNetQ來改寫一次.</p>
-<p>程式原始碼 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXM=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples">Sample Code<i class="fa fa-external-link"></i></span></p>
-<h3 id="Publisher程式碼"><a href="#Publisher程式碼" class="headerlink" title="Publisher程式碼"></a>Publisher程式碼</h3><p>這是使用RabbitMq Client寫的版本</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//建立連接工廠</span></span><br><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"localhost"</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())<span class="comment">//创建通道</span></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> 如果在RabbitMq手動建立可以忽略這段程式</span></span><br><span class="line">    <span class="comment">//建立一個Queue</span></span><br><span class="line">    channel.QueueDeclare(queueName, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//建立一個Exchange</span></span><br><span class="line">    channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//把Queue跟Exchange</span></span><br><span class="line">    channel.QueueBind(queueName, exchangeName, routeKey); </span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"\nRabbitMQ連接成功,如需離開請按下Escape鍵"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> input = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> messageBytes = Encoding.UTF8.GetBytes(input);</span><br><span class="line">        channel.BasicPublish(exchange: exchangeName,</span><br><span class="line">                              routingKey: routeKey,</span><br><span class="line">                              body: messageBytes);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我在利用EasyNetQ改寫後變的如下，是不是簡潔很多?</p>
-<blockquote>
-<p>因為EasyNetQ幫我們把一些程式封裝起來讓我們關注發送訊息</p>
-</blockquote>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>).Advanced)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">var</span> exchange = bus.ExchangeDeclare(exchangeName, ExchangeType.Direct);</span><br><span class="line">    <span class="keyword">var</span> queue = bus.QueueDeclare(queueName);</span><br><span class="line">    bus.Bind(exchange, queue, routeKey);</span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"請輸入訊息!"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        bus.Publish(exchange, <span class="string">"my.routing"</span>, <span class="literal">false</span>, <span class="keyword">new</span> Message&lt;<span class="keyword">string</span>&gt;(input));</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
-<p>稍後會跟大家揭密.</p>
-<h3 id="RabbitMQ-Consumer-程式碼"><a href="#RabbitMQ-Consumer-程式碼" class="headerlink" title="RabbitMQ Consumer 程式碼"></a>RabbitMQ Consumer 程式碼</h3><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"127.0.0.1"</span>,</span><br><span class="line">    Port = <span class="number">5672</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"DirectQueue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())</span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//channel.QueueBind</span></span><br><span class="line">    EventingBasicConsumer consumer = <span class="keyword">new</span> EventingBasicConsumer(channel);</span><br><span class="line">    channel.BasicQos(<span class="number">0</span>, <span class="number">1</span>, <span class="literal">false</span>);</span><br><span class="line">    <span class="comment">//接收到消息事件 consumer.IsRunning</span></span><br><span class="line">    consumer.Received += (ch, ea) =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> message = Encoding.UTF8.GetString(ea.Body);</span><br><span class="line"></span><br><span class="line">        Console.WriteLine(<span class="string">$"Queue:<span class="subst">&#123;queueName&#125;</span>收到資料： <span class="subst">&#123;message&#125;</span>"</span>);</span><br><span class="line">        channel.BasicAck(ea.DeliveryTag, <span class="literal">false</span>);</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    channel.BasicConsume(queueName, <span class="literal">false</span>, consumer); </span><br><span class="line">    Console.WriteLine(<span class="string">"接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我在利用EasyNetQ改寫後變如下</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>))</span><br><span class="line">&#123;</span><br><span class="line">    Task.Run(() =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            bus.SendReceive.Receive&lt;<span class="keyword">string</span>&gt;(queueName, (m) =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                Console.WriteLine(m);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    Console.WriteLine(<span class="string">"開始接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到EasyNetQ在API資料封裝幫我們做了些事情(原本RabbitMQ Client使用<code>byte[]</code>來傳輸資料，而EasyNetQ幫我們提供可以使用泛型或物件的方式傳遞)</p>
-<blockquote>
-<p>但EasyNetQ部分功能也不會平白產生，在MQ Header那邊有做些手腳.還記得我前面說的那個問題嗎?<br>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
-</blockquote>
-<h2 id="EasyNetQ小秘密"><a href="#EasyNetQ小秘密" class="headerlink" title="EasyNetQ小秘密"></a>EasyNetQ小秘密</h2><p>上面我有留一個問題</p>
-<blockquote>
-<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
-</blockquote>
-<p>如果你用EasyNetQ收RabbitMQ Client發送的訊息會發現Queue中會多出<code>EasyNetQ_Default_Error_Queue</code>(這個是收集<code>EasyNetQ</code>錯誤的Queue).</p>
-<p>錯誤訊息如下圖</p>
-<p><img src="https://i.imgur.com/FCB5JZp.png" alt></p>
-<p>如果知道的小夥伴可以忽略此節，但如果不知道的人我推薦你要來了解一下</p>
-<p>我們先利用EasyNetQ Publisher送一些訊息，再RabbitMq瀏覽畫面點選Queue</p>
-<p><img src="https://i.imgur.com/aVgYaQg.png" alt></p>
-<p>點選<strong>Get messages</strong>並按下Get Message按鈕，能看到<code>Properties</code>中有<code>type:System.String, System.Private.CoreLib</code>.</p>
-<p><img src="https://i.imgur.com/5xoyQ0E.png" alt="https://i.imgur.com/5xoyQ0E.png"></p>
-<p>聰明如你應該可以猜到原來EasyNetQ之所以可以在Publisher和Comsumer之間使用泛型是因為EasyNetQ在Property使用type來傳輸使用Type資訊.</p>
-<p>在Comsumer可以利用這些資訊來組裝物件.</p>
-<blockquote>
-<p>這邊有點要注意，因為她是傳送Type資訊，假如你兩個lib都有一個<code>Person</code>類別且裡面<code>Property</code>名稱,類型都一樣，但Publisher和Comsumer之間利用泛型轉換會報錯<br>因為兩個lib的<code>Person</code>類別Type的metadata資訊不一樣</p>
-</blockquote>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>有了EasyNetQ操作RabbitMq就簡單許多，但我個人覺得目前API還可以再加強多封裝些不一樣的情境，目前提供API有點少.</p>
-<blockquote>
-<p>目前如果要用特別一點的需求可以利用<code>IAdvancedBus</code>來完成</p>
-</blockquote>
-<p>另外EasyNetQ也有DI Container只是我還沒研究，等之後研究在跟大家分享．</p>
+<p>只要用這兩個就可以完成我們的需求</p>
+<h2 id="Code解說與問題分析"><a href="#Code解說與問題分析" class="headerlink" title="Code解說與問題分析"></a>Code解說與問題分析</h2><p>一開始我在分析問題是要找尋合適的API後面經過塞選挑出上面兩個API.</p>
+<p>接下來我就考慮把畫面用Table + 分頁方式呈現,而Detail Page利用Query String方式傳Country Name來看明細資料.</p>
+<p>我用Pure前端串接API，所以我建立兩個Html頁面</p>
+<ul>
+<li>一個是Master Page</li>
+<li>一個是Detail Page</li>
+</ul>
+<h3 id="Master-page"><a href="#Master-page" class="headerlink" title="Master page"></a>Master page</h3><p><img src="https://i.imgur.com/Sj52iBe.png" alt></p>
+<p>在Javascript code我主要介紹流程</p>
+<p>主要在一開始頁面建立時去Load <span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvYWxs" title="https://restcountries.eu/rest/v2/all">All<i class="fa fa-external-link"></i></span> 資料並把資料binding在<code>rows</code>陣列物件</p>
+<p><code>orderBy</code>方法，提供一個排序實現這邊可以讓Page呼叫時傳入要排的欄位名稱就可以不用HardCode(使用類似<code>@click=&quot;orderBy(&#39;name&#39;),ASC *= -1&quot;</code>)傳入Name就可以對於Name來排序，提高程式碼可用性</p>
+<p>因為API請求有時候會比較久，所以我這邊使用<span class="exturl" data-url="aHR0cHM6Ly93d3cubnBtanMuY29tL3BhY2thZ2UvdnVlLWxvYWRpbmctb3ZlcmxheQ==" title="https://www.npmjs.com/package/vue-loading-overlay">vue-loading-overlay<i class="fa fa-external-link"></i></span>來當Loading Page(有興趣的可以在查閱此連結的API)</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="HTML"><figure class="iseeu highlight /html"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">"app"</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">template</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"vld-parent"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">loading</span> <span class="attr">:active.sync</span>=<span class="string">"isLoading"</span> <span class="attr">:is-full-page</span>=<span class="string">"true"</span>&gt;</span><span class="tag">&lt;/<span class="name">loading</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">template</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span>&gt;</span><span class="tag">&lt;<span class="name">b</span>&gt;</span>Search Country Name:<span class="tag">&lt;/<span class="name">b</span>&gt;</span> <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"text"</span> <span class="attr">v-model</span>=<span class="string">"countryName"</span>&gt;</span><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">v-if</span>=<span class="string">"filteredRows.length === 0"</span>&gt;</span>No Data Display!!<span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">table</span> <span class="attr">v-if</span>=<span class="string">"filteredRows.length &gt; 0"</span> <span class="attr">class</span>=<span class="string">"table table-condensed"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">thead</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tr</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>國旗<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span> @<span class="attr">click</span>=<span class="string">"orderBy('name'),ASC *= -1"</span>&gt;</span>國家名稱</span><br><span class="line">        <span class="tag">&lt;<span class="name">span</span> <span class="attr">class</span>=<span class="string">"icon"</span> <span class="attr">:class</span>=<span class="string">"&#123;'Reverse':ASC==1&#125;"</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">i</span> <span class="attr">class</span>=<span class="string">"fa fa-angle-up"</span>&gt;</span><span class="tag">&lt;/<span class="name">i</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>2位國家代碼<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>3位國家代碼<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>母語名稱<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>替代國家名稱<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">th</span>&gt;</span>國際電話區號<span class="tag">&lt;/<span class="name">th</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">thead</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tr</span> <span class="attr">v-for</span>=<span class="string">"item in filteredRows.slice(pageStart, pageStart + pageSize)"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span><span class="tag">&lt;<span class="name">img</span> <span class="attr">v-bind:src</span>=<span class="string">item.flag</span> <span class="attr">style</span>=<span class="string">'height:150px'</span>&gt;</span><span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">a</span> <span class="attr">target</span>=<span class="string">"_blank"</span> <span class="attr">:href</span>=<span class="string">"'./CountryModel.html?countryName=' + item.name"</span>&gt;</span></span><br><span class="line">        &#123;&#123; item.name &#125;&#125;</span><br><span class="line">        <span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.alpha2Code &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.alpha3Code &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.nativeName &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.altSpellings[0] &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">td</span>&gt;</span>&#123;&#123; item.callingCodes[0] &#125;&#125;<span class="tag">&lt;/<span class="name">td</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">tr</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">table</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span> <span class="attr">class</span>=<span class="string">"pagination"</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ul</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'disabled': (currPage === 1)&#125;"</span> @<span class="attr">click.prevent</span>=<span class="string">"setPage(currPage-1)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>Prev<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-for</span>=<span class="string">"n in totalPage"</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'active': (currPage === (n))&#125;"</span> @<span class="attr">click.prevent</span>=<span class="string">"setPage(n)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span></span></span><br><span class="line"><span class="tag">        <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>&#123;&#123;n&#125;&#125;<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">li</span> <span class="attr">v-bind:class</span>=<span class="string">"&#123;'disabled': (currPage === totalPage || totalPage === 0)&#125;"</span></span></span><br><span class="line"><span class="tag">        @<span class="attr">click.prevent</span>=<span class="string">"setPage(currPage+1)"</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"#"</span>&gt;</span>Next<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;/<span class="name">li</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">    el: <span class="string">'#app'</span>,</span><br><span class="line">    data: &#123;</span><br><span class="line">      rows: [],</span><br><span class="line">      pageSize: <span class="number">25</span>,</span><br><span class="line">      currPage: <span class="number">1</span>,</span><br><span class="line">      countryName: <span class="string">''</span>,</span><br><span class="line">      ASC: <span class="number">1</span>,</span><br><span class="line">      isLoading: <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    computed: &#123;</span><br><span class="line">      filteredRows: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">return</span> self.rows.filter(<span class="function"><span class="params">x</span>=&gt;</span> !self.countryName || x.name.search(self.countryName) != <span class="number">-1</span>);</span><br><span class="line">      &#125;,</span><br><span class="line">      pageStart: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="keyword">this</span>.currPage - <span class="number">1</span>) * <span class="keyword">this</span>.pageSize;</span><br><span class="line">      &#125;,</span><br><span class="line">      totalPage: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">Math</span>.ceil(<span class="keyword">this</span>.filteredRows.length / <span class="keyword">this</span>.pageSize);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    methods: &#123;</span><br><span class="line">      setPage: <span class="function"><span class="keyword">function</span> (<span class="params">index</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (index &lt;= <span class="number">0</span> || index &gt; <span class="keyword">this</span>.totalPage) &#123;</span><br><span class="line">          <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">this</span>.currPage = index;</span><br><span class="line">      &#125;,</span><br><span class="line">      orderBy: <span class="function"><span class="keyword">function</span> (<span class="params">item</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">        <span class="keyword">return</span> self.rows.sort(<span class="function"><span class="keyword">function</span> (<span class="params">obj1, obj2</span>) </span>&#123;</span><br><span class="line">          <span class="keyword">var</span> obj1 = obj1[item]</span><br><span class="line">          <span class="keyword">var</span> obj2 = obj2[item]</span><br><span class="line"></span><br><span class="line">          <span class="keyword">if</span> (obj1 === obj2)</span><br><span class="line">            <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">          <span class="keyword">else</span> <span class="keyword">if</span> (obj1 &gt; obj2)</span><br><span class="line">            <span class="keyword">return</span> self.ASC;</span><br><span class="line">          <span class="keyword">else</span></span><br><span class="line">            <span class="keyword">return</span> self.ASC * <span class="number">-1</span>;</span><br><span class="line">        &#125;);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    created: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">      $.<span class="keyword">get</span>('https://restcountries.eu/rest/v2/all', function (data) &#123;</span><br><span class="line">        self.rows = data;</span><br><span class="line">        self.isLoading = <span class="literal">false</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;,</span><br><span class="line">    watch:&#123;</span><br><span class="line">      countryName:<span class="function"><span class="keyword">function</span>(<span class="params">newValue</span>)</span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.currPage = <span class="number">1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure></div>
+<h3 id="Detail-Page"><a href="#Detail-Page" class="headerlink" title="Detail Page"></a>Detail Page</h3><p><img src="https://i.imgur.com/PLnxUIn.png" alt></p>
+<p>Detail我使用<span class="exturl" data-url="aHR0cHM6Ly9yZXN0Y291bnRyaWVzLmV1L3Jlc3QvdjIvbmFtZS9hcnViYT9mdWxsVGV4dD10cnVl" title="https://restcountries.eu/rest/v2/name/aruba?fullText=true">FULL NAME<i class="fa fa-external-link"></i></span>來查找我要的國家明細</p>
+<p>Detail Html畫面，我就不多說可以看原始碼</p>
+<p>因為我在設計時想要使用QueryString來傳送CountryName，所以我利用<code>URLSearchParams</code>來取得QueryString <code>countryName</code>資料並使用Ajax查詢API</p>
+<p>如果查不到資料或使用者傳送一個不存在的資訊，我就會顯示<code>No Data Display!!</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JAVASCRIPT"><figure class="iseeu highlight /javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> app = <span class="keyword">new</span> Vue(&#123;</span><br><span class="line">    el: <span class="string">'#app'</span>,</span><br><span class="line">    data: &#123;</span><br><span class="line">      vm: &#123;&#125;,</span><br><span class="line">      isLoading : <span class="literal">true</span></span><br><span class="line">    &#125;,</span><br><span class="line">    created: <span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">var</span> self = <span class="keyword">this</span>;</span><br><span class="line">      <span class="keyword">let</span> urlParams = <span class="keyword">new</span> URLSearchParams(<span class="built_in">window</span>.location.search);</span><br><span class="line">      <span class="keyword">var</span> countryName = urlParams.has(<span class="string">'countryName'</span>) ? urlParams.get(<span class="string">'countryName'</span>) : <span class="string">''</span>;</span><br><span class="line">      <span class="keyword">var</span> url = <span class="string">'https://restcountries.eu/rest/v2/name/'</span>+<span class="built_in">encodeURI</span>(countryName)+<span class="string">'?fullText=true'</span></span><br><span class="line">      $.<span class="keyword">get</span>(url, function (data) &#123;</span><br><span class="line">        self.vm = data[<span class="number">0</span>];</span><br><span class="line">        self.isLoading = <span class="literal">false</span>;</span><br><span class="line">      &#125;).fail(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="built_in">document</span>.write(<span class="string">'No Data Display!!'</span>);</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;);</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>這次題目我前後大約花半天就把東西從無到有完成，個人覺得還算蠻順利的，但我寫的Front Code可能不太標準(因為我很少寫Js XDD)</p>
+<p>如果有寫得不好的地方在歡迎指教</p>
+<p>不得不說我覺得Vuejs寫起來真的蠻直覺，而且很多資源可以查閱學習來相對蠻容易的</p>
+<p>相是Loading Page就有很多不同的樣式可以挑選.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/vue-first-Restcountries/">https://isdaniel.github.io/vue-first-Restcountries/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
-        <category>C#</category>
-        <category>RabbitMQ</category>
+        <category>javascript</category>
+        <category>vue.js</category>
       </categories>
       <tags>
-        <tag>C#</tag>
-        <tag>RabbitMQ</tag>
-        <tag>MQ</tag>
+        <tag>javascript</tag>
+        <tag>vue.js</tag>
+        <tag>Restcountries</tag>
       </tags>
   </entry>
 </search>
