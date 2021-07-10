@@ -143,22 +143,22 @@
 
 
 
-  <meta name="description" content="Agenda 前文 案例 資料初始化 建立Index 查詢語法 如何優化?   小結:  前文JOIN條件範圍時,執行計畫預估值容易不準確,這也間接導致查詢效能不好.  就算有建立Index也會遇到上述問題  假如我們想要提升JOIN條件範圍效能並讓Index可以發揮最大最用可以怎麼做? 就讓我利用一個範例來跟大家分享. 案例此範例有使用到三張表  Product表:擁有1-10編號產品 Repo">
-<meta name="keywords" content="Sql-server,DataBase,Turning,Index">
+  <meta name="description" content="前文JOIN條件範圍時,執行計畫預估值容易不準確,這也間接導致查詢效能不好.  就算有建立Index也會遇到上述問題  假如我們想要提升JOIN條件範圍效能並讓Index可以發揮最大最用可以怎麼做? 就讓我利用一個範例來跟大家分享. 案例此範例有使用到三張表  Product表:擁有1-10編號產品 ReportPeriod表:存放產每期報表的資訊(時間,和是否產報表) T99表:線上產品訂單資訊">
+<meta name="keywords" content="DataBase,Turning,sql-server,Index">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JOIN範圍條件Index優化">
 <meta property="og:url" content="https://isdaniel.github.io/join-index-improve/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="Agenda 前文 案例 資料初始化 建立Index 查詢語法 如何優化?   小結:  前文JOIN條件範圍時,執行計畫預估值容易不準確,這也間接導致查詢效能不好.  就算有建立Index也會遇到上述問題  假如我們想要提升JOIN條件範圍效能並讓Index可以發揮最大最用可以怎麼做? 就讓我利用一個範例來跟大家分享. 案例此範例有使用到三張表  Product表:擁有1-10編號產品 Repo">
+<meta property="og:description" content="前文JOIN條件範圍時,執行計畫預估值容易不準確,這也間接導致查詢效能不好.  就算有建立Index也會遇到上述問題  假如我們想要提升JOIN條件範圍效能並讓Index可以發揮最大最用可以怎麼做? 就讓我利用一個範例來跟大家分享. 案例此範例有使用到三張表  Product表:擁有1-10編號產品 ReportPeriod表:存放產每期報表的資訊(時間,和是否產報表) T99表:線上產品訂單資訊">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/QGNtlUr.png">
 <meta property="og:image" content="https://i.imgur.com/3Z2dy2E.png">
 <meta property="og:image" content="https://i.imgur.com/QGNtlUr.png">
 <meta property="og:image" content="https://i.imgur.com/ZPsyQgH.png">
-<meta property="og:updated_time" content="2021-07-10T14:36:59.311Z">
+<meta property="og:updated_time" content="2021-07-10T15:30:41.442Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="JOIN範圍條件Index優化">
-<meta name="twitter:description" content="Agenda 前文 案例 資料初始化 建立Index 查詢語法 如何優化?   小結:  前文JOIN條件範圍時,執行計畫預估值容易不準確,這也間接導致查詢效能不好.  就算有建立Index也會遇到上述問題  假如我們想要提升JOIN條件範圍效能並讓Index可以發揮最大最用可以怎麼做? 就讓我利用一個範例來跟大家分享. 案例此範例有使用到三張表  Product表:擁有1-10編號產品 Repo">
+<meta name="twitter:description" content="前文JOIN條件範圍時,執行計畫預估值容易不準確,這也間接導致查詢效能不好.  就算有建立Index也會遇到上述問題  假如我們想要提升JOIN條件範圍效能並讓Index可以發揮最大最用可以怎麼做? 就讓我利用一個範例來跟大家分享. 案例此範例有使用到三張表  Product表:擁有1-10編號產品 ReportPeriod表:存放產每期報表的資訊(時間,和是否產報表) T99表:線上產品訂單資訊">
 <meta name="twitter:image" content="https://i.imgur.com/QGNtlUr.png">
 
 
@@ -519,7 +519,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
+                <time title="Modified: 2021-07-10 15:30:41" itemprop="dateModified" datetime="2021-07-10T15:30:41+00:00">2021-07-10</time>
               
             
           </span>
@@ -592,7 +592,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">4.4k</span>
+                <span title="Symbols count in article">4.3k</span>
               
 
               
@@ -626,18 +626,7 @@
       
 
       
-        <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#前文">前文</a></li>
-<li><a href="#案例">案例</a><ul>
-<li><a href="#資料初始化">資料初始化</a></li>
-<li><a href="#建立index">建立Index</a></li>
-<li><a href="#查詢語法">查詢語法</a></li>
-<li><a href="#如何優化">如何優化?</a></li>
-</ul>
-</li>
-<li><a href="#小結">小結:</a></li>
-</ul>
-<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p><code>JOIN</code>條件範圍時,執行計畫<strong>預估值</strong>容易不準確,這也間接導致查詢效能不好.</p>
+        <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p><code>JOIN</code>條件範圍時,執行計畫<strong>預估值</strong>容易不準確,這也間接導致查詢效能不好.</p>
 <blockquote>
 <p>就算有建立Index也會遇到上述問題</p>
 </blockquote>
@@ -728,14 +717,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\dblock-1\" rel="bookmark">淺談SqlServer Lock(一)</a></div>
+      <div class="popular-posts-title"><a href="\dbnote\" rel="bookmark">撰寫SQL的建議</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\dbnote\" rel="bookmark">撰寫SQL的建議</a></div>
+      <div class="popular-posts-title"><a href="\sqlserver-statistics\" rel="bookmark">影響Query Optimizer產生執行計畫的關鍵(統計值)</a></div>
       
     </li>
   
@@ -761,11 +750,11 @@
       
         <div class="post-tags">
           
-            <a href="/tags/Sql-server/" rel="tag"># Sql-server</a>
-          
             <a href="/tags/DataBase/" rel="tag"># DataBase</a>
           
             <a href="/tags/Turning/" rel="tag"># Turning</a>
+          
+            <a href="/tags/sql-server/" rel="tag"># sql-server</a>
           
             <a href="/tags/Index/" rel="tag"># Index</a>
           
@@ -1223,7 +1212,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#前文"><span class="nav-number">1.1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例"><span class="nav-number">1.2.</span> <span class="nav-text">案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#資料初始化"><span class="nav-number">1.2.1.</span> <span class="nav-text">資料初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立Index"><span class="nav-number">1.2.2.</span> <span class="nav-text">建立Index</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查詢語法"><span class="nav-number">1.2.3.</span> <span class="nav-text">查詢語法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何優化"><span class="nav-number">1.2.4.</span> <span class="nav-text">如何優化?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">1.3.</span> <span class="nav-text">小結:</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前文"><span class="nav-number">1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#案例"><span class="nav-number">2.</span> <span class="nav-text">案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#資料初始化"><span class="nav-number">2.1.</span> <span class="nav-text">資料初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立Index"><span class="nav-number">2.2.</span> <span class="nav-text">建立Index</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查詢語法"><span class="nav-number">2.3.</span> <span class="nav-text">查詢語法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何優化"><span class="nav-number">2.4.</span> <span class="nav-text">如何優化?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">3.</span> <span class="nav-text">小結:</span></a></li></ol></div>
             
 
           </div>
