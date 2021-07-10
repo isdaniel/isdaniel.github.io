@@ -332,7 +332,7 @@
       
     
 
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">82</span></a>
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">84</span></a>
 
   </li>
         
@@ -351,7 +351,7 @@
       
     
 
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">22</span></a>
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">26</span></a>
 
   </li>
         
@@ -370,7 +370,7 @@
       
     
 
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">88</span></a>
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">89</span></a>
 
   </li>
 
@@ -452,6 +452,253 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/db-isolation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/db-isolation/" class="post-title-link" itemprop="url">在高併發系統不得不了解的Isolation Level(by 錢包被扣到變負值)</a>
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2021-07-10 10:54:52 / Modified: 14:36:59" itemprop="dateCreated datePublished" datetime="2021-07-10T10:54:52+00:00">2021-07-10</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/DB/" itemprop="url" rel="index"><span itemprop="name">DB</span></a></span>
+
+                
+                
+                  , 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/DB/SqlServer/" itemprop="url" rel="index"><span itemprop="name">SqlServer</span></a></span>
+
+                
+                
+                  , 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/DB/SqlServer/Isolation/" itemprop="url" rel="index"><span itemprop="name">Isolation</span></a></span>
+
+                
+                
+                  , 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/DB/SqlServer/Isolation/Racing-Condition/" itemprop="url" rel="index"><span itemprop="name">Racing Condition</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/db-isolation/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="db-isolation/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">2.5k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">5 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+        <div class="post-gallery" itemscope itemtype="http://schema.org/ImageGallery">
+          
+          
+            <div class="post-gallery-row">
+              <img src="https://i.imgur.com/K9h9Knl.png" itemprop="contentUrl">
+            
+          
+
+          
+          </div>
+        </div>
+      
+
+      
+        
+          
+            <p>
+              前言假如我跟你說下面語法在高併發系統，UserId = 101餘額會扣到變負值你們知道問題出在哪裡嗎？
+本篇會跟大家解析問題所在(DB Isolation重要性)
+建立樣本資料 &amp; 問題解釋我建立一個資料表UserAccount並建立一個PK在UserID欄位上，裡面Patch一筆資料Use
+              ...
+            </p>
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/db-isolation/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/easy-net-mq-introduce/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -497,12 +744,24 @@
                 
               
 
-              <time title="Created: 2021-06-27 22:30:52 / Modified: 07:59:44" itemprop="dateCreated datePublished" datetime="2021-06-27T22:30:52+00:00">2021-06-27</time>
+              <time title="Created: 2021-06-27 22:30:52" itemprop="dateCreated datePublished" datetime="2021-06-27T22:30:52+00:00">2021-06-27</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -752,7 +1011,7 @@ If the server disconn
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -1001,7 +1260,7 @@ If the server disconn
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -1241,7 +1500,7 @@ Heap資料表有個特性是Insert資料快比較快，因為插入資料不需�
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -1482,7 +1741,7 @@ TestSplit：新增1,000,000筆Sample
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -1709,7 +1968,7 @@ Expression vs Reflection pe
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -1951,7 +2210,7 @@ Expression vs Reflection pe
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -2178,7 +2437,7 @@ Docker建立MS
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -2413,7 +2672,7 @@ SQLQuery
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
+                <time title="Modified: 2021-07-10 14:36:59" itemprop="dateModified" datetime="2021-07-10T14:36:59+00:00">2021-07-10</time>
               
             
           </span>
@@ -2571,267 +2830,6 @@ SQLQuery
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/dblock-1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/dblock-1/" class="post-title-link" itemprop="url">淺談SqlServer Lock(一)</a>
-              
-            
-          </h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-
-              
-                
-              
-
-              <time title="Created: 2020-08-16 11:12:43" itemprop="dateCreated datePublished" datetime="2020-08-16T11:12:43+00:00">2020-08-16</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2021-06-27 07:59:44" itemprop="dateModified" datetime="2021-06-27T07:59:44+00:00">2021-06-27</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">In</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a></span>
-
-                
-                
-                  , 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/DataBase/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-              
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-            
-                <span class="post-meta-item-text">Comments: </span>
-                <a href="/dblock-1/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="dblock-1/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-symbolscount">
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Symbols count in article: </span>
-                
-                <span title="Symbols count in article">2.6k</span>
-              
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Reading time &asymp;</span>
-                
-                <span title="Reading time">5 mins.</span>
-              
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-        <div class="post-gallery" itemscope itemtype="http://schema.org/ImageGallery">
-          
-          
-            <div class="post-gallery-row">
-              <img src="https://i.imgur.com/3WWvSXp.png" itemprop="contentUrl">
-            
-          
-
-          
-          </div>
-        </div>
-      
-
-      
-        
-          
-            <p>
-              Agenda
-前文
-兩種圍度的Lock
-Lock範圍
-Lock類型
-Update Lock 存在的意義
-
-
-
-
-Lock互斥Demo
-NoLock的隱憂
-
-
-小結前文
-
-之前有跟大家介紹資料庫交易中的ACID,今天我們就來談談常常聽到Lock
-在討論Lock前我們必須先了解,為什麼會有Lock?
-假
-              ...
-            </p>
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/dblock-1/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2880,7 +2878,7 @@ NoLock的隱憂
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">88</span>
+                    <span class="site-state-item-count">89</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
@@ -2941,7 +2939,15 @@ NoLock的隱憂
                     
                       
                     
-                    <span class="site-state-item-count">22</span>
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">26</span>
                     <span class="site-state-item-name">categories</span>
                   </a>
                 </div>
@@ -3122,7 +3128,11 @@ NoLock的隱憂
                     
                       
                     
-                    <span class="site-state-item-count">82</span>
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">84</span>
                     <span class="site-state-item-name">tags</span>
                   </a>
                 </div>
@@ -3231,7 +3241,7 @@ NoLock的隱憂
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">370k</span>
+    <span title="Symbols count total">372k</span>
   
 
   
@@ -3240,7 +3250,7 @@ NoLock的隱憂
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">11:12</span>
+    <span title="Reading time total">11:17</span>
   
 </div>
 
