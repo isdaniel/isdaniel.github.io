@@ -151,15 +151,15 @@
 <meta property="og:site_name" content="石頭的coding之路">
 <meta property="og:description" content="Agenda 前言 IOC介紹 程式碼介紹IOC by Autofac   AutoFac IOC容器 和 Asp.net mvc關係 DependencyResolver 揭密 MVC 裡IDependencyResolver 小結:  前言IOC依賴反轉是oop重要程式設計思想。  Ioc—Inversion of Control 控制反轉  控制反轉是一個設計思想 ，把對於某個物件的控制權移">
 <meta property="og:locale" content="zh-tw">
-<meta property="og:image" content="https://az787680.vo.msecnd.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png">
-<meta property="og:image" content="https://az787680.vo.msecnd.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png">
+<meta property="og:image" content="https://dotblogsfile.blob.core.windows.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png">
+<meta property="og:image" content="https://dotblogsfile.blob.core.windows.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/13/Controller_Parameter.gif">
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/13/IOC_Asp.netMVC.png">
-<meta property="og:updated_time" content="2021-07-10T15:30:41.442Z">
+<meta property="og:updated_time" content="2021-07-11T07:08:15.510Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Asp.net MVC如何實現IOC解析器 (第13天)">
 <meta name="twitter:description" content="Agenda 前言 IOC介紹 程式碼介紹IOC by Autofac   AutoFac IOC容器 和 Asp.net mvc關係 DependencyResolver 揭密 MVC 裡IDependencyResolver 小結:  前言IOC依賴反轉是oop重要程式設計思想。  Ioc—Inversion of Control 控制反轉  控制反轉是一個設計思想 ，把對於某個物件的控制權移">
-<meta name="twitter:image" content="https://az787680.vo.msecnd.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png">
+<meta name="twitter:image" content="https://dotblogsfile.blob.core.windows.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png">
 
 
 
@@ -519,7 +519,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-07-10 15:30:41" itemprop="dateModified" datetime="2021-07-10T15:30:41+00:00">2021-07-10</time>
+                <time title="Modified: 2021-07-11 07:08:15" itemprop="dateModified" datetime="2021-07-11T07:08:15+00:00">2021-07-11</time>
               
             
           </span>
@@ -649,7 +649,7 @@
 </blockquote>
 <p><code>A</code>物件內部有使用到<code>B</code>物件 <code>A</code>,<code>B</code>物件中有依賴的成份<br>控制反轉是把原本<code>A</code>對<code>B</code>控制權移交給第三方容器。<br>降低<code>A</code>對<code>B</code>物件的耦合性，讓雙方都倚賴第三方容器。</p>
 <p>上面說明太抽象嗎? 可以看一下下面這張圖.</p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png" alt="img"></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png" alt="img"></p>
 <blockquote>
 <p>最後對於使用者來說,我只需要認識這個第三方容器並跟這個容器取得我要A物件,至於A物件和其他物件關係使用者不用瞭解</p>
 </blockquote>
@@ -659,7 +659,7 @@
 <li>設定物件關係的註冊表(取用時會依照此註冊關係建立物件並自動注入相依物件)</li>
 </ol>
 <h3 id="程式碼介紹IOC-by-Autofac"><a href="#程式碼介紹IOC-by-Autofac" class="headerlink" title="程式碼介紹IOC by Autofac"></a>程式碼介紹IOC by Autofac</h3><p>我們依照此圖做一個簡單範例<strong>by Autofac</strong></p>
-<p><img src="https://az787680.vo.msecnd.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png" alt="img"></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png" alt="img"></p>
 <p><code>A</code>物件會直接引用於<code>B</code>和<code>C</code>物件這導致<code>A</code><strong>掌控</strong><code>B</code>和<code>C</code>物件創建和銷毀</p>
 <p>如下面程式碼,A物件需要掌控<code>B</code>和<code>C</code>生命週期和物件建立.</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">A</span>&#123;</span><br><span class="line">    <span class="keyword">public</span> B BObject &#123;<span class="keyword">get</span>;<span class="keyword">set</span>;&#125; =  <span class="keyword">new</span> B();</span><br><span class="line">    <span class="keyword">public</span> C CObject &#123;<span class="keyword">get</span>;<span class="keyword">set</span>;&#125; =  <span class="keyword">new</span> C();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
