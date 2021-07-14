@@ -1506,77 +1506,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>在高併發系統不得不了解的Isolation Level(by 錢包被扣到變負值)</title>
-    <url>/db-isolation/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如我跟你說下面語法在高併發系統，UserId = 101餘額會扣到變負值你們知道問題出在哪裡嗎？</p>
-<p>本篇會跟大家解析問題所在(DB Isolation重要性)</p>
-<h2 id="建立樣本資料-amp-問題解釋"><a href="#建立樣本資料-amp-問題解釋" class="headerlink" title="建立樣本資料 &amp; 問題解釋"></a>建立樣本資料 &amp; 問題解釋</h2><p>我建立一個資料表<code>UserAccount</code>並建立一個PK在<code>UserID</code>欄位上，裡面Patch一筆資料Userid = 101餘額有100元</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.UserAccount(</span><br><span class="line">	UserID <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	Balance <span class="built_in">DECIMAL</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> (</span><br><span class="line">		UserID</span><br><span class="line">	)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.UserAccount <span class="keyword">VALUES</span> (<span class="number">101</span>,<span class="number">100</span>);</span><br></pre></td></tr></table></figure></div>
-<p>執行扣款有bug版腳本</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
-<p>明明上面有使用Transatcion但為什麼還是會扣成負值?</p>
-<h3 id="壓力測試數值介紹-amp-問題重現"><a href="#壓力測試數值介紹-amp-問題重現" class="headerlink" title="壓力測試數值介紹 &amp; 問題重現"></a>壓力測試數值介紹 &amp; 問題重現</h3><p>壓力測試我使用SqlQueryStress，工具使用相關介紹可以參考<a href="https://isdaniel.github.io/sqlquerystress-intro/">資料庫壓測好工具-SQLQueryStress</a></p>
-<p>測試使用下面數值</p>
-<ul>
-<li>Thread:100</li>
-<li>Iterator:10</li>
-</ul>
-<p><img src="https://i.imgur.com/wpbx538.png" alt></p>
-<p>執行畫面如上圖</p>
-<p>執行完畢後我們在查詢此表</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span>  dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
-<p><img src="https://i.imgur.com/Md6RyOY.png" alt></p>
-<p>發現數值被扣到-70!!</p>
-<p>明明我有判斷<code>Balance &gt;= @Balance</code>確定有餘額才扣款為什麼會變成負值而不是0元?</p>
-<h2 id="Isolation-Level-介紹"><a href="#Isolation-Level-介紹" class="headerlink" title="Isolation Level 介紹"></a>Isolation Level 介紹</h2><p>此次問題要解釋必須先了解DB的Isolation Level</p>
-<p>交易隔離有分四種</p>
-<ul>
-<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
-<li>ex: (NOLOCK)hint</li>
-</ul>
-</li>
-<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
-<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
-<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
-<li>ex: (Hold Lock) hint</li>
-</ul>
-</li>
-<li>Snapshot<ul>
-<li>Snapshot:在交易中讀取old version資料,就算此物件在執行中已經被commit tran</li>
-<li>Read Committed Snapshot Isolation(RCSI):在交易中讀取old version資料,但如果後續讀取物件(已經被更新且commit tran)就會使用新資料(可能造成Non-repeatable )<blockquote>
-<p>(RCSI)可以使用<code>ReadCommittedLock</code>避免Non-repeatable,假如同時有其他Session在<br>參考資料: <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvc3RhbmxleTE0LzIwMTcvMTIvMTMvcmNzaV92c19zbmFwc2hvdGlzb2xhdGlvbg==" title="https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation">https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-</li>
-</ul>
-</li>
-</ul>
-<p>SqlServer預設使用<code>Read Commited</code>，<code>Read Commited</code>有一個特色是Shared Lock不會保留到交易結束.</p>
-<p>所以假如在高併發系統中，很有可能會有多個connetion通過檢核在扣款那邊blocking，所以就導致檢核餘額大小失效.</p>
-<h2 id="解決問題"><a href="#解決問題" class="headerlink" title="解決問題"></a>解決問題</h2><p>因為我知道<code>UserID</code>是唯一值且當作查詢條件，所以我可以在<code>EXISTS</code>查詢時使用<code>XLOCK</code> hint.</p>
-<blockquote>
-<p>因為shared lock和Xlock互斥</p>
-</blockquote>
-<p>所以blocking位置會從原本<code>UPDATE dbo.UserAccount</code>轉移到<code>SELECT 1 FROM dbo.UserAccount WITH(ROWLOCK,XLOCK) WHERE UserID = @UserID</code>上面就可以保證判斷條件的connection一瞬間只有一個.</p>
-<p>所以這個解法是使用<strong>提高lock層級</strong>並放在<strong>對的位置</strong>來解決shared lock之間不互斥問題.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount <span class="keyword">WITH</span>(ROWLOCK,XLOCK)</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
-<p>我們在查詢<code>UserAccount</code>資料表發現用同樣的Thread和Iterator(甚至更多)來壓測Balance不會變成負值.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本文章希望透過一個小例子跟大家分享DB Isolation Level重要性，在高併發系統中Isolation尤為重要，調整範圍大小需要對於系統有一定了解（調整太大會降低系統吞吐量,Level不足<br>會早成Data Racing甚至是Racing Condition）.</p>
-<p>如果是小型系統遇到此問題機率就很低，但對於中大型系統這個問題不得不重視．</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/db-isolation/">https://isdaniel.github.io/db-isolation/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>DB</category>
-        <category>sql-server</category>
-        <category>Isolation</category>
-        <category>Racing Condition</category>
-      </categories>
-      <tags>
-        <tag>DB</tag>
-        <tag>Isolation</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Sqlserver不可不知道Heap Table.</title>
     <url>/db-heaptable/</url>
     <content><![CDATA[<h2 id="Heap-資料表"><a href="#Heap-資料表" class="headerlink" title="Heap 資料表"></a>Heap 資料表</h2><p>如果資料表沒有<code>Clustered Index</code>那此表就會是Heap資料表</p>
@@ -1658,6 +1587,77 @@ class Program
         <tag>Sql-server</tag>
         <tag>DataBase</tag>
         <tag>table</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在高併發系統不得不了解的Isolation Level(by 錢包被扣到變負值)</title>
+    <url>/db-isolation/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如我跟你說下面語法在高併發系統，UserId = 101餘額會扣到變負值你們知道問題出在哪裡嗎？</p>
+<p>本篇會跟大家解析問題所在(DB Isolation重要性)</p>
+<h2 id="建立樣本資料-amp-問題解釋"><a href="#建立樣本資料-amp-問題解釋" class="headerlink" title="建立樣本資料 &amp; 問題解釋"></a>建立樣本資料 &amp; 問題解釋</h2><p>我建立一個資料表<code>UserAccount</code>並建立一個PK在<code>UserID</code>欄位上，裡面Patch一筆資料Userid = 101餘額有100元</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.UserAccount(</span><br><span class="line">	UserID <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	Balance <span class="built_in">DECIMAL</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> (</span><br><span class="line">		UserID</span><br><span class="line">	)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.UserAccount <span class="keyword">VALUES</span> (<span class="number">101</span>,<span class="number">100</span>);</span><br></pre></td></tr></table></figure></div>
+<p>執行扣款有bug版腳本</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
+<p>明明上面有使用Transatcion但為什麼還是會扣成負值?</p>
+<h3 id="壓力測試數值介紹-amp-問題重現"><a href="#壓力測試數值介紹-amp-問題重現" class="headerlink" title="壓力測試數值介紹 &amp; 問題重現"></a>壓力測試數值介紹 &amp; 問題重現</h3><p>壓力測試我使用SqlQueryStress，工具使用相關介紹可以參考<a href="https://isdaniel.github.io/sqlquerystress-intro/">資料庫壓測好工具-SQLQueryStress</a></p>
+<p>測試使用下面數值</p>
+<ul>
+<li>Thread:100</li>
+<li>Iterator:10</li>
+</ul>
+<p><img src="https://i.imgur.com/wpbx538.png" alt></p>
+<p>執行畫面如上圖</p>
+<p>執行完畢後我們在查詢此表</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span>  dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://i.imgur.com/Md6RyOY.png" alt></p>
+<p>發現數值被扣到-70!!</p>
+<p>明明我有判斷<code>Balance &gt;= @Balance</code>確定有餘額才扣款為什麼會變成負值而不是0元?</p>
+<h2 id="Isolation-Level-介紹"><a href="#Isolation-Level-介紹" class="headerlink" title="Isolation Level 介紹"></a>Isolation Level 介紹</h2><p>此次問題要解釋必須先了解DB的Isolation Level</p>
+<p>交易隔離有分四種</p>
+<ul>
+<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
+<li>ex: (NOLOCK)hint</li>
+</ul>
+</li>
+<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
+<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
+<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
+<li>ex: (Hold Lock) hint</li>
+</ul>
+</li>
+<li>Snapshot<ul>
+<li>Snapshot:在交易中讀取old version資料,就算此物件在執行中已經被commit tran</li>
+<li>Read Committed Snapshot Isolation(RCSI):在交易中讀取old version資料,但如果後續讀取物件(已經被更新且commit tran)就會使用新資料(可能造成Non-repeatable )<blockquote>
+<p>(RCSI)可以使用<code>ReadCommittedLock</code>避免Non-repeatable,假如同時有其他Session在<br>參考資料: <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvc3RhbmxleTE0LzIwMTcvMTIvMTMvcmNzaV92c19zbmFwc2hvdGlzb2xhdGlvbg==" title="https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation">https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<p>SqlServer預設使用<code>Read Commited</code>，<code>Read Commited</code>有一個特色是Shared Lock不會保留到交易結束.</p>
+<p>所以假如在高併發系統中，很有可能會有多個connetion通過檢核在扣款那邊blocking，所以就導致檢核餘額大小失效.</p>
+<h2 id="解決問題"><a href="#解決問題" class="headerlink" title="解決問題"></a>解決問題</h2><p>因為我知道<code>UserID</code>是唯一值且當作查詢條件，所以我可以在<code>EXISTS</code>查詢時使用<code>XLOCK</code> hint.</p>
+<blockquote>
+<p>因為shared lock和Xlock互斥</p>
+</blockquote>
+<p>所以blocking位置會從原本<code>UPDATE dbo.UserAccount</code>轉移到<code>SELECT 1 FROM dbo.UserAccount WITH(ROWLOCK,XLOCK) WHERE UserID = @UserID</code>上面就可以保證判斷條件的connection一瞬間只有一個.</p>
+<p>所以這個解法是使用<strong>提高lock層級</strong>並放在<strong>對的位置</strong>來解決shared lock之間不互斥問題.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount <span class="keyword">WITH</span>(ROWLOCK,XLOCK)</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
+<p>我們在查詢<code>UserAccount</code>資料表發現用同樣的Thread和Iterator(甚至更多)來壓測Balance不會變成負值.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本文章希望透過一個小例子跟大家分享DB Isolation Level重要性，在高併發系統中Isolation尤為重要，調整範圍大小需要對於系統有一定了解（調整太大會降低系統吞吐量,Level不足<br>會早成Data Racing甚至是Racing Condition）.</p>
+<p>如果是小型系統遇到此問題機率就很低，但對於中大型系統這個問題不得不重視．</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/db-isolation/">https://isdaniel.github.io/db-isolation/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DB</category>
+        <category>sql-server</category>
+        <category>Isolation</category>
+        <category>Racing Condition</category>
+      </categories>
+      <tags>
+        <tag>DB</tag>
+        <tag>Isolation</tag>
       </tags>
   </entry>
   <entry>
@@ -2881,78 +2881,6 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
-    <title>Appveyor搭配Github自動化上傳Nuget</title>
-    <url>/github-with-nugetdeploy/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
-<p>今天跟大家分享我開源專案<span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
-<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3Mv" title="https://www.appveyor.com/docs/">Appveyor<i class="fa fa-external-link"></i></span>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
-<blockquote>
-<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
-</blockquote>
-<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
-<p><img src="https://i.imgur.com/YPKBuFQ.png" alt></p>
-<p>選擇我們要建立CICD專案.</p>
-<p><img src="https://i.imgur.com/FW4Pd0j.png" alt></p>
-<p>最後會在Project頁看到你剛剛新建立Project.</p>
-<p><img src="https://i.imgur.com/vA6DIjh.png" alt></p>
-<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
-<ul>
-<li>透過UI來操作設定</li>
-<li>透過appveyor.yml設定(專案root目錄)</li>
-</ul>
-<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
-<p>我使用我的開源專案<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>來當作這次範例.</p>
-<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
-<ul>
-<li>image：指定Build的IDE VS版本.</li>
-<li>before_build：建置專案前要執行步驟</li>
-<li>build_script：建置專案時要執行步驟</li>
-<li>after_build：建置專案完成執行步驟</li>
-<li>deploy：將你建置完artifact deploy到某個地方</li>
-<li>artifacts：存放artifact位置</li>
-<li>environment：設定環境變數</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">'&#123;build&#125;'</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.nupkg'</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.snupkg'</span></span><br></pre></td></tr></table></figure></div>
-<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
-<ul>
-<li>provider：NuGet(Bj4)</li>
-<li>api_key：<ul>
-<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
-</ul>
-</li>
-<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
-<li>artifact：查找需要上傳檔案資訊</li>
-</ul>
-<p>這個YML設定檔有下面流程</p>
-<ol>
-<li>nuget restore.</li>
-<li>build .net core專案</li>
-<li>執行unit test</li>
-<li>發布package到Nuget(只限於master)</li>
-</ol>
-<blockquote>
-<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
-</blockquote>
-<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
-<p><img src="https://i.imgur.com/VRbUO5i.png" alt></p>
-<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
-<p>這是之前跑ElectronicInvoice_TW專案<span class="exturl" data-url="aHR0cHM6Ly9jaS5hcHB2ZXlvci5jb20vcHJvamVjdC9pc2RhbmllbC9lbGVjdHJvbmljaW52b2ljZS10dy9idWlsZHMvMzcxMTg5ODU=" title="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄<i class="fa fa-external-link"></i></span>歷程</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
-<p>參考連結：<span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3MvbnVnZXQv" title="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>CICD</category>
-        <category>netcore</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>CICD</tag>
-        <tag>Appveyor</tag>
-        <tag>.netcore</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>淺談-編碼(encoding) vs 加解密 vs 雜湊(Hash)</title>
     <url>/hash-encoding/</url>
     <content><![CDATA[<p>這一邊有三筆資料</p>
@@ -3029,6 +2957,78 @@ GROUP BY userName
         <tag>AES</tag>
         <tag>SHA256</tag>
         <tag>Hash</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Appveyor搭配Github自動化上傳Nuget</title>
+    <url>/github-with-nugetdeploy/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
+<p>今天跟大家分享我開源專案<span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
+<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3Mv" title="https://www.appveyor.com/docs/">Appveyor<i class="fa fa-external-link"></i></span>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
+<blockquote>
+<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
+</blockquote>
+<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
+<p><img src="https://i.imgur.com/YPKBuFQ.png" alt></p>
+<p>選擇我們要建立CICD專案.</p>
+<p><img src="https://i.imgur.com/FW4Pd0j.png" alt></p>
+<p>最後會在Project頁看到你剛剛新建立Project.</p>
+<p><img src="https://i.imgur.com/vA6DIjh.png" alt></p>
+<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
+<ul>
+<li>透過UI來操作設定</li>
+<li>透過appveyor.yml設定(專案root目錄)</li>
+</ul>
+<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
+<p>我使用我的開源專案<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>來當作這次範例.</p>
+<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
+<ul>
+<li>image：指定Build的IDE VS版本.</li>
+<li>before_build：建置專案前要執行步驟</li>
+<li>build_script：建置專案時要執行步驟</li>
+<li>after_build：建置專案完成執行步驟</li>
+<li>deploy：將你建置完artifact deploy到某個地方</li>
+<li>artifacts：存放artifact位置</li>
+<li>environment：設定環境變數</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">'&#123;build&#125;'</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.nupkg'</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.snupkg'</span></span><br></pre></td></tr></table></figure></div>
+<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
+<ul>
+<li>provider：NuGet(Bj4)</li>
+<li>api_key：<ul>
+<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
+</ul>
+</li>
+<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
+<li>artifact：查找需要上傳檔案資訊</li>
+</ul>
+<p>這個YML設定檔有下面流程</p>
+<ol>
+<li>nuget restore.</li>
+<li>build .net core專案</li>
+<li>執行unit test</li>
+<li>發布package到Nuget(只限於master)</li>
+</ol>
+<blockquote>
+<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
+</blockquote>
+<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
+<p><img src="https://i.imgur.com/VRbUO5i.png" alt></p>
+<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
+<p>這是之前跑ElectronicInvoice_TW專案<span class="exturl" data-url="aHR0cHM6Ly9jaS5hcHB2ZXlvci5jb20vcHJvamVjdC9pc2RhbmllbC9lbGVjdHJvbmljaW52b2ljZS10dy9idWlsZHMvMzcxMTg5ODU=" title="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄<i class="fa fa-external-link"></i></span>歷程</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
+<p>參考連結：<span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3MvbnVnZXQv" title="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>CICD</category>
+        <category>netcore</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>CICD</tag>
+        <tag>Appveyor</tag>
+        <tag>.netcore</tag>
       </tags>
   </entry>
   <entry>
@@ -3228,7 +3228,7 @@ email_url: dog830228@gmail.com
     <url>/high-concurrency-atomic-cas-algorithm/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
 <p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
-<p>本文使用範例在</p>
+<p>本文使用範例在我github上<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvQ0FTX0xvY2s=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/CAS_Lock">CAS_Lock<i class="fa fa-external-link"></i></span>有興趣的人可以參考.</p>
 <h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
 <p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
 <p>下面Sample Code是這樣.</p>
@@ -7450,89 +7450,6 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
-    <title>SQL Server Merge condition on declare value problem</title>
-    <url>/sqlserver-merge-condition-problem/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如要判斷資料是否存在於資料表中,存在就更新,不存在就新增.</p>
-<p>這時我們可以使用<code>Merge</code>來幫助我們完成.</p>
-<blockquote>
-<p>當兩個資料表有複雜的比對的特性時，<code>MERGE</code>陳述式的條件式行為表現最佳。</p>
-</blockquote>
-<p>有了<code>Merge</code>我們就不用使用<code>IF EXISTS</code>.</p>
-<p>一切都是這麼完美…</p>
-<p>直到到有一天<code>Merge</code>在Prod撞到一個問題..</p>
-<h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>使用語法user defined table type &amp; Table如下</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[PriceLimitation](</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line"> <span class="keyword">CONSTRAINT</span> [PK_PriceLimitation] PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">    [UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, IGNORE_DUP_KEY = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line">) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
-<p>呼叫執行SP<code>[dbo].[CalculateLimitation]</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
-<p>主要傳入參數判斷更新或新增<code>[dbo].[PriceLimitation]</code>表</p>
-<p>我們在<code>ELK</code>發現在執行SP時<strong>很少概率</strong>會發生PRIMARY KEY重複問題.</p>
-<blockquote>
-<p>Violation of PRIMARY KEY constraint ‘PK_PriceLimitation’. Cannot insert duplicate key in object ‘dbo.PriceLimitation’.</p>
-</blockquote>
-<p>但這張表PK使用欄位都有正確在<code>Merge</code>條件上,所以當下我們嘗是在DEV重現此問題,但一直無法成功</p>
-<p>後來發現此問題在<strong>高併發</strong>時才會發生,所以我們使用<span class="exturl" data-url="aHR0cHM6Ly93d3cubXNzcWx0aXBzLmNvbS9zcWxzZXJ2ZXJ0aXAvMjczMC9zcWwtcXVlcnktc3RyZXNzLXRvb2wv" title="https://www.mssqltips.com/sqlservertip/2730/sql-query-stress-tool/">Query Stress<i class="fa fa-external-link"></i></span>來幫助我們模擬高併發請求時的狀態.</p>
-<h3 id="Query-Stress重現問題"><a href="#Query-Stress重現問題" class="headerlink" title="Query Stress重現問題"></a>Query Stress重現問題</h3><p>撰寫了模擬SQL並利用Query Stress重現問題.</p>
-<p>模擬SQL腳本</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @CategoryID,@ProductID,@ProdcutGroupID,@PriceLimit</span><br></pre></td></tr></table></figure></div>
-<p>我使用模擬參數是</p>
-<ul>
-<li>Iterator:30</li>
-<li>Thread:100</li>
-</ul>
-<p>來模擬高併發時資料庫請求狀況,就能發現這時已經會出現Prod的<code>Exception</code>.</p>
-<p><img src="https://i.imgur.com/1RpWBYP.png" alt></p>
-<h3 id="找到問題尋求解法"><a href="#找到問題尋求解法" class="headerlink" title="找到問題尋求解法"></a>找到問題尋求解法</h3><p>對於目前Prod問題已經邁出一大步了,因為現在問題可以重現,在網路上找了許多文章還是沒找到解法….</p>
-<p>後面在MSDN時看到關鍵一段話,關於<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvc3FsL3Qtc3FsL3N0YXRlbWVudHMvbWVyZ2UtdHJhbnNhY3Qtc3FsP3ZpZXc9c3FsLXNlcnZlci12ZXIxNQ==" title="https://docs.microsoft.com/zh-tw/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver15">merge-transact-sql<i class="fa fa-external-link"></i></span>.</p>
-<blockquote>
-<p>請務必只從目標資料表指定用於比對用途的資料行。 也就是說，從目標資料表中指定要與來源資料表的對應資料行進行比較的資料行。 請勿嘗試在 ON 子句中篩選出目標資料表的資料列 (例如指定 <code>AND NOT target_table.column_x = value)</code> 來改善查詢效能。 這樣做可能會傳回非預期且不正確的結果。</p>
-</blockquote>
-<p>後面有看到有篇文章在介紹<span class="exturl" data-url="aHR0cHM6Ly9kYmEuc3RhY2tleGNoYW5nZS5jb20vcXVlc3Rpb25zLzE1NDUwOS91c2Utd2hlcmUtY2xhdXNlLXdpdGgtbWVyZ2U=" title="https://dba.stackexchange.com/questions/154509/use-where-clause-with-merge">use-where-clause-with-merge<i class="fa fa-external-link"></i></span></p>
-<p>我就嘗試把sp寫法改成只利用兩個Table可以<code>JOIN</code>欄位當作條件,發現Duplicate PK問題就可以解決了….但發現另一個更麻煩問題.</p>
-<p>SP改寫後</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span>   </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID </span><br><span class="line">            <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
-<p>新寫法的執行計畫在對於大資料表時會很沒效率….</p>
-<h4 id="改寫後遇到的問題-不好的執行計畫"><a href="#改寫後遇到的問題-不好的執行計畫" class="headerlink" title="改寫後遇到的問題(不好的執行計畫)"></a>改寫後遇到的問題(不好的執行計畫)</h4><p>一般SP在執行過後都會把使用的執行計畫快取起來,所以我們可以透過DMV來查看執行執行計畫.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> Cacheobjtype, Objtype, <span class="built_in">TEXT</span>, query_plan</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_exec_cached_plans t1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_sql_text(plan_handle) t2</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_query_plan(plan_handle) t3</span><br><span class="line"><span class="keyword">where</span> t2.objectid = object_id(<span class="string">'dbo.CalculateStake'</span>, <span class="string">'p'</span>)</span><br></pre></td></tr></table></figure></div>
-<p>新和舊SP寫法執行計畫如下圖.</p>
-<p>舊寫法</p>
-<p><img src="https://i.imgur.com/ueY6efl.png" alt></p>
-<p>新寫法</p>
-<p><img src="https://i.imgur.com/gbPva4K.png" alt></p>
-<p>造成上面差異原因，因為新寫法透過統計資訊使用效能較差的執行計畫(能看到上面使用<code>Merge Join</code>明明傳入結果集資料並不多)且在<code>WHEN MATCHED</code>進行第二次判斷…</p>
-<p>所以效能就變很差,現在已經找到此問題點了，我就在思考那有沒有辦法兼具效能又可解決此問題呢?</p>
-<h3 id="最終版SP寫法"><a href="#最終版SP寫法" class="headerlink" title="最終版SP寫法"></a>最終版SP寫法</h3><p>最後我就思考何不如把傳入參數全部加入<code>user defined table type</code></p>
-<ol>
-<li>這樣就可以利用傳入參數當作<code>ON</code>條件也可以得到精準執行計畫.</li>
-<li><code>user defined table type</code>所有欄位可以跟Table的Clustered Index Match.</li>
-</ol>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> proc[dbo].[CalculateStake]</span><br><span class="line"><span class="keyword">drop</span> <span class="keyword">type</span> [dbo].[uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= t2.ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=t2.CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID =t2.ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(t2.CategoryID, t2.ProdcutGroupID, t2.UserID ,t2.StakeAmount, t2.ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
-<p>測試腳本改成把參數透過<code>uftt_PriceLimit</code>傳入</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @PriceLimit</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>請在跑修改後的SP前記得把Table先Truncate掉，這樣可以更精準模擬</p>
-</blockquote>
-<p>使用QueryStress模擬參數</p>
-<ul>
-<li>Iterator:30</li>
-<li>Thread:100</li>
-</ul>
-<p>執行結果如下</p>
-<p><img src="https://i.imgur.com/fQMm2up.png" alt></p>
-<p>利用<code>Query Stress</code>工具壓測發現問題解決且效能不會變差:)</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>沒想到<code>Merge</code>在<code>On</code>條件有些隱藏限制(對於On寫value condition官方只有說會有想不到的問題發生,並沒解釋原因為何…),但經過這次經驗我日後在使用<code>Merge</code>時不會直接在On使用value condition會在中間多墊一層<code>Table</code>這樣就可以使用<code>ON</code>來<code>JOIN</code>.</p>
-<p>另外<code>QueryStress</code>真是一個對於DB壓測找問題的好工具,推薦大家去了解使用</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/sqlserver-merge-condition-problem/">https://isdaniel.github.io/sqlserver-merge-condition-problem/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>SQL-Server</category>
-      </categories>
-      <tags>
-        <tag>SQL</tag>
-        <tag>SQL-Server</tag>
-        <tag>Merge</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>影響Query Optimizer產生執行計畫的關鍵(統計值)</title>
     <url>/sqlserver-statistics/</url>
     <content><![CDATA[<h2 id="什麼是統計值"><a href="#什麼是統計值" class="headerlink" title="什麼是統計值"></a>什麼是統計值</h2><p>SQL Server的QO(Query Optimizer)透過<code>cost-based model</code>來選擇一個最合適計畫(估算成本最低)來執行查詢</p>
@@ -7796,6 +7713,89 @@ using (var channel = connection.CreateModel())
         <tag>C#</tag>
         <tag>DesignPattern</tag>
         <tag>TemplatePattern</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SQL Server Merge condition on declare value problem</title>
+    <url>/sqlserver-merge-condition-problem/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如要判斷資料是否存在於資料表中,存在就更新,不存在就新增.</p>
+<p>這時我們可以使用<code>Merge</code>來幫助我們完成.</p>
+<blockquote>
+<p>當兩個資料表有複雜的比對的特性時，<code>MERGE</code>陳述式的條件式行為表現最佳。</p>
+</blockquote>
+<p>有了<code>Merge</code>我們就不用使用<code>IF EXISTS</code>.</p>
+<p>一切都是這麼完美…</p>
+<p>直到到有一天<code>Merge</code>在Prod撞到一個問題..</p>
+<h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>使用語法user defined table type &amp; Table如下</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[PriceLimitation](</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line"> <span class="keyword">CONSTRAINT</span> [PK_PriceLimitation] PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">    [UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, IGNORE_DUP_KEY = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line">) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<p>呼叫執行SP<code>[dbo].[CalculateLimitation]</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
+<p>主要傳入參數判斷更新或新增<code>[dbo].[PriceLimitation]</code>表</p>
+<p>我們在<code>ELK</code>發現在執行SP時<strong>很少概率</strong>會發生PRIMARY KEY重複問題.</p>
+<blockquote>
+<p>Violation of PRIMARY KEY constraint ‘PK_PriceLimitation’. Cannot insert duplicate key in object ‘dbo.PriceLimitation’.</p>
+</blockquote>
+<p>但這張表PK使用欄位都有正確在<code>Merge</code>條件上,所以當下我們嘗是在DEV重現此問題,但一直無法成功</p>
+<p>後來發現此問題在<strong>高併發</strong>時才會發生,所以我們使用<span class="exturl" data-url="aHR0cHM6Ly93d3cubXNzcWx0aXBzLmNvbS9zcWxzZXJ2ZXJ0aXAvMjczMC9zcWwtcXVlcnktc3RyZXNzLXRvb2wv" title="https://www.mssqltips.com/sqlservertip/2730/sql-query-stress-tool/">Query Stress<i class="fa fa-external-link"></i></span>來幫助我們模擬高併發請求時的狀態.</p>
+<h3 id="Query-Stress重現問題"><a href="#Query-Stress重現問題" class="headerlink" title="Query Stress重現問題"></a>Query Stress重現問題</h3><p>撰寫了模擬SQL並利用Query Stress重現問題.</p>
+<p>模擬SQL腳本</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @CategoryID,@ProductID,@ProdcutGroupID,@PriceLimit</span><br></pre></td></tr></table></figure></div>
+<p>我使用模擬參數是</p>
+<ul>
+<li>Iterator:30</li>
+<li>Thread:100</li>
+</ul>
+<p>來模擬高併發時資料庫請求狀況,就能發現這時已經會出現Prod的<code>Exception</code>.</p>
+<p><img src="https://i.imgur.com/1RpWBYP.png" alt></p>
+<h3 id="找到問題尋求解法"><a href="#找到問題尋求解法" class="headerlink" title="找到問題尋求解法"></a>找到問題尋求解法</h3><p>對於目前Prod問題已經邁出一大步了,因為現在問題可以重現,在網路上找了許多文章還是沒找到解法….</p>
+<p>後面在MSDN時看到關鍵一段話,關於<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvc3FsL3Qtc3FsL3N0YXRlbWVudHMvbWVyZ2UtdHJhbnNhY3Qtc3FsP3ZpZXc9c3FsLXNlcnZlci12ZXIxNQ==" title="https://docs.microsoft.com/zh-tw/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver15">merge-transact-sql<i class="fa fa-external-link"></i></span>.</p>
+<blockquote>
+<p>請務必只從目標資料表指定用於比對用途的資料行。 也就是說，從目標資料表中指定要與來源資料表的對應資料行進行比較的資料行。 請勿嘗試在 ON 子句中篩選出目標資料表的資料列 (例如指定 <code>AND NOT target_table.column_x = value)</code> 來改善查詢效能。 這樣做可能會傳回非預期且不正確的結果。</p>
+</blockquote>
+<p>後面有看到有篇文章在介紹<span class="exturl" data-url="aHR0cHM6Ly9kYmEuc3RhY2tleGNoYW5nZS5jb20vcXVlc3Rpb25zLzE1NDUwOS91c2Utd2hlcmUtY2xhdXNlLXdpdGgtbWVyZ2U=" title="https://dba.stackexchange.com/questions/154509/use-where-clause-with-merge">use-where-clause-with-merge<i class="fa fa-external-link"></i></span></p>
+<p>我就嘗試把sp寫法改成只利用兩個Table可以<code>JOIN</code>欄位當作條件,發現Duplicate PK問題就可以解決了….但發現另一個更麻煩問題.</p>
+<p>SP改寫後</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span>   </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID </span><br><span class="line">            <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
+<p>新寫法的執行計畫在對於大資料表時會很沒效率….</p>
+<h4 id="改寫後遇到的問題-不好的執行計畫"><a href="#改寫後遇到的問題-不好的執行計畫" class="headerlink" title="改寫後遇到的問題(不好的執行計畫)"></a>改寫後遇到的問題(不好的執行計畫)</h4><p>一般SP在執行過後都會把使用的執行計畫快取起來,所以我們可以透過DMV來查看執行執行計畫.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> Cacheobjtype, Objtype, <span class="built_in">TEXT</span>, query_plan</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_exec_cached_plans t1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_sql_text(plan_handle) t2</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_query_plan(plan_handle) t3</span><br><span class="line"><span class="keyword">where</span> t2.objectid = object_id(<span class="string">'dbo.CalculateStake'</span>, <span class="string">'p'</span>)</span><br></pre></td></tr></table></figure></div>
+<p>新和舊SP寫法執行計畫如下圖.</p>
+<p>舊寫法</p>
+<p><img src="https://i.imgur.com/ueY6efl.png" alt></p>
+<p>新寫法</p>
+<p><img src="https://i.imgur.com/gbPva4K.png" alt></p>
+<p>造成上面差異原因，因為新寫法透過統計資訊使用效能較差的執行計畫(能看到上面使用<code>Merge Join</code>明明傳入結果集資料並不多)且在<code>WHEN MATCHED</code>進行第二次判斷…</p>
+<p>所以效能就變很差,現在已經找到此問題點了，我就在思考那有沒有辦法兼具效能又可解決此問題呢?</p>
+<h3 id="最終版SP寫法"><a href="#最終版SP寫法" class="headerlink" title="最終版SP寫法"></a>最終版SP寫法</h3><p>最後我就思考何不如把傳入參數全部加入<code>user defined table type</code></p>
+<ol>
+<li>這樣就可以利用傳入參數當作<code>ON</code>條件也可以得到精準執行計畫.</li>
+<li><code>user defined table type</code>所有欄位可以跟Table的Clustered Index Match.</li>
+</ol>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> proc[dbo].[CalculateStake]</span><br><span class="line"><span class="keyword">drop</span> <span class="keyword">type</span> [dbo].[uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= t2.ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=t2.CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID =t2.ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(t2.CategoryID, t2.ProdcutGroupID, t2.UserID ,t2.StakeAmount, t2.ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
+<p>測試腳本改成把參數透過<code>uftt_PriceLimit</code>傳入</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @PriceLimit</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>請在跑修改後的SP前記得把Table先Truncate掉，這樣可以更精準模擬</p>
+</blockquote>
+<p>使用QueryStress模擬參數</p>
+<ul>
+<li>Iterator:30</li>
+<li>Thread:100</li>
+</ul>
+<p>執行結果如下</p>
+<p><img src="https://i.imgur.com/fQMm2up.png" alt></p>
+<p>利用<code>Query Stress</code>工具壓測發現問題解決且效能不會變差:)</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>沒想到<code>Merge</code>在<code>On</code>條件有些隱藏限制(對於On寫value condition官方只有說會有想不到的問題發生,並沒解釋原因為何…),但經過這次經驗我日後在使用<code>Merge</code>時不會直接在On使用value condition會在中間多墊一層<code>Table</code>這樣就可以使用<code>ON</code>來<code>JOIN</code>.</p>
+<p>另外<code>QueryStress</code>真是一個對於DB壓測找問題的好工具,推薦大家去了解使用</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/sqlserver-merge-condition-problem/">https://isdaniel.github.io/sqlserver-merge-condition-problem/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>SQL-Server</category>
+      </categories>
+      <tags>
+        <tag>SQL</tag>
+        <tag>SQL-Server</tag>
+        <tag>Merge</tag>
       </tags>
   </entry>
   <entry>

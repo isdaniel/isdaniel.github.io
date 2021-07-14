@@ -143,21 +143,21 @@
 
 
 
-  <meta name="description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我">
+  <meta name="description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在我github上CAS_Lock有興趣的人可以參考. 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系">
 <meta name="keywords" content="C#,atomic">
 <meta property="og:type" content="article">
 <meta property="og:title" content="高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)">
 <meta property="og:url" content="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我">
+<meta property="og:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在我github上CAS_Lock有興趣的人可以參考. 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/44M2Jr7.png">
 <meta property="og:image" content="https://i.imgur.com/zXprOIe.png">
 <meta property="og:image" content="https://i.imgur.com/BUCajHn.png">
-<meta property="og:updated_time" content="2021-07-14T15:31:04.883Z">
+<meta property="og:updated_time" content="2021-07-14T15:32:49.947Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)">
-<meta name="twitter:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我">
+<meta name="twitter:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在我github上CAS_Lock有興趣的人可以參考. 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系">
 <meta name="twitter:image" content="https://i.imgur.com/44M2Jr7.png">
 
 
@@ -501,7 +501,7 @@
                 
               
 
-              <time title="Created: 2021-07-14 22:30:11 / Modified: 15:31:04" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
+              <time title="Created: 2021-07-14 22:30:11 / Modified: 15:32:49" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
             
 
             
@@ -615,7 +615,7 @@
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
 <p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
-<p>本文使用範例在</p>
+<p>本文使用範例在我github上<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvQ0FTX0xvY2s=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/CAS_Lock">CAS_Lock<i class="fa fa-external-link"></i></span>有興趣的人可以參考.</p>
 <h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
 <p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
 <p>下面Sample Code是這樣.</p>
