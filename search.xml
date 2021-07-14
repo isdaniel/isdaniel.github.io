@@ -622,49 +622,6 @@ A~Z (26)
       </tags>
   </entry>
   <entry>
-    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
-    <url>/c-func-1/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
-<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
-<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
-<hr>
-<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$"delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>執行結果:Yes 委託是一個特別的類別</p>
-</blockquote>
-<p>但委託物件方式很特別 他在宣告時必須傳入<strong>[建構子參數]</strong>  而建構子參數是<strong>[方法]</strong></p>
-<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
-<pre><code>public delegate int calcInt(int arg1,int arg2);
-</code></pre><p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">add</span>(<span class="params"><span class="keyword">int</span> a, <span class="keyword">int</span> b</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>或是</p>
-<p>使用.net提供的 語法糖 如下</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br></pre></td></tr></table></figure></div>
-<p>編譯器會動態幫我們產生一個方法。</p>
-<p>委託就這樣嗎?!</p>
-<hr>
-<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<t></t></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class Calculator&lt;T&gt;</span><br><span class="line">    <span class="keyword">where</span> T : <span class="keyword">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
-<p>重點:我們可以在Client端決定如何使用此方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="keyword">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="keyword">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="keyword">int</span>&gt;(i_List);</span><br><span class="line"><span class="keyword">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="keyword">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$"add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>"</span>);</span><br></pre></td></tr></table></figure></div>
-<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
-<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Delegate</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Func</tag>
-        <tag>Delegate</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>橋接模式(BridgePattern)</title>
     <url>/bridge-pattern/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><h3 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h3><p>如果有兩大類模組是多對多的組合，如本次Smaple Code. Nick和Addidas 包包都有紅、藍、黃….或其他顏色</p>
@@ -1014,6 +971,49 @@ public abstract class MoveBase
         <tag>C#</tag>
         <tag>DesignPattern</tag>
         <tag>BridgePattern</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
+    <url>/c-func-1/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
+<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
+<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
+<hr>
+<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$"delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>執行結果:Yes 委託是一個特別的類別</p>
+</blockquote>
+<p>但委託物件方式很特別 他在宣告時必須傳入<strong>[建構子參數]</strong>  而建構子參數是<strong>[方法]</strong></p>
+<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
+<pre><code>public delegate int calcInt(int arg1,int arg2);
+</code></pre><p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">add</span>(<span class="params"><span class="keyword">int</span> a, <span class="keyword">int</span> b</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>或是</p>
+<p>使用.net提供的 語法糖 如下</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br></pre></td></tr></table></figure></div>
+<p>編譯器會動態幫我們產生一個方法。</p>
+<p>委託就這樣嗎?!</p>
+<hr>
+<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<t></t></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class Calculator&lt;T&gt;</span><br><span class="line">    <span class="keyword">where</span> T : <span class="keyword">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
+<p>重點:我們可以在Client端決定如何使用此方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="keyword">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="keyword">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="keyword">int</span>&gt;(i_List);</span><br><span class="line"><span class="keyword">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="keyword">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$"add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>"</span>);</span><br></pre></td></tr></table></figure></div>
+<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
+<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Delegate</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Func</tag>
+        <tag>Delegate</tag>
       </tags>
   </entry>
   <entry>
@@ -2195,53 +2195,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>發布自己的Nuget專案</title>
-    <url>/deploy-ownnuget/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>前陣子在被面試官說：我有電子發票開源專案，是否有上到Nuget上</p>
-<p>我回答:沒有.</p>
-<p>我就突然想到我也可以把我的專案放到Nuget上讓更多人方便使用</p>
-<p>我就查詢資料去了解整個上板流程,並打成文章跟大家分享</p>
-<hr>
-<h3 id="下載Nuget-Commandline-Tool"><a href="#下載Nuget-Commandline-Tool" class="headerlink" title="下載Nuget Commandline Tool"></a>下載Nuget Commandline Tool</h3><p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL2Rvd25sb2Fkcw==" title="https://www.nuget.org/downloads">下載Nuget Commandline Tool<i class="fa fa-external-link"></i></span></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152784_97518.png" alt></p>
-<p>之後你會取得 <code>nuget.exe</code> 這個檔案</p>
-<p>把它放到你要打包Nuget的專案資料夾中</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152541_67261.png" alt></p>
-<p>之後打開cmd 並在專案資料夾打上 <code>nuget spce</code></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152985_63932.png" alt></p>
-<p>之後在你資料夾中會出現 <code>xxxx.nuspec</code>的XML檔案,這個檔案是描述你要打包的專案</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">code</span> <span class="attr">class</span>=<span class="string">"language-xml"</span>&gt;</span><span class="meta">&lt;?xml version="1.0"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">package</span> &gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">metadata</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">id</span>&gt;</span><span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span><span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">authors</span>&gt;</span><span class="tag">&lt;/<span class="name">authors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">owners</span>&gt;</span><span class="tag">&lt;/<span class="name">owners</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">licenseUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">licenseUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">projectUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">projectUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">iconUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">iconUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">requireLicenseAcceptance</span>&gt;</span>false<span class="tag">&lt;/<span class="name">requireLicenseAcceptance</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">description</span>&gt;</span>This is a AOP framework<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">releaseNotes</span>&gt;</span>Summary of changes made in this release of the package.<span class="tag">&lt;/<span class="name">releaseNotes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">copyright</span>&gt;</span>Copyright 2018<span class="tag">&lt;/<span class="name">copyright</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tags</span>&gt;</span>c# AOP<span class="tag">&lt;/<span class="name">tags</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">metadata</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
-<h3 id="必填欄位"><a href="#必填欄位" class="headerlink" title="必填欄位"></a>必填欄位</h3><ul>
-<li>ID：不區分大小寫的套件識別碼，在整個 nuget.org 或套件所在的任何組件庫中都必須是唯一的。 識別碼可能不包含對 URL 而言無效的空格或字元，而且通常會遵循 .NET 命名空間規則。 如需指導方針，請參閱<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvY3JlYXRlLXBhY2thZ2VzL2NyZWF0aW5nLWEtcGFja2FnZSNjaG9vc2luZy1hLXVuaXF1ZS1wYWNrYWdlLWlkZW50aWZpZXItYW5kLXNldHRpbmctdGhlLXZlcnNpb24tbnVtYmVy" title="https://docs.microsoft.com/zh-tw/nuget/create-packages/creating-a-package#choosing-a-unique-package-identifier-and-setting-the-version-number">選擇唯一的套件識別碼<i class="fa fa-external-link"></i></span>。</li>
-<li>Version：套件版本，遵循 <em>major.minor.patch</em> 模式。 版本號碼可以包含預先發行版本的後置詞，如<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL3BhY2thZ2UtdmVyc2lvbmluZyNwcmUtcmVsZWFzZS12ZXJzaW9ucw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/package-versioning#pre-release-versions">套件版本控制<i class="fa fa-external-link"></i></span>中所述。</li>
-<li>Description：UI 顯示中的套件詳細描述。</li>
-</ul>
-<blockquote>
-<p>Authors：以逗號分隔的套件作者清單，與 nuget.org 上的設定檔名稱相符。這些名稱會顯示在 nuget.org 的 NuGet 組件庫中，並用來交互參照相同作者的其他套件。</p>
-</blockquote>
-<h3 id="打包Nuget"><a href="#打包Nuget" class="headerlink" title="打包Nuget"></a>打包Nuget</h3><p>填完資料後就可以回到commandline 並打另一個指令<code>nuget pack</code>將專案打包成 <code>xxx.nupkg</code> 檔案 以提供上傳</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153426_68079.png" alt></p>
-<p>之後申辦一個Nuget帳號,並產生一個API Key</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153601_8669.png" alt></p>
-<p>產生完後在上面的選單選擇 <code>Upload</code> 按鈕</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153522_96047.png" alt>之後按下Browse按鈕並上傳你的 <code>xxxx.nupkg</code>檔案,上傳完畢後就按下Submit按鈕 將此專案提交上去</p>
-<p>上傳完畢後Nuget他會審核你的專案,等審核完後大家就可以下載使用你的專案摟^^</p>
-<h3 id="石頭已經打包專案"><a href="#石頭已經打包專案" class="headerlink" title="石頭已經打包專案"></a>石頭已經打包專案</h3><p>這兩個是我已經發布的專案</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0F3ZXNvbWVQcm94eS5OZXQv" title="https://www.nuget.org/packages/AwesomeProxy.Net/">AwesomeProxy.Net<i class="fa fa-external-link"></i></span></p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span></p>
-<h3 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h3><p>如果要查nuget指令可以打 <code>nuget ?</code></p>
-<h3 id="參考連結："><a href="#參考連結：" class="headerlink" title="參考連結："></a>參考連結：</h3><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL251c3BlYw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/nuspec">.nuspec 參考<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/deploy-ownnuget/">https://isdaniel.github.io/deploy-ownnuget/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Nuget</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>(C#)裝飾者模式(Decorator Pattern)</title>
     <url>/decorator-pattern/</url>
     <content><![CDATA[<p>裝飾者模式是一個很精美且優雅的模式</p>
@@ -2340,6 +2293,53 @@ class Program
         <tag>C#</tag>
         <tag>Design-Pattern</tag>
         <tag>Decorator-Pattern</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>發布自己的Nuget專案</title>
+    <url>/deploy-ownnuget/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>前陣子在被面試官說：我有電子發票開源專案，是否有上到Nuget上</p>
+<p>我回答:沒有.</p>
+<p>我就突然想到我也可以把我的專案放到Nuget上讓更多人方便使用</p>
+<p>我就查詢資料去了解整個上板流程,並打成文章跟大家分享</p>
+<hr>
+<h3 id="下載Nuget-Commandline-Tool"><a href="#下載Nuget-Commandline-Tool" class="headerlink" title="下載Nuget Commandline Tool"></a>下載Nuget Commandline Tool</h3><p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL2Rvd25sb2Fkcw==" title="https://www.nuget.org/downloads">下載Nuget Commandline Tool<i class="fa fa-external-link"></i></span></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152784_97518.png" alt></p>
+<p>之後你會取得 <code>nuget.exe</code> 這個檔案</p>
+<p>把它放到你要打包Nuget的專案資料夾中</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152541_67261.png" alt></p>
+<p>之後打開cmd 並在專案資料夾打上 <code>nuget spce</code></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152985_63932.png" alt></p>
+<p>之後在你資料夾中會出現 <code>xxxx.nuspec</code>的XML檔案,這個檔案是描述你要打包的專案</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">code</span> <span class="attr">class</span>=<span class="string">"language-xml"</span>&gt;</span><span class="meta">&lt;?xml version="1.0"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">package</span> &gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">metadata</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">id</span>&gt;</span><span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span><span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">authors</span>&gt;</span><span class="tag">&lt;/<span class="name">authors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">owners</span>&gt;</span><span class="tag">&lt;/<span class="name">owners</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">licenseUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">licenseUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">projectUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">projectUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">iconUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">iconUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">requireLicenseAcceptance</span>&gt;</span>false<span class="tag">&lt;/<span class="name">requireLicenseAcceptance</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">description</span>&gt;</span>This is a AOP framework<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">releaseNotes</span>&gt;</span>Summary of changes made in this release of the package.<span class="tag">&lt;/<span class="name">releaseNotes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">copyright</span>&gt;</span>Copyright 2018<span class="tag">&lt;/<span class="name">copyright</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tags</span>&gt;</span>c# AOP<span class="tag">&lt;/<span class="name">tags</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">metadata</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<h3 id="必填欄位"><a href="#必填欄位" class="headerlink" title="必填欄位"></a>必填欄位</h3><ul>
+<li>ID：不區分大小寫的套件識別碼，在整個 nuget.org 或套件所在的任何組件庫中都必須是唯一的。 識別碼可能不包含對 URL 而言無效的空格或字元，而且通常會遵循 .NET 命名空間規則。 如需指導方針，請參閱<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvY3JlYXRlLXBhY2thZ2VzL2NyZWF0aW5nLWEtcGFja2FnZSNjaG9vc2luZy1hLXVuaXF1ZS1wYWNrYWdlLWlkZW50aWZpZXItYW5kLXNldHRpbmctdGhlLXZlcnNpb24tbnVtYmVy" title="https://docs.microsoft.com/zh-tw/nuget/create-packages/creating-a-package#choosing-a-unique-package-identifier-and-setting-the-version-number">選擇唯一的套件識別碼<i class="fa fa-external-link"></i></span>。</li>
+<li>Version：套件版本，遵循 <em>major.minor.patch</em> 模式。 版本號碼可以包含預先發行版本的後置詞，如<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL3BhY2thZ2UtdmVyc2lvbmluZyNwcmUtcmVsZWFzZS12ZXJzaW9ucw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/package-versioning#pre-release-versions">套件版本控制<i class="fa fa-external-link"></i></span>中所述。</li>
+<li>Description：UI 顯示中的套件詳細描述。</li>
+</ul>
+<blockquote>
+<p>Authors：以逗號分隔的套件作者清單，與 nuget.org 上的設定檔名稱相符。這些名稱會顯示在 nuget.org 的 NuGet 組件庫中，並用來交互參照相同作者的其他套件。</p>
+</blockquote>
+<h3 id="打包Nuget"><a href="#打包Nuget" class="headerlink" title="打包Nuget"></a>打包Nuget</h3><p>填完資料後就可以回到commandline 並打另一個指令<code>nuget pack</code>將專案打包成 <code>xxx.nupkg</code> 檔案 以提供上傳</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153426_68079.png" alt></p>
+<p>之後申辦一個Nuget帳號,並產生一個API Key</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153601_8669.png" alt></p>
+<p>產生完後在上面的選單選擇 <code>Upload</code> 按鈕</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153522_96047.png" alt>之後按下Browse按鈕並上傳你的 <code>xxxx.nupkg</code>檔案,上傳完畢後就按下Submit按鈕 將此專案提交上去</p>
+<p>上傳完畢後Nuget他會審核你的專案,等審核完後大家就可以下載使用你的專案摟^^</p>
+<h3 id="石頭已經打包專案"><a href="#石頭已經打包專案" class="headerlink" title="石頭已經打包專案"></a>石頭已經打包專案</h3><p>這兩個是我已經發布的專案</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0F3ZXNvbWVQcm94eS5OZXQv" title="https://www.nuget.org/packages/AwesomeProxy.Net/">AwesomeProxy.Net<i class="fa fa-external-link"></i></span></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span></p>
+<h3 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h3><p>如果要查nuget指令可以打 <code>nuget ?</code></p>
+<h3 id="參考連結："><a href="#參考連結：" class="headerlink" title="參考連結："></a>參考連結：</h3><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL251c3BlYw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/nuspec">.nuspec 參考<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/deploy-ownnuget/">https://isdaniel.github.io/deploy-ownnuget/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Nuget</tag>
       </tags>
   </entry>
   <entry>
@@ -3221,6 +3221,78 @@ email_url: dog830228@gmail.com
         <tag>Blog</tag>
         <tag>Github</tag>
         <tag>CICD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)</title>
+    <url>/high-concurrency-atomic-CAS/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
+<p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
+<h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
+<p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
+<p>下面Sample Code是這樣.</p>
+<p>我用<code>Task</code>假裝高併發，下面有一個<code>Member</code>類別預設給100000元的Balance</p>
+<p>有一個<code>UpdateBalance</code>每呼叫一次就扣10元，我透過<code>For</code>跑10000次</p>
+<p>理論上我預期在跑完下面顯示Balance會員餘額是0 (因為 10000*10 = 100000).</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Balance -= <span class="number">10</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://i.imgur.com/44M2Jr7.png" alt></p>
+<p>但執行後蠻常會是不等於0!!</p>
+<p>這時我會問面試者兩個問題</p>
+<ul>
+<li>為什麼會不等於0</li>
+<li>如果要解決你會怎麼解決這個問題?</li>
+</ul>
+<p>如果知道的人可以跳到CAS部分，如果不知原因我下面會跟大家分享</p>
+<h3 id="為什麼會不等於0"><a href="#為什麼會不等於0" class="headerlink" title="為什麼會不等於0"></a>為什麼會不等於0</h3><p>這個問題牽扯到Thread是如何對於變數操作的，Thread在操作變數之前會把資料複製一份進Thread Context中在操作我們要步驟</p>
+<p>所以在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
+<ol>
+<li>將執行個體變數中的值載入至register。</li>
+<li>將載入值減10</li>
+<li>將異動後值放回原本值的Memory。</li>
+</ol>
+<p>因為以上步驟，假如同一時間有兩個不同的Thread取到的Balance都是1000，並個別對於Balance減10元，我們原本預期這是兩個操作（預期資料為980）</p>
+<p>但因為取的瞬間都是1000-10=990把數值放回變數中就導致少扣一個10元…</p>
+<p>概念如下圖.</p>
+<p><img src="https://i.imgur.com/zXprOIe.png" alt></p>
+<p>知道原因了要解決就簡單了.</p>
+<h3 id="使用Lock解決"><a href="#使用Lock解決" class="headerlink" title="使用Lock解決"></a>使用Lock解決</h3><p>因為這段程式碼遇到Data Raceing在同一個時間有兩個不同的Thread對於資料競爭</p>
+<p>如果要避免競爭lock是一個比較方便的方式，他可以保證一瞬間只有一個Thread(Session)來執行某段程式碼(通常會放在異動資料那部分)來保證Isolation.</p>
+<p>下面是使用lock版本的程式碼，能看到我在<code>Balance -= 10;</code>這一段使用lock來確保每一個瞬間只有一個Thread可以異動資料，其他的Thread需要blocking等他完成</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="comment">//here</span></span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用lock之後能發現不管執行幾次資料都會如我們預期顯示.</p>
+<p>使用lock執行概念圖如下.</p>
+<p>在同一時間我們會把要執行程式 利用一個類似保護網的方式，確保同一時間只有一個Thread來做操作.</p>
+<p>Thread2取得lock在操作Thread1就必須等待Thread2執行完,在取值=&gt;改值..等等動作</p>
+<p><img src="https://i.imgur.com/BUCajHn.png" alt></p>
+<blockquote>
+<p>只是使用lock會降低些許吞吐量(但資料正確性是最重要的)，所以要注意使用lock範圍大小</p>
+</blockquote>
+<h2 id="CAS-compare-and-swap-提高效率"><a href="#CAS-compare-and-swap-提高效率" class="headerlink" title="CAS(compare and swap)提高效率"></a>CAS(compare and swap)提高效率</h2><p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFNiVBRiU5NCVFOCVCRSU4MyVFNSVCOSVCNiVFNCVCQSVBNCVFNiU4RCVBMg==" title="https://zh.wikipedia.org/zh-tw/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2">CAS<i class="fa fa-external-link"></i></span>是利用compare and swap來確保資料Atomic.</p>
+<p>在不同的語言</p>
+<h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用 <span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
+<p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
+<ul>
+<li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
+<li><code>Decrement</code>:把數值– 具有Atomic</li>
+<li><code>Increment</code>:把數值++ 具有Atomic</li>
+</ul>
+<p>除了上面我們還可以針對Reference Type做Atomic有興趣的人在自行了解</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Stopwatch sw = <span class="keyword">new</span> Stopwatch();</span><br><span class="line">		<span class="keyword">int</span> balanceValue = <span class="number">10000000</span>;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = balanceValue &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		sw.Start();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"Lock Version"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		tasks.Clear();</span><br><span class="line">		member.Balance = balanceValue;</span><br><span class="line">		sw.Restart();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalanceByInterlock()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"InterLocked Version:"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalanceByInterlock</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">int</span> val = <span class="number">0</span>;</span><br><span class="line">		Balance = Interlocked.Exchange(<span class="keyword">ref</span> val, Balance -= <span class="number">10</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Interlocked效率會比較高是因為block會造成Thread的blocking等待浪費,但Interlocked核心概念是在這段話Atomic<strong>取得資料跟原職比較(如果資料還沒改就把值修改進Memory中)</strong></p>
+<p>所以效率就會比lock好很多</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在有些情境適合使用Lock(例如許多操作需要有一致的Atomic)就比較適合.</p>
+<p>Interlocked適合用在對於數值的Atomic.</p>
+<p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
+<p>我慢慢可以理解為什麼Redis,Node.js一開始要使用sigel Thread來運作了…</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-CAS/">https://isdaniel.github.io/high-concurrency-atomic-CAS/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>atomic</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>atomic</tag>
       </tags>
   </entry>
   <entry>
@@ -5469,78 +5541,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>動手DIY改造 Asp.net MVC- Route解析機制 (第26天)</title>
-    <url>/ithelp-day26/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#routedata">RouteData</a></li>
-<li><a href="#%e5%bb%ba%e7%ab%8b%e8%87%aa%e5%b7%b1route%e6%a9%9f%e5%88%b6">建立自己Route機制</a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>UrlRoutingModule</code>對於<code>OnPostResolveRequestCache</code>事件添加一個對於<strong>MVC</strong>很重要的動作,透過<code>RouteCollection</code>取得此次請求匹配<code>RouteData</code>物件.</p>
-<p>利用此<code>RouteData</code>取得要使用的<code>IHttpHandler</code>來執行它.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">RouteData routeData = RouteCollection.GetRouteData(context);</span><br></pre></td></tr></table></figure></div>
-<p><code>RouteCollection</code>是全域路由註冊表.我們在一開始使用<code>MapRoute</code>註冊與之匹配<code>Controller</code>和<code>Action</code></p>
-<blockquote>
-<p><code>RouteCollection</code>是基於<code>RouteBase</code>物件集合,所以它可以存放所有繼承<code>RouteBase</code>物件,<code>RouteBase</code>這個類別有一個重要的方法來取得<code>RouteData</code>,<code>RouteData</code>封裝此次<code>Http</code>請求的<code>Controller</code>,<code>Action</code>…等資訊</p>
-</blockquote>
-<p>對於每個<code>Http</code>請求依序找尋第一個匹配路由規則</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;controller&#125;/&#123;action&#125;/&#123;id&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, id = UrlParameter.Optional &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure></div>
-<h2 id="RouteData"><a href="#RouteData" class="headerlink" title="RouteData"></a>RouteData</h2><p>在<code>RouteData</code>類別中有幾個重要屬性.</p>
-<ul>
-<li><code>RouteHandler</code>:存放<code>IRouteHandler</code>物件(提供<code>IHttpHander</code>並呼叫執行物件)</li>
-<li><code>Values</code>: 一個字典集合,存放Key為<code>Controller</code>和<code>Action</code>,<code>Value</code>是<code>URL</code>參數值相對位置參數</li>
-<li><code>GetRequiredString</code>:利用傳入<code>string</code>參數對於<code>Values</code>字典取匹配名稱.</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RouteData</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _values = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _dataTokens = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> IRouteHandler _routeHandler;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   使用指定的路由及路由處理常式，初始化 <span class="doctag">&lt;see cref="T:System.Web.Routing.RouteData" /&gt;</span> 類別的新執行個體。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="route"&gt;</span>此物件會定義路由。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="routeHandler"&gt;</span>處理要求的物件。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RouteData</span>(<span class="params">RouteBase route, IRouteHandler routeHandler</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">this</span>.Route = route;</span><br><span class="line">      <span class="keyword">this</span>.RouteHandler = routeHandler;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   取得自訂值集合，當 ASP.NET 路由判斷路由是否符合要求時，會將這些值傳遞至路由處理常式但不會使用。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary DataTokens</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._dataTokens;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定代表路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteBase Route &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定處理要求路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> IRouteHandler RouteHandler</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._routeHandler;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">set</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">this</span>._routeHandler = <span class="keyword">value</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得 URL 參數值和預設路由值的集合。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary Values</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._values;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>擷取具有指定識別項的值。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetRequiredString</span>(<span class="params"><span class="keyword">string</span> valueName</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">object</span> obj;</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">this</span>.Values.TryGetValue(valueName, <span class="keyword">out</span> obj))</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">string</span> str = obj <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="keyword">string</span>.IsNullOrEmpty(str))</span><br><span class="line">          <span class="keyword">return</span> str;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(<span class="keyword">string</span>.Format((IFormatProvider) CultureInfo.CurrentUICulture, System.Web.SR.GetString(<span class="string">"RouteData_RequiredValue"</span>), <span class="keyword">new</span> <span class="keyword">object</span>[<span class="number">1</span>]</span><br><span class="line">      &#123;</span><br><span class="line">        (<span class="keyword">object</span>) valueName</span><br><span class="line">      &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><code>RouteData</code>主要把<code>Client</code>傳送<strong>Http</strong>請求資訊經解析後存放在<code>Values</code>中.</p>
-<p><code>RouteBase</code>中有個<code>GetRouteData</code>方法，藉由我們的路由設定去解析當前是否匹配到路由規則，如果有就回傳一個<code>RouteData</code>物件，否則回傳<code>Null</code></p>
-<h2 id="建立自己Route機制"><a href="#建立自己Route機制" class="headerlink" title="建立自己Route機制"></a>建立自己Route機制</h2><p>一般使用<code>Route</code>這個物件是使用<code>/</code>當作註冊對應的規則</p>
-<p><code>{Controller}/{Action}</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
-<p>第一個區塊字串被當作<code>ControllerName</code></p>
-<p>第二個區塊字串被當作<code>ActionName</code></p>
-<blockquote>
-<p>因為在<strong>Asp.net MVC</strong>透過<code>RouteData.GetRequiredString</code>傳入<code>ControllerName</code>或<code>ActionName</code>取得相對應的值.</p>
-</blockquote>
-<p>這次例子我們希望可以透過<code>QueryString</code>來製作<code>Route</code>對應規則</p>
-<blockquote>
-<p><code>{domain}?controller=home&amp;action=about</code></p>
-</blockquote>
-<p>透過上面<code>URL</code>期望呼叫<code>HomeController.About</code>方法</p>
-<p>廢話不多說我們來看一下這個<code>QueryStringRoute</code>是如何被實現</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QueryStringRoute</span> : <span class="title">RouteBase</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">bool</span> <span class="title">Match</span>(<span class="params">NameValueCollection queryString, <span class="keyword">out</span> IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; variables</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        variables = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> para = Url.Split(<span class="string">'&amp;'</span>);</span><br><span class="line">        <span class="keyword">if</span> (!para.All(x=&gt;queryString.AllKeys.Contains(x)))</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">        variables = para.ToDictionary(x =&gt; x, y =&gt; queryString[y]);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> RouteData <span class="title">GetRouteData</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; <span class="keyword">value</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (Match(httpContext.Request.QueryString,<span class="keyword">out</span> <span class="keyword">value</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            RouteData routeData = <span class="keyword">new</span> RouteData(<span class="keyword">this</span>, <span class="keyword">new</span> MvcRouteHandler());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> dict <span class="keyword">in</span> <span class="keyword">value</span>)</span><br><span class="line">                routeData.Values.Add(dict.Key,dict.Value);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> routeData;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> VirtualPathData <span class="title">GetVirtualPath</span>(<span class="params">RequestContext requestContext, RouteValueDictionary values</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>我們實現<code>RouteBase</code>抽象類別兩個方法</p>
-<ul>
-<li><code>GetRouteData</code></li>
-<li><code>GetVirtualPath</code></li>
-</ul>
-<p>其中<code>GetRouteData</code>是我們主要要實作方法</p>
-<p><code>Request.QueryString</code>這個集合封裝<strong>Http</strong> <code>QueryString</code>的資訊.</p>
-<p>首先我們先判斷此次請求<code>QueryString</code>是否由傳<code>Controller</code>,<code>Action</code>資料過來,如果有把值填入<code>RouteData.Values</code>字典集合中,反之不匹配此<code>Route</code>規則就回傳<code>NULL</code>.</p>
-<blockquote>
-<p><strong>MVC</strong>從<code>RouteData.Values</code>取得對應的資料.</p>
-</blockquote>
-<p>使用上就可透過<code>RouteCollection.Add</code>將<code>Route</code>添加到集合中</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">RegisterRoutes</span>(<span class="params">RouteCollection routes</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    routes.Add(<span class="string">"customer"</span>,<span class="keyword">new</span> QueryStringRoute()</span><br><span class="line">    &#123;</span><br><span class="line">        Url = <span class="string">"controller&amp;action"</span></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><strong>Http</strong>請求就會依序找尋第一個匹配<code>Route</code>來執行.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>透過繼承<code>RouteBase</code>抽象類別並實現<code>GetRouteData</code>方法透過返回<code>RouteData</code>物件對於<code>Http</code>請求資訊封裝到<code>RouteData.Values</code>字典集合.(在<strong>MVC</strong>框架中會對於<code>Values</code>字典中取<code>Key</code>為<code>Controller</code>和<code>Action</code>的值.)</p>
-<p>最後再把新建立<code>RouteBase</code>物件加入到全域<code>RouteCollection</code>中.</p>
-<p>希望大家看完這篇後可以了解並自行擴充自己<code>Route</code>機制.</p>
-<p>本次範例程式碼<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyUm91dGU=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerRoute">Git Sample<i class="fa fa-external-link"></i></span>(CustomerRoute Branch)</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day26/">https://isdaniel.github.io/ithelp-day26/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>動手DIY改造 Asp.net MVC- 自己動作建立一個DependencyResolver解析器(Autofac) (第27天)</title>
     <url>/ithelp-day27/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5601,6 +5601,78 @@ email_url: dog830228@gmail.com
 <p>最後會把<code>Controller</code>依賴物件藉由<strong>依賴注入容器</strong>注入進去.</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyQ29udGFpbmVy" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerContainer">Github範例程式原始碼<i class="fa fa-external-link"></i></span> <code>CustomerContainer</code>分支上</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day27/">https://isdaniel.github.io/ithelp-day27/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>動手DIY改造 Asp.net MVC- Route解析機制 (第26天)</title>
+    <url>/ithelp-day26/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#routedata">RouteData</a></li>
+<li><a href="#%e5%bb%ba%e7%ab%8b%e8%87%aa%e5%b7%b1route%e6%a9%9f%e5%88%b6">建立自己Route機制</a></li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>UrlRoutingModule</code>對於<code>OnPostResolveRequestCache</code>事件添加一個對於<strong>MVC</strong>很重要的動作,透過<code>RouteCollection</code>取得此次請求匹配<code>RouteData</code>物件.</p>
+<p>利用此<code>RouteData</code>取得要使用的<code>IHttpHandler</code>來執行它.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">RouteData routeData = RouteCollection.GetRouteData(context);</span><br></pre></td></tr></table></figure></div>
+<p><code>RouteCollection</code>是全域路由註冊表.我們在一開始使用<code>MapRoute</code>註冊與之匹配<code>Controller</code>和<code>Action</code></p>
+<blockquote>
+<p><code>RouteCollection</code>是基於<code>RouteBase</code>物件集合,所以它可以存放所有繼承<code>RouteBase</code>物件,<code>RouteBase</code>這個類別有一個重要的方法來取得<code>RouteData</code>,<code>RouteData</code>封裝此次<code>Http</code>請求的<code>Controller</code>,<code>Action</code>…等資訊</p>
+</blockquote>
+<p>對於每個<code>Http</code>請求依序找尋第一個匹配路由規則</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;controller&#125;/&#123;action&#125;/&#123;id&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, id = UrlParameter.Optional &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure></div>
+<h2 id="RouteData"><a href="#RouteData" class="headerlink" title="RouteData"></a>RouteData</h2><p>在<code>RouteData</code>類別中有幾個重要屬性.</p>
+<ul>
+<li><code>RouteHandler</code>:存放<code>IRouteHandler</code>物件(提供<code>IHttpHander</code>並呼叫執行物件)</li>
+<li><code>Values</code>: 一個字典集合,存放Key為<code>Controller</code>和<code>Action</code>,<code>Value</code>是<code>URL</code>參數值相對位置參數</li>
+<li><code>GetRequiredString</code>:利用傳入<code>string</code>參數對於<code>Values</code>字典取匹配名稱.</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RouteData</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _values = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> RouteValueDictionary _dataTokens = <span class="keyword">new</span> RouteValueDictionary();</span><br><span class="line">    <span class="keyword">private</span> IRouteHandler _routeHandler;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   使用指定的路由及路由處理常式，初始化 <span class="doctag">&lt;see cref="T:System.Web.Routing.RouteData" /&gt;</span> 類別的新執行個體。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="route"&gt;</span>此物件會定義路由。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="routeHandler"&gt;</span>處理要求的物件。<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RouteData</span>(<span class="params">RouteBase route, IRouteHandler routeHandler</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">this</span>.Route = route;</span><br><span class="line">      <span class="keyword">this</span>.RouteHandler = routeHandler;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span>   取得自訂值集合，當 ASP.NET 路由判斷路由是否符合要求時，會將這些值傳遞至路由處理常式但不會使用。</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary DataTokens</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._dataTokens;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定代表路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteBase Route &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得或設定處理要求路由的物件。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> IRouteHandler RouteHandler</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._routeHandler;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">set</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">this</span>._routeHandler = <span class="keyword">value</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>取得 URL 參數值和預設路由值的集合。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="keyword">public</span> RouteValueDictionary Values</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="keyword">get</span></span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>._values;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span>擷取具有指定識別項的值。<span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetRequiredString</span>(<span class="params"><span class="keyword">string</span> valueName</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">      <span class="keyword">object</span> obj;</span><br><span class="line">      <span class="keyword">if</span> (<span class="keyword">this</span>.Values.TryGetValue(valueName, <span class="keyword">out</span> obj))</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="keyword">string</span> str = obj <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="keyword">string</span>.IsNullOrEmpty(str))</span><br><span class="line">          <span class="keyword">return</span> str;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(<span class="keyword">string</span>.Format((IFormatProvider) CultureInfo.CurrentUICulture, System.Web.SR.GetString(<span class="string">"RouteData_RequiredValue"</span>), <span class="keyword">new</span> <span class="keyword">object</span>[<span class="number">1</span>]</span><br><span class="line">      &#123;</span><br><span class="line">        (<span class="keyword">object</span>) valueName</span><br><span class="line">      &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><code>RouteData</code>主要把<code>Client</code>傳送<strong>Http</strong>請求資訊經解析後存放在<code>Values</code>中.</p>
+<p><code>RouteBase</code>中有個<code>GetRouteData</code>方法，藉由我們的路由設定去解析當前是否匹配到路由規則，如果有就回傳一個<code>RouteData</code>物件，否則回傳<code>Null</code></p>
+<h2 id="建立自己Route機制"><a href="#建立自己Route機制" class="headerlink" title="建立自己Route機制"></a>建立自己Route機制</h2><p>一般使用<code>Route</code>這個物件是使用<code>/</code>當作註冊對應的規則</p>
+<p><code>{Controller}/{Action}</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
+<p>第一個區塊字串被當作<code>ControllerName</code></p>
+<p>第二個區塊字串被當作<code>ActionName</code></p>
+<blockquote>
+<p>因為在<strong>Asp.net MVC</strong>透過<code>RouteData.GetRequiredString</code>傳入<code>ControllerName</code>或<code>ActionName</code>取得相對應的值.</p>
+</blockquote>
+<p>這次例子我們希望可以透過<code>QueryString</code>來製作<code>Route</code>對應規則</p>
+<blockquote>
+<p><code>{domain}?controller=home&amp;action=about</code></p>
+</blockquote>
+<p>透過上面<code>URL</code>期望呼叫<code>HomeController.About</code>方法</p>
+<p>廢話不多說我們來看一下這個<code>QueryStringRoute</code>是如何被實現</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QueryStringRoute</span> : <span class="title">RouteBase</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">bool</span> <span class="title">Match</span>(<span class="params">NameValueCollection queryString, <span class="keyword">out</span> IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; variables</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        variables = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> para = Url.Split(<span class="string">'&amp;'</span>);</span><br><span class="line">        <span class="keyword">if</span> (!para.All(x=&gt;queryString.AllKeys.Contains(x)))</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">        variables = para.ToDictionary(x =&gt; x, y =&gt; queryString[y]);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> RouteData <span class="title">GetRouteData</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt; <span class="keyword">value</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (Match(httpContext.Request.QueryString,<span class="keyword">out</span> <span class="keyword">value</span>))</span><br><span class="line">        &#123;</span><br><span class="line">            RouteData routeData = <span class="keyword">new</span> RouteData(<span class="keyword">this</span>, <span class="keyword">new</span> MvcRouteHandler());</span><br><span class="line"></span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> dict <span class="keyword">in</span> <span class="keyword">value</span>)</span><br><span class="line">                routeData.Values.Add(dict.Key,dict.Value);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> routeData;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> VirtualPathData <span class="title">GetVirtualPath</span>(<span class="params">RequestContext requestContext, RouteValueDictionary values</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>我們實現<code>RouteBase</code>抽象類別兩個方法</p>
+<ul>
+<li><code>GetRouteData</code></li>
+<li><code>GetVirtualPath</code></li>
+</ul>
+<p>其中<code>GetRouteData</code>是我們主要要實作方法</p>
+<p><code>Request.QueryString</code>這個集合封裝<strong>Http</strong> <code>QueryString</code>的資訊.</p>
+<p>首先我們先判斷此次請求<code>QueryString</code>是否由傳<code>Controller</code>,<code>Action</code>資料過來,如果有把值填入<code>RouteData.Values</code>字典集合中,反之不匹配此<code>Route</code>規則就回傳<code>NULL</code>.</p>
+<blockquote>
+<p><strong>MVC</strong>從<code>RouteData.Values</code>取得對應的資料.</p>
+</blockquote>
+<p>使用上就可透過<code>RouteCollection.Add</code>將<code>Route</code>添加到集合中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">RegisterRoutes</span>(<span class="params">RouteCollection routes</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    routes.Add(<span class="string">"customer"</span>,<span class="keyword">new</span> QueryStringRoute()</span><br><span class="line">    &#123;</span><br><span class="line">        Url = <span class="string">"controller&amp;action"</span></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><strong>Http</strong>請求就會依序找尋第一個匹配<code>Route</code>來執行.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>透過繼承<code>RouteBase</code>抽象類別並實現<code>GetRouteData</code>方法透過返回<code>RouteData</code>物件對於<code>Http</code>請求資訊封裝到<code>RouteData.Values</code>字典集合.(在<strong>MVC</strong>框架中會對於<code>Values</code>字典中取<code>Key</code>為<code>Controller</code>和<code>Action</code>的值.)</p>
+<p>最後再把新建立<code>RouteBase</code>物件加入到全域<code>RouteCollection</code>中.</p>
+<p>希望大家看完這篇後可以了解並自行擴充自己<code>Route</code>機制.</p>
+<p>本次範例程式碼<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyUm91dGU=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerRoute">Git Sample<i class="fa fa-external-link"></i></span>(CustomerRoute Branch)</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day26/">https://isdaniel.github.io/ithelp-day26/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -7056,52 +7128,6 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
-    <title>五分鐘快速了解 [傳址，傳參考，傳址]</title>
-    <url>/ref-address/</url>
-    <content><![CDATA[<p><strong>傳址，傳參考，傳址</strong>  是基本但重要的概念。此概念在很多語言都通用</p>
-<p>我使用Gif動畫檔 快速帶領大家了解 <strong>傳址，傳參考，傳址</strong></p>
-<ol>
-<li><p>傳值(Call By Value)</p>
-<p> 顧名思義 是把<code>值</code>傳到 另一個<code>記憶體位置</code>的<code>值</code>上</p>
-</li>
-</ol>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627294_92268.gif" alt="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627294_92268.gif"></p>
-<ol>
-<li>傳址 (Call By Adress)</li>
-</ol>
-<p>是把<code>記憶體位置</code>傳到 另一個<code>記憶體位置</code>的<code>值</code>上</p>
-<blockquote>
-<p>補充:嚴格來說(<code>Call By Adress</code>)是不正統的說法,其實傳址也是傳值但傳的是<code>記憶體位置</code>    </p>
-</blockquote>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627835_01874.gif" alt="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627835_01874.gif"></p>
-<ol>
-<li><p>傳參考(Call By Reference)</p>
-<p>是把<code>記憶體位置</code>傳到  移到另一個<code>記憶體位置</code>上 (可看作同一個物件)</p>
-</li>
-</ol>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627909_09266.gif" alt="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627909_09266.gif"></p>
-<p>在C#廣義來說</p>
-<ul>
-<li><p>基本型別 Struct (int,double,float,byte …)  可看作 傳值</p>
-</li>
-<li><p>一般型別 Class (自訂Class ,SqlConnection….)  可看作 傳址  更精確來說是傳Stack的值(指向Heap的記憶體位置)</p>
-</li>
-</ul>
-<p><strong>在C#中並沒傳參考，只有傳值和傳址</strong></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ref-address/">https://isdaniel.github.io/ref-address/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Memory</tag>
-        <tag>call by value</tag>
-        <tag>call by adress</tag>
-        <tag>call by reference</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>RabbitMQ (二) 概念</title>
     <url>/rabbitmq-install-01/</url>
     <content><![CDATA[<h2 id="介紹RabbitMQ"><a href="#介紹RabbitMQ" class="headerlink" title="介紹RabbitMQ"></a>介紹RabbitMQ</h2><p>RabbitMQ是個訊息仲介（broker），主要是利用消息把生產者跟消費者解耦合</p>
@@ -7175,6 +7201,99 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
+    <title>RabbitMQ (一) 安裝介紹</title>
+    <url>/rabbitmq-introduce-02/</url>
+    <content><![CDATA[<h2 id="RabbitMQ是什麼"><a href="#RabbitMQ是什麼" class="headerlink" title="RabbitMQ是什麼?"></a>RabbitMQ是什麼?</h2><p>RabbitMQ是一個訊息中介軟體 (broker), 他實作​<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFOSVBQiU5OCVFNyVCQSVBNyVFNiVCNiU4OCVFNiU4MSVBRiVFOSU5OCU5RiVFNSU4OCU5NyVFNSU4RCU4RiVFOCVBRSVBRQ==" title="https://zh.wikipedia.org/zh-tw/%E9%AB%98%E7%BA%A7%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%8D%8F%E8%AE%AE">AMQP標準<i class="fa fa-external-link"></i></span>, 特點是消息轉發是非同步並且可靠.</p>
+<p>主要用來處理應用程序之間消息的儲存與轉發可讓消費者和生產者解耦合, 消息是基於二進制</p>
+<p>因為RabbitMQ Server是用<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span>語言編寫，所以在安裝RabbitMQ Server前須先安裝<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span><span class="exturl" data-url="aHR0cHM6Ly93d3cuZXJsYW5nLm9yZy9kb3dubG9hZHM=" title="https://www.erlang.org/downloads">環境<i class="fa fa-external-link"></i></span></p>
+<p>安裝完後可到<span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2Rvd25sb2FkLmh0bWw=" title="https://www.rabbitmq.com/download.html">RabbitMq<i class="fa fa-external-link"></i></span>官網下載安裝Server .</p>
+<p>以下是常用在CMD使用的使令</p>
+<ul>
+<li><p>開啟RabbitMq Server. </p>
+<p>  rabbitmq-server -detached</p>
+</li>
+<li><p>查看RabbitMq狀態 </p>
+<p>  rabbitmqctl status</p>
+</li>
+<li><p>查看Queue列表狀態</p>
+<p>  rabbitmqctl list_queues</p>
+</li>
+<li><p>查看交換器(Exchange)</p>
+<p>  rabbitmqctl list_exchanges</p>
+</li>
+<li><p>查看綁定狀態</p>
+<p>  rabbitmqctl list_bindings</p>
+</li>
+</ul>
+<h2 id="RabbitMQ-Server-UI"><a href="#RabbitMQ-Server-UI" class="headerlink" title="RabbitMQ Server UI"></a>RabbitMQ Server UI</h2><p>RabbitMq Server 很貼心也有UI版的控制面板,只需在CMD中輸入這個指令 啟用Server UI套件</p>
+<h3 id="rabbitmq-plugins-enable-rabbitmq-management"><a href="#rabbitmq-plugins-enable-rabbitmq-management" class="headerlink" title="rabbitmq-plugins enable rabbitmq_management"></a>rabbitmq-plugins enable rabbitmq_management</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823390_90475.png" alt></p>
+<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/ <i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823535_62339.png" alt></p>
+<p>預設帳號密碼都是guest.</p>
+<h4 id="Rabbitmq-run-in-Docker"><a href="#Rabbitmq-run-in-Docker" class="headerlink" title="Rabbitmq run in Docker"></a>Rabbitmq run in Docker</h4><p>使用Docker可以方便建立我們的<span class="exturl" data-url="aHR0cHM6Ly9odWIuZG9ja2VyLmNvbS9fL3JhYmJpdG1x" title="https://hub.docker.com/_/rabbitmq">Rabbitmq<i class="fa fa-external-link"></i></span></p>
+<p>在你電腦安裝完Docker後,只需使用下面指令</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">docker run -d --hostname myrabbit --name RabbitMQ -p <span class="number">8080</span>:<span class="number">15672</span> rabbitmq:<span class="number">3</span>-management</span><br></pre></td></tr></table></figure></div>
+<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/<i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
+<p><strong>Web UI</strong>和Server都會幫我們運行起來</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>安裝RabbitMQ步驟就這幾步而已 ^^,之後會跟大家分享如何在.Net使用RabbitMQ.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-introduce-02/">https://isdaniel.github.io/rabbitmq-introduce-02/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>RabbitMQ</tag>
+        <tag>MQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>五分鐘快速了解 [傳址，傳參考，傳址]</title>
+    <url>/ref-address/</url>
+    <content><![CDATA[<p><strong>傳址，傳參考，傳址</strong>  是基本但重要的概念。此概念在很多語言都通用</p>
+<p>我使用Gif動畫檔 快速帶領大家了解 <strong>傳址，傳參考，傳址</strong></p>
+<ol>
+<li><p>傳值(Call By Value)</p>
+<p> 顧名思義 是把<code>值</code>傳到 另一個<code>記憶體位置</code>的<code>值</code>上</p>
+</li>
+</ol>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627294_92268.gif" alt="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627294_92268.gif"></p>
+<ol>
+<li>傳址 (Call By Adress)</li>
+</ol>
+<p>是把<code>記憶體位置</code>傳到 另一個<code>記憶體位置</code>的<code>值</code>上</p>
+<blockquote>
+<p>補充:嚴格來說(<code>Call By Adress</code>)是不正統的說法,其實傳址也是傳值但傳的是<code>記憶體位置</code>    </p>
+</blockquote>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627835_01874.gif" alt="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627835_01874.gif"></p>
+<ol>
+<li><p>傳參考(Call By Reference)</p>
+<p>是把<code>記憶體位置</code>傳到  移到另一個<code>記憶體位置</code>上 (可看作同一個物件)</p>
+</li>
+</ol>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627909_09266.gif" alt="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/e39d0fd8-5258-4484-949c-3019082ff20e/1519627909_09266.gif"></p>
+<p>在C#廣義來說</p>
+<ul>
+<li><p>基本型別 Struct (int,double,float,byte …)  可看作 傳值</p>
+</li>
+<li><p>一般型別 Class (自訂Class ,SqlConnection….)  可看作 傳址  更精確來說是傳Stack的值(指向Heap的記憶體位置)</p>
+</li>
+</ul>
+<p><strong>在C#中並沒傳參考，只有傳值和傳址</strong></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ref-address/">https://isdaniel.github.io/ref-address/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Memory</tag>
+        <tag>call by value</tag>
+        <tag>call by adress</tag>
+        <tag>call by reference</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Gaps and Islands problem (SQL) 連續範圍</title>
     <url>/sql-gaps-and-islands-problem/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>SO 發現蠻多人有遇到 <code>Gaps and Islands problem</code></p>
@@ -7234,53 +7353,6 @@ using (var channel = connection.CreateModel())
         <tag>MySQL</tag>
         <tag>Postgresql</tag>
         <tag>SQL-Gaps-and-Islands-problem</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RabbitMQ (一) 安裝介紹</title>
-    <url>/rabbitmq-introduce-02/</url>
-    <content><![CDATA[<h2 id="RabbitMQ是什麼"><a href="#RabbitMQ是什麼" class="headerlink" title="RabbitMQ是什麼?"></a>RabbitMQ是什麼?</h2><p>RabbitMQ是一個訊息中介軟體 (broker), 他實作​<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFOSVBQiU5OCVFNyVCQSVBNyVFNiVCNiU4OCVFNiU4MSVBRiVFOSU5OCU5RiVFNSU4OCU5NyVFNSU4RCU4RiVFOCVBRSVBRQ==" title="https://zh.wikipedia.org/zh-tw/%E9%AB%98%E7%BA%A7%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%8D%8F%E8%AE%AE">AMQP標準<i class="fa fa-external-link"></i></span>, 特點是消息轉發是非同步並且可靠.</p>
-<p>主要用來處理應用程序之間消息的儲存與轉發可讓消費者和生產者解耦合, 消息是基於二進制</p>
-<p>因為RabbitMQ Server是用<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span>語言編寫，所以在安裝RabbitMQ Server前須先安裝<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span><span class="exturl" data-url="aHR0cHM6Ly93d3cuZXJsYW5nLm9yZy9kb3dubG9hZHM=" title="https://www.erlang.org/downloads">環境<i class="fa fa-external-link"></i></span></p>
-<p>安裝完後可到<span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2Rvd25sb2FkLmh0bWw=" title="https://www.rabbitmq.com/download.html">RabbitMq<i class="fa fa-external-link"></i></span>官網下載安裝Server .</p>
-<p>以下是常用在CMD使用的使令</p>
-<ul>
-<li><p>開啟RabbitMq Server. </p>
-<p>  rabbitmq-server -detached</p>
-</li>
-<li><p>查看RabbitMq狀態 </p>
-<p>  rabbitmqctl status</p>
-</li>
-<li><p>查看Queue列表狀態</p>
-<p>  rabbitmqctl list_queues</p>
-</li>
-<li><p>查看交換器(Exchange)</p>
-<p>  rabbitmqctl list_exchanges</p>
-</li>
-<li><p>查看綁定狀態</p>
-<p>  rabbitmqctl list_bindings</p>
-</li>
-</ul>
-<h2 id="RabbitMQ-Server-UI"><a href="#RabbitMQ-Server-UI" class="headerlink" title="RabbitMQ Server UI"></a>RabbitMQ Server UI</h2><p>RabbitMq Server 很貼心也有UI版的控制面板,只需在CMD中輸入這個指令 啟用Server UI套件</p>
-<h3 id="rabbitmq-plugins-enable-rabbitmq-management"><a href="#rabbitmq-plugins-enable-rabbitmq-management" class="headerlink" title="rabbitmq-plugins enable rabbitmq_management"></a>rabbitmq-plugins enable rabbitmq_management</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823390_90475.png" alt></p>
-<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/ <i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823535_62339.png" alt></p>
-<p>預設帳號密碼都是guest.</p>
-<h4 id="Rabbitmq-run-in-Docker"><a href="#Rabbitmq-run-in-Docker" class="headerlink" title="Rabbitmq run in Docker"></a>Rabbitmq run in Docker</h4><p>使用Docker可以方便建立我們的<span class="exturl" data-url="aHR0cHM6Ly9odWIuZG9ja2VyLmNvbS9fL3JhYmJpdG1x" title="https://hub.docker.com/_/rabbitmq">Rabbitmq<i class="fa fa-external-link"></i></span></p>
-<p>在你電腦安裝完Docker後,只需使用下面指令</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">docker run -d --hostname myrabbit --name RabbitMQ -p <span class="number">8080</span>:<span class="number">15672</span> rabbitmq:<span class="number">3</span>-management</span><br></pre></td></tr></table></figure></div>
-<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/<i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
-<p><strong>Web UI</strong>和Server都會幫我們運行起來</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>安裝RabbitMQ步驟就這幾步而已 ^^,之後會跟大家分享如何在.Net使用RabbitMQ.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-introduce-02/">https://isdaniel.github.io/rabbitmq-introduce-02/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>RabbitMQ</tag>
-        <tag>MQ</tag>
       </tags>
   </entry>
   <entry>
