@@ -1,79 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>ACID</title>
-    <url>/acid/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備</p>
-<ul>
-<li>原子性（atomicity，稱不可分割性）</li>
-<li>一致性（consistency）</li>
-<li>隔離性（isolation，稱獨立性）</li>
-<li>持久性（durability）</li>
-</ul>
-<p>這就是我們說的ACID.</p>
-<p>下面我會跟大家簡述ACID.</p>
-<h2 id="Atomicity-原子性"><a href="#Atomicity-原子性" class="headerlink" title="Atomicity(原子性)"></a>Atomicity(原子性)</h2><p>所有Logical Unit都必須符合原子性</p>
-<blockquote>
-<p>整個流程要不是全部成功，不然就整段失敗，不會有部分完成</p>
-</blockquote>
-<p>sample data.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">IF (<span class="keyword">SELECT</span> OBJECT_ID(<span class="string">'dbo.ProductTest'</span>)) <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>   </span><br><span class="line"> <span class="keyword">DROP</span> <span class="keyword">TABLE</span> dbo.ProductTest;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.ProductTest ( ProductID <span class="built_in">INT</span> <span class="keyword">CONSTRAINT</span> ValueEqualsOne <span class="keyword">CHECK</span> (ProductID = <span class="number">1</span>)); </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> Product (ProductID <span class="built_in">INT</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.Product </span><br><span class="line"><span class="keyword">SELECT</span> <span class="number">2</span></span><br></pre></td></tr></table></figure></div>
-<p>下面我們在sql-server有包Transation,因為<code>ProductTest</code>資料表有一個CONSTRAINT <code>ProductID</code>必須等於1,但目前<code>Product</code>表有1筆不符合此資料表有一個<code>CONSTRAINT</code>資料(ProductId=2)</p>
-<p>如果按照(原子性)說法下面語法有包Tran應該會被RollBack,但事實上….</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第一句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest        </span><br><span class="line">	<span class="keyword">SELECT</span>  p.ProductID        </span><br><span class="line">	<span class="keyword">FROM</span>    dbo.Product <span class="keyword">AS</span> p</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第二句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span></span><br></pre></td></tr></table></figure></div>
-<p>我們在執行上面語法時會有一個<code>Error</code>，但第二句語法卻會成功新增資料.</p>
-<p>此時各位會覺得很奇怪,這個語法並不符合原子性.</p>
-<blockquote>
-<p>雖然Transation範圍是有包含<code>Logical Unit</code>,但Sql-Server <code>XACT_ABORT</code>預設是關閉.sta</p>
-</blockquote>
-<ol>
-<li>開啟<code>XACT_ABORT</code>（預設<code>XACT_ABORT</code>是<code>Off</code>）<br> <code>XACT_ABORT</code>的開關代表,交易過程中有錯誤時是否要完整取消整段交易</li>
-<li>使用<code>Try...Catch</code>判斷<code>RollBack</code>時間點</li>
-</ol>
-<blockquote>
-<p><code>Atomicity</code>(原子性)可以確保我們在交易過程中失敗,不會有部分成功,部分失敗,造成系統不穩定.</p>
-</blockquote>
-<h2 id="Consistency-一致性"><a href="#Consistency-一致性" class="headerlink" title="Consistency(一致性)　"></a>Consistency(一致性)　</h2><p>在Logical unit完成時不會破壞資料表制訂constraint,關聯性規則.</p>
-<p>交易過程中並不會有任何一筆資料違反,我們制定的Check constraint的資料，PK及FK的關係也同樣不會被破壞，確保不會違反Business規則。</p>
-<blockquote>
-<p>sql-server因為要檢查constraint,所以會導致些許Blocking.</p>
-</blockquote>
-<h2 id="Isolation"><a href="#Isolation" class="headerlink" title="Isolation"></a>Isolation</h2><p>在現實生活中,會同步進行多個Translation,所以Isolation是為了確保各個交易是互相隔離不會同時互相影響(不然就有可能破壞掉他們的一致性了).</p>
-<ul>
-<li>Lock:在某段語法被執行時,會放鎖在影響範圍,不同鎖的類型會有互斥或者可共存的情況,資料庫透過鎖確保流程.</li>
-<li>Block:假如有兩段語法,語法A跟語法B影響資料範圍是一樣的,假如語法A先在此區域上<strong>鎖</strong>且語法B嘗試要在同一個區域上<strong>鎖</strong>,發現兩個鎖互斥,這時語法B就會等待語法A執行完後再執行(此狀態稱之為Block).</li>
-<li>DeadLock:交易結束前會對於影響資料範圍上鎖,如果另一個語法對於某區段資料異動就會產生Block,但如果兩個交易剛好影響範圍是互相顛倒順序,這個Block會無法被釋放….此時就會產生DeadLock(每一段時間會有一個DeadLock Monitor決定誰是被犧牲者，把她資源釋放).</li>
-</ul>
-<p>交易隔離有分四種</p>
-<h2 id="Isolation-Level"><a href="#Isolation-Level" class="headerlink" title="Isolation Level"></a>Isolation Level</h2><ul>
-<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
-<li>ex: (NOLOCK)hint</li>
-</ul>
-</li>
-<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
-<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
-<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
-<li>ex: (Hold Lock) hint</li>
-</ul>
-</li>
-</ul>
-<h2 id="Durability"><a href="#Durability" class="headerlink" title="Durability"></a>Durability</h2><p>當你完成<code>Transaction</code>後,不管發生什麼事情資料都會完整保留在DB中，一般來說<code>Transaction</code>完成前後都會寫<code>Transaction log</code></p>
-<p>假如DB遇到非預期錯誤(ex:停電),在DB Server重啟後，DB會依照之前紀錄嘗試Recovery.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/acid/">https://isdaniel.github.io/acid/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>IOC</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>IOC</tag>
-        <tag>Autofac</tag>
-        <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>AOP Lock Architecture</title>
     <url>/aop-lock-mechanism/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
@@ -389,6 +316,79 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>C#</tag>
         <tag>Automapper</tag>
         <tag>Model</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>ACID</title>
+    <url>/acid/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備</p>
+<ul>
+<li>原子性（atomicity，稱不可分割性）</li>
+<li>一致性（consistency）</li>
+<li>隔離性（isolation，稱獨立性）</li>
+<li>持久性（durability）</li>
+</ul>
+<p>這就是我們說的ACID.</p>
+<p>下面我會跟大家簡述ACID.</p>
+<h2 id="Atomicity-原子性"><a href="#Atomicity-原子性" class="headerlink" title="Atomicity(原子性)"></a>Atomicity(原子性)</h2><p>所有Logical Unit都必須符合原子性</p>
+<blockquote>
+<p>整個流程要不是全部成功，不然就整段失敗，不會有部分完成</p>
+</blockquote>
+<p>sample data.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">IF (<span class="keyword">SELECT</span> OBJECT_ID(<span class="string">'dbo.ProductTest'</span>)) <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>   </span><br><span class="line"> <span class="keyword">DROP</span> <span class="keyword">TABLE</span> dbo.ProductTest;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.ProductTest ( ProductID <span class="built_in">INT</span> <span class="keyword">CONSTRAINT</span> ValueEqualsOne <span class="keyword">CHECK</span> (ProductID = <span class="number">1</span>)); </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> Product (ProductID <span class="built_in">INT</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.Product </span><br><span class="line"><span class="keyword">SELECT</span> <span class="number">2</span></span><br></pre></td></tr></table></figure></div>
+<p>下面我們在sql-server有包Transation,因為<code>ProductTest</code>資料表有一個CONSTRAINT <code>ProductID</code>必須等於1,但目前<code>Product</code>表有1筆不符合此資料表有一個<code>CONSTRAINT</code>資料(ProductId=2)</p>
+<p>如果按照(原子性)說法下面語法有包Tran應該會被RollBack,但事實上….</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第一句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest        </span><br><span class="line">	<span class="keyword">SELECT</span>  p.ProductID        </span><br><span class="line">	<span class="keyword">FROM</span>    dbo.Product <span class="keyword">AS</span> p</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第二句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span></span><br></pre></td></tr></table></figure></div>
+<p>我們在執行上面語法時會有一個<code>Error</code>，但第二句語法卻會成功新增資料.</p>
+<p>此時各位會覺得很奇怪,這個語法並不符合原子性.</p>
+<blockquote>
+<p>雖然Transation範圍是有包含<code>Logical Unit</code>,但Sql-Server <code>XACT_ABORT</code>預設是關閉.sta</p>
+</blockquote>
+<ol>
+<li>開啟<code>XACT_ABORT</code>（預設<code>XACT_ABORT</code>是<code>Off</code>）<br> <code>XACT_ABORT</code>的開關代表,交易過程中有錯誤時是否要完整取消整段交易</li>
+<li>使用<code>Try...Catch</code>判斷<code>RollBack</code>時間點</li>
+</ol>
+<blockquote>
+<p><code>Atomicity</code>(原子性)可以確保我們在交易過程中失敗,不會有部分成功,部分失敗,造成系統不穩定.</p>
+</blockquote>
+<h2 id="Consistency-一致性"><a href="#Consistency-一致性" class="headerlink" title="Consistency(一致性)　"></a>Consistency(一致性)　</h2><p>在Logical unit完成時不會破壞資料表制訂constraint,關聯性規則.</p>
+<p>交易過程中並不會有任何一筆資料違反,我們制定的Check constraint的資料，PK及FK的關係也同樣不會被破壞，確保不會違反Business規則。</p>
+<blockquote>
+<p>sql-server因為要檢查constraint,所以會導致些許Blocking.</p>
+</blockquote>
+<h2 id="Isolation"><a href="#Isolation" class="headerlink" title="Isolation"></a>Isolation</h2><p>在現實生活中,會同步進行多個Translation,所以Isolation是為了確保各個交易是互相隔離不會同時互相影響(不然就有可能破壞掉他們的一致性了).</p>
+<ul>
+<li>Lock:在某段語法被執行時,會放鎖在影響範圍,不同鎖的類型會有互斥或者可共存的情況,資料庫透過鎖確保流程.</li>
+<li>Block:假如有兩段語法,語法A跟語法B影響資料範圍是一樣的,假如語法A先在此區域上<strong>鎖</strong>且語法B嘗試要在同一個區域上<strong>鎖</strong>,發現兩個鎖互斥,這時語法B就會等待語法A執行完後再執行(此狀態稱之為Block).</li>
+<li>DeadLock:交易結束前會對於影響資料範圍上鎖,如果另一個語法對於某區段資料異動就會產生Block,但如果兩個交易剛好影響範圍是互相顛倒順序,這個Block會無法被釋放….此時就會產生DeadLock(每一段時間會有一個DeadLock Monitor決定誰是被犧牲者，把她資源釋放).</li>
+</ul>
+<p>交易隔離有分四種</p>
+<h2 id="Isolation-Level"><a href="#Isolation-Level" class="headerlink" title="Isolation Level"></a>Isolation Level</h2><ul>
+<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
+<li>ex: (NOLOCK)hint</li>
+</ul>
+</li>
+<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
+<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
+<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
+<li>ex: (Hold Lock) hint</li>
+</ul>
+</li>
+</ul>
+<h2 id="Durability"><a href="#Durability" class="headerlink" title="Durability"></a>Durability</h2><p>當你完成<code>Transaction</code>後,不管發生什麼事情資料都會完整保留在DB中，一般來說<code>Transaction</code>完成前後都會寫<code>Transaction log</code></p>
+<p>假如DB遇到非預期錯誤(ex:停電),在DB Server重啟後，DB會依照之前紀錄嘗試Recovery.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/acid/">https://isdaniel.github.io/acid/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>IOC</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>IOC</tag>
+        <tag>Autofac</tag>
+        <tag>AOP</tag>
       </tags>
   </entry>
   <entry>
@@ -3282,6 +3282,10 @@ email_url: dog830228@gmail.com
 <p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
 <h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
 <p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
+<p>下面這段虛擬碼解釋<code>balance -= 10;</code>CAS中類似下面效果</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//original</span></span><br><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CAS </span></span><br><span class="line"><span class="keyword">int</span> oldValue = balance;</span><br><span class="line"><span class="keyword">int</span> newValue = oldValue - <span class="number">1</span>;</span><br><span class="line"><span class="comment">//compare value source and set</span></span><br><span class="line">Interlocked.CompareExchange(<span class="keyword">ref</span> balance,newValue,oldValue);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Interlocked.CompareExchange類似下面做法，但具有Atomic</span></span><br><span class="line"><span class="comment">//if(ref balance == oldValue)&#123;</span></span><br><span class="line"><span class="comment">//	balance = newValue;</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br></pre></td></tr></table></figure>
+<p>主要是把compare value source and set這段包成一個不可分割區段達到Atomic.</p>
+<p>＞ 我上面用<code>ref</code>來表示從記憶體位置取得<code>balance</code>原始資料</p>
 <ul>
 <li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
 <li><code>Decrement</code>:把數值– 具有Atomic</li>
@@ -3307,6 +3311,64 @@ email_url: dog830228@gmail.com
       <tags>
         <tag>C#</tag>
         <tag>atomic</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>【財政部查詢類電子發票API】框架解說 C#</title>
+    <url>/invoicetw-framework/</url>
+    <content><![CDATA[<p>小弟之前有分享過串接【財政部查詢類電子發票API】小框架使用文</p>
+<p>使用文連結 <span class="exturl" data-url="aHR0cHM6Ly9pdGhlbHAuaXRob21lLmNvbS50dy9hcnRpY2xlcy8xMDE4MzkwNA==" title="https://ithelp.ithome.com.tw/articles/10183904">快速使用財政部電子發票API 使用 C#<i class="fa fa-external-link"></i></span><br>串接文件下載 <span class="exturl" data-url="aHR0cHM6Ly93d3cuZWludm9pY2UubmF0Lmdvdi50dy9ob21lL0Rvd25Mb2FkP2ZpbGVOYW1lPTE0NzY4NTUzODc0NTVfMC40LjQucGRm" title="https://www.einvoice.nat.gov.tw/home/DownLoad?fileName=1476855387455_0.4.4.pdf">電子發票查詢API 1.4.4<i class="fa fa-external-link"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">程式原始碼連結<i class="fa fa-external-link"></i></span></p>
+<p>這次想跟大家分享我做出此框架的歷程..</p>
+<hr>
+<p>框架目的：希望可以做出方便日後維護擴展的API。</p>
+<p>串接API時發現他們有幾個共同之處</p>
+<ol>
+<li>API請求參數名稱需降冪排列</li>
+<li>請求參數最後會加上簽章</li>
+<li>都有時間戳記</li>
+<li>回應資料格式都是Json</li>
+<li>都是使用Http (Get or Post) </li>
+</ol>
+<p>我就想到可以使用 <strong>工廠模式來實作這系列產品</strong> (工廠模式主要是切割產品的使用和生產)</p>
+<h2 id="產品解說"><a href="#產品解說" class="headerlink" title="產品解說"></a>產品解說</h2><p>因為他們都有共同的能力<strong>傳入一組參數回傳一串Json </strong><br>我就先寫出一個API共同的介面簽章  <code>IApiRunner</code><br>這個介面為基礎來撰寫後面的程式碼</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行api的介面</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IApiRunner</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 執行api</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>傳入的參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span>回傳資料<span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我在中間多一個抽象泛型類別 ApiBase<t> (用泛型是為了給子類決定傳入參數的Model)<br>原因:</t></p>
+<ol>
+<li>中間使用泛型抽象類別讓子類決定要傳入哪組參數</li>
+<li>可以將一些共通的方法寫在裡面</li>
+<li>子類別只需要知道要提供哪些動作，所以在ApiBase中提供兩個方法來override<ul>
+<li>請求URL   目前預設讀取Config (GetApiURL)</li>
+<li>參數的組合 (SetParamter)</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 子類繼承提供參數</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">string</span> <span class="title">SetParamter</span>(<span class="params">T model</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 取得api的Url路徑</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">GetApiURL</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">string</span> apiname = <span class="keyword">this</span>.GetType().Name;</span><br><span class="line">    <span class="keyword">if</span> (!ConfigurationManager.AppSettings.AllKeys.Contains(apiname))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="keyword">string</span>.Format(<span class="string">"請確認Config的appsetting有無此參數 &#123;0&#125;"</span>,</span><br><span class="line">            apiname));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ConfigurationManager.AppSettings[apiname];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行Api</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//建立所需參數</span></span><br><span class="line">    <span class="keyword">string</span> result = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> postData = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> posturl = GetApiURL();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> data = ObjectToModel(model);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//取得加密後的參數</span></span><br><span class="line">    postData = GetInvoiceParamter(SetParamter(data));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        ServicePointManager.ServerCertificateValidationCallback</span><br><span class="line">            = HttpTool.ValidateServerCertificate;</span><br><span class="line">        result = HttpTool.HttpPost(posturl, postData);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex)</span><br><span class="line">    &#123;</span><br><span class="line">        result = GetSysErrorMsg();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>目前產品部分已經建構好了。</p>
+<h2 id="工廠解說"><a href="#工廠解說" class="headerlink" title="工廠解說"></a>工廠解說</h2><p>工廠部分這次我選擇使用【反射方式來實現工廠】</p>
+<p>工廠類別 <code>MoblieInvoiceApiFactroy</code> 其實最主要是使用GetInstance方法<br><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 提供api的工廠</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Model和Api命名要相關</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 例如:testModel 對 testApi</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>Model參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IApiRunner <span class="title">GetInstace</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (model == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"不能傳空的參數"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> modelName = model.GetType().Name;</span><br><span class="line">    <span class="keyword">return</span> (IApiRunner)Activator.CreateInstance</span><br><span class="line">        (GetInstanceType(model), <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其中我把決定使用哪個組API的決定權交給Model並寫在標籤上(Attirbute)<br>在執行時他可獲取此參數Model所註冊參數的型別，來動態產生產品</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 反射取得綁定Model上綁定的API型別</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Type <span class="title">GetInstanceType</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> modelType = model.GetType();</span><br><span class="line">    <span class="keyword">var</span> attr = modelType.GetCustomAttribute(<span class="keyword">typeof</span>(ApiTypeAttribute)) <span class="keyword">as</span> ApiTypeAttribute;</span><br><span class="line">    <span class="keyword">if</span> (attr != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetApiType(attr);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">"Model尚未賦予ApiTypeAttribute"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>EX:查詢中獎號碼API Model 可以很清楚知道這個Model隸屬於哪個API </p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">ApiType(ApiType = typeof(QryWinningListApi), MockApiType = typeof(QryWinningListMockApi))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QryWinningListModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> invTerm &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>值得一提的是它有多一個MockApiType 為什麼會有這個?<br>原因：如果財政部伺服器連不到我們可以改成假資料或是模擬資料(讀取資料庫或是其他方式)。</p>
+<p>以上就是此框架的解說</p>
+<p>外部只需要呼叫工廠的GetInstance方法並傳入參數Model就會回傳相對應的產品API類別<br>這樣就降低執行和產生產品的耦合度，因為外部不是直接強耦合於Api類別而是透過工廠<br>日後如需增加API產品只需擴展新的類別 <strong>符合OCP(開放封閉原則)</strong><br>已經達到目的：希望可以做出方便日後維護擴展的API。</p>
+<p>Ps:這次我除了使用 <strong>工廠模式,也有用到樣板模式,代理模式</strong> 剩下兩個模式讓大家來找看看吧^^</p>
+<blockquote>
+<p>一般來說很少只用一個模式就可以解決一個問題的，通常都是配合使用</p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/invoicetw-framework/">https://isdaniel.github.io/invoicetw-framework/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>SourceCode</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Design-Pattern</tag>
+        <tag>Open-Source</tag>
+        <tag>OOP</tag>
       </tags>
   </entry>
   <entry>
@@ -3459,64 +3521,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>【財政部查詢類電子發票API】框架解說 C#</title>
-    <url>/invoicetw-framework/</url>
-    <content><![CDATA[<p>小弟之前有分享過串接【財政部查詢類電子發票API】小框架使用文</p>
-<p>使用文連結 <span class="exturl" data-url="aHR0cHM6Ly9pdGhlbHAuaXRob21lLmNvbS50dy9hcnRpY2xlcy8xMDE4MzkwNA==" title="https://ithelp.ithome.com.tw/articles/10183904">快速使用財政部電子發票API 使用 C#<i class="fa fa-external-link"></i></span><br>串接文件下載 <span class="exturl" data-url="aHR0cHM6Ly93d3cuZWludm9pY2UubmF0Lmdvdi50dy9ob21lL0Rvd25Mb2FkP2ZpbGVOYW1lPTE0NzY4NTUzODc0NTVfMC40LjQucGRm" title="https://www.einvoice.nat.gov.tw/home/DownLoad?fileName=1476855387455_0.4.4.pdf">電子發票查詢API 1.4.4<i class="fa fa-external-link"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">程式原始碼連結<i class="fa fa-external-link"></i></span></p>
-<p>這次想跟大家分享我做出此框架的歷程..</p>
-<hr>
-<p>框架目的：希望可以做出方便日後維護擴展的API。</p>
-<p>串接API時發現他們有幾個共同之處</p>
-<ol>
-<li>API請求參數名稱需降冪排列</li>
-<li>請求參數最後會加上簽章</li>
-<li>都有時間戳記</li>
-<li>回應資料格式都是Json</li>
-<li>都是使用Http (Get or Post) </li>
-</ol>
-<p>我就想到可以使用 <strong>工廠模式來實作這系列產品</strong> (工廠模式主要是切割產品的使用和生產)</p>
-<h2 id="產品解說"><a href="#產品解說" class="headerlink" title="產品解說"></a>產品解說</h2><p>因為他們都有共同的能力<strong>傳入一組參數回傳一串Json </strong><br>我就先寫出一個API共同的介面簽章  <code>IApiRunner</code><br>這個介面為基礎來撰寫後面的程式碼</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行api的介面</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IApiRunner</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 執行api</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>傳入的參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span>回傳資料<span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我在中間多一個抽象泛型類別 ApiBase<t> (用泛型是為了給子類決定傳入參數的Model)<br>原因:</t></p>
-<ol>
-<li>中間使用泛型抽象類別讓子類決定要傳入哪組參數</li>
-<li>可以將一些共通的方法寫在裡面</li>
-<li>子類別只需要知道要提供哪些動作，所以在ApiBase中提供兩個方法來override<ul>
-<li>請求URL   目前預設讀取Config (GetApiURL)</li>
-<li>參數的組合 (SetParamter)</li>
-</ul>
-</li>
-</ol>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 子類繼承提供參數</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">string</span> <span class="title">SetParamter</span>(<span class="params">T model</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 取得api的Url路徑</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">GetApiURL</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">string</span> apiname = <span class="keyword">this</span>.GetType().Name;</span><br><span class="line">    <span class="keyword">if</span> (!ConfigurationManager.AppSettings.AllKeys.Contains(apiname))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="keyword">string</span>.Format(<span class="string">"請確認Config的appsetting有無此參數 &#123;0&#125;"</span>,</span><br><span class="line">            apiname));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ConfigurationManager.AppSettings[apiname];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行Api</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//建立所需參數</span></span><br><span class="line">    <span class="keyword">string</span> result = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> postData = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> posturl = GetApiURL();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> data = ObjectToModel(model);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//取得加密後的參數</span></span><br><span class="line">    postData = GetInvoiceParamter(SetParamter(data));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        ServicePointManager.ServerCertificateValidationCallback</span><br><span class="line">            = HttpTool.ValidateServerCertificate;</span><br><span class="line">        result = HttpTool.HttpPost(posturl, postData);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex)</span><br><span class="line">    &#123;</span><br><span class="line">        result = GetSysErrorMsg();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>目前產品部分已經建構好了。</p>
-<h2 id="工廠解說"><a href="#工廠解說" class="headerlink" title="工廠解說"></a>工廠解說</h2><p>工廠部分這次我選擇使用【反射方式來實現工廠】</p>
-<p>工廠類別 <code>MoblieInvoiceApiFactroy</code> 其實最主要是使用GetInstance方法<br><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 提供api的工廠</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Model和Api命名要相關</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 例如:testModel 對 testApi</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>Model參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IApiRunner <span class="title">GetInstace</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (model == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"不能傳空的參數"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> modelName = model.GetType().Name;</span><br><span class="line">    <span class="keyword">return</span> (IApiRunner)Activator.CreateInstance</span><br><span class="line">        (GetInstanceType(model), <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>其中我把決定使用哪個組API的決定權交給Model並寫在標籤上(Attirbute)<br>在執行時他可獲取此參數Model所註冊參數的型別，來動態產生產品</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 反射取得綁定Model上綁定的API型別</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Type <span class="title">GetInstanceType</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> modelType = model.GetType();</span><br><span class="line">    <span class="keyword">var</span> attr = modelType.GetCustomAttribute(<span class="keyword">typeof</span>(ApiTypeAttribute)) <span class="keyword">as</span> ApiTypeAttribute;</span><br><span class="line">    <span class="keyword">if</span> (attr != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetApiType(attr);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">"Model尚未賦予ApiTypeAttribute"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>EX:查詢中獎號碼API Model 可以很清楚知道這個Model隸屬於哪個API </p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">ApiType(ApiType = typeof(QryWinningListApi), MockApiType = typeof(QryWinningListMockApi))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QryWinningListModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> invTerm &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>值得一提的是它有多一個MockApiType 為什麼會有這個?<br>原因：如果財政部伺服器連不到我們可以改成假資料或是模擬資料(讀取資料庫或是其他方式)。</p>
-<p>以上就是此框架的解說</p>
-<p>外部只需要呼叫工廠的GetInstance方法並傳入參數Model就會回傳相對應的產品API類別<br>這樣就降低執行和產生產品的耦合度，因為外部不是直接強耦合於Api類別而是透過工廠<br>日後如需增加API產品只需擴展新的類別 <strong>符合OCP(開放封閉原則)</strong><br>已經達到目的：希望可以做出方便日後維護擴展的API。</p>
-<p>Ps:這次我除了使用 <strong>工廠模式,也有用到樣板模式,代理模式</strong> 剩下兩個模式讓大家來找看看吧^^</p>
-<blockquote>
-<p>一般來說很少只用一個模式就可以解決一個問題的，通常都是配合使用</p>
-</blockquote>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/invoicetw-framework/">https://isdaniel.github.io/invoicetw-framework/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>SourceCode</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Design-Pattern</tag>
-        <tag>Open-Source</tag>
-        <tag>OOP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>IOC(控制反轉)，DI(依賴注入) 深入淺出~~</title>
     <url>/ioc-di/</url>
     <content><![CDATA[<p><code>IOC</code>是一個oop重要的程式設計思想。</p>
@@ -3606,111 +3610,6 @@ email_url: dog830228@gmail.com
         <tag>IOC</tag>
         <tag>Autofac</tag>
         <tag>Design-Pattern</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)</title>
-    <url>/ithelp-day1/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e9%96%8b%e8%b3%bd%e5%89%8d%e8%a8%80">開賽前言：</a><ul>
-<li><a href="#%e7%82%ba%e4%bb%80%e9%ba%bc%e6%83%b3%e8%a6%81%e9%81%b8%e6%93%87%e6%ad%a4%e4%b8%bb%e9%a1%8c">為什麼想要選擇此主題</a></li>
-<li><a href="#%e9%96%b1%e8%ae%80%e6%99%82%e5%bb%ba%e8%ad%b0%e4%ba%8b%e9%a0%85">閱讀時建議事項</a></li>
-<li><a href="#%e6%96%87%e7%ab%a0%e6%94%b6%e7%a9%ab">文章收穫</a></li>
-</ul>
-</li>
-<li><a href="#%e9%80%b2%e5%85%a5%e4%b8%bb%e9%a1%8c">進入主題</a><ul>
-<li><a href="#%e7%80%8f%e8%a6%bd%e5%99%a8%e8%ab%8b%e6%b1%82iis%e6%b5%81%e7%a8%8b">瀏覽器請求IIS流程</a></li>
-<li><a href="#%e5%a6%82%e4%bd%95%e8%be%a8%e5%88%a5%e6%98%af%e5%90%a6%e7%82%ba%e9%9d%9c%e6%85%8b%e6%aa%94%e6%a1%88">如何辨別是否為靜態檔案?</a></li>
-<li><a href="#net-clr-httpmodule--httphandler-%e6%a0%b8%e5%bf%83%e6%a8%a1%e7%b5%84">.Net CLR Httpmodule &amp; Httphandler 核心模組</a></li>
-<li><a href="#w3wp%e6%87%89%e7%94%a8%e7%a8%8b%e5%bc%8f">W3WP應用程式</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結</a></li>
-</ul>
-<h2 id="開賽前言："><a href="#開賽前言：" class="headerlink" title="開賽前言："></a>開賽前言：</h2><p>三十篇文章架構基本遵循:</p>
-<ol>
-<li><strong>前言:</strong>前情提要，閱讀此文建議使用工具或知識.</li>
-<li>標出大主題(大字體+錨點)之後在細項列出要說明的細節</li>
-<li>小結：每篇都有一個小結快速總結今天重點</li>
-</ol>
-<h3 id="為什麼想要選擇此主題"><a href="#為什麼想要選擇此主題" class="headerlink" title="為什麼想要選擇此主題"></a>為什麼想要選擇此主題</h3><p>選擇這個主題主要原因是</p>
-<ol>
-<li>沒有人整理一套較完整的Asp.net執行原始碼解析文章(從<code>Http</code>請求<code>IIS Server</code>,進入<code>CLR</code>前置動作),<strong>asp.net mvc</strong>原始碼解析</li>
-<li>台灣大部分的文章都是分享如何使用，很少文章有介紹如何運作．</li>
-<li>利用微軟開原後站在巨人肩膀上可以看更遠，理解<strong>MVC</strong>框架如何去設計具有一定的彈性.</li>
-<li>了解核心運作流程，更好改善或擴充現有專案架構（讓系統變得更有條理）</li>
-</ol>
-<h3 id="閱讀時建議事項"><a href="#閱讀時建議事項" class="headerlink" title="閱讀時建議事項"></a>閱讀時建議事項</h3><p>我在文章中會盡量寫出我看到精華部分,但此系列文可能對於<strong>MVC</strong>新手不太容易閱讀,因為<strong>MVC</strong>框架中運用到許多設計模式和OOP觀念(當初我在閱讀上也花了不少功夫)</p>
-<p>個人覺得OOP有很重要一個點是盡量用<strong>物件和物件關聯</strong>，資料狀態轉移來了解程式碼.</p>
-<blockquote>
-<p>簡白來說就是物件關聯和關係</p>
-</blockquote>
-<h3 id="文章收穫"><a href="#文章收穫" class="headerlink" title="文章收穫"></a>文章收穫</h3><p>我希望大家在閱讀完所有文章後可以獲得</p>
-<ol>
-<li><strong>Http</strong>對於<strong>IIS Server</strong>請求如何導向<strong>Asp.net MVC</strong>執行</li>
-<li><strong>Asp.net MVC</strong>原始碼有基本了解和知道哪幾個重要類別,了解後能依照系統需要替換改寫.</li>
-<li><strong>Asp.net MVC</strong>用到很多設計技巧(因為這是一個較大框架),希望大家能更了解設計模式如何運用在實戰中</li>
-<li>閱讀第一個框架原始碼會花不少時間,了解一個大框架後在去看其他框架閱讀時間會越來越少</li>
-</ol>
-<h2 id="進入主題"><a href="#進入主題" class="headerlink" title="進入主題"></a>進入主題</h2><p><code>Asp.net</code>基於<code>.NET Framework</code>框架所提供，開發<strong>Web</strong>應用程式的類別庫，封裝在<code>System.Web.dll</code>檔案中，提供使用者開發網頁，ASP.NET運行在安裝了.NET Framework的<code>IIS(Internet Information Services)</code>伺服器上</p>
-<p>微軟大大近幾年也投入<code>Open Source</code>行列讓我們可以更方便來窺探，Asp.net運作原理. 這個<span class="exturl" data-url="aHR0cHM6Ly9yZWZlcmVuY2Vzb3VyY2UubWljcm9zb2Z0LmNvbS8=" title="https://referencesource.microsoft.com/">連結 Reference Source<i class="fa fa-external-link"></i></span> 可以查看微軟核心的<code>DLL</code>程式碼(這個網站是我們第一階段追code的好朋友)</p>
-<p><code>Asp.net</code>程式基本上是由<code>IIS</code>進行託管，介紹<code>Asp.net MVC</code>原始碼之前我們需要先了解<code>Asp.net</code>和<code>IIS</code>關係.</p>
-<h3 id="瀏覽器請求IIS流程"><a href="#瀏覽器請求IIS流程" class="headerlink" title="瀏覽器請求IIS流程"></a>瀏覽器請求IIS流程</h3><p>Web基於Http協定，它是一個無狀態協定，每次請求都是新的且不會紀錄之前請求的東西<br>下圖我畫出一個對於IIS請求基本會跑的流程圖.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png" alt="瀏覽器請求IIS流程"></p>
-<p>基本分為兩個區塊</p>
-<ul>
-<li>粉紅色是<code>IIS Server</code>領域<ul>
-<li>會有一個<code>Http.sys</code>的程式在監聽所有<code>Http</code>請求並交由<code>W3WP.exe</code>並透過<code>aspnet_isapi</code>來此次請求是否為靜態檔案.</li>
-</ul>
-</li>
-<li>藍色是<code>.Net CLR</code>領域由幾塊核心程式完成請求<ul>
-<li>ISAPIRunTime</li>
-<li>HttpRuntime</li>
-<li>HttpApplicationFactory</li>
-<li>HttpApplication</li>
-</ul>
-</li>
-</ul>
-<p>之後會陸續介紹他們.</p>
-<ol>
-<li>請求<strong>靜態檔案</strong>透過路徑找尋<strong>靜態檔案</strong>並回傳.</li>
-<li>請求<strong>非靜態檔案</strong>透過<code>.Net CLR</code>執行返回結果.</li>
-</ol>
-<h3 id="如何辨別是否為靜態檔案"><a href="#如何辨別是否為靜態檔案" class="headerlink" title="如何辨別是否為靜態檔案?"></a>如何辨別是否為靜態檔案?</h3><p>如何辨別是否為靜態檔案,就需要談談<code>HttpHandler</code>的註冊表(後面有文章會說到)</p>
-<p>基本上如果是請求<code>Html</code>,<code>css</code>,<code>js</code>…都會直接回傳不會在經過<code>.Net CLR</code></p>
-<h3 id="Net-CLR-Httpmodule-amp-Httphandler-核心模組"><a href="#Net-CLR-Httpmodule-amp-Httphandler-核心模組" class="headerlink" title=".Net CLR Httpmodule &amp; Httphandler 核心模組"></a>.Net CLR Httpmodule &amp; Httphandler 核心模組</h3><p>Asp.net所有應用程式都離不開兩個核心模組<code>Httpmodule &amp; Httphandler</code>且最終會找到一個繼承於<code>IHttpHanlder</code>物件來處理請求.</p>
-<p>在網路上看到一個很好地比喻<strong>HttpModule &amp; HttpHandler</strong></p>
-<p><strong>Http</strong>請求像是一個旅客身上帶著行李拿著票來搭火車.</p>
-<ul>
-<li><code>HttpHandler</code> 是火車的終點站.</li>
-<li><code>HttpModule</code> 是火車中途停靠的各站.</li>
-</ul>
-<p>這個比喻可以很清楚知道每個請求透過<code>CLR</code>就是要找到一個<code>HttpHandler</code>來執行.</p>
-<p><img src="https://www.codeproject.com/KB/web-image/thumbnailer/thumbnailer_pipeline.gif" alt="圖片參考連結"></p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cuY29kZXByb2plY3QuY29tL0FydGljbGVzLzE2MTIwL1RodW1ibmFpbGVyLUhUVFAtSGFuZGxlcg==" title="https://www.codeproject.com/Articles/16120/Thumbnailer-HTTP-Handler">圖片參考連結<i class="fa fa-external-link"></i></span></p>
-<h3 id="W3WP應用程式"><a href="#W3WP應用程式" class="headerlink" title="W3WP應用程式"></a>W3WP應用程式</h3><p>當<code>IIS</code>在執行處理Http請求時工作管理員有一個<code>w3wp</code>應用程式在監聽.</p>
-<p>此應用程式會依照<code>aspnet_isapi</code>模組來判斷此次請求是否走入<code>.net CLR</code></p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/1/w3wp.PNG" alt="w3wp.PNG"></p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們了解到</p>
-<ol>
-<li>瀏覽器請求IIS基本流程</li>
-<li>Asp.net核心模組<strong>Httpmodule &amp; Httphandler</strong></li>
-<li>IIS有一個<code>Http.sys</code>程式在監聽所有<code>Http</code>請求</li>
-<li>IIS透過一個<code>w3wp.exe</code>初步過濾判斷如何執行此請求.</li>
-</ol>
-<p>瀏覽器發出<strong>Http</strong>請求給IIS,IIS透過<code>Http.sys</code>來監聽請求並交給<code>w3wp.exe</code>這個應用程式來判斷是否要交由<code>.net</code>託管處理此次請求.</p>
-<p>下篇我們會來詳細講述<code>Httpmodule &amp; Httphandler</code></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day1/">https://isdaniel.github.io/ithelp-day1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
       </tags>
   </entry>
   <entry>
@@ -3837,6 +3736,111 @@ email_url: dog830228@gmail.com
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/11/mvchandler_uml.png" alt="mvchandler_uml.png"></p>
 <p><code>MvcHandler</code>是<code>MVC</code>的核心類別,借由<code>ControllerBuilder</code>創件者來取得產生<code>Controller</code>的工廠(預設使用<code>DefaultControllerFactory</code>)，並呼叫<code>CreateController</code>方法來產生一個<code>Controller</code></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day11/">https://isdaniel.github.io/ithelp-day11/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)</title>
+    <url>/ithelp-day1/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e9%96%8b%e8%b3%bd%e5%89%8d%e8%a8%80">開賽前言：</a><ul>
+<li><a href="#%e7%82%ba%e4%bb%80%e9%ba%bc%e6%83%b3%e8%a6%81%e9%81%b8%e6%93%87%e6%ad%a4%e4%b8%bb%e9%a1%8c">為什麼想要選擇此主題</a></li>
+<li><a href="#%e9%96%b1%e8%ae%80%e6%99%82%e5%bb%ba%e8%ad%b0%e4%ba%8b%e9%a0%85">閱讀時建議事項</a></li>
+<li><a href="#%e6%96%87%e7%ab%a0%e6%94%b6%e7%a9%ab">文章收穫</a></li>
+</ul>
+</li>
+<li><a href="#%e9%80%b2%e5%85%a5%e4%b8%bb%e9%a1%8c">進入主題</a><ul>
+<li><a href="#%e7%80%8f%e8%a6%bd%e5%99%a8%e8%ab%8b%e6%b1%82iis%e6%b5%81%e7%a8%8b">瀏覽器請求IIS流程</a></li>
+<li><a href="#%e5%a6%82%e4%bd%95%e8%be%a8%e5%88%a5%e6%98%af%e5%90%a6%e7%82%ba%e9%9d%9c%e6%85%8b%e6%aa%94%e6%a1%88">如何辨別是否為靜態檔案?</a></li>
+<li><a href="#net-clr-httpmodule--httphandler-%e6%a0%b8%e5%bf%83%e6%a8%a1%e7%b5%84">.Net CLR Httpmodule &amp; Httphandler 核心模組</a></li>
+<li><a href="#w3wp%e6%87%89%e7%94%a8%e7%a8%8b%e5%bc%8f">W3WP應用程式</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結</a></li>
+</ul>
+<h2 id="開賽前言："><a href="#開賽前言：" class="headerlink" title="開賽前言："></a>開賽前言：</h2><p>三十篇文章架構基本遵循:</p>
+<ol>
+<li><strong>前言:</strong>前情提要，閱讀此文建議使用工具或知識.</li>
+<li>標出大主題(大字體+錨點)之後在細項列出要說明的細節</li>
+<li>小結：每篇都有一個小結快速總結今天重點</li>
+</ol>
+<h3 id="為什麼想要選擇此主題"><a href="#為什麼想要選擇此主題" class="headerlink" title="為什麼想要選擇此主題"></a>為什麼想要選擇此主題</h3><p>選擇這個主題主要原因是</p>
+<ol>
+<li>沒有人整理一套較完整的Asp.net執行原始碼解析文章(從<code>Http</code>請求<code>IIS Server</code>,進入<code>CLR</code>前置動作),<strong>asp.net mvc</strong>原始碼解析</li>
+<li>台灣大部分的文章都是分享如何使用，很少文章有介紹如何運作．</li>
+<li>利用微軟開原後站在巨人肩膀上可以看更遠，理解<strong>MVC</strong>框架如何去設計具有一定的彈性.</li>
+<li>了解核心運作流程，更好改善或擴充現有專案架構（讓系統變得更有條理）</li>
+</ol>
+<h3 id="閱讀時建議事項"><a href="#閱讀時建議事項" class="headerlink" title="閱讀時建議事項"></a>閱讀時建議事項</h3><p>我在文章中會盡量寫出我看到精華部分,但此系列文可能對於<strong>MVC</strong>新手不太容易閱讀,因為<strong>MVC</strong>框架中運用到許多設計模式和OOP觀念(當初我在閱讀上也花了不少功夫)</p>
+<p>個人覺得OOP有很重要一個點是盡量用<strong>物件和物件關聯</strong>，資料狀態轉移來了解程式碼.</p>
+<blockquote>
+<p>簡白來說就是物件關聯和關係</p>
+</blockquote>
+<h3 id="文章收穫"><a href="#文章收穫" class="headerlink" title="文章收穫"></a>文章收穫</h3><p>我希望大家在閱讀完所有文章後可以獲得</p>
+<ol>
+<li><strong>Http</strong>對於<strong>IIS Server</strong>請求如何導向<strong>Asp.net MVC</strong>執行</li>
+<li><strong>Asp.net MVC</strong>原始碼有基本了解和知道哪幾個重要類別,了解後能依照系統需要替換改寫.</li>
+<li><strong>Asp.net MVC</strong>用到很多設計技巧(因為這是一個較大框架),希望大家能更了解設計模式如何運用在實戰中</li>
+<li>閱讀第一個框架原始碼會花不少時間,了解一個大框架後在去看其他框架閱讀時間會越來越少</li>
+</ol>
+<h2 id="進入主題"><a href="#進入主題" class="headerlink" title="進入主題"></a>進入主題</h2><p><code>Asp.net</code>基於<code>.NET Framework</code>框架所提供，開發<strong>Web</strong>應用程式的類別庫，封裝在<code>System.Web.dll</code>檔案中，提供使用者開發網頁，ASP.NET運行在安裝了.NET Framework的<code>IIS(Internet Information Services)</code>伺服器上</p>
+<p>微軟大大近幾年也投入<code>Open Source</code>行列讓我們可以更方便來窺探，Asp.net運作原理. 這個<span class="exturl" data-url="aHR0cHM6Ly9yZWZlcmVuY2Vzb3VyY2UubWljcm9zb2Z0LmNvbS8=" title="https://referencesource.microsoft.com/">連結 Reference Source<i class="fa fa-external-link"></i></span> 可以查看微軟核心的<code>DLL</code>程式碼(這個網站是我們第一階段追code的好朋友)</p>
+<p><code>Asp.net</code>程式基本上是由<code>IIS</code>進行託管，介紹<code>Asp.net MVC</code>原始碼之前我們需要先了解<code>Asp.net</code>和<code>IIS</code>關係.</p>
+<h3 id="瀏覽器請求IIS流程"><a href="#瀏覽器請求IIS流程" class="headerlink" title="瀏覽器請求IIS流程"></a>瀏覽器請求IIS流程</h3><p>Web基於Http協定，它是一個無狀態協定，每次請求都是新的且不會紀錄之前請求的東西<br>下圖我畫出一個對於IIS請求基本會跑的流程圖.</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png" alt="瀏覽器請求IIS流程"></p>
+<p>基本分為兩個區塊</p>
+<ul>
+<li>粉紅色是<code>IIS Server</code>領域<ul>
+<li>會有一個<code>Http.sys</code>的程式在監聽所有<code>Http</code>請求並交由<code>W3WP.exe</code>並透過<code>aspnet_isapi</code>來此次請求是否為靜態檔案.</li>
+</ul>
+</li>
+<li>藍色是<code>.Net CLR</code>領域由幾塊核心程式完成請求<ul>
+<li>ISAPIRunTime</li>
+<li>HttpRuntime</li>
+<li>HttpApplicationFactory</li>
+<li>HttpApplication</li>
+</ul>
+</li>
+</ul>
+<p>之後會陸續介紹他們.</p>
+<ol>
+<li>請求<strong>靜態檔案</strong>透過路徑找尋<strong>靜態檔案</strong>並回傳.</li>
+<li>請求<strong>非靜態檔案</strong>透過<code>.Net CLR</code>執行返回結果.</li>
+</ol>
+<h3 id="如何辨別是否為靜態檔案"><a href="#如何辨別是否為靜態檔案" class="headerlink" title="如何辨別是否為靜態檔案?"></a>如何辨別是否為靜態檔案?</h3><p>如何辨別是否為靜態檔案,就需要談談<code>HttpHandler</code>的註冊表(後面有文章會說到)</p>
+<p>基本上如果是請求<code>Html</code>,<code>css</code>,<code>js</code>…都會直接回傳不會在經過<code>.Net CLR</code></p>
+<h3 id="Net-CLR-Httpmodule-amp-Httphandler-核心模組"><a href="#Net-CLR-Httpmodule-amp-Httphandler-核心模組" class="headerlink" title=".Net CLR Httpmodule &amp; Httphandler 核心模組"></a>.Net CLR Httpmodule &amp; Httphandler 核心模組</h3><p>Asp.net所有應用程式都離不開兩個核心模組<code>Httpmodule &amp; Httphandler</code>且最終會找到一個繼承於<code>IHttpHanlder</code>物件來處理請求.</p>
+<p>在網路上看到一個很好地比喻<strong>HttpModule &amp; HttpHandler</strong></p>
+<p><strong>Http</strong>請求像是一個旅客身上帶著行李拿著票來搭火車.</p>
+<ul>
+<li><code>HttpHandler</code> 是火車的終點站.</li>
+<li><code>HttpModule</code> 是火車中途停靠的各站.</li>
+</ul>
+<p>這個比喻可以很清楚知道每個請求透過<code>CLR</code>就是要找到一個<code>HttpHandler</code>來執行.</p>
+<p><img src="https://www.codeproject.com/KB/web-image/thumbnailer/thumbnailer_pipeline.gif" alt="圖片參考連結"></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cuY29kZXByb2plY3QuY29tL0FydGljbGVzLzE2MTIwL1RodW1ibmFpbGVyLUhUVFAtSGFuZGxlcg==" title="https://www.codeproject.com/Articles/16120/Thumbnailer-HTTP-Handler">圖片參考連結<i class="fa fa-external-link"></i></span></p>
+<h3 id="W3WP應用程式"><a href="#W3WP應用程式" class="headerlink" title="W3WP應用程式"></a>W3WP應用程式</h3><p>當<code>IIS</code>在執行處理Http請求時工作管理員有一個<code>w3wp</code>應用程式在監聽.</p>
+<p>此應用程式會依照<code>aspnet_isapi</code>模組來判斷此次請求是否走入<code>.net CLR</code></p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/1/w3wp.PNG" alt="w3wp.PNG"></p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們了解到</p>
+<ol>
+<li>瀏覽器請求IIS基本流程</li>
+<li>Asp.net核心模組<strong>Httpmodule &amp; Httphandler</strong></li>
+<li>IIS有一個<code>Http.sys</code>程式在監聽所有<code>Http</code>請求</li>
+<li>IIS透過一個<code>w3wp.exe</code>初步過濾判斷如何執行此請求.</li>
+</ol>
+<p>瀏覽器發出<strong>Http</strong>請求給IIS,IIS透過<code>Http.sys</code>來監聽請求並交給<code>w3wp.exe</code>這個應用程式來判斷是否要交由<code>.net</code>託管處理此次請求.</p>
+<p>下篇我們會來詳細講述<code>Httpmodule &amp; Httphandler</code></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day1/">https://isdaniel.github.io/ithelp-day1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -5790,56 +5794,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制 (第29天)</title>
-    <url>/ithelp-day29/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#%e5%a4%9a%e5%9c%8b%e8%b7%af%e7%94%b1%e8%a8%ad%e5%ae%9a">多國路由設定</a></li>
-<li><a href="#%e5%8f%96%e5%be%97%e8%b2%a8%e5%b9%a3%e7%ac%a6%e8%99%9f">取得貨幣符號</a></li>
-<li><a href="#%e6%93%b4%e5%85%85-webviewpagetmodel">擴充 WebViewPage<tmodel></tmodel></a></li>
-<li><a href="#razorview%e4%bd%bf%e7%94%a8%e6%93%b4%e5%85%85%e5%be%8cwebviewpagetmodel">RazorView使用擴充後WebViewPage<tmodel></tmodel></a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
-<p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
-<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>{culture}</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, culture = <span class="string">"en"</span> &#125;);</span><br></pre></td></tr></table></figure></div>
-<h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
-<p>在<code>CurrencyProvider</code>類別透過<code>Routes.Values[&quot;culture&quot;]</code>取得使用者傳遞語系國家.</p>
-<p>透過此參數可以知道使用者想要使用哪個國家貨幣.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CurrencyProvider</span> : <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        HttpContextBase contextWrapper = <span class="keyword">new</span> HttpContextWrapper(HttpContext.Current);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">string</span> culture = RouteTable.Routes.GetRouteData(contextWrapper)?.Values[<span class="string">"culture"</span>] <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> GetSymbol(culture);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">string</span> <span class="title">GetSymbol</span>(<span class="params"><span class="keyword">string</span> culture</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">switch</span> (culture)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"en"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"eu"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"£"</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="擴充-WebViewPage"><a href="#擴充-WebViewPage" class="headerlink" title="擴充 WebViewPage"></a>擴充 WebViewPage<tmodel></tmodel></h2><p>在<code>Autofac</code>多註冊一個</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">builder.RegisterType&lt;CurrencyProvider&gt;().As&lt;ICurrency&gt;();</span><br><span class="line">DependencyResolver.SetResolver(<span class="keyword">new</span> CustomerDependencyResolver(builder.Build()));</span><br></pre></td></tr></table></figure></div>
-<p>最後在建立一個<code>CountryViewPage&lt;TModel&gt;</code>抽象類別繼承於<code>WebViewPage&lt;TModel&gt;</code>.</p>
-<p>在此類別中建立一個<code>ICurrency</code>屬性,並在建構子中透過<code>DependencyResolver.Current.GetService</code>給值</p>
-<blockquote>
-<p>因為這間已經替換成<code>Autofac</code>解析器,所以會吃<code>Autofac</code>註冊的類別.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public abstract class CountryViewPage&lt;TModel&gt; : WebViewPage&lt;TModel&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CountryViewPage</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Currency = DependencyResolver.Current.GetService&lt;ICurrency&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ICurrency Currency &#123; <span class="keyword">get</span>;  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="RazorView使用擴充後WebViewPage"><a href="#RazorView使用擴充後WebViewPage" class="headerlink" title="RazorView使用擴充後WebViewPage"></a>RazorView使用擴充後WebViewPage<tmodel></tmodel></h2><p>在<code>View</code>上使用新<code>WebViewPage&lt;TModel&gt;</code>只需要在最上面加<code>@inherits CountryViewPage&lt;object&gt;</code>.<br>我們就可以透過<code>@</code>呼叫<code>Currency</code>物件.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">@inherits CountryViewPage&lt;<span class="keyword">object</span>&gt;</span><br><span class="line"></span><br><span class="line">@&#123;</span><br><span class="line">    ViewBag.Title = <span class="string">"About"</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;h2&gt;@ViewBag.Title.&lt;/h2&gt;</span><br><span class="line">&lt;h3&gt;@ViewBag.Message @Currency.GetCurrencySymbol()&lt;/h3&gt;</span><br><span class="line"></span><br><span class="line">&lt;p&gt;Use <span class="keyword">this</span> area to provide additional information.&lt;/p&gt;</span><br></pre></td></tr></table></figure></div>
-<p>如果每個頁面都需要使用新的<code>WebViewPage&lt;TModel&gt;</code>可以透過<code>web.config</code>新增加一個<code>&lt;pages pageBaseType=&quot;CountryViewPage&quot;&gt;</code>將<code>Razor</code>產生的<code>C#</code>程式碼繼承於此類別</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">system.web.webPages.razor</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">pages</span> <span class="attr">pageBaseType</span>=<span class="string">"CountryViewPage"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">namespaces</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Ajax"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Html"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Routing"</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">namespaces</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">pages</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">system.web.webPages.razor</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>其實我們也可以繼承<code>WebViewPage&lt;TModel&gt;</code>來擴充<code>View</code>多變性</p>
-<p>這邊有一個題目提供讀者來完成透過上面概念完成多國語系,這裡提供一條方法完成</p>
-<blockquote>
-<p>寫一個<code>string transfer(string key)</code>透過<code>Resource</code>檔案來完成;</p>
-</blockquote>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyV2ViVmlld1BhZ2U=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerWebViewPage">Github範例程式原始碼<i class="fa fa-external-link"></i></span> <code>CustomerWebViewPage</code>分支上</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day29/">https://isdaniel.github.io/ithelp-day29/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>啟動吧!Asp.Net IsapiRunTime &amp; HttpRuntime (第3天)</title>
     <url>/ithelp-day3/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5935,6 +5889,56 @@ email_url: dog830228@gmail.com
 </ul>
 <p>下篇我們會來好好介紹<code>HttpApplicationFactory</code>這個工廠到底如何返回<code>IHttpHanlder</code>物件.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day3/">https://isdaniel.github.io/ithelp-day3/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制 (第29天)</title>
+    <url>/ithelp-day29/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#%e5%a4%9a%e5%9c%8b%e8%b7%af%e7%94%b1%e8%a8%ad%e5%ae%9a">多國路由設定</a></li>
+<li><a href="#%e5%8f%96%e5%be%97%e8%b2%a8%e5%b9%a3%e7%ac%a6%e8%99%9f">取得貨幣符號</a></li>
+<li><a href="#%e6%93%b4%e5%85%85-webviewpagetmodel">擴充 WebViewPage<tmodel></tmodel></a></li>
+<li><a href="#razorview%e4%bd%bf%e7%94%a8%e6%93%b4%e5%85%85%e5%be%8cwebviewpagetmodel">RazorView使用擴充後WebViewPage<tmodel></tmodel></a></li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
+<p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
+<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>{culture}</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, culture = <span class="string">"en"</span> &#125;);</span><br></pre></td></tr></table></figure></div>
+<h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
+<p>在<code>CurrencyProvider</code>類別透過<code>Routes.Values[&quot;culture&quot;]</code>取得使用者傳遞語系國家.</p>
+<p>透過此參數可以知道使用者想要使用哪個國家貨幣.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CurrencyProvider</span> : <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        HttpContextBase contextWrapper = <span class="keyword">new</span> HttpContextWrapper(HttpContext.Current);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">string</span> culture = RouteTable.Routes.GetRouteData(contextWrapper)?.Values[<span class="string">"culture"</span>] <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> GetSymbol(culture);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">string</span> <span class="title">GetSymbol</span>(<span class="params"><span class="keyword">string</span> culture</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">switch</span> (culture)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"en"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"eu"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"£"</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="擴充-WebViewPage"><a href="#擴充-WebViewPage" class="headerlink" title="擴充 WebViewPage"></a>擴充 WebViewPage<tmodel></tmodel></h2><p>在<code>Autofac</code>多註冊一個</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">builder.RegisterType&lt;CurrencyProvider&gt;().As&lt;ICurrency&gt;();</span><br><span class="line">DependencyResolver.SetResolver(<span class="keyword">new</span> CustomerDependencyResolver(builder.Build()));</span><br></pre></td></tr></table></figure></div>
+<p>最後在建立一個<code>CountryViewPage&lt;TModel&gt;</code>抽象類別繼承於<code>WebViewPage&lt;TModel&gt;</code>.</p>
+<p>在此類別中建立一個<code>ICurrency</code>屬性,並在建構子中透過<code>DependencyResolver.Current.GetService</code>給值</p>
+<blockquote>
+<p>因為這間已經替換成<code>Autofac</code>解析器,所以會吃<code>Autofac</code>註冊的類別.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public abstract class CountryViewPage&lt;TModel&gt; : WebViewPage&lt;TModel&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CountryViewPage</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Currency = DependencyResolver.Current.GetService&lt;ICurrency&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ICurrency Currency &#123; <span class="keyword">get</span>;  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="RazorView使用擴充後WebViewPage"><a href="#RazorView使用擴充後WebViewPage" class="headerlink" title="RazorView使用擴充後WebViewPage"></a>RazorView使用擴充後WebViewPage<tmodel></tmodel></h2><p>在<code>View</code>上使用新<code>WebViewPage&lt;TModel&gt;</code>只需要在最上面加<code>@inherits CountryViewPage&lt;object&gt;</code>.<br>我們就可以透過<code>@</code>呼叫<code>Currency</code>物件.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">@inherits CountryViewPage&lt;<span class="keyword">object</span>&gt;</span><br><span class="line"></span><br><span class="line">@&#123;</span><br><span class="line">    ViewBag.Title = <span class="string">"About"</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;h2&gt;@ViewBag.Title.&lt;/h2&gt;</span><br><span class="line">&lt;h3&gt;@ViewBag.Message @Currency.GetCurrencySymbol()&lt;/h3&gt;</span><br><span class="line"></span><br><span class="line">&lt;p&gt;Use <span class="keyword">this</span> area to provide additional information.&lt;/p&gt;</span><br></pre></td></tr></table></figure></div>
+<p>如果每個頁面都需要使用新的<code>WebViewPage&lt;TModel&gt;</code>可以透過<code>web.config</code>新增加一個<code>&lt;pages pageBaseType=&quot;CountryViewPage&quot;&gt;</code>將<code>Razor</code>產生的<code>C#</code>程式碼繼承於此類別</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">system.web.webPages.razor</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">pages</span> <span class="attr">pageBaseType</span>=<span class="string">"CountryViewPage"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">namespaces</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Ajax"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Html"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Routing"</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">namespaces</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">pages</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">system.web.webPages.razor</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>其實我們也可以繼承<code>WebViewPage&lt;TModel&gt;</code>來擴充<code>View</code>多變性</p>
+<p>這邊有一個題目提供讀者來完成透過上面概念完成多國語系,這裡提供一條方法完成</p>
+<blockquote>
+<p>寫一個<code>string transfer(string key)</code>透過<code>Resource</code>檔案來完成;</p>
+</blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyV2ViVmlld1BhZ2U=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerWebViewPage">Github範例程式原始碼<i class="fa fa-external-link"></i></span> <code>CustomerWebViewPage</code>分支上</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day29/">https://isdaniel.github.io/ithelp-day29/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>

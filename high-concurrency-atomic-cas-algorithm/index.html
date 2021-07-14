@@ -155,7 +155,7 @@
 <meta property="og:image" content="https://i.imgur.com/zXprOIe.png">
 <meta property="og:image" content="https://i.imgur.com/BUCajHn.png">
 <meta property="og:image" content="https://i.imgur.com/eMjYN6P.png">
-<meta property="og:updated_time" content="2021-07-14T15:52:08.663Z">
+<meta property="og:updated_time" content="2021-07-14T16:12:11.297Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)">
 <meta name="twitter:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在我github上CAS_Lock有興趣的人可以參考. 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系">
@@ -502,7 +502,7 @@
                 
               
 
-              <time title="Created: 2021-07-14 22:30:11 / Modified: 15:52:08" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
+              <time title="Created: 2021-07-14 22:30:11 / Modified: 16:12:11" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
             
 
             
@@ -580,7 +580,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">4.7k</span>
+                <span title="Symbols count in article">5.1k</span>
               
 
               
@@ -594,7 +594,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">8 mins.</span>
+                <span title="Reading time">9 mins.</span>
               
             </div>
           
@@ -670,6 +670,10 @@
 <p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
 <h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
 <p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
+<p>下面這段虛擬碼解釋<code>balance -= 10;</code>CAS中類似下面效果</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//original</span></span><br><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CAS </span></span><br><span class="line"><span class="keyword">int</span> oldValue = balance;</span><br><span class="line"><span class="keyword">int</span> newValue = oldValue - <span class="number">1</span>;</span><br><span class="line"><span class="comment">//compare value source and set</span></span><br><span class="line">Interlocked.CompareExchange(<span class="keyword">ref</span> balance,newValue,oldValue);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Interlocked.CompareExchange類似下面做法，但具有Atomic</span></span><br><span class="line"><span class="comment">//if(ref balance == oldValue)&#123;</span></span><br><span class="line"><span class="comment">//	balance = newValue;</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br></pre></td></tr></table></figure>
+<p>主要是把compare value source and set這段包成一個不可分割區段達到Atomic.</p>
+<p>＞ 我上面用<code>ref</code>來表示從記憶體位置取得<code>balance</code>原始資料</p>
 <ul>
 <li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
 <li><code>Decrement</code>:把數值– 具有Atomic</li>
@@ -707,14 +711,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\acid\" rel="bookmark">ACID</a></div>
-      
-    </li>
-  
-    <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\autofac-aop\" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
+      <div class="popular-posts-title"><a href="\aop-lock-mechanism\" rel="bookmark">AOP Lock Architecture</a></div>
       
     </li>
   
@@ -729,6 +726,13 @@
       
       
       <div class="popular-posts-title"><a href="\automapperinit\" rel="bookmark">(AutoMapper)反射自動註冊AutoMapper Profile</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\acid\" rel="bookmark">ACID</a></div>
       
     </li>
   
@@ -1254,7 +1258,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">11:25</span>
+    <span title="Reading time total">11:26</span>
   
 </div>
 
