@@ -143,21 +143,21 @@
 
 
 
-  <meta name="description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我用Task假裝高">
+  <meta name="description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我">
 <meta name="keywords" content="C#,atomic">
 <meta property="og:type" content="article">
 <meta property="og:title" content="高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)">
-<meta property="og:url" content="https://isdaniel.github.io/high-concurrency-atomic-CAS/index.html">
+<meta property="og:url" content="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我用Task假裝高">
+<meta property="og:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/44M2Jr7.png">
 <meta property="og:image" content="https://i.imgur.com/zXprOIe.png">
 <meta property="og:image" content="https://i.imgur.com/BUCajHn.png">
-<meta property="og:updated_time" content="2021-07-14T07:08:25.922Z">
+<meta property="og:updated_time" content="2021-07-14T15:14:10.226Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)">
-<meta name="twitter:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我用Task假裝高">
+<meta name="twitter:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我">
 <meta name="twitter:image" content="https://i.imgur.com/44M2Jr7.png">
 
 
@@ -166,7 +166,7 @@
 
   
   
-  <link rel="canonical" href="https://isdaniel.github.io/high-concurrency-atomic-CAS/">
+  <link rel="canonical" href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">
 
 
 
@@ -458,7 +458,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/high-concurrency-atomic-CAS/">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Daniel Shih">
@@ -501,7 +501,7 @@
                 
               
 
-              <time title="Created: 2021-07-14 22:30:11 / Modified: 07:08:25" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
+              <time title="Created: 2021-07-14 22:30:11 / Modified: 15:14:10" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
             
 
             
@@ -549,8 +549,8 @@
                 </span>
             
                 <span class="post-meta-item-text">Comments: </span>
-                <a href="/high-concurrency-atomic-CAS/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="high-concurrency-atomic-CAS/" itemprop="commentCount"></span>
+                <a href="/high-concurrency-atomic-cas-algorithm/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="high-concurrency-atomic-cas-algorithm/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -615,6 +615,7 @@
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
 <p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
+<p>本文使用範例在</p>
 <h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
 <p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
 <p>下面Sample Code是這樣.</p>
@@ -672,7 +673,7 @@
 <p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
 <p>因為多執行緒有許多地方需要注意,不然執行效率會不如單執行緒.</p>
 <p>我慢慢可以理解為什麼Redis,Node.js一開始要使用sigel Thread來運作了…</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-CAS/">https://isdaniel.github.io/high-concurrency-atomic-CAS/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 
       
     </div>
@@ -1420,8 +1421,8 @@
 
 <script>
   var disqus_config = function() {
-    this.page.url = "https://isdaniel.github.io/high-concurrency-atomic-CAS/";
-    this.page.identifier = "high-concurrency-atomic-CAS/";
+    this.page.url = "https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/";
+    this.page.identifier = "high-concurrency-atomic-cas-algorithm/";
     this.page.title = '高併發系統系列-使用lock & Interlocked CAS(compare and swap)';
     };
   function loadComments() {
