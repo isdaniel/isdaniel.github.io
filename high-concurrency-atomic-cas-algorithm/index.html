@@ -154,7 +154,7 @@
 <meta property="og:image" content="https://i.imgur.com/44M2Jr7.png">
 <meta property="og:image" content="https://i.imgur.com/zXprOIe.png">
 <meta property="og:image" content="https://i.imgur.com/BUCajHn.png">
-<meta property="og:updated_time" content="2021-07-14T15:14:10.226Z">
+<meta property="og:updated_time" content="2021-07-14T15:31:04.883Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)">
 <meta name="twitter:description" content="前言在之前我有寫一篇關於資料庫的ACID分享RDBMS資料庫基本原則 假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生.. 本文使用範例在 沒有注意Atomic會導致的問題我是我們公司擔任技術面試官之一，假如面試者說他實作過高併發系統。 我就會先問以下問題來辨別是否要更深入面試高併發系統相關問題. 下面Sample Code是這樣. 我">
@@ -501,7 +501,7 @@
                 
               
 
-              <time title="Created: 2021-07-14 22:30:11 / Modified: 15:14:10" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
+              <time title="Created: 2021-07-14 22:30:11 / Modified: 15:31:04" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
             
 
             
@@ -579,7 +579,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">4.3k</span>
+                <span title="Symbols count in article">4.6k</span>
               
 
               
@@ -656,8 +656,18 @@
 <p>只是使用lock會降低些許吞吐量(但資料正確性是最重要的)，所以要注意使用lock範圍大小</p>
 </blockquote>
 <h2 id="CAS-compare-and-swap-提高效率"><a href="#CAS-compare-and-swap-提高效率" class="headerlink" title="CAS(compare and swap)提高效率"></a>CAS(compare and swap)提高效率</h2><p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFNiVBRiU5NCVFOCVCRSU4MyVFNSVCOSVCNiVFNCVCQSVBNCVFNiU4RCVBMg==" title="https://zh.wikipedia.org/zh-tw/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2">CAS<i class="fa fa-external-link"></i></span>是利用compare and swap來確保資料Atomic.</p>
-<p>在不同的語言</p>
-<h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用 <span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
+<p>前面有說過在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
+<ol>
+<li>將執行個體變數中的值載入至register。</li>
+<li>將載入值減10</li>
+<li>將異動後值放回原本值的Memory。</li>
+</ol>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">balance -= <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+<p>會拆解成類似下面動作</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br></pre></td></tr></table></figure>
+<p>假如在取balance(附值給temp)跟把值重新寫入balance中間有其他Thread來操作，就會造成所謂Data Racing，因為對於我們來說上面後兩部有不可分割性(Atomic).</p>
+<p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
+<h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
 <p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
 <ul>
 <li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
@@ -1232,7 +1242,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">376k</span>
+    <span title="Symbols count total">377k</span>
   
 
   
@@ -1241,7 +1251,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">11:24</span>
+    <span title="Reading time total">11:25</span>
   
 </div>
 
