@@ -143,23 +143,23 @@
 
 
 
-  <meta name="description" content="前言假如有一個面試題目是  目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C” 要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號   ex:  A  B  C  A  B  C   程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印 123456789101112131415161718192021222324">
+  <meta name="description" content="前言在多執行緒系統中，Thread的執行和長短是交由OS來幫我處理了 假如有一個面試題目是  目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C” 要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號   ex:  A  B  C  A  B  C   程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印 123456">
 <meta name="keywords" content="C#,thread,concurrent">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Asp.net HttpHandler vs HttpModule 詳細解說.">
+<meta property="og:title" content="高併發系統系列-多執行緒中順序 by EventWaitHandle">
 <meta property="og:url" content="https://isdaniel.github.io/multithread-eventwaithandle/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="前言假如有一個面試題目是  目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C” 要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號   ex:  A  B  C  A  B  C   程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印 123456789101112131415161718192021222324">
+<meta property="og:description" content="前言在多執行緒系統中，Thread的執行和長短是交由OS來幫我處理了 假如有一個面試題目是  目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C” 要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號   ex:  A  B  C  A  B  C   程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印 123456">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/j6mNk2W.png">
 <meta property="og:image" content="https://i.imgur.com/9FAhwA3.png">
 <meta property="og:image" content="https://i.imgur.com/v5OlGWV.png">
 <meta property="og:image" content="https://i.imgur.com/DUFMMqs.png">
 <meta property="og:image" content="https://i.imgur.com/9FAhwA3.png">
-<meta property="og:updated_time" content="2021-07-17T08:20:38.713Z">
+<meta property="og:updated_time" content="2021-07-17T08:23:24.634Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Asp.net HttpHandler vs HttpModule 詳細解說.">
-<meta name="twitter:description" content="前言假如有一個面試題目是  目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C” 要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號   ex:  A  B  C  A  B  C   程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印 123456789101112131415161718192021222324">
+<meta name="twitter:title" content="高併發系統系列-多執行緒中順序 by EventWaitHandle">
+<meta name="twitter:description" content="前言在多執行緒系統中，Thread的執行和長短是交由OS來幫我處理了 假如有一個面試題目是  目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C” 要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號   ex:  A  B  C  A  B  C   程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印 123456">
 <meta name="twitter:image" content="https://i.imgur.com/j6mNk2W.png">
 
 
@@ -178,7 +178,7 @@
   };
 </script>
 
-  <title>Asp.net HttpHandler vs HttpModule 詳細解說. | 石頭的coding之路</title>
+  <title>高併發系統系列-多執行緒中順序 by EventWaitHandle | 石頭的coding之路</title>
   
 
 
@@ -477,7 +477,7 @@
 
         
         
-          <h2 class="post-title" itemprop="name headline">Asp.net HttpHandler vs HttpModule 詳細解說.
+          <h2 class="post-title" itemprop="name headline">高併發系統系列-多執行緒中順序 by EventWaitHandle
 
               
             
@@ -503,24 +503,12 @@
                 
               
 
-              <time title="Created: 2019-06-11 19:16:37" itemprop="dateCreated datePublished" datetime="2019-06-11T19:16:37+00:00">2019-06-11</time>
+              <time title="Created: 2021-07-17 19:16:37 / Modified: 08:23:24" itemprop="dateCreated datePublished" datetime="2021-07-17T19:16:37+00:00">2021-07-17</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2021-07-17 08:20:38" itemprop="dateModified" datetime="2021-07-17T08:20:38+00:00">2021-07-17</time>
               
             
           </span>
@@ -627,7 +615,8 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如有一個面試題目是</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在多執行緒系統中，Thread的執行和長短是交由OS來幫我處理了</p>
+<p>假如有一個面試題目是</p>
 <ul>
 <li>目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C”</li>
 <li><p>要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號</p>
@@ -782,8 +771,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/httphandler-httpmodule/" rel="next" title="Asp.net HttpHandler vs HttpModule 詳細解說.">
-                <i class="fa fa-chevron-left"></i> Asp.net HttpHandler vs HttpModule 詳細解說.
+              <a href="/high-concurrency-atomic-cas-algorithm/" rel="next" title="高併發系統系列-使用lock & Interlocked CAS(compare and swap)">
+                <i class="fa fa-chevron-left"></i> 高併發系統系列-使用lock & Interlocked CAS(compare and swap)
               </a>
             
           </div>
@@ -791,10 +780,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/ithelp-day1/" rel="prev" title="(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)">
-                (開賽)Http 請求 Asp.net IIS伺服器架構 (第1天) <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -1459,7 +1444,7 @@
   var disqus_config = function() {
     this.page.url = "https://isdaniel.github.io/multithread-eventwaithandle/";
     this.page.identifier = "multithread-eventwaithandle/";
-    this.page.title = 'Asp.net HttpHandler vs HttpModule 詳細解說.';
+    this.page.title = '高併發系統系列-多執行緒中順序 by EventWaitHandle';
     };
   function loadComments() {
     var d = document, s = d.createElement('script');
