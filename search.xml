@@ -1390,6 +1390,52 @@ class Program
       </tags>
   </entry>
   <entry>
+    <title>(SQL Server) CTE RECURSIVE (遞迴)製作月曆</title>
+    <url>/cte-recursive/</url>
+    <content><![CDATA[<p>如果要製作月報…但只有給起訖日</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377514_65506.PNG" alt="pic"></p>
+<p>要產生出如下的列表 要怎麼辦…</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="pic"></p>
+<p>第一個想到的解法 會使用 <code>WHILE  +  [暫存表]</code>迴圈遍歷 把每個月新增入暫存表中</p>
+<p>程式碼如下:</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line"><span class="comment">--宣告一個起始時間變數</span></span><br><span class="line"><span class="keyword">DECLARE</span> @TempStartDate DATETIME</span><br><span class="line"><span class="keyword">DECLARE</span> @TempEndDate DATETIME</span><br><span class="line"></span><br><span class="line"><span class="comment">--設置變數 最小時間(起始時間)  和 最大時間</span></span><br><span class="line"><span class="keyword">SELECT</span> @TempStartDate = StartDate,@TempEndDate=EndDate </span><br><span class="line"><span class="keyword">FROM</span> @t</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP(Dates DATETIME)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WHILE</span>(@TempStartDate &lt; @TempEndDate)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">     <span class="comment">--將資料新增入暫存表</span></span><br><span class="line">     <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="comment">#TEMP (Dates) VALUES (@TempStartDate)</span></span><br><span class="line">     <span class="comment">--每跑一次迴圈就加一個月</span></span><br><span class="line">	 <span class="keyword">SELECT</span> @TempStartDate = <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,@TempStartDate)</span><br><span class="line"><span class="keyword">END</span> </span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="comment">#TEMP</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP</span></span><br></pre></td></tr></table></figure></div>
+<p>但這個解法雖然簡單..但程式碼又臭又長..</p>
+<p><strong>Q: 有沒有更好看的解法又可達成目的呢?</strong></p>
+<p><strong>ANS: 有!! 就是本次主角 CTE 遞迴</strong></p>
+<p>話不多說先貼上程式碼</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span>  <span class="keyword">INTO</span>  @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE (Dates,EndDate) <span class="keyword">AS</span></span><br><span class="line">(</span><br><span class="line">	<span class="keyword">SELECT</span> StartDate <span class="keyword">AS</span> Dates,EndDate <span class="keyword">AS</span> EndDate</span><br><span class="line">	<span class="keyword">FROM</span> @t</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="comment">--注意這邊使用 UNION ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates),EndDate</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates) &lt; EndDate <span class="comment">--判斷是否目前遞迴月份小於結束日期</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> CTE.Dates</span><br><span class="line"><span class="keyword">FROM</span> CTE</span><br></pre></td></tr></table></figure></div>
+<p>接下來解說 CTE遞迴原理 :</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521379674_85716.PNG" alt="PIC"></p>
+<p>可看到CTE中最主要執行四個步驟</p>
+<ol>
+<li>取得初始結果集並(錨點結果集) T(0)</li>
+<li>將T(0)結果集進行判斷是否滿足 DATEADD(MONTH,1,Dates) &lt; EndDate 不滿足繼續走,並產生T(1)結果集,依照此結果集繼續往下執行</li>
+<li>在執行上面的2步驟 直到滿足條件 T(0),T(1)…..T(n)</li>
+<li>傳回結果集。將之前所有產生結果集 UNION ALL。</li>
+</ol>
+<p><strong><code>使用CTE遞迴必須使用UNION ALL</code></strong></p>
+<p>最後CTE結果集就會呈現如下^^<br><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG"></p>
+<p><strong>補充 oracle解法</strong></p>
+<p>同場加映!! </p>
+<p>如果使用 <em>oracle</em> 可使用 <strong><code>connect by</code></strong> 很簡便取得日曆</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T</span><br><span class="line">(</span><br><span class="line">    StartDate <span class="built_in">DATE</span>,</span><br><span class="line">	EndDate <span class="built_in">DATE</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T( StartDate, EndDate ) <span class="keyword">VALUES</span>  (<span class="built_in">date</span> <span class="string">'2017-01-01'</span>,<span class="built_in">date</span> <span class="string">'2018-01-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span> - <span class="number">1</span> ) <span class="string">"Date"</span></span><br><span class="line">   <span class="keyword">from</span> T </span><br><span class="line"><span class="keyword">connect</span> <span class="keyword">by</span> trunc(EndDate,<span class="string">'mm'</span>) &gt;= add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span>)</span><br><span class="line">  <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><span class="exturl" data-url="aHR0cDovL3NxbGZpZGRsZS5jb20vIyE0Lzc1Y2Q5LzE0" title="http://sqlfiddle.com/#!4/75cd9/14">http://sqlfiddle.com/#!4/75cd9/14<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/cte-recursive/">https://isdaniel.github.io/cte-recursive/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>SQL</category>
+      </categories>
+      <tags>
+        <tag>SQL</tag>
+        <tag>Tsql</tag>
+        <tag>MSSql</tag>
+        <tag>CTE</tag>
+        <tag>UNION ALL</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Asp.net使用快取 (二)</title>
     <url>/cache-asp-net-2/</url>
     <content><![CDATA[<a href="/cache-asp-net-1/" title="Asp.net使用快取 (一)">Asp.net使用快取 (一)</a>
@@ -1457,52 +1503,6 @@ class Program
         <tag>C#</tag>
         <tag>Asp.net</tag>
         <tag>cache</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>(SQL Server) CTE RECURSIVE (遞迴)製作月曆</title>
-    <url>/cte-recursive/</url>
-    <content><![CDATA[<p>如果要製作月報…但只有給起訖日</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377514_65506.PNG" alt="pic"></p>
-<p>要產生出如下的列表 要怎麼辦…</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="pic"></p>
-<p>第一個想到的解法 會使用 <code>WHILE  +  [暫存表]</code>迴圈遍歷 把每個月新增入暫存表中</p>
-<p>程式碼如下:</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line"><span class="comment">--宣告一個起始時間變數</span></span><br><span class="line"><span class="keyword">DECLARE</span> @TempStartDate DATETIME</span><br><span class="line"><span class="keyword">DECLARE</span> @TempEndDate DATETIME</span><br><span class="line"></span><br><span class="line"><span class="comment">--設置變數 最小時間(起始時間)  和 最大時間</span></span><br><span class="line"><span class="keyword">SELECT</span> @TempStartDate = StartDate,@TempEndDate=EndDate </span><br><span class="line"><span class="keyword">FROM</span> @t</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP(Dates DATETIME)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WHILE</span>(@TempStartDate &lt; @TempEndDate)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">     <span class="comment">--將資料新增入暫存表</span></span><br><span class="line">     <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="comment">#TEMP (Dates) VALUES (@TempStartDate)</span></span><br><span class="line">     <span class="comment">--每跑一次迴圈就加一個月</span></span><br><span class="line">	 <span class="keyword">SELECT</span> @TempStartDate = <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,@TempStartDate)</span><br><span class="line"><span class="keyword">END</span> </span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="comment">#TEMP</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP</span></span><br></pre></td></tr></table></figure></div>
-<p>但這個解法雖然簡單..但程式碼又臭又長..</p>
-<p><strong>Q: 有沒有更好看的解法又可達成目的呢?</strong></p>
-<p><strong>ANS: 有!! 就是本次主角 CTE 遞迴</strong></p>
-<p>話不多說先貼上程式碼</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span>  <span class="keyword">INTO</span>  @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE (Dates,EndDate) <span class="keyword">AS</span></span><br><span class="line">(</span><br><span class="line">	<span class="keyword">SELECT</span> StartDate <span class="keyword">AS</span> Dates,EndDate <span class="keyword">AS</span> EndDate</span><br><span class="line">	<span class="keyword">FROM</span> @t</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="comment">--注意這邊使用 UNION ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates),EndDate</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates) &lt; EndDate <span class="comment">--判斷是否目前遞迴月份小於結束日期</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> CTE.Dates</span><br><span class="line"><span class="keyword">FROM</span> CTE</span><br></pre></td></tr></table></figure></div>
-<p>接下來解說 CTE遞迴原理 :</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521379674_85716.PNG" alt="PIC"></p>
-<p>可看到CTE中最主要執行四個步驟</p>
-<ol>
-<li>取得初始結果集並(錨點結果集) T(0)</li>
-<li>將T(0)結果集進行判斷是否滿足 DATEADD(MONTH,1,Dates) &lt; EndDate 不滿足繼續走,並產生T(1)結果集,依照此結果集繼續往下執行</li>
-<li>在執行上面的2步驟 直到滿足條件 T(0),T(1)…..T(n)</li>
-<li>傳回結果集。將之前所有產生結果集 UNION ALL。</li>
-</ol>
-<p><strong><code>使用CTE遞迴必須使用UNION ALL</code></strong></p>
-<p>最後CTE結果集就會呈現如下^^<br><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG"></p>
-<p><strong>補充 oracle解法</strong></p>
-<p>同場加映!! </p>
-<p>如果使用 <em>oracle</em> 可使用 <strong><code>connect by</code></strong> 很簡便取得日曆</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T</span><br><span class="line">(</span><br><span class="line">    StartDate <span class="built_in">DATE</span>,</span><br><span class="line">	EndDate <span class="built_in">DATE</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T( StartDate, EndDate ) <span class="keyword">VALUES</span>  (<span class="built_in">date</span> <span class="string">'2017-01-01'</span>,<span class="built_in">date</span> <span class="string">'2018-01-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span> - <span class="number">1</span> ) <span class="string">"Date"</span></span><br><span class="line">   <span class="keyword">from</span> T </span><br><span class="line"><span class="keyword">connect</span> <span class="keyword">by</span> trunc(EndDate,<span class="string">'mm'</span>) &gt;= add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span>)</span><br><span class="line">  <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p><span class="exturl" data-url="aHR0cDovL3NxbGZpZGRsZS5jb20vIyE0Lzc1Y2Q5LzE0" title="http://sqlfiddle.com/#!4/75cd9/14">http://sqlfiddle.com/#!4/75cd9/14<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/cte-recursive/">https://isdaniel.github.io/cte-recursive/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>SQL</category>
-      </categories>
-      <tags>
-        <tag>SQL</tag>
-        <tag>Tsql</tag>
-        <tag>MSSql</tag>
-        <tag>CTE</tag>
-        <tag>UNION ALL</tag>
       </tags>
   </entry>
   <entry>
@@ -2296,53 +2296,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>發布自己的Nuget專案</title>
-    <url>/deploy-ownnuget/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>前陣子在被面試官說：我有電子發票開源專案，是否有上到Nuget上</p>
-<p>我回答:沒有.</p>
-<p>我就突然想到我也可以把我的專案放到Nuget上讓更多人方便使用</p>
-<p>我就查詢資料去了解整個上板流程,並打成文章跟大家分享</p>
-<hr>
-<h3 id="下載Nuget-Commandline-Tool"><a href="#下載Nuget-Commandline-Tool" class="headerlink" title="下載Nuget Commandline Tool"></a>下載Nuget Commandline Tool</h3><p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL2Rvd25sb2Fkcw==" title="https://www.nuget.org/downloads">下載Nuget Commandline Tool<i class="fa fa-external-link"></i></span></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152784_97518.png" alt></p>
-<p>之後你會取得 <code>nuget.exe</code> 這個檔案</p>
-<p>把它放到你要打包Nuget的專案資料夾中</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152541_67261.png" alt></p>
-<p>之後打開cmd 並在專案資料夾打上 <code>nuget spce</code></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152985_63932.png" alt></p>
-<p>之後在你資料夾中會出現 <code>xxxx.nuspec</code>的XML檔案,這個檔案是描述你要打包的專案</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">code</span> <span class="attr">class</span>=<span class="string">"language-xml"</span>&gt;</span><span class="meta">&lt;?xml version="1.0"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">package</span> &gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">metadata</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">id</span>&gt;</span><span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span><span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">authors</span>&gt;</span><span class="tag">&lt;/<span class="name">authors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">owners</span>&gt;</span><span class="tag">&lt;/<span class="name">owners</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">licenseUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">licenseUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">projectUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">projectUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">iconUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">iconUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">requireLicenseAcceptance</span>&gt;</span>false<span class="tag">&lt;/<span class="name">requireLicenseAcceptance</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">description</span>&gt;</span>This is a AOP framework<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">releaseNotes</span>&gt;</span>Summary of changes made in this release of the package.<span class="tag">&lt;/<span class="name">releaseNotes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">copyright</span>&gt;</span>Copyright 2018<span class="tag">&lt;/<span class="name">copyright</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tags</span>&gt;</span>c# AOP<span class="tag">&lt;/<span class="name">tags</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">metadata</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
-<h3 id="必填欄位"><a href="#必填欄位" class="headerlink" title="必填欄位"></a>必填欄位</h3><ul>
-<li>ID：不區分大小寫的套件識別碼，在整個 nuget.org 或套件所在的任何組件庫中都必須是唯一的。 識別碼可能不包含對 URL 而言無效的空格或字元，而且通常會遵循 .NET 命名空間規則。 如需指導方針，請參閱<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvY3JlYXRlLXBhY2thZ2VzL2NyZWF0aW5nLWEtcGFja2FnZSNjaG9vc2luZy1hLXVuaXF1ZS1wYWNrYWdlLWlkZW50aWZpZXItYW5kLXNldHRpbmctdGhlLXZlcnNpb24tbnVtYmVy" title="https://docs.microsoft.com/zh-tw/nuget/create-packages/creating-a-package#choosing-a-unique-package-identifier-and-setting-the-version-number">選擇唯一的套件識別碼<i class="fa fa-external-link"></i></span>。</li>
-<li>Version：套件版本，遵循 <em>major.minor.patch</em> 模式。 版本號碼可以包含預先發行版本的後置詞，如<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL3BhY2thZ2UtdmVyc2lvbmluZyNwcmUtcmVsZWFzZS12ZXJzaW9ucw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/package-versioning#pre-release-versions">套件版本控制<i class="fa fa-external-link"></i></span>中所述。</li>
-<li>Description：UI 顯示中的套件詳細描述。</li>
-</ul>
-<blockquote>
-<p>Authors：以逗號分隔的套件作者清單，與 nuget.org 上的設定檔名稱相符。這些名稱會顯示在 nuget.org 的 NuGet 組件庫中，並用來交互參照相同作者的其他套件。</p>
-</blockquote>
-<h3 id="打包Nuget"><a href="#打包Nuget" class="headerlink" title="打包Nuget"></a>打包Nuget</h3><p>填完資料後就可以回到commandline 並打另一個指令<code>nuget pack</code>將專案打包成 <code>xxx.nupkg</code> 檔案 以提供上傳</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153426_68079.png" alt></p>
-<p>之後申辦一個Nuget帳號,並產生一個API Key</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153601_8669.png" alt></p>
-<p>產生完後在上面的選單選擇 <code>Upload</code> 按鈕</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153522_96047.png" alt>之後按下Browse按鈕並上傳你的 <code>xxxx.nupkg</code>檔案,上傳完畢後就按下Submit按鈕 將此專案提交上去</p>
-<p>上傳完畢後Nuget他會審核你的專案,等審核完後大家就可以下載使用你的專案摟^^</p>
-<h3 id="石頭已經打包專案"><a href="#石頭已經打包專案" class="headerlink" title="石頭已經打包專案"></a>石頭已經打包專案</h3><p>這兩個是我已經發布的專案</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0F3ZXNvbWVQcm94eS5OZXQv" title="https://www.nuget.org/packages/AwesomeProxy.Net/">AwesomeProxy.Net<i class="fa fa-external-link"></i></span></p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span></p>
-<h3 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h3><p>如果要查nuget指令可以打 <code>nuget ?</code></p>
-<h3 id="參考連結："><a href="#參考連結：" class="headerlink" title="參考連結："></a>參考連結：</h3><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL251c3BlYw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/nuspec">.nuspec 參考<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/deploy-ownnuget/">https://isdaniel.github.io/deploy-ownnuget/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Nuget</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Docker深入淺出(一)</title>
     <url>/docker-deepknow-1/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>docker透過指令能快速建立相同執行環境並比起VM減少電腦資源消耗.</p>
@@ -2412,6 +2365,53 @@ class Program
       <tags>
         <tag>Docker</tag>
         <tag>Container</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>發布自己的Nuget專案</title>
+    <url>/deploy-ownnuget/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>前陣子在被面試官說：我有電子發票開源專案，是否有上到Nuget上</p>
+<p>我回答:沒有.</p>
+<p>我就突然想到我也可以把我的專案放到Nuget上讓更多人方便使用</p>
+<p>我就查詢資料去了解整個上板流程,並打成文章跟大家分享</p>
+<hr>
+<h3 id="下載Nuget-Commandline-Tool"><a href="#下載Nuget-Commandline-Tool" class="headerlink" title="下載Nuget Commandline Tool"></a>下載Nuget Commandline Tool</h3><p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL2Rvd25sb2Fkcw==" title="https://www.nuget.org/downloads">下載Nuget Commandline Tool<i class="fa fa-external-link"></i></span></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152784_97518.png" alt></p>
+<p>之後你會取得 <code>nuget.exe</code> 這個檔案</p>
+<p>把它放到你要打包Nuget的專案資料夾中</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152541_67261.png" alt></p>
+<p>之後打開cmd 並在專案資料夾打上 <code>nuget spce</code></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543152985_63932.png" alt></p>
+<p>之後在你資料夾中會出現 <code>xxxx.nuspec</code>的XML檔案,這個檔案是描述你要打包的專案</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">code</span> <span class="attr">class</span>=<span class="string">"language-xml"</span>&gt;</span><span class="meta">&lt;?xml version="1.0"?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">package</span> &gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">metadata</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">id</span>&gt;</span><span class="tag">&lt;/<span class="name">id</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span><span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">title</span>&gt;</span><span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">authors</span>&gt;</span><span class="tag">&lt;/<span class="name">authors</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">owners</span>&gt;</span><span class="tag">&lt;/<span class="name">owners</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">licenseUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">licenseUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">projectUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">projectUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">iconUrl</span>&gt;</span><span class="tag">&lt;/<span class="name">iconUrl</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">requireLicenseAcceptance</span>&gt;</span>false<span class="tag">&lt;/<span class="name">requireLicenseAcceptance</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">description</span>&gt;</span>This is a AOP framework<span class="tag">&lt;/<span class="name">description</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">releaseNotes</span>&gt;</span>Summary of changes made in this release of the package.<span class="tag">&lt;/<span class="name">releaseNotes</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">copyright</span>&gt;</span>Copyright 2018<span class="tag">&lt;/<span class="name">copyright</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">tags</span>&gt;</span>c# AOP<span class="tag">&lt;/<span class="name">tags</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">metadata</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">package</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<h3 id="必填欄位"><a href="#必填欄位" class="headerlink" title="必填欄位"></a>必填欄位</h3><ul>
+<li>ID：不區分大小寫的套件識別碼，在整個 nuget.org 或套件所在的任何組件庫中都必須是唯一的。 識別碼可能不包含對 URL 而言無效的空格或字元，而且通常會遵循 .NET 命名空間規則。 如需指導方針，請參閱<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvY3JlYXRlLXBhY2thZ2VzL2NyZWF0aW5nLWEtcGFja2FnZSNjaG9vc2luZy1hLXVuaXF1ZS1wYWNrYWdlLWlkZW50aWZpZXItYW5kLXNldHRpbmctdGhlLXZlcnNpb24tbnVtYmVy" title="https://docs.microsoft.com/zh-tw/nuget/create-packages/creating-a-package#choosing-a-unique-package-identifier-and-setting-the-version-number">選擇唯一的套件識別碼<i class="fa fa-external-link"></i></span>。</li>
+<li>Version：套件版本，遵循 <em>major.minor.patch</em> 模式。 版本號碼可以包含預先發行版本的後置詞，如<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL3BhY2thZ2UtdmVyc2lvbmluZyNwcmUtcmVsZWFzZS12ZXJzaW9ucw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/package-versioning#pre-release-versions">套件版本控制<i class="fa fa-external-link"></i></span>中所述。</li>
+<li>Description：UI 顯示中的套件詳細描述。</li>
+</ul>
+<blockquote>
+<p>Authors：以逗號分隔的套件作者清單，與 nuget.org 上的設定檔名稱相符。這些名稱會顯示在 nuget.org 的 NuGet 組件庫中，並用來交互參照相同作者的其他套件。</p>
+</blockquote>
+<h3 id="打包Nuget"><a href="#打包Nuget" class="headerlink" title="打包Nuget"></a>打包Nuget</h3><p>填完資料後就可以回到commandline 並打另一個指令<code>nuget pack</code>將專案打包成 <code>xxx.nupkg</code> 檔案 以提供上傳</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153426_68079.png" alt></p>
+<p>之後申辦一個Nuget帳號,並產生一個API Key</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153601_8669.png" alt></p>
+<p>產生完後在上面的選單選擇 <code>Upload</code> 按鈕</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/a236f1fa-ad61-4d1e-a547-873093f89865/1543153522_96047.png" alt>之後按下Browse按鈕並上傳你的 <code>xxxx.nupkg</code>檔案,上傳完畢後就按下Submit按鈕 將此專案提交上去</p>
+<p>上傳完畢後Nuget他會審核你的專案,等審核完後大家就可以下載使用你的專案摟^^</p>
+<h3 id="石頭已經打包專案"><a href="#石頭已經打包專案" class="headerlink" title="石頭已經打包專案"></a>石頭已經打包專案</h3><p>這兩個是我已經發布的專案</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0F3ZXNvbWVQcm94eS5OZXQv" title="https://www.nuget.org/packages/AwesomeProxy.Net/">AwesomeProxy.Net<i class="fa fa-external-link"></i></span></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span></p>
+<h3 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h3><p>如果要查nuget指令可以打 <code>nuget ?</code></p>
+<h3 id="參考連結："><a href="#參考連結：" class="headerlink" title="參考連結："></a>參考連結：</h3><p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvbnVnZXQvcmVmZXJlbmNlL251c3BlYw==" title="https://docs.microsoft.com/zh-tw/nuget/reference/nuspec">.nuspec 參考<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/deploy-ownnuget/">https://isdaniel.github.io/deploy-ownnuget/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Nuget</tag>
       </tags>
   </entry>
   <entry>
@@ -7969,7 +7969,7 @@ using (var channel = connection.CreateModel())
 <blockquote>
 <p><code>MemoryBarrier</code>保證我們程式可見性，概念跟volatile一樣清除cache直接讀取主要Memory資料.</p>
 </blockquote>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">VolatileRead</span>(<span class="params"><span class="keyword">ref</span> Object address</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Object ret = address;</span><br><span class="line">    MemoryBarrier(); <span class="comment">// Call MemoryBarrier to ensure the proper semantic in a portable way.</span></span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">VolatileWrite</span>(<span class="params"><span class="keyword">ref</span> Object address, Object <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    MemoryBarrier(); <span class="comment">// Call MemoryBarrier to ensure the proper semantic in a portable way.</span></span><br><span class="line">    address = <span class="keyword">value</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">VolatileRead</span>(<span class="params"><span class="keyword">ref</span> Object address</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Object ret = address;</span><br><span class="line">    <span class="comment">//呼叫組語load 禁止指令重排  從Memory拿到最新資料</span></span><br><span class="line">    MemoryBarrier(); <span class="comment">// Call MemoryBarrier to ensure the proper semantic in a portable way.</span></span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">VolatileWrite</span>(<span class="params"><span class="keyword">ref</span> Object address, Object <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//呼叫組語store 禁止指令重排</span></span><br><span class="line">    MemoryBarrier(); <span class="comment">// Call MemoryBarrier to ensure the proper semantic in a portable way.</span></span><br><span class="line">    address = <span class="keyword">value</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在多執行緒系統中我建議常異動的變數要使用<code>volatile</code>來保證每個Thread讀,寫資料是正確</p>
 <p><img src="https://i.imgur.com/lMx2FJI.png" alt></p>
 <p>發現在我們常用的Console類別,運用許多<code>volatile</code>來達到Thread互相資料可見性.</p>
