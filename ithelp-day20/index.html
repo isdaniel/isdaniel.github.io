@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-tw">
+<head><meta name="generator" content="Hexo 3.8.0">
+  
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+    
+    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+
+  <meta name="description" content="Agenda 前言 IMetadataAware介面 AllowHtmlAttribute標籤 為何可以透過實現IMetadataAware介面來擴充對於metadata操作   CachedDataAnnotationsModelMetadataProvider CachedDataAnnotationsModelMetadata CachedDataAnnotationsMetadataAtt">
+<meta name="keywords" content="C#,Asp.net,Asp.net-MVC,SourceCode,11th鐵人賽">
+<meta property="og:type" content="article">
+<meta property="og:title" content="探討Model上客製化標籤如何被解析使用 (第20天)">
+<meta property="og:url" content="https://isdaniel.github.io/ithelp-day20/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="Agenda 前言 IMetadataAware介面 AllowHtmlAttribute標籤 為何可以透過實現IMetadataAware介面來擴充對於metadata操作   CachedDataAnnotationsModelMetadataProvider CachedDataAnnotationsModelMetadata CachedDataAnnotationsMetadataAtt">
+<meta property="og:locale" content="zh-tw">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/metadata_uml.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/19/XSS.PNG">
+<meta property="og:updated_time" content="2021-07-30T16:46:12.637Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="探討Model上客製化標籤如何被解析使用 (第20天)">
+<meta name="twitter:description" content="Agenda 前言 IMetadataAware介面 AllowHtmlAttribute標籤 為何可以透過實現IMetadataAware介面來擴充對於metadata操作   CachedDataAnnotationsModelMetadataProvider CachedDataAnnotationsModelMetadata CachedDataAnnotationsMetadataAtt">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/metadata_uml.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://isdaniel.github.io/ithelp-day20/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>探討Model上客製化標籤如何被解析使用 (第20天) | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-course">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">88</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">29</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">92</span></a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+    <div class="reading-progress-bar"></div>
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ithelp-day20/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">探討Model上客製化標籤如何被解析使用 (第20天)
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-10-01 10:00:00" itemprop="dateCreated datePublished" datetime="2019-10-01T10:00:00+00:00">2019-10-01</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-07-30 16:46:12" itemprop="dateModified" datetime="2021-07-30T16:46:12+00:00">2021-07-30</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/11th鐵人賽/" itemprop="url" rel="index"><span itemprop="name">11th鐵人賽</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/ithelp-day20/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ithelp-day20/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">7.7k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">14 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#imetadataaware%e4%bb%8b%e9%9d%a2">IMetadataAware介面</a><ul>
+<li><a href="#allowhtmlattribute%e6%a8%99%e7%b1%a4">AllowHtmlAttribute標籤</a></li>
+<li><a href="#%e7%82%ba%e4%bd%95%e5%8f%af%e4%bb%a5%e9%80%8f%e9%81%8e%e5%af%a6%e7%8f%beimetadataaware%e4%bb%8b%e9%9d%a2%e4%be%86%e6%93%b4%e5%85%85%e5%b0%8d%e6%96%bcmetadata%e6%93%8d%e4%bd%9c">為何可以透過實現IMetadataAware介面來擴充對於metadata操作</a></li>
+</ul>
+</li>
+<li><a href="#cacheddataannotationsmodelmetadataprovider">CachedDataAnnotationsModelMetadataProvider</a><ul>
+<li><a href="#cacheddataannotationsmodelmetadata">CachedDataAnnotationsModelMetadata</a></li>
+<li><a href="#cacheddataannotationsmetadataattributes">CachedDataAnnotationsMetadataAttributes</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇有介紹<code>ModelMetadata</code>和參數<code>Model</code>之間的關係.</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/metadata_uml.png" alt="UML_Model"></p>
+<p><strong>MVC</strong>提供我們一個<code>IMetadataAware</code>介面,讓我們可以對最終生成<code>ModelMetadata</code>進行自由設定.</p>
+<h2 id="IMetadataAware介面"><a href="#IMetadataAware介面" class="headerlink" title="IMetadataAware介面"></a>IMetadataAware介面</h2><p>在<code>IMetadataAware</code>介面有一個<code>OnMetadataCreated</code>方法</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IMetadataAware</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">OnMetadataCreated</span>(<span class="params">ModelMetadata metadata</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在<strong>MVC</strong>有預設兩個實現<code>IMetadataAware</code>介面的標籤.</p>
+<ul>
+<li><code>AllowHtmlAttribute</code>:標上的屬性可以攜帶<code>Html</code>資料.</li>
+<li><code>AdditionalMetadataAttribute</code>:對於當前屬性的<code>modelmetadata</code>資訊的<code>AdditionalValues</code>添加資料(添加資料可透過<code>ViewData.ModelMetadata.AdditionalValues</code>取得資料)</li>
+</ul>
+<p>如果你想要對於<code>modelmetadata</code>資訊做修改或新增資料可以製作自己<code>IMetadataAware</code>介面標籤.</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h3 id="AllowHtmlAttribute標籤"><a href="#AllowHtmlAttribute標籤" class="headerlink" title="AllowHtmlAttribute標籤"></a>AllowHtmlAttribute標籤</h3><p>為了防止<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFOCVCNyVBOCVFNyVCNiVCMiVFNyVBQiU5OSVFNiU4QyU4NyVFNCVCQiVBNCVFNyVBMiVCQw==" title="https://zh.wikipedia.org/zh-tw/%E8%B7%A8%E7%B6%B2%E7%AB%99%E6%8C%87%E4%BB%A4%E7%A2%BC">(Cross-site scripting)XSS攻擊<i class="fa fa-external-link"></i></span>通過在針對某些輸入框中寫入或注入<code>HTML</code>來攻擊我們<code>Web</code>應用</p>
+<p>針對<code>HTML</code>標記驗證通過<code>ModelMetadata</code>的<code>RequestValidationEnabled</code>來控制，如下面程式碼顯示</p>
+<p>這是一個布爾類型的可讀寫屬性。</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ModelMetadata</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">bool</span> RequestValidationEnabled &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>此屬性在默認情況下為<code>True</code>進行驗證防護</p>
+</blockquote>
+<p><strong>ASP.NET MVC</strong>有一個預設標籤<code>AllowHtmlAttribute</code>在進行<code>Model</code>綁定之前會對對應請求資料進行驗證，確保沒有任何<code>HTML</code>標記包含其中。</p>
+<p>如果在<code>Input</code> tag輸入有關<code>Html</code>資料就會出現下面錯誤.(這是<strong>MVC</strong>貼心幫我們開啟防護XSS攻擊的機制)</p>
+<blockquote>
+<p>具有潛在危險<code>Request.Form</code> 的值已從用戶端 (xxxxxx) 偵測到。</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/19/XSS.PNG" alt="UML_Model"></p>
+<p>如果查看<code>AllowHtmlAttribute</code>原始碼就很簡單只是把<code>metadata.RequestValidationEnabled</code>設成<code>false</code>允許使用者上傳<code>Html</code>資料.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">AllowHtmlAttribute</span> : <span class="title">Attribute</span>, <span class="title">IMetadataAware</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">OnMetadataCreated</span>(<span class="params">ModelMetadata metadata</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (metadata == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"metadata"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        metadata.RequestValidationEnabled = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>我們就可以把<code>Html</code>資料傳送到<strong>AP</strong>端了</p>
+<blockquote>
+<p>只是這個標籤請斟酌使用打開有一定風險.</p>
+</blockquote>
+<h3 id="為何可以透過實現IMetadataAware介面來擴充對於metadata操作"><a href="#為何可以透過實現IMetadataAware介面來擴充對於metadata操作" class="headerlink" title="為何可以透過實現IMetadataAware介面來擴充對於metadata操作"></a>為何可以透過實現IMetadataAware介面來擴充對於metadata操作</h3><p>在<code>AssociatedMetadataProvider</code>抽象類別中有個<code>ApplyMetadataAwareAttributes</code>方法.</p>
+<p>參數物件上屬性進行反射取得使用到<code>IMetadataAware</code>的標籤,並呼叫他的<code>OnMetadataCreated</code>方法.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">AssociatedMetadataProvider</span> : <span class="title">ModelMetadataProvider</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">ApplyMetadataAwareAttributes</span>(<span class="params">IEnumerable&lt;Attribute&gt; attributes, ModelMetadata result</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">foreach</span> (IMetadataAware awareAttribute <span class="keyword">in</span> attributes.OfType&lt;IMetadataAware&gt;())</span><br><span class="line">        &#123;</span><br><span class="line">            awareAttribute.OnMetadataCreated(result);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="CachedDataAnnotationsModelMetadataProvider"><a href="#CachedDataAnnotationsModelMetadataProvider" class="headerlink" title="CachedDataAnnotationsModelMetadataProvider"></a>CachedDataAnnotationsModelMetadataProvider</h2><p>在<strong>MVC</strong> <code>Action</code>傳入參數上可以標示許多標籤例如</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">VerifyCodeViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">	[<span class="meta">Required</span>]</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> Provider &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	[<span class="meta">Required</span>]</span><br><span class="line">	[<span class="meta">Display(Name = <span class="meta-string">"代碼"</span>)</span>]</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> Code &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> ReturnUrl &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	[<span class="meta">Display(Name = <span class="meta-string">"記住此瀏覽器?"</span>)</span>]</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> RememberBrowser &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> RememberMe &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ForgotViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">	[<span class="meta">Required</span>]</span><br><span class="line">	[<span class="meta">Display(Name = <span class="meta-string">"電子郵件"</span>)</span>]</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> Email &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<ul>
+<li><code>RequiredAttribute</code></li>
+<li><code>DisplayAttribute</code></li>
+</ul>
+<p>還有其他一大堆,下面會跟大家介紹<strong>MVC</strong>是怎麼取得並使用這些標籤,<code>ModelMetadataProviders</code>這個類別會提供使用哪個<code>ModelMetadataProvider</code></p>
+<p>在原始碼建構子預設使用<code>CachedDataAnnotationsModelMetadataProvider</code></p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ModelMetadataProviders</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> ModelMetadataProviders _instance = <span class="keyword">new</span> ModelMetadataProviders();</span><br><span class="line">    <span class="keyword">private</span> ModelMetadataProvider _currentProvider;</span><br><span class="line">    <span class="keyword">private</span> IResolver&lt;ModelMetadataProvider&gt; _resolver;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">internal</span> <span class="title">ModelMetadataProviders</span>(<span class="params">IResolver&lt;ModelMetadataProvider&gt; resolver = <span class="literal">null</span></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _resolver = resolver ?? <span class="keyword">new</span> SingleServiceResolver&lt;ModelMetadataProvider&gt;(</span><br><span class="line">                                    () =&gt; _currentProvider,</span><br><span class="line">                                    <span class="keyword">new</span> CachedDataAnnotationsModelMetadataProvider(),</span><br><span class="line">                                    <span class="string">"ModelMetadataProviders.Current"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在<code>CachedDataAnnotationsModelMetadataProvider</code>類別有一個<code>CreateMetadataPrototype</code>方法返回一個<code>CachedDataAnnotationsModelMetadata</code>物件,這個物件存放參數上屬性欄位使用標籤資訊.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">public class CachedDataAnnotationsModelMetadataProvider : CachedAssociatedMetadataProvider&lt;CachedDataAnnotationsModelMetadata&gt;</span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> CachedDataAnnotationsModelMetadata <span class="title">CreateMetadataPrototype</span>(<span class="params">IEnumerable&lt;Attribute&gt; attributes, Type containerType, Type modelType, <span class="keyword">string</span> propertyName</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> CachedDataAnnotationsModelMetadata(<span class="keyword">this</span>, containerType, modelType, propertyName, attributes);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> CachedDataAnnotationsModelMetadata <span class="title">CreateMetadataFromPrototype</span>(<span class="params">CachedDataAnnotationsModelMetadata prototype, Func&lt;<span class="keyword">object</span>&gt; modelAccessor</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> CachedDataAnnotationsModelMetadata(prototype, modelAccessor);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="CachedDataAnnotationsModelMetadata"><a href="#CachedDataAnnotationsModelMetadata" class="headerlink" title="CachedDataAnnotationsModelMetadata"></a>CachedDataAnnotationsModelMetadata</h3><p><code>CachedDataAnnotationsModelMetadata</code>類別上有許多屬性,主要是方便日後來判斷使用<strong>MVC</strong>使用標籤</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">public class CachedDataAnnotationsModelMetadata : CachedModelMetadata&lt;CachedDataAnnotationsMetadataAttributes&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">bool</span> _isEditFormatStringFromCache;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CachedDataAnnotationsModelMetadata</span>(<span class="params">CachedDataAnnotationsModelMetadata prototype, Func&lt;<span class="keyword">object</span>&gt; modelAccessor</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">prototype, modelAccessor</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CachedDataAnnotationsModelMetadata</span>(<span class="params">CachedDataAnnotationsModelMetadataProvider provider, Type containerType, Type modelType, <span class="keyword">string</span> propertyName, IEnumerable&lt;Attribute&gt; attributes</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">provider, containerType, modelType, propertyName, new CachedDataAnnotationsMetadataAttributes(attributes.ToArray(</span>)))</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">bool</span> <span class="title">ComputeConvertEmptyStringToNull</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> PrototypeCache.DisplayFormat != <span class="literal">null</span></span><br><span class="line">                    ? PrototypeCache.DisplayFormat.ConvertEmptyStringToNull</span><br><span class="line">                    : <span class="keyword">base</span>.ComputeConvertEmptyStringToNull();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">string</span> <span class="title">ComputeDataTypeName</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (PrototypeCache.DataType != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> PrototypeCache.DataType.ToDataTypeName();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (PrototypeCache.DisplayFormat != <span class="literal">null</span> &amp;&amp; !PrototypeCache.DisplayFormat.HtmlEncode)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> DataTypeUtil.HtmlTypeName;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">base</span>.ComputeDataTypeName();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>有一個蠻特別事情是<code>CachedDataAnnotationsModelMetadata : CachedModelMetadata&lt;CachedDataAnnotationsMetadataAttributes&gt;</code>他繼承一個泛型類別<code>CachedDataAnnotationsMetadataAttributes</code>存放取得物件標籤的資訊.</p>
+<h3 id="CachedDataAnnotationsMetadataAttributes"><a href="#CachedDataAnnotationsMetadataAttributes" class="headerlink" title="CachedDataAnnotationsMetadataAttributes"></a>CachedDataAnnotationsMetadataAttributes</h3><p><code>CachedDataAnnotationsMetadataAttributes</code>類別主要把屬性上的某些標籤給值到類別的屬性上,方便<code>CachedDataAnnotationsModelMetadata</code>來操作使用.</p>
+<p>這也是為什麼只有某些標籤掛在屬性上可以被使用.預設只有<code>CachedDataAnnotationsMetadataAttributes</code>才會被反射取得.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CachedDataAnnotationsMetadataAttributes</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">CachedDataAnnotationsMetadataAttributes</span>(<span class="params">Attribute[] attributes</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		DataType = attributes.OfType&lt;DataTypeAttribute&gt;().FirstOrDefault();</span><br><span class="line">		Display = attributes.OfType&lt;DisplayAttribute&gt;().FirstOrDefault();</span><br><span class="line">		DisplayColumn = attributes.OfType&lt;DisplayColumnAttribute&gt;().FirstOrDefault();</span><br><span class="line">		DisplayFormat = attributes.OfType&lt;DisplayFormatAttribute&gt;().FirstOrDefault();</span><br><span class="line">		DisplayName = attributes.OfType&lt;DisplayNameAttribute&gt;().FirstOrDefault();</span><br><span class="line">		Editable = attributes.OfType&lt;EditableAttribute&gt;().FirstOrDefault();</span><br><span class="line">		HiddenInput = attributes.OfType&lt;HiddenInputAttribute&gt;().FirstOrDefault();</span><br><span class="line">		ReadOnly = attributes.OfType&lt;ReadOnlyAttribute&gt;().FirstOrDefault();</span><br><span class="line">		Required = attributes.OfType&lt;RequiredAttribute&gt;().FirstOrDefault();</span><br><span class="line">		ScaffoldColumn = attributes.OfType&lt;ScaffoldColumnAttribute&gt;().FirstOrDefault();</span><br><span class="line">        <span class="comment">//.....</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> DataTypeAttribute DataType &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> DisplayAttribute Display &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> DisplayColumnAttribute DisplayColumn &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> DisplayFormatAttribute DisplayFormat &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> DisplayNameAttribute DisplayName &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> EditableAttribute Editable &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> HiddenInputAttribute HiddenInput &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="comment">//.....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>ModelMetaData</code>是一個<strong>Model Binding</strong>很重要物件,裡面存放許多調用參數的資訊.</p>
+<p><strong>MVC</strong>提供一個<code>IMetadataAware</code>介面可以改變<code>ModelMetaData</code>中資訊,提高更高的彈性.</p>
+<p>這篇也介紹了<code>IMetadataAware</code>介面是在哪邊做攔截.</p>
+<p>另外也分享常掛在屬性上標籤取得的類別跟機制</p>
+<ul>
+<li><code>DisplayNameAttribute</code></li>
+<li><code>RequiredAttribute</code></li>
+<li><code>DisplayAttribute</code></li>
+</ul>
+<p>透過<code>CachedDataAnnotationsModelMetadataProvider</code>這個類別來取得以上標籤,並在日後做判斷.</p>
+<p>下篇會和大家分享另一種屬性標籤<code>ValidationAttribute</code>的取得和呼叫過程.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day20/">https://isdaniel.github.io/ithelp-day20/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day21\" rel="bookmark">探討Model驗證標籤(ValidationAttribute) (第21天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day2\" rel="bookmark">Asp.Net支柱 IHttpMoudle & IHttphandler (第2天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day9\" rel="bookmark">進入MVC原始碼世界 Route & RouteTable 原始碼解析 (第9天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day8\" rel="bookmark">揭密Mvc使用IHttpHandler by UrlRoutingModule-4.0 (第8天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day7\" rel="bookmark">Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler (第7天)</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C#</a>
+          
+            <a href="/tags/Asp-net/" rel="tag"># Asp.net</a>
+          
+            <a href="/tags/Asp-net-MVC/" rel="tag"># Asp.net-MVC</a>
+          
+            <a href="/tags/SourceCode/" rel="tag"># SourceCode</a>
+          
+            <a href="/tags/11th鐵人賽/" rel="tag"># 11th鐵人賽</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/ithelp-day19/" rel="next" title="Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)">
+                <i class="fa fa-chevron-left"></i> Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/ithelp-day21/" rel="prev" title="探討Model驗證標籤(ValidationAttribute) (第21天)">
+                探討Model驗證標籤(ValidationAttribute) (第21天) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+  <br>
+  <div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
+            
+              <p class="site-author-name" itemprop="name">Daniel Shih</p>
+              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">29</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">88</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IMetadataAware介面"><span class="nav-number">1.2.</span> <span class="nav-text">IMetadataAware介面</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AllowHtmlAttribute標籤"><span class="nav-number">1.2.1.</span> <span class="nav-text">AllowHtmlAttribute標籤</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#為何可以透過實現IMetadataAware介面來擴充對於metadata操作"><span class="nav-number">1.2.2.</span> <span class="nav-text">為何可以透過實現IMetadataAware介面來擴充對於metadata操作</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CachedDataAnnotationsModelMetadataProvider"><span class="nav-number">1.3.</span> <span class="nav-text">CachedDataAnnotationsModelMetadataProvider</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#CachedDataAnnotationsModelMetadata"><span class="nav-number">1.3.1.</span> <span class="nav-text">CachedDataAnnotationsModelMetadata</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CachedDataAnnotationsMetadataAttributes"><span class="nav-number">1.3.2.</span> <span class="nav-text">CachedDataAnnotationsMetadataAttributes</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結："><span class="nav-number">1.4.</span> <span class="nav-text">小結：</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+    <span title="Symbols count total">386k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+    <span title="Reading time total">11:41</span>
+  
+</div>
+
+
+
+  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+  
+  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/reading_progress/reading_progress.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-141257985-1');
+</script>
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+  <script src="/js/exturl.js?v=7.1.1"></script>
+
+
+  
+
+  
+  
+  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/ithelp-day20/";
+    this.page.identifier = "ithelp-day20/";
+    this.page.title = '探討Model上客製化標籤如何被解析使用 (第20天)';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    $(function() {
+      var offsetTop = $('#comments').offset().top - $(window).height();
+      if (offsetTop <= 0) {
+        // load directly when there's no a scrollbar
+        loadComments();
+      } else {
+        $(window).on('scroll.disqus_scroll', function() {
+          // offsetTop may changes because of manually resizing browser window or lazy loading images.
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          var scrollTop = $(window).scrollTop();
+
+          // pre-load comments a bit? (margin or anything else)
+          if (offsetTop - scrollTop < 60) {
+            $(window).off('.disqus_scroll');
+            loadComments();
+          }
+        });
+      }
+    });
+  
+</script>
+
+
+
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '',
+    clientSecret: '',
+    repo: '',
+    owner: '',
+    admin: [''],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+<script>
+  $('.highlight').not('.gist .highlight').each(function(i, e) {
+    var $wrap = $('<div>').addClass('highlight-wrap');
+    $(e).after($wrap);
+    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
+      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+        return $(e).text();
+      }).toArray().join('\n');
+      var ta = document.createElement('textarea');
+      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+      ta.style.top = yPosition + 'px'; // Prevent page scroll
+      ta.style.position = 'absolute';
+      ta.style.opacity = '0';
+      ta.readOnly = true;
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, code.length);
+      ta.readOnly = false;
+      var result = document.execCommand('copy');
+      
+        if (result) $(this).text('Copied');
+        else $(this).text('Copy failed');
+      
+      ta.blur(); // For iOS
+      $(this).blur();
+    })).on('mouseleave', function(e) {
+      var $b = $(this).find('.copy-btn');
+      setTimeout(function() {
+        $b.text('Copy');
+      }, 300);
+    }).append(e);
+  })
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

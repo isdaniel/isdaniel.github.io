@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-tw">
+<head><meta name="generator" content="Hexo 3.8.0">
+  
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+    
+    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+
+  <meta name="description" content="Agenda 前言 IModelBinder(DefaultModelBinder) ModelBinders ModelBinderDictionary   IValueProvider 提供參數填值 ValueProvider工廠集合(ValueProviderFactories)   ValueProviderFactory JsonValueProviderFactory   取得IVal">
+<meta name="keywords" content="C#,Asp.net,Asp.net-MVC,SourceCode,11th鐵人賽">
+<meta property="og:type" content="article">
+<meta property="og:title" content="提供ModelBing幾個重要功臣(Model) (第18天)">
+<meta property="og:url" content="https://isdaniel.github.io/ithelp-day18/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="Agenda 前言 IModelBinder(DefaultModelBinder) ModelBinders ModelBinderDictionary   IValueProvider 提供參數填值 ValueProvider工廠集合(ValueProviderFactories)   ValueProviderFactory JsonValueProviderFactory   取得IVal">
+<meta property="og:locale" content="zh-tw">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/ValueProvider_Factory.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg">
+<meta property="og:updated_time" content="2021-07-30T16:46:12.637Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="提供ModelBing幾個重要功臣(Model) (第18天)">
+<meta name="twitter:description" content="Agenda 前言 IModelBinder(DefaultModelBinder) ModelBinders ModelBinderDictionary   IValueProvider 提供參數填值 ValueProvider工廠集合(ValueProviderFactories)   ValueProviderFactory JsonValueProviderFactory   取得IVal">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://isdaniel.github.io/ithelp-day18/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>提供ModelBing幾個重要功臣(Model) (第18天) | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-course">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">88</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">29</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">92</span></a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+    <div class="reading-progress-bar"></div>
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ithelp-day18/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">提供ModelBing幾個重要功臣(Model) (第18天)
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-09-29 10:00:00" itemprop="dateCreated datePublished" datetime="2019-09-29T10:00:00+00:00">2019-09-29</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-07-30 16:46:12" itemprop="dateModified" datetime="2021-07-30T16:46:12+00:00">2021-07-30</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/11th鐵人賽/" itemprop="url" rel="index"><span itemprop="name">11th鐵人賽</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/ithelp-day18/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ithelp-day18/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">8.7k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">16 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#imodelbinderdefaultmodelbinder">IModelBinder(DefaultModelBinder)</a><ul>
+<li><a href="#modelbinders">ModelBinders</a></li>
+<li><a href="#modelbinderdictionary">ModelBinderDictionary</a></li>
+</ul>
+</li>
+<li><a href="#ivalueprovider-%e6%8f%90%e4%be%9b%e5%8f%83%e6%95%b8%e5%a1%ab%e5%80%bc">IValueProvider 提供參數填值</a><ul>
+<li><a href="#valueprovider%e5%b7%a5%e5%bb%a0%e9%9b%86%e5%90%88valueproviderfactories">ValueProvider工廠集合(ValueProviderFactories)</a></li>
+</ul>
+</li>
+<li><a href="#valueproviderfactory">ValueProviderFactory</a><ul>
+<li><a href="#jsonvalueproviderfactory">JsonValueProviderFactory</a></li>
+</ul>
+</li>
+<li><a href="#%e5%8f%96%e5%be%97ivalueprovider">取得IValueProvider</a><ul>
+<li><a href="#namevaluecollectionvalueprovider">NameValueCollectionValueProvider</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><strong>MVC</strong>的<code>Model-Binding</code>建立複雜物件(牽扯到複雜模型綁定.)</p>
+<p>這篇會跟大家介紹<strong>MVC</strong>是如何把達成這個複雜的動作</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="IModelBinder-DefaultModelBinder"><a href="#IModelBinder-DefaultModelBinder" class="headerlink" title="IModelBinder(DefaultModelBinder)"></a>IModelBinder(DefaultModelBinder)</h2><p><code>DefaultModelBinder</code>將Http請求傳來資料轉換為強型別物件,<code>DefaultModelBinder</code>是如何取得使用<code>Model</code>資料呢?</p>
+<blockquote>
+<p>實現<code>IValueProvider</code>來處理。</p>
+</blockquote>
+<h3 id="ModelBinders"><a href="#ModelBinders" class="headerlink" title="ModelBinders"></a>ModelBinders</h3><p><code>IModelBinder.BindModel</code>方法使用兩個參數</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">object</span> <span class="title">BindModel</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext</span>)</span></span><br></pre></td></tr></table></figure></div>
+<ol>
+<li><code>ControllerContext</code>:<code>Controller</code>資訊，</li>
+<li><code>ModelBindingContext</code>:當前參數綁定資訊</li>
+</ol>
+<p><code>BindModel</code>方法機於<code>Http</code>請求傳送資料進行<code>Model</code>綁定(對於<code>Action</code>方法使用參數),其中<code>ModelBindingContext</code>參數會提供綁定使用的重要物件成員.</p>
+<blockquote>
+<p>關於<code>ModelBindingContext</code>建立我們會在後續部分進行的單獨介紹.</p>
+</blockquote>
+<p>在<code>IModelBinder.BindModel</code>方法中主要透過兩個重要<code>internal</code>方法.</p>
+<ul>
+<li><code>BindComplexModel</code>:複雜參數綁定</li>
+<li><code>BindSimpleModel</code>:簡單參數綁定</li>
+</ul>
+<p>下圖可以表示<code>SimpleModel</code>和<code>ComplexModel</code></p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg" alt="BindSimpleModel"></p>
+<blockquote>
+<p><code>ComplexModel</code>一個人可擁有多個房子,所以<code>Person</code>類別擁有<code>HouseCollection</code>引用.<br>取得使用<code>ModelBinder</code>機制。</p>
+</blockquote>
+<p>取得<code>ModelBinder</code>會依照下面順序</p>
+<ol>
+<li>參數掛有<code>ModelBinderAttribute</code>標籤並將<code>BinderType</code>屬性指向一個繼承<code>IModelBinder</code>型別.</li>
+<li>參數掛有繼承<code>CustomModelBinderAttribute</code>類型</li>
+<li>透過<code>ModelBinderProviderCollection</code>(預設<strong>MVC</strong>沒有提供<code>ModelBinderProvider</code>)</li>
+<li>預設<code>DefaultModelBinder</code></li>
+</ol>
+<p>下面兩個使用<code>ModelBinder</code>都是<code>DefaultModelBinder</code>,但一個是使用第一點,另一個使用第四點.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ActionResult <span class="title">HttpModules</span>(<span class="params">Person p</span>)</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> ActionResult <span class="title">HttpModules</span>(<span class="params">[ModelBinder(<span class="keyword">typeof</span>(DefaultModelBinder</span>))]Person p)</span></span><br></pre></td></tr></table></figure></div>
+<p>在<code>Global.cs</code>可透過<code>ModelBinders.Binders.Add</code>方法註冊綁定類型.</p>
+<p>如下面程式碼.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ModelBinders.Binders.Add(<span class="keyword">typeof</span>(Arg),<span class="keyword">new</span> FooModelBinder());</span><br></pre></td></tr></table></figure></div>
+<h3 id="ModelBinderDictionary"><a href="#ModelBinderDictionary" class="headerlink" title="ModelBinderDictionary"></a>ModelBinderDictionary</h3><p>一般參數透過<code>DefaultModelBinder</code>來幫我們完成參數綁定.</p>
+<p>但有些特別的資料需要透過<code>ModelBinderDictionary</code>取得使用<code>ModelBinder</code>,例如上傳檔案,我們可以使用<code>HttpPostedFileBase</code>來取得檔案資訊流.</p>
+<p>那是因為在<code>ModelBinderDictionary</code>有註冊一個<code>HttpPostedFileBaseModelBinder</code>來幫我們做解析.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> ModelBinderDictionary <span class="title">CreateDefaultBinderDictionary</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ModelBinderDictionary binders = <span class="keyword">new</span> ModelBinderDictionary()</span><br><span class="line">    &#123;</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(HttpPostedFileBase), <span class="keyword">new</span> HttpPostedFileBaseModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(<span class="keyword">byte</span>[]), <span class="keyword">new</span> ByteArrayModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(Binary), <span class="keyword">new</span> LinqBinaryModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(CancellationToken), <span class="keyword">new</span> CancellationTokenModelBinder() &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">return</span> binders;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="IValueProvider-提供參數填值"><a href="#IValueProvider-提供參數填值" class="headerlink" title="IValueProvider 提供參數填值"></a>IValueProvider 提供參數填值</h2><p><code>IValueProvider</code>介面有一個重要方法<code>GetValue</code>會返回<code>ValueProviderResult</code>物件對於<code>ValueProvider</code>參數封裝</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">ValueProviderResult <span class="title">GetValue</span>(<span class="params"><span class="keyword">string</span> key</span>)</span></span><br></pre></td></tr></table></figure></div>
+<h3 id="ValueProvider工廠集合-ValueProviderFactories"><a href="#ValueProvider工廠集合-ValueProviderFactories" class="headerlink" title="ValueProvider工廠集合(ValueProviderFactories)"></a>ValueProvider工廠集合(ValueProviderFactories)</h3><p>在<code>ControllerBase</code>類別中有一個屬性<code>ValueProvider</code>設定參數填值動作</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> IValueProvider ValueProvider</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (_valueProvider == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            _valueProvider = ValueProviderFactories.Factories.GetValueProvider(ControllerContext);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> _valueProvider;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">set</span> &#123; _valueProvider = <span class="keyword">value</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><strong>Http</strong>傳送參數可能又多種模式(<code>Post Form</code>,<code>Query String</code>,<code>Ajax</code>….)</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title">ValueProviderFactories</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> ValueProviderFactoryCollection _factories = <span class="keyword">new</span> ValueProviderFactoryCollection()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">new</span> ChildActionValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> FormValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> JsonValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> RouteDataValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> QueryStringValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> HttpFileCollectionValueProviderFactory(),</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ValueProviderFactoryCollection Factories</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _factories; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<ol>
+<li><code>ChildActionValueProviderFactory</code>：取得另一個呼叫<span class="exturl" data-url="bWFpbHRvOmBASHRtbC5BY3Rpb24=" title="mailto:`@Html.Action">`@Html.Action<i class="fa fa-external-link"></i></span>`傳來<strong>Model</strong>資料</li>
+<li><code>FormValueProviderFactory</code>：取得<code>HTTP POST</code>送來的資料</li>
+<li><code>JsonValueProviderFactory</code>：取得<code>JSON</code>資料(<code>Content-Type = application/json</code>)</li>
+<li><code>RouteDataValueProviderFactory</code>：取得從網址路徑取得到路由參數值</li>
+<li><code>QueryStringValueProviderFactory</code>：取得從<code>Http</code>請求的<code>Query String</code>資料</li>
+<li><code>HttpFileCollectionValueProviderFactory</code>：取得檔案上傳功能傳來檔案</li>
+</ol>
+<p>如果此次請求匹配到多個<code>ValueProvider</code>機制會怎處理?</p>
+<blockquote>
+<p>會按照上面<code>ProviderFactory</code>設定順序來排執行優先順序來填值</p>
+</blockquote>
+<h2 id="ValueProviderFactory"><a href="#ValueProviderFactory" class="headerlink" title="ValueProviderFactory"></a>ValueProviderFactory</h2><p><strong>MVC</strong>利用工廠模式透過<code>ValueProviderFactory</code>實現的工廠來<code>IValueProvider</code>填值提供者物件.</p>
+<h3 id="JsonValueProviderFactory"><a href="#JsonValueProviderFactory" class="headerlink" title="JsonValueProviderFactory"></a>JsonValueProviderFactory</h3><p>在<code>ValueProviderFactory</code>IValueProvider GetValueProvider</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">JsonValueProviderFactory</span> : <span class="title">ValueProviderFactory</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">AddToBackingStore</span>(<span class="params">EntryLimitedDictionary backingStore, <span class="keyword">string</span> prefix, <span class="keyword">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">object</span>&gt; d = <span class="keyword">value</span> <span class="keyword">as</span> IDictionary&lt;<span class="keyword">string</span>, <span class="keyword">object</span>&gt;;</span><br><span class="line">		<span class="keyword">if</span> (d != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">foreach</span> (KeyValuePair&lt;<span class="keyword">string</span>, <span class="keyword">object</span>&gt; entry <span class="keyword">in</span> d)</span><br><span class="line">			&#123;</span><br><span class="line">				AddToBackingStore(backingStore, MakePropertyKey(prefix, entry.Key), entry.Value);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		IList l = <span class="keyword">value</span> <span class="keyword">as</span> IList;</span><br><span class="line">		<span class="keyword">if</span> (l != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; l.Count; i++)</span><br><span class="line">			&#123;</span><br><span class="line">				AddToBackingStore(backingStore, MakeArrayKey(prefix, i), l[i]);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// primitive</span></span><br><span class="line">		backingStore.Add(prefix, <span class="keyword">value</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">object</span> <span class="title">GetDeserializedObject</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (!controllerContext.HttpContext.Request.ContentType.StartsWith(<span class="string">"application/json"</span>, StringComparison.OrdinalIgnoreCase))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// not JSON request</span></span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		StreamReader reader = <span class="keyword">new</span> StreamReader(controllerContext.HttpContext.Request.InputStream);</span><br><span class="line">		<span class="keyword">string</span> bodyText = reader.ReadToEnd();</span><br><span class="line">		<span class="keyword">if</span> (String.IsNullOrEmpty(bodyText))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// no JSON data</span></span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		JavaScriptSerializer serializer = <span class="keyword">new</span> JavaScriptSerializer();</span><br><span class="line">		<span class="keyword">object</span> jsonData = serializer.DeserializeObject(bodyText);</span><br><span class="line">		<span class="keyword">return</span> jsonData;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IValueProvider <span class="title">GetValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (controllerContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controllerContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">object</span> jsonData = GetDeserializedObject(controllerContext);</span><br><span class="line">		<span class="keyword">if</span> (jsonData == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">object</span>&gt; backingStore = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">object</span>&gt;(StringComparer.OrdinalIgnoreCase);</span><br><span class="line">		EntryLimitedDictionary backingStoreWrapper = <span class="keyword">new</span> EntryLimitedDictionary(backingStore);</span><br><span class="line">		AddToBackingStore(backingStoreWrapper, String.Empty, jsonData);</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> DictionaryValueProvider&lt;<span class="keyword">object</span>&gt;(backingStore, CultureInfo.CurrentCulture);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/ValueProvider_Factory.jpg" alt="UML_Model"></p>
+<h2 id="取得IValueProvider"><a href="#取得IValueProvider" class="headerlink" title="取得IValueProvider"></a>取得IValueProvider</h2><p>透過<code>ValueProviderFactory</code>返回相對應的<code>IValueProvider</code>物件.</p>
+<p>下面介紹幾個實現<code>ValueProvider</code>物件</p>
+<h3 id="NameValueCollectionValueProvider"><a href="#NameValueCollectionValueProvider" class="headerlink" title="NameValueCollectionValueProvider"></a>NameValueCollectionValueProvider</h3><p><code>NameValueCollectionValueProvider</code>可從<code>NameValueCollection</code>集合取得參數.</p>
+<p>因為<code>Request.Form</code>和<code>Request.QueryString</code>都是<code>NameValueCollection</code>類型集合.</p>
+<blockquote>
+<p>　這個方法很巧妙利用一個共同參數類型簽章來達成多態轉折點</p>
+</blockquote>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">virtual</span> NameValueCollection Form</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//....</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">virtual</span> NameValueCollection QueryString</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//....</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><strong>Http</strong>傳值到<strong>Server</strong>有許多方式,這裡介紹<strong>MVC</strong>利用哪個<strong>ValueProvider</strong>將<code>Form</code>跟<code>QueryString</code>填值到物件上,很巧妙使用<code>NameValueCollectionValueProvider</code>建構子參數<code>NameValueCollection</code>決定是要使用<code>Form</code>或<code>QueryString</code>填充值到參數.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">FormValueProvider</span> : <span class="title">NameValueCollectionValueProvider</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">FormValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">controllerContext, new UnvalidatedRequestValuesWrapper(controllerContext.HttpContext.Request.Unvalidated</span>))</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">FormValueProvider</span>(<span class="params">ControllerContext controllerContext, IUnvalidatedRequestValues unvalidatedValues</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext.HttpContext.Request.Form, unvalidatedValues.Form, CultureInfo.CurrentCulture</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">QueryStringValueProvider</span> : <span class="title">NameValueCollectionValueProvider</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">QueryStringValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">controllerContext, new UnvalidatedRequestValuesWrapper(controllerContext.HttpContext.Request.Unvalidated</span>))</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">QueryStringValueProvider</span>(<span class="params">ControllerContext controllerContext, IUnvalidatedRequestValues unvalidatedValues</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext.HttpContext.Request.QueryString, unvalidatedValues.QueryString, CultureInfo.InvariantCulture</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>實現<code>IValueProvider</code>物件主要會依靠<code>GetValue</code>方法取得<code>ValueProviderResult</code>.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">Serializable</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ValueProviderResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> CultureInfo _staticCulture = CultureInfo.InvariantCulture;</span><br><span class="line">	<span class="keyword">private</span> CultureInfo _instanceCulture;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="title">ValueProviderResult</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ValueProviderResult</span>(<span class="params"><span class="keyword">object</span> rawValue, <span class="keyword">string</span> attemptedValue, CultureInfo culture</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		RawValue = rawValue;</span><br><span class="line">		AttemptedValue = attemptedValue;</span><br><span class="line">		Culture = culture;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> AttemptedValue &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> CultureInfo Culture</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_instanceCulture == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				_instanceCulture = _staticCulture;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _instanceCulture;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">protected</span> <span class="keyword">set</span> &#123; _instanceCulture = <span class="keyword">value</span>; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">object</span> RawValue &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">object</span> <span class="title">ConvertTo</span>(<span class="params">Type type</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">return</span> ConvertTo(type, <span class="literal">null</span> <span class="comment">/* culture */</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">object</span> <span class="title">ConvertTo</span>(<span class="params">Type type, CultureInfo culture</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="comment">//....</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><code>ValueProviderResult</code>對於<code>ValueProvider</code>物件做封裝，一般存放<code>Http</code>參數擁有兩個只讀屬性</p>
+<ol>
+<li><code>RawValue</code>表示物件值</li>
+<li><code>AttemptedValue</code>主要用於顯示</li>
+</ol>
+<p><code>ValueProviderResult</code>提供兩個<code>ConvertTo</code>重載方法實現向指定目標類型轉換。</p>
+<p>某些類型格式化依賴於相應的語言文化（比如時間、日期和貨幣等），這個語言文化通過<code>Culture</code>屬性來達成.</p>
+<p>最終會呼叫一個<code>UnwrapPossibleArrayType</code>方法來建立物件</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>在<code>ControllerActionInvoker.GetParameterValue</code>取得參數方法,<code>ModelBing</code>動作有兩個重要的屬性</p>
+<ul>
+<li><code>IValueProvider</code>:提供如何填值</li>
+<li><code>IModelBinder</code>:建立物件(綁定關聯) 預設使用<code>DefaultModelBinder</code>類別.</li>
+</ul>
+<p>目前分享的<code>IValueProvider</code>和<code>IModelBinder</code> UML類別關聯圖如下</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg" alt="UML_Model"></p>
+<p>下篇會介紹<code>ModelBind</code>模型綁定重點邏輯,有分簡單參數綁定和複雜參數綁定</p>
+<ul>
+<li><code>BindComplexModel</code></li>
+<li><code>BindSimpleModel</code></li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day18/">https://isdaniel.github.io/ithelp-day18/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day21\" rel="bookmark">探討Model驗證標籤(ValidationAttribute) (第21天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day20\" rel="bookmark">探討Model上客製化標籤如何被解析使用 (第20天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day9\" rel="bookmark">進入MVC原始碼世界 Route & RouteTable 原始碼解析 (第9天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day8\" rel="bookmark">揭密Mvc使用IHttpHandler by UrlRoutingModule-4.0 (第8天)</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\ithelp-day7\" rel="bookmark">Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler (第7天)</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/C/" rel="tag"># C#</a>
+          
+            <a href="/tags/Asp-net/" rel="tag"># Asp.net</a>
+          
+            <a href="/tags/Asp-net-MVC/" rel="tag"># Asp.net-MVC</a>
+          
+            <a href="/tags/SourceCode/" rel="tag"># SourceCode</a>
+          
+            <a href="/tags/11th鐵人賽/" rel="tag"># 11th鐵人賽</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/ithelp-day17/" rel="next" title="Action方法如何被執行InvokeAction(二) (第17天)">
+                <i class="fa fa-chevron-left"></i> Action方法如何被執行InvokeAction(二) (第17天)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/ithelp-day19/" rel="prev" title="Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)">
+                Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+  <br>
+  <div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
+            
+              <p class="site-author-name" itemprop="name">Daniel Shih</p>
+              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">92</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">29</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">88</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IModelBinder-DefaultModelBinder"><span class="nav-number">1.2.</span> <span class="nav-text">IModelBinder(DefaultModelBinder)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ModelBinders"><span class="nav-number">1.2.1.</span> <span class="nav-text">ModelBinders</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ModelBinderDictionary"><span class="nav-number">1.2.2.</span> <span class="nav-text">ModelBinderDictionary</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IValueProvider-提供參數填值"><span class="nav-number">1.3.</span> <span class="nav-text">IValueProvider 提供參數填值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ValueProvider工廠集合-ValueProviderFactories"><span class="nav-number">1.3.1.</span> <span class="nav-text">ValueProvider工廠集合(ValueProviderFactories)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ValueProviderFactory"><span class="nav-number">1.4.</span> <span class="nav-text">ValueProviderFactory</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JsonValueProviderFactory"><span class="nav-number">1.4.1.</span> <span class="nav-text">JsonValueProviderFactory</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#取得IValueProvider"><span class="nav-number">1.5.</span> <span class="nav-text">取得IValueProvider</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#NameValueCollectionValueProvider"><span class="nav-number">1.5.1.</span> <span class="nav-text">NameValueCollectionValueProvider</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結："><span class="nav-number">1.6.</span> <span class="nav-text">小結：</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+    <span title="Symbols count total">386k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+    <span title="Reading time total">11:41</span>
+  
+</div>
+
+
+
+  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+  
+  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/reading_progress/reading_progress.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-141257985-1');
+</script>
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+  <script src="/js/exturl.js?v=7.1.1"></script>
+
+
+  
+
+  
+  
+  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/ithelp-day18/";
+    this.page.identifier = "ithelp-day18/";
+    this.page.title = '提供ModelBing幾個重要功臣(Model) (第18天)';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    $(function() {
+      var offsetTop = $('#comments').offset().top - $(window).height();
+      if (offsetTop <= 0) {
+        // load directly when there's no a scrollbar
+        loadComments();
+      } else {
+        $(window).on('scroll.disqus_scroll', function() {
+          // offsetTop may changes because of manually resizing browser window or lazy loading images.
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          var scrollTop = $(window).scrollTop();
+
+          // pre-load comments a bit? (margin or anything else)
+          if (offsetTop - scrollTop < 60) {
+            $(window).off('.disqus_scroll');
+            loadComments();
+          }
+        });
+      }
+    });
+  
+</script>
+
+
+
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '',
+    clientSecret: '',
+    repo: '',
+    owner: '',
+    admin: [''],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+<script>
+  $('.highlight').not('.gist .highlight').each(function(i, e) {
+    var $wrap = $('<div>').addClass('highlight-wrap');
+    $(e).after($wrap);
+    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
+      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+        return $(e).text();
+      }).toArray().join('\n');
+      var ta = document.createElement('textarea');
+      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+      ta.style.top = yPosition + 'px'; // Prevent page scroll
+      ta.style.position = 'absolute';
+      ta.style.opacity = '0';
+      ta.readOnly = true;
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, code.length);
+      ta.readOnly = false;
+      var result = document.execCommand('copy');
+      
+        if (result) $(this).text('Copied');
+        else $(this).text('Copy failed');
+      
+      ta.blur(); // For iOS
+      $(this).blur();
+    })).on('mouseleave', function(e) {
+      var $b = $(this).find('.copy-btn');
+      setTimeout(function() {
+        $b.text('Copy');
+      }, 300);
+    }).append(e);
+  })
+</script>
+
+
+  
+
+  
+
+</body>
+</html>
