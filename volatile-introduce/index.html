@@ -157,8 +157,12 @@
 <meta property="og:image" content="https://i.imgur.com/zXprOIe.png">
 <meta property="og:image" content="https://i.imgur.com/pUqN5ii.png">
 <meta property="og:image" content="https://i.imgur.com/fszxx6X.png">
+<meta property="og:image" content="https://i.imgur.com/Id8xPz6.png">
+<meta property="og:image" content="https://i.imgur.com/UHkm2RQ.png">
+<meta property="og:image" content="https://i.imgur.com/iJoRJnM.png">
+<meta property="og:image" content="https://i.imgur.com/qM7RtEF.png">
 <meta property="og:image" content="https://i.imgur.com/lMx2FJI.png">
-<meta property="og:updated_time" content="2021-07-31T03:21:00.303Z">
+<meta property="og:updated_time" content="2021-08-02T06:18:08.067Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="多執行緒系統中不得不知-volatile">
 <meta name="twitter:description" content="前言假如你寫過多執行緒系統一定會看過volatile，但你對他的了解有多少？ MSDN對於volatile關鍵字解釋如下.  volatile 關鍵字指出某個欄位可能是由同時執行的多個執行緒所修改。 編譯器、執行階段系統，甚至硬體都有可能基於效能因素，而重新排列對記憶體位置的讀取和寫入。 宣告為 volatile 的欄位不受限於這些最佳化考量。 加入 volatile 修飾詞可確保所有的執行緒都會">
@@ -522,7 +526,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-07-31 03:21:00" itemprop="dateModified" datetime="2021-07-31T03:21:00+00:00">2021-07-31</time>
+                <time title="Modified: 2021-08-02 06:18:08" itemprop="dateModified" datetime="2021-08-02T06:18:08+00:00">2021-08-02</time>
               
             
           </span>
@@ -595,7 +599,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">3.9k</span>
+                <span title="Symbols count in article">4.3k</span>
               
 
               
@@ -609,7 +613,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">7 mins.</span>
+                <span title="Reading time">8 mins.</span>
               
             </div>
           
@@ -703,6 +707,24 @@
 <p><code>MemoryBarrier</code>保證我們程式可見性，概念跟volatile一樣清除cache直接讀取主要Memory資料.</p>
 </blockquote>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title">VolatileRead</span>(<span class="params"><span class="keyword">ref</span> Object address</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Object ret = address;</span><br><span class="line">    <span class="comment">//呼叫組語load 禁止指令重排  從Memory拿到最新資料</span></span><br><span class="line">    MemoryBarrier(); <span class="comment">// Call MemoryBarrier to ensure the proper semantic in a portable way.</span></span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">VolatileWrite</span>(<span class="params"><span class="keyword">ref</span> Object address, Object <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//呼叫組語store 禁止指令重排</span></span><br><span class="line">    MemoryBarrier(); <span class="comment">// Call MemoryBarrier to ensure the proper semantic in a portable way.</span></span><br><span class="line">    address = <span class="keyword">value</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnRocmVhZC5tZW1vcnliYXJyaWVyP3ZpZXc9bmV0LTUuMCNTeXN0ZW1fVGhyZWFkaW5nX1RocmVhZF9NZW1vcnlCYXJyaWVy" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.thread.memorybarrier?view=net-5.0#System_Threading_Thread_MemoryBarrier">MSDN Thread.MemoryBarrier<i class="fa fa-external-link"></i></span>其中有段說明</p>
+<blockquote>
+<p>同步處理記憶體存取，如下所示：執行目前執行緒的處理器無法以下列方式重新排列指示</p>
+</blockquote>
+<h3 id="IL中使用volatile差異"><a href="#IL中使用volatile差異" class="headerlink" title="IL中使用volatile差異"></a>IL中使用volatile差異</h3><p>我們知道C#是透過CLR來運行IL中繼語言，我們可以透過<code>ILSpy</code>來查看上面使用volatile和沒使用volatile差異</p>
+<h4 id="沒使用volatile"><a href="#沒使用volatile" class="headerlink" title="沒使用volatile"></a>沒使用volatile</h4><p>Main function:</p>
+<p><img src="https://i.imgur.com/Id8xPz6.png" alt></p>
+<p>Member Class:</p>
+<p><img src="https://i.imgur.com/UHkm2RQ.png" alt></p>
+<h4 id="使用volatile"><a href="#使用volatile" class="headerlink" title="使用volatile"></a>使用volatile</h4><p>Main function:</p>
+<p><img src="https://i.imgur.com/iJoRJnM.png" alt></p>
+<p>Member Class:</p>
+<p><img src="https://i.imgur.com/qM7RtEF.png" alt></p>
+<p>上面IL能發現有使用volatile差異在一個指令<a href="[OpCodes.Volatile](https://docs.microsoft.com/zh-tw/dotnet/api/system.reflection.emit.opcodes.volatile?view=net-5.0">OpCodes.Volatile</a>)</p>
+<blockquote>
+<p>指定目前在評估Heap頂端的位址可能是volatile，並且<strong>無法快取讀</strong>取該位置的結果，或者無法隱藏存放該位置的多個存放區。</p>
+</blockquote>
+<p>上面是MSDN解釋 主要是說使用volatile在Thread中就無法cache該變數資料每次讀取都必須回Memory中讀.</p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在多執行緒系統中我建議常異動的變數要使用<code>volatile</code>來保證每個Thread讀,寫資料是正確</p>
 <p><img src="https://i.imgur.com/lMx2FJI.png" alt></p>
 <p>發現在我們常用的Console類別,運用許多<code>volatile</code>來達到Thread互相資料可見性.</p>
@@ -1244,7 +1266,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile-三大特性"><span class="nav-number">2.</span> <span class="nav-text">volatile 三大特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile令變數具有可見性-amp-volatile避免指令優化重排"><span class="nav-number">3.</span> <span class="nav-text">volatile令變數具有可見性 &amp; volatile避免指令優化重排</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#解釋volatile可見性-amp-指令優化重排"><span class="nav-number">3.1.</span> <span class="nav-text">解釋volatile可見性 &amp; 指令優化重排</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-volatile-解決問題"><span class="nav-number">3.2.</span> <span class="nav-text">使用 volatile 解決問題</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile-不保證Atomic"><span class="nav-number">4.</span> <span class="nav-text">volatile 不保證Atomic</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#區域變數或參考型別使用volatile"><span class="nav-number">5.</span> <span class="nav-text">區域變數或參考型別使用volatile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">6.</span> <span class="nav-text">小結</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile-三大特性"><span class="nav-number">2.</span> <span class="nav-text">volatile 三大特性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile令變數具有可見性-amp-volatile避免指令優化重排"><span class="nav-number">3.</span> <span class="nav-text">volatile令變數具有可見性 &amp; volatile避免指令優化重排</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#解釋volatile可見性-amp-指令優化重排"><span class="nav-number">3.1.</span> <span class="nav-text">解釋volatile可見性 &amp; 指令優化重排</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-volatile-解決問題"><span class="nav-number">3.2.</span> <span class="nav-text">使用 volatile 解決問題</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile-不保證Atomic"><span class="nav-number">4.</span> <span class="nav-text">volatile 不保證Atomic</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#區域變數或參考型別使用volatile"><span class="nav-number">5.</span> <span class="nav-text">區域變數或參考型別使用volatile</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#IL中使用volatile差異"><span class="nav-number">5.1.</span> <span class="nav-text">IL中使用volatile差異</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#沒使用volatile"><span class="nav-number">5.1.1.</span> <span class="nav-text">沒使用volatile</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用volatile"><span class="nav-number">5.1.2.</span> <span class="nav-text">使用volatile</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">6.</span> <span class="nav-text">小結</span></a></li></ol></div>
             
 
           </div>
@@ -1286,7 +1308,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">11:41</span>
+    <span title="Reading time total">11:42</span>
   
 </div>
 
