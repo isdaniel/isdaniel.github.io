@@ -152,7 +152,7 @@
 <meta property="og:description" content="前言你知道object lock底層怎麼實作，可重入鎖是底層是怎麼運作的嗎? 本篇就跟大家分享這些細節. 可重入鎖Demo1234567891011121314151617181920212223242526272829303132333435363738class Program&amp;#123;    static object _object = new object();    static v">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/dWZF6DH.png">
-<meta property="og:updated_time" content="2021-08-15T15:51:49.628Z">
+<meta property="og:updated_time" content="2021-08-16T00:55:40.148Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="CLR系列-Lock深入淺出">
 <meta name="twitter:description" content="前言你知道object lock底層怎麼實作，可重入鎖是底層是怎麼運作的嗎? 本篇就跟大家分享這些細節. 可重入鎖Demo1234567891011121314151617181920212223242526272829303132333435363738class Program&amp;#123;    static object _object = new object();    static v">
@@ -499,12 +499,24 @@
                 
               
 
-              <time title="Created: 2021-08-15 21:13:34 / Modified: 15:51:49" itemprop="dateCreated datePublished" datetime="2021-08-15T21:13:34+00:00">2021-08-15</time>
+              <time title="Created: 2021-08-15 21:13:34" itemprop="dateCreated datePublished" datetime="2021-08-15T21:13:34+00:00">2021-08-15</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-08-16 00:55:40" itemprop="dateModified" datetime="2021-08-16T00:55:40+00:00">2021-08-16</time>
               
             
           </span>
@@ -653,6 +665,9 @@
 <li>m_appDomainIndex:當前AppDomain標示</li>
 <li>m_lockState:目前lock佔有狀態(int 0代表可用，1代表不可用)</li>
 </ul>
+<blockquote>
+<p>syncBlock內置有一個FIFO等待鏈結表的排隊隊列，將每個等待獲取lock的Thread封裝成一個Node</p>
+</blockquote>
 <p>下面部分會跟大家介紹cpp核心解鎖</p>
 <h2 id="LockState-object"><a href="#LockState-object" class="headerlink" title="LockState object"></a>LockState object</h2><p>m_lockState這個變數帳管syncblk鎖狀態，對於Lock來說至關重要</p>
 <p>下面是原始碼，裡面涉及許多邏輯運算我不打算一一解說 有興趣的可以自行查看</p>
