@@ -2605,6 +2605,85 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
+    <title>Reflection在進化-淺談Expression表達式</title>
+    <url>/expression-vs-reflection/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>稍微有經驗的.net工程師一定聽過或使用過Reflection,Reflection雖然好用(能動態處理很多事情)但對於效能會有些影響.</p>
+<p>我能否擁有Reflection的動態彈性且兼顧效能呢?</p>
+<p>有:就是我們這次要介紹的Expression.</p>
+<h2 id="Expression-vs-Reflection-performace"><a href="#Expression-vs-Reflection-performace" class="headerlink" title="Expression vs Reflection performace"></a>Expression vs Reflection performace</h2><p>我會準備一個範例來比較<code>Expression</code>和<code>Reflection</code>效能差異</p>
+<ul>
+<li><code>Expression</code></li>
+<li><code>Activator.CreateInstance</code></li>
+</ul>
+<h3 id="Activator-CreateInstance-Code"><a href="#Activator-CreateInstance-Code" class="headerlink" title="Activator.CreateInstance Code"></a>Activator.CreateInstance Code</h3><p><code>Activator.CreateInstance</code>沒甚麼好說就是一個靜態方法傳入<code>Type</code>動態產生一個物件</p>
+<h3 id="Expression-code"><a href="#Expression-code" class="headerlink" title="Expression code"></a>Expression code</h3><p>Expression程式碼如下,能發現只是為了建立一個物件需要寫一大堆程式碼(但這些程式碼對於追求效能的你是必須的)</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delegate</span> T Func&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args);</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//get a lambda method to create new object.</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Func&lt;T&gt; ExpressionCreator&lt;T&gt;()</span><br><span class="line">	&#123;</span><br><span class="line">		ConstructorInfo ctor = <span class="keyword">typeof</span>(T).GetConstructors().FirstOrDefault();</span><br><span class="line">		Type type = ctor.DeclaringType;</span><br><span class="line"></span><br><span class="line">		ParameterInfo[] paramsInfo = ctor.GetParameters();</span><br><span class="line"></span><br><span class="line">		ParameterExpression param =</span><br><span class="line">			Expression.Parameter(<span class="keyword">typeof</span>(<span class="keyword">object</span>[]), <span class="string">"args"</span>);</span><br><span class="line"></span><br><span class="line">		Expression[] argsExp =</span><br><span class="line">			<span class="keyword">new</span> Expression[paramsInfo.Length];</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; paramsInfo.Length; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			Expression index = Expression.Constant(i);</span><br><span class="line">			Type paramType = paramsInfo[i].ParameterType;</span><br><span class="line"></span><br><span class="line">			Expression paramAccessorExp =</span><br><span class="line">				Expression.ArrayIndex(param, index);</span><br><span class="line"></span><br><span class="line">			Expression paramCastExp =</span><br><span class="line">				Expression.Convert(paramAccessorExp, paramType);</span><br><span class="line"></span><br><span class="line">			argsExp[i] = paramCastExp;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		NewExpression newExp = Expression.New(ctor, argsExp);</span><br><span class="line"></span><br><span class="line">		LambdaExpression lambda = Expression.Lambda(<span class="keyword">typeof</span>(Func&lt;T&gt;), newExp, param);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> (Func&lt;T&gt;)lambda.Compile();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>產生出來Lambda程式碼如下,之後我們就可以透過此lambda來產生我們要物件摟</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">.Lambda <span class="meta">#Lambda1&lt;ConsoleWeb.Func`1[ConsoleWeb.A]&gt;(System.Object[] $args) &#123;</span></span><br><span class="line">    .New ConsoleWeb.A()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="BenchmarkDotNet分析"><a href="#BenchmarkDotNet分析" class="headerlink" title="BenchmarkDotNet分析"></a>BenchmarkDotNet分析</h2><p>Sample Project放在<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvRXhwcmVzc2lvblZzUmVmbGVjdGlvbg==" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/ExpressionVsReflection">GitHub ExpressionVsReflection<i class="fa fa-external-link"></i></span></p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">delegate</span> T Func&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args);</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ObjectProvider</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> ConcurrentDictionary&lt;<span class="keyword">string</span>,Delegate&gt; _mapFunc = <span class="keyword">new</span> ConcurrentDictionary&lt;<span class="keyword">string</span>, Delegate&gt;();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> T ReflectionCreator&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args)</span><br><span class="line">		<span class="keyword">where</span> T : <span class="keyword">class</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> Activator.CreateInstance(<span class="keyword">typeof</span>(T), args) <span class="keyword">as</span> T;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Func&lt;T&gt; ExpressionCreator&lt;T&gt;()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">var</span> key = <span class="keyword">typeof</span>(T).Name;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (!_mapFunc.TryGetValue(key, <span class="keyword">out</span> Delegate result))</span><br><span class="line">		&#123;</span><br><span class="line">			ConstructorInfo ctor = <span class="keyword">typeof</span>(T).GetConstructors().FirstOrDefault();</span><br><span class="line"></span><br><span class="line">			ParameterInfo[] paramsInfo = ctor.GetParameters();</span><br><span class="line"></span><br><span class="line">			ParameterExpression param =</span><br><span class="line">				Expression.Parameter(<span class="keyword">typeof</span>(<span class="keyword">object</span>[]), <span class="string">"args"</span>);</span><br><span class="line"></span><br><span class="line">			Expression[] argsExp =</span><br><span class="line">				<span class="keyword">new</span> Expression[paramsInfo.Length];</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; paramsInfo.Length; i++)</span><br><span class="line">			&#123;</span><br><span class="line">				Expression index = Expression.Constant(i);</span><br><span class="line">				Type paramType = paramsInfo[i].ParameterType;</span><br><span class="line"></span><br><span class="line">				Expression paramAccessorExp =</span><br><span class="line">					Expression.ArrayIndex(param, index);</span><br><span class="line"></span><br><span class="line">				Expression paramCastExp =</span><br><span class="line">					Expression.Convert(paramAccessorExp, paramType);</span><br><span class="line"></span><br><span class="line">				argsExp[i] = paramCastExp;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			NewExpression newExp = Expression.New(ctor, argsExp);</span><br><span class="line"></span><br><span class="line">			LambdaExpression lambda = Expression.Lambda(<span class="keyword">typeof</span>(Func&lt;T&gt;), newExp, param);</span><br><span class="line"></span><br><span class="line">			result = lambda.Compile();</span><br><span class="line"></span><br><span class="line">			_mapFunc.GetOrAdd(key, result);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> (Func&lt;T&gt;)result;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">BenchmarkDotNet</span>=v0.<span class="number">12.1</span>, OS=Windows <span class="number">10.0</span>.<span class="number">18363.1440</span> (<span class="number">1909</span>/November2018Update/<span class="number">19</span>H2)</span><br><span class="line">Intel Core i7-9700 CPU 3.00GHz, 1 CPU, 8 logical and 8 physical cores</span><br><span class="line">  [Host]     : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT DEBUG  [AttachedDebugger]</span><br><span class="line">  ShortRun   : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT</span><br><span class="line">  Job-ZMUHMP : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT</span><br><span class="line"></span><br><span class="line">|                            Method |         Mean |    StdDev |      Error |  Gen 0 | Gen 1 | Gen 2 | Allocated |</span><br><span class="line">|---------------------------------- |-------------:|----------:|-----------:|-------:|------:|------:|----------:|</span><br><span class="line">|  &amp;#39;ExpressionCreator no parameter&amp;#39; |     54.87 ns |  0.111 ns |   2.021 ns |      - |     - |     - |         - |</span><br><span class="line">| &amp;#39;ExpressionCreator had parameter&amp;#39; |     77.08 ns |  0.511 ns |   9.314 ns | 0.0076 |     - |     - |      40 B |</span><br><span class="line">|  &amp;#39;ReflectionCreator no parameter&amp;#39; |    463.32 ns |  2.229 ns |  40.667 ns | 0.0318 |     - |     - |     168 B |</span><br><span class="line">| &amp;#39;ReflectionCreator had parameter&amp;#39; |    604.89 ns | 13.413 ns | 244.710 ns | 0.0426 |     - |     - |     224 B |</span><br></pre></td></tr></table></figure>
+<p>上面顯示使用Expression效能比起使用Reflection有明顯提升.</p>
+<h3 id="Expression小提醒"><a href="#Expression小提醒" class="headerlink" title="Expression小提醒"></a>Expression小提醒</h3><blockquote>
+<p>如果使用Expression或Emit技術時,產生的程式碼(委派)記得使用Cache存放起來,因為如果每次執行都運算Compile效能反而會比Reflection還要更差.</p>
+</blockquote>
+<p>如果沒有使用Cache來執行Expression效率就大大降低甚至比Reflection還要差.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="GHERKIN"><figure class="iseeu highlight /gherkin"><table><tr><td class="code"><pre><span class="line">|<span class="string">                            Method </span>|<span class="string">         Mean </span>|<span class="string">    StdDev </span>|<span class="string">       Error </span>|<span class="string">  Gen 0 </span>|<span class="string">  Gen 1 </span>|<span class="string"> Gen 2 </span>|<span class="string"> Allocated </span>|</span><br><span class="line">|<span class="string">---------------------------------- </span>|<span class="string">-------------:</span>|<span class="string">----------:</span>|<span class="string">------------:</span>|<span class="string">-------:</span>|<span class="string">-------:</span>|<span class="string">------:</span>|<span class="string">----------:</span>|</span><br><span class="line">|<span class="string">  &amp;#39;ReflectionCreator no parameter&amp;#39; </span>|<span class="string">     464.3 ns </span>|<span class="string">   5.30 ns </span>|<span class="string">    96.70 ns </span>|<span class="string"> 0.0318 </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">     168 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ReflectionCreator had parameter&amp;#39; </span>|<span class="string">     586.2 ns </span>|<span class="string">   0.40 ns </span>|<span class="string">     7.25 ns </span>|<span class="string"> 0.0426 </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">     224 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ReflectionCreator had parameter&amp;#39; </span>|<span class="string">  10,000.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ReflectionCreator no parameter&amp;#39; </span>|<span class="string">  11,500.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ExpressionCreator no parameter&amp;#39; </span>|<span class="string">  45,225.3 ns </span>|<span class="string">  64.40 ns </span>|<span class="string"> 1,174.88 ns </span>|<span class="string"> 0.4883 </span>|<span class="string"> 0.4069 </span>|<span class="string">     - </span>|<span class="string">    2909 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ExpressionCreator had parameter&amp;#39; </span>|<span class="string">  67,297.9 ns </span>|<span class="string"> 522.99 ns </span>|<span class="string"> 9,541.35 ns </span>|<span class="string"> 0.5697 </span>|<span class="string"> 0.4883 </span>|<span class="string">     - </span>|<span class="string">    3324 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ExpressionCreator had parameter&amp;#39; </span>|<span class="string"> 339,900.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ExpressionCreator no parameter&amp;#39; </span>|<span class="string"> 352,500.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br></pre></td></tr></table></figure></div>
+<h3 id="常用Expression解說"><a href="#常用Expression解說" class="headerlink" title="常用Expression解說"></a>常用Expression解說</h3><p>透過上面範例,能發現Expression核心概念是用來產生Delegate程式碼並呼叫使用.</p>
+<blockquote>
+<p>因為動作最小單位是<strong>方法</strong>,委派可以視做<strong>方法</strong></p>
+</blockquote>
+<ul>
+<li>Expression.Call 呼叫委派方法<ul>
+<li>Note:如果呼叫static方法第一個參數是null</li>
+</ul>
+</li>
+<li>Expression.Assign 對於Expression給值 ex: expression1 = expression2</li>
+<li>Expression.Block  大括號區域 ex:<code>{}</code></li>
+<li>Expression.Convert 轉型</li>
+<li>Expression.Multiply 乘法</li>
+<li>Expression.Bind 綁定物件屬性,成員</li>
+<li>Expression.MemberInit 建構子成員初始化</li>
+<li>(BinaryExpression)<ul>
+<li>Expression.GreaterThanOrEqual:大於等於</li>
+<li>Expression.GreaterThan:大於</li>
+<li>Expression.LessThanOrEqual:小於等於</li>
+<li>Expression.LessThan:小於</li>
+</ul>
+</li>
+<li>Expression.Lambda 封裝成方法</li>
+<li>Expression.New 建立New語法</li>
+</ul>
+<h4 id="ArrayAccess-vs-ArrayIndex"><a href="#ArrayAccess-vs-ArrayIndex" class="headerlink" title="ArrayAccess vs ArrayIndex"></a>ArrayAccess vs ArrayIndex</h4><ul>
+<li>ArrayIndex 是只讀Index</li>
+<li>ArrayAccess 可讀可寫</li>
+</ul>
+<blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS9xdWVzdGlvbnMvMTQ5NzM4MTMvYXJyYXlhY2Nlc3MtdnMtYXJyYXlpbmRleC1pbi1leHByZXNzaW9uLXRyZWU=" title="https://stackoverflow.com/questions/14973813/arrayaccess-vs-arrayindex-in-expression-tree">https://stackoverflow.com/questions/14973813/arrayaccess-vs-arrayindex-in-expression-tree<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Expression和Emit雖然難寫,但寫的好可以讓程式碼更有彈性且比Reflection更有效能,Expression在許多知名架構都有使用(包含微軟MVC框架也是使用Reflection + Expression來優化),舉一個例子動態代理就很適合使用<code>Expression</code>或<code>Emit</code>來優化.</p>
+<blockquote>
+<p>知名動態代理框架<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2Nhc3RsZXByb2plY3QvQ29yZQ==" title="https://github.com/castleproject/Core">castle<i class="fa fa-external-link"></i></span>有使用到Emit.</p>
+</blockquote>
+<p>Emit想要解決的問題和Expression類似,只是Emit提供更多底層API讓我們呼叫(比Expression可以控制更多細節)</p>
+<blockquote>
+<p>Emit可以寫類似IL程式語法</p>
+</blockquote>
+<p>想必然Emit寫起來也更繁瑣更容易出錯.</p>
+<p>所以了解Expression是前往.net進階工程師必經之路.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/expression-vs-reflection/">https://isdaniel.github.io/expression-vs-reflection/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>OOP</tag>
+        <tag>Reflection</tag>
+        <tag>Expression</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>為什麼 Float和Double會有誤差 (浮點數儲存原理)</title>
     <url>/float-double/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>大家都知道float和double會有誤差 </p>
@@ -2744,85 +2823,6 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
-    <title>Reflection在進化-淺談Expression表達式</title>
-    <url>/expression-vs-reflection/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>稍微有經驗的.net工程師一定聽過或使用過Reflection,Reflection雖然好用(能動態處理很多事情)但對於效能會有些影響.</p>
-<p>我能否擁有Reflection的動態彈性且兼顧效能呢?</p>
-<p>有:就是我們這次要介紹的Expression.</p>
-<h2 id="Expression-vs-Reflection-performace"><a href="#Expression-vs-Reflection-performace" class="headerlink" title="Expression vs Reflection performace"></a>Expression vs Reflection performace</h2><p>我會準備一個範例來比較<code>Expression</code>和<code>Reflection</code>效能差異</p>
-<ul>
-<li><code>Expression</code></li>
-<li><code>Activator.CreateInstance</code></li>
-</ul>
-<h3 id="Activator-CreateInstance-Code"><a href="#Activator-CreateInstance-Code" class="headerlink" title="Activator.CreateInstance Code"></a>Activator.CreateInstance Code</h3><p><code>Activator.CreateInstance</code>沒甚麼好說就是一個靜態方法傳入<code>Type</code>動態產生一個物件</p>
-<h3 id="Expression-code"><a href="#Expression-code" class="headerlink" title="Expression code"></a>Expression code</h3><p>Expression程式碼如下,能發現只是為了建立一個物件需要寫一大堆程式碼(但這些程式碼對於追求效能的你是必須的)</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">delegate</span> T Func&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args);</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//get a lambda method to create new object.</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Func&lt;T&gt; ExpressionCreator&lt;T&gt;()</span><br><span class="line">	&#123;</span><br><span class="line">		ConstructorInfo ctor = <span class="keyword">typeof</span>(T).GetConstructors().FirstOrDefault();</span><br><span class="line">		Type type = ctor.DeclaringType;</span><br><span class="line"></span><br><span class="line">		ParameterInfo[] paramsInfo = ctor.GetParameters();</span><br><span class="line"></span><br><span class="line">		ParameterExpression param =</span><br><span class="line">			Expression.Parameter(<span class="keyword">typeof</span>(<span class="keyword">object</span>[]), <span class="string">"args"</span>);</span><br><span class="line"></span><br><span class="line">		Expression[] argsExp =</span><br><span class="line">			<span class="keyword">new</span> Expression[paramsInfo.Length];</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; paramsInfo.Length; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			Expression index = Expression.Constant(i);</span><br><span class="line">			Type paramType = paramsInfo[i].ParameterType;</span><br><span class="line"></span><br><span class="line">			Expression paramAccessorExp =</span><br><span class="line">				Expression.ArrayIndex(param, index);</span><br><span class="line"></span><br><span class="line">			Expression paramCastExp =</span><br><span class="line">				Expression.Convert(paramAccessorExp, paramType);</span><br><span class="line"></span><br><span class="line">			argsExp[i] = paramCastExp;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		NewExpression newExp = Expression.New(ctor, argsExp);</span><br><span class="line"></span><br><span class="line">		LambdaExpression lambda = Expression.Lambda(<span class="keyword">typeof</span>(Func&lt;T&gt;), newExp, param);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> (Func&lt;T&gt;)lambda.Compile();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>產生出來Lambda程式碼如下,之後我們就可以透過此lambda來產生我們要物件摟</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">.Lambda <span class="meta">#Lambda1&lt;ConsoleWeb.Func`1[ConsoleWeb.A]&gt;(System.Object[] $args) &#123;</span></span><br><span class="line">    .New ConsoleWeb.A()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="BenchmarkDotNet分析"><a href="#BenchmarkDotNet分析" class="headerlink" title="BenchmarkDotNet分析"></a>BenchmarkDotNet分析</h2><p>Sample Project放在<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvRXhwcmVzc2lvblZzUmVmbGVjdGlvbg==" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/ExpressionVsReflection">GitHub ExpressionVsReflection<i class="fa fa-external-link"></i></span></p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">delegate</span> T Func&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args);</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ObjectProvider</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> ConcurrentDictionary&lt;<span class="keyword">string</span>,Delegate&gt; _mapFunc = <span class="keyword">new</span> ConcurrentDictionary&lt;<span class="keyword">string</span>, Delegate&gt;();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> T ReflectionCreator&lt;T&gt;(<span class="keyword">params</span> <span class="keyword">object</span>[] args)</span><br><span class="line">		<span class="keyword">where</span> T : <span class="keyword">class</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> Activator.CreateInstance(<span class="keyword">typeof</span>(T), args) <span class="keyword">as</span> T;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> Func&lt;T&gt; ExpressionCreator&lt;T&gt;()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">var</span> key = <span class="keyword">typeof</span>(T).Name;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (!_mapFunc.TryGetValue(key, <span class="keyword">out</span> Delegate result))</span><br><span class="line">		&#123;</span><br><span class="line">			ConstructorInfo ctor = <span class="keyword">typeof</span>(T).GetConstructors().FirstOrDefault();</span><br><span class="line"></span><br><span class="line">			ParameterInfo[] paramsInfo = ctor.GetParameters();</span><br><span class="line"></span><br><span class="line">			ParameterExpression param =</span><br><span class="line">				Expression.Parameter(<span class="keyword">typeof</span>(<span class="keyword">object</span>[]), <span class="string">"args"</span>);</span><br><span class="line"></span><br><span class="line">			Expression[] argsExp =</span><br><span class="line">				<span class="keyword">new</span> Expression[paramsInfo.Length];</span><br><span class="line"></span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; paramsInfo.Length; i++)</span><br><span class="line">			&#123;</span><br><span class="line">				Expression index = Expression.Constant(i);</span><br><span class="line">				Type paramType = paramsInfo[i].ParameterType;</span><br><span class="line"></span><br><span class="line">				Expression paramAccessorExp =</span><br><span class="line">					Expression.ArrayIndex(param, index);</span><br><span class="line"></span><br><span class="line">				Expression paramCastExp =</span><br><span class="line">					Expression.Convert(paramAccessorExp, paramType);</span><br><span class="line"></span><br><span class="line">				argsExp[i] = paramCastExp;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			NewExpression newExp = Expression.New(ctor, argsExp);</span><br><span class="line"></span><br><span class="line">			LambdaExpression lambda = Expression.Lambda(<span class="keyword">typeof</span>(Func&lt;T&gt;), newExp, param);</span><br><span class="line"></span><br><span class="line">			result = lambda.Compile();</span><br><span class="line"></span><br><span class="line">			_mapFunc.GetOrAdd(key, result);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> (Func&lt;T&gt;)result;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="attr">BenchmarkDotNet</span>=v0.<span class="number">12.1</span>, OS=Windows <span class="number">10.0</span>.<span class="number">18363.1440</span> (<span class="number">1909</span>/November2018Update/<span class="number">19</span>H2)</span><br><span class="line">Intel Core i7-9700 CPU 3.00GHz, 1 CPU, 8 logical and 8 physical cores</span><br><span class="line">  [Host]     : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT DEBUG  [AttachedDebugger]</span><br><span class="line">  ShortRun   : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT</span><br><span class="line">  Job-ZMUHMP : .NET Framework 4.8 (4.8.4250.0), X86 LegacyJIT</span><br><span class="line"></span><br><span class="line">|                            Method |         Mean |    StdDev |      Error |  Gen 0 | Gen 1 | Gen 2 | Allocated |</span><br><span class="line">|---------------------------------- |-------------:|----------:|-----------:|-------:|------:|------:|----------:|</span><br><span class="line">|  &amp;#39;ExpressionCreator no parameter&amp;#39; |     54.87 ns |  0.111 ns |   2.021 ns |      - |     - |     - |         - |</span><br><span class="line">| &amp;#39;ExpressionCreator had parameter&amp;#39; |     77.08 ns |  0.511 ns |   9.314 ns | 0.0076 |     - |     - |      40 B |</span><br><span class="line">|  &amp;#39;ReflectionCreator no parameter&amp;#39; |    463.32 ns |  2.229 ns |  40.667 ns | 0.0318 |     - |     - |     168 B |</span><br><span class="line">| &amp;#39;ReflectionCreator had parameter&amp;#39; |    604.89 ns | 13.413 ns | 244.710 ns | 0.0426 |     - |     - |     224 B |</span><br></pre></td></tr></table></figure>
-<p>上面顯示使用Expression效能比起使用Reflection有明顯提升.</p>
-<h3 id="Expression小提醒"><a href="#Expression小提醒" class="headerlink" title="Expression小提醒"></a>Expression小提醒</h3><blockquote>
-<p>如果使用Expression或Emit技術時,產生的程式碼(委派)記得使用Cache存放起來,因為如果每次執行都運算Compile效能反而會比Reflection還要更差.</p>
-</blockquote>
-<p>如果沒有使用Cache來執行Expression效率就大大降低甚至比Reflection還要差.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="GHERKIN"><figure class="iseeu highlight /gherkin"><table><tr><td class="code"><pre><span class="line">|<span class="string">                            Method </span>|<span class="string">         Mean </span>|<span class="string">    StdDev </span>|<span class="string">       Error </span>|<span class="string">  Gen 0 </span>|<span class="string">  Gen 1 </span>|<span class="string"> Gen 2 </span>|<span class="string"> Allocated </span>|</span><br><span class="line">|<span class="string">---------------------------------- </span>|<span class="string">-------------:</span>|<span class="string">----------:</span>|<span class="string">------------:</span>|<span class="string">-------:</span>|<span class="string">-------:</span>|<span class="string">------:</span>|<span class="string">----------:</span>|</span><br><span class="line">|<span class="string">  &amp;#39;ReflectionCreator no parameter&amp;#39; </span>|<span class="string">     464.3 ns </span>|<span class="string">   5.30 ns </span>|<span class="string">    96.70 ns </span>|<span class="string"> 0.0318 </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">     168 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ReflectionCreator had parameter&amp;#39; </span>|<span class="string">     586.2 ns </span>|<span class="string">   0.40 ns </span>|<span class="string">     7.25 ns </span>|<span class="string"> 0.0426 </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">     224 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ReflectionCreator had parameter&amp;#39; </span>|<span class="string">  10,000.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ReflectionCreator no parameter&amp;#39; </span>|<span class="string">  11,500.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ExpressionCreator no parameter&amp;#39; </span>|<span class="string">  45,225.3 ns </span>|<span class="string">  64.40 ns </span>|<span class="string"> 1,174.88 ns </span>|<span class="string"> 0.4883 </span>|<span class="string"> 0.4069 </span>|<span class="string">     - </span>|<span class="string">    2909 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ExpressionCreator had parameter&amp;#39; </span>|<span class="string">  67,297.9 ns </span>|<span class="string"> 522.99 ns </span>|<span class="string"> 9,541.35 ns </span>|<span class="string"> 0.5697 </span>|<span class="string"> 0.4883 </span>|<span class="string">     - </span>|<span class="string">    3324 B </span>|</span><br><span class="line">|<span class="string"> &amp;#39;ExpressionCreator had parameter&amp;#39; </span>|<span class="string"> 339,900.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br><span class="line">|<span class="string">  &amp;#39;ExpressionCreator no parameter&amp;#39; </span>|<span class="string"> 352,500.0 ns </span>|<span class="string">   0.00 ns </span>|<span class="string">          NA </span>|<span class="string">      - </span>|<span class="string">      - </span>|<span class="string">     - </span>|<span class="string">         - </span>|</span><br></pre></td></tr></table></figure></div>
-<h3 id="常用Expression解說"><a href="#常用Expression解說" class="headerlink" title="常用Expression解說"></a>常用Expression解說</h3><p>透過上面範例,能發現Expression核心概念是用來產生Delegate程式碼並呼叫使用.</p>
-<blockquote>
-<p>因為動作最小單位是<strong>方法</strong>,委派可以視做<strong>方法</strong></p>
-</blockquote>
-<ul>
-<li>Expression.Call 呼叫委派方法<ul>
-<li>Note:如果呼叫static方法第一個參數是null</li>
-</ul>
-</li>
-<li>Expression.Assign 對於Expression給值 ex: expression1 = expression2</li>
-<li>Expression.Block  大括號區域 ex:<code>{}</code></li>
-<li>Expression.Convert 轉型</li>
-<li>Expression.Multiply 乘法</li>
-<li>Expression.Bind 綁定物件屬性,成員</li>
-<li>Expression.MemberInit 建構子成員初始化</li>
-<li>(BinaryExpression)<ul>
-<li>Expression.GreaterThanOrEqual:大於等於</li>
-<li>Expression.GreaterThan:大於</li>
-<li>Expression.LessThanOrEqual:小於等於</li>
-<li>Expression.LessThan:小於</li>
-</ul>
-</li>
-<li>Expression.Lambda 封裝成方法</li>
-<li>Expression.New 建立New語法</li>
-</ul>
-<h4 id="ArrayAccess-vs-ArrayIndex"><a href="#ArrayAccess-vs-ArrayIndex" class="headerlink" title="ArrayAccess vs ArrayIndex"></a>ArrayAccess vs ArrayIndex</h4><ul>
-<li>ArrayIndex 是只讀Index</li>
-<li>ArrayAccess 可讀可寫</li>
-</ul>
-<blockquote>
-<p><span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS9xdWVzdGlvbnMvMTQ5NzM4MTMvYXJyYXlhY2Nlc3MtdnMtYXJyYXlpbmRleC1pbi1leHByZXNzaW9uLXRyZWU=" title="https://stackoverflow.com/questions/14973813/arrayaccess-vs-arrayindex-in-expression-tree">https://stackoverflow.com/questions/14973813/arrayaccess-vs-arrayindex-in-expression-tree<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Expression和Emit雖然難寫,但寫的好可以讓程式碼更有彈性且比Reflection更有效能,Expression在許多知名架構都有使用(包含微軟MVC框架也是使用Reflection + Expression來優化),舉一個例子動態代理就很適合使用<code>Expression</code>或<code>Emit</code>來優化.</p>
-<blockquote>
-<p>知名動態代理框架<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2Nhc3RsZXByb2plY3QvQ29yZQ==" title="https://github.com/castleproject/Core">castle<i class="fa fa-external-link"></i></span>有使用到Emit.</p>
-</blockquote>
-<p>Emit想要解決的問題和Expression類似,只是Emit提供更多底層API讓我們呼叫(比Expression可以控制更多細節)</p>
-<blockquote>
-<p>Emit可以寫類似IL程式語法</p>
-</blockquote>
-<p>想必然Emit寫起來也更繁瑣更容易出錯.</p>
-<p>所以了解Expression是前往.net進階工程師必經之路.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/expression-vs-reflection/">https://isdaniel.github.io/expression-vs-reflection/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>OOP</tag>
-        <tag>Reflection</tag>
-        <tag>Expression</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>建立自己Blog系列(一) 介紹 Github (hosting) + Hexo (Blog) + Appveyor(CICD)</title>
     <url>/github-hexo-appveyor/</url>
     <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>網路上已經有許多Blog託管平台 例如:Google Blog，痞客邦….為何我還要自己寫這篇跟大家分享?</p>
@@ -2878,6 +2878,171 @@ GROUP BY userName
         <tag>Blog</tag>
         <tag>Github</tag>
         <tag>CICD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Appveyor搭配Github自動化上傳Nuget</title>
+    <url>/github-with-nugetdeploy/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
+<p>今天跟大家分享我開源專案<span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
+<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3Mv" title="https://www.appveyor.com/docs/">Appveyor<i class="fa fa-external-link"></i></span>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
+<blockquote>
+<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
+</blockquote>
+<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
+<p><img src="https://i.imgur.com/YPKBuFQ.png" alt></p>
+<p>選擇我們要建立CICD專案.</p>
+<p><img src="https://i.imgur.com/FW4Pd0j.png" alt></p>
+<p>最後會在Project頁看到你剛剛新建立Project.</p>
+<p><img src="https://i.imgur.com/vA6DIjh.png" alt></p>
+<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
+<ul>
+<li>透過UI來操作設定</li>
+<li>透過appveyor.yml設定(專案root目錄)</li>
+</ul>
+<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
+<p>我使用我的開源專案<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>來當作這次範例.</p>
+<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
+<ul>
+<li>image：指定Build的IDE VS版本.</li>
+<li>before_build：建置專案前要執行步驟</li>
+<li>build_script：建置專案時要執行步驟</li>
+<li>after_build：建置專案完成執行步驟</li>
+<li>deploy：將你建置完artifact deploy到某個地方</li>
+<li>artifacts：存放artifact位置</li>
+<li>environment：設定環境變數</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">'&#123;build&#125;'</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.nupkg'</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.snupkg'</span></span><br></pre></td></tr></table></figure></div>
+<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
+<ul>
+<li>provider：NuGet(Bj4)</li>
+<li>api_key：<ul>
+<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
+</ul>
+</li>
+<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
+<li>artifact：查找需要上傳檔案資訊</li>
+</ul>
+<p>這個YML設定檔有下面流程</p>
+<ol>
+<li>nuget restore.</li>
+<li>build .net core專案</li>
+<li>執行unit test</li>
+<li>發布package到Nuget(只限於master)</li>
+</ol>
+<blockquote>
+<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
+</blockquote>
+<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
+<p><img src="https://i.imgur.com/VRbUO5i.png" alt></p>
+<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
+<p>這是之前跑ElectronicInvoice_TW專案<span class="exturl" data-url="aHR0cHM6Ly9jaS5hcHB2ZXlvci5jb20vcHJvamVjdC9pc2RhbmllbC9lbGVjdHJvbmljaW52b2ljZS10dy9idWlsZHMvMzcxMTg5ODU=" title="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄<i class="fa fa-external-link"></i></span>歷程</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
+<p>參考連結：<span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3MvbnVnZXQv" title="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>CICD</category>
+        <category>netcore</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>CICD</tag>
+        <tag>Appveyor</tag>
+        <tag>.netcore</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)</title>
+    <url>/high-concurrency-atomic-cas-algorithm/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
+<p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
+<p>本文使用範例在我github上<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvQ0FTX0xvY2s=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/CAS_Lock">CAS_Lock<i class="fa fa-external-link"></i></span>有興趣的人可以參考.</p>
+<h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
+<p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
+<p>下面Sample Code是這樣.</p>
+<p>我用<code>Task</code>假裝高併發，下面有一個<code>Member</code>類別預設給100000元的Balance</p>
+<p>有一個<code>UpdateBalance</code>每呼叫一次就扣10元，我透過<code>For</code>跑10000次</p>
+<p>理論上我預期在跑完下面顯示Balance會員餘額是0 (因為 10000*10 = 100000).</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Balance -= <span class="number">10</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://i.imgur.com/44M2Jr7.png" alt></p>
+<p>但執行後蠻常會是不等於0!!</p>
+<p>這時我會問面試者兩個問題</p>
+<ul>
+<li>為什麼會不等於0</li>
+<li>如果要解決你會怎麼解決這個問題?</li>
+</ul>
+<p>如果知道的人可以跳到CAS部分，如果不知原因我下面會跟大家分享</p>
+<h3 id="為什麼會不等於0"><a href="#為什麼會不等於0" class="headerlink" title="為什麼會不等於0"></a>為什麼會不等於0</h3><p>這個問題牽扯到Thread是如何對於變數操作的，Thread在操作變數之前會把資料複製一份進Thread Context中在操作我們要步驟</p>
+<p>所以在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
+<ol>
+<li>將執行個體變數中的值載入至register。</li>
+<li>將載入值減10</li>
+<li>將異動後值放回原本值的Memory。</li>
+</ol>
+<p>因為以上步驟，假如同一時間有兩個不同的Thread取到的Balance都是1000，並個別對於Balance減10元，我們原本預期這是兩個操作（預期資料為980）</p>
+<p>但因為取的瞬間都是1000-10=990把數值放回變數中就導致少扣一個10元…</p>
+<p>概念如下圖.</p>
+<p><img src="https://i.imgur.com/zXprOIe.png" alt></p>
+<p>知道原因了要解決就簡單了.</p>
+<h3 id="使用Lock解決"><a href="#使用Lock解決" class="headerlink" title="使用Lock解決"></a>使用Lock解決</h3><p>因為這段程式碼遇到Data Raceing在同一個時間有兩個不同的Thread對於資料競爭</p>
+<p>如果要避免競爭lock是一個比較方便的方式，他可以保證一瞬間只有一個Thread(Session)來執行某段程式碼(通常會放在異動資料那部分)來保證Isolation.</p>
+<p>下面是使用lock版本的程式碼，能看到我在<code>Balance -= 10;</code>這一段使用lock來確保每一個瞬間只有一個Thread可以異動資料，其他的Thread需要blocking等他完成</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="comment">//here</span></span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用lock之後能發現不管執行幾次資料都會如我們預期顯示.</p>
+<p>使用lock執行概念圖如下.</p>
+<p>在同一時間我們會把要執行程式 利用一個類似保護網的方式，確保同一時間只有一個Thread來做操作.</p>
+<p>Thread2取得lock在操作Thread1就必須等待Thread2執行完,在取值=&gt;改值..等等動作</p>
+<p><img src="https://i.imgur.com/BUCajHn.png" alt></p>
+<blockquote>
+<p>只是使用lock會降低些許吞吐量(但資料正確性是最重要的)，所以要注意使用lock範圍大小</p>
+</blockquote>
+<h2 id="CAS-compare-and-swap-提高效率"><a href="#CAS-compare-and-swap-提高效率" class="headerlink" title="CAS(compare and swap)提高效率"></a>CAS(compare and swap)提高效率</h2><p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFNiVBRiU5NCVFOCVCRSU4MyVFNSVCOSVCNiVFNCVCQSVBNCVFNiU4RCVBMg==" title="https://zh.wikipedia.org/zh-tw/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2">CAS<i class="fa fa-external-link"></i></span>是利用compare and swap來確保資料Atomic.</p>
+<blockquote>
+<p>因為CAS可以取得數值記憶體空間來比較給值並且他也是一條CPU原語具有原子性 <span class="exturl" data-url="aHR0cHM6Ly93d3cuaXRzZnVuLmNvbS50dy9DQVMvd2lraS01MTQ1NTQxLTQyNzA3MzE=" title="https://www.itsfun.com.tw/CAS/wiki-5145541-4270731">cpu 硬體同步原語<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<p>前面有說過在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
+<ol>
+<li>將執行個體變數中的值載入至register。</li>
+<li>將載入值減10</li>
+<li>將異動後值放回原本值的Memory。</li>
+</ol>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">balance -= <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+<p>會拆解成類似下面動作</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br></pre></td></tr></table></figure>
+<p>假如在取balance(附值給temp)跟把值重新寫入balance中間有其他Thread來操作，就會造成所謂Data Racing，因為對於我們來說上面後兩部有不可分割性(Atomic).</p>
+<p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
+<h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
+<p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
+<p>下面這段虛擬碼解釋<code>balance -= 10;</code>CAS中類似下面效果</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//original</span></span><br><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CAS </span></span><br><span class="line"><span class="keyword">int</span> oldValue = balance;</span><br><span class="line"><span class="keyword">int</span> newValue = oldValue - <span class="number">1</span>;</span><br><span class="line"><span class="comment">//compare value source and set</span></span><br><span class="line">Interlocked.CompareExchange(<span class="keyword">ref</span> balance,newValue,oldValue);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Interlocked.CompareExchange類似下面做法，但具有Atomic</span></span><br><span class="line"><span class="comment">//if(ref balance == oldValue)&#123;</span></span><br><span class="line"><span class="comment">//	balance = newValue;</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br></pre></td></tr></table></figure>
+<p>主要是把compare value source and set這段包成一個不可分割區段達到Atomic.</p>
+<p>＞ 我上面用<code>ref</code>來表示從記憶體位置取得<code>balance</code>原始資料</p>
+<ul>
+<li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
+<li><code>Decrement</code>:把數值– 具有Atomic</li>
+<li><code>Increment</code>:把數值++ 具有Atomic</li>
+</ul>
+<p>除了上面我們還可以針對Reference Type做Atomic有興趣的人在自行了解</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Stopwatch sw = <span class="keyword">new</span> Stopwatch();</span><br><span class="line">		<span class="keyword">int</span> balanceValue = <span class="number">10000000</span>;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = balanceValue &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		sw.Start();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"Lock Version"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		tasks.Clear();</span><br><span class="line">		member.Balance = balanceValue;</span><br><span class="line">		sw.Restart();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalanceByInterlock()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"InterLocked Version:"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalanceByInterlock</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">int</span> val = <span class="number">0</span>;</span><br><span class="line">		Balance = Interlocked.Exchange(<span class="keyword">ref</span> val, Balance -= <span class="number">10</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下圖是比較兩者執行時間還有併發計算數值，能發現數值兩個都正確計算出0，但Interlocked執行時間少於lock版本.</p>
+<p><img src="https://i.imgur.com/eMjYN6P.png" alt></p>
+<p>Interlocked效率會比較高是因為block會造成Thread的blocking等待浪費,但Interlocked核心概念是在這段話Atomic<strong>取得資料跟原職比較(如果資料還沒改就把值修改進Memory中)</strong></p>
+<p>所以效率就會比lock好很多</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在有些情境適合使用Lock(例如許多操作需要有一致的Atomic)就比較適合.</p>
+<p>Interlocked適合用在對於數值的Atomic.</p>
+<p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
+<p>因為多執行緒有許多地方需要注意,不然執行效率會不如單執行緒.</p>
+<p>我慢慢可以理解為什麼Redis,Node.js一開始要使用sigel Thread來運作了…</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>atomic</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>atomic</tag>
       </tags>
   </entry>
   <entry>
@@ -2957,78 +3122,6 @@ GROUP BY userName
         <tag>AES</tag>
         <tag>SHA256</tag>
         <tag>Hash</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Appveyor搭配Github自動化上傳Nuget</title>
-    <url>/github-with-nugetdeploy/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
-<p>今天跟大家分享我開源專案<span class="exturl" data-url="aHR0cHM6Ly93d3cubnVnZXQub3JnL3BhY2thZ2VzL0VsZWN0cm9uaWNJbnZvaWNlX1RXLw==" title="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
-<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3Mv" title="https://www.appveyor.com/docs/">Appveyor<i class="fa fa-external-link"></i></span>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
-<blockquote>
-<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
-</blockquote>
-<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
-<p><img src="https://i.imgur.com/YPKBuFQ.png" alt></p>
-<p>選擇我們要建立CICD專案.</p>
-<p><img src="https://i.imgur.com/FW4Pd0j.png" alt></p>
-<p>最後會在Project頁看到你剛剛新建立Project.</p>
-<p><img src="https://i.imgur.com/vA6DIjh.png" alt></p>
-<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
-<ul>
-<li>透過UI來操作設定</li>
-<li>透過appveyor.yml設定(專案root目錄)</li>
-</ul>
-<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
-<p>我使用我的開源專案<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span>來當作這次範例.</p>
-<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
-<ul>
-<li>image：指定Build的IDE VS版本.</li>
-<li>before_build：建置專案前要執行步驟</li>
-<li>build_script：建置專案時要執行步驟</li>
-<li>after_build：建置專案完成執行步驟</li>
-<li>deploy：將你建置完artifact deploy到某個地方</li>
-<li>artifacts：存放artifact位置</li>
-<li>environment：設定環境變數</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YML"><figure class="iseeu highlight /yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">'&#123;build&#125;'</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.nupkg'</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">'**\*.snupkg'</span></span><br></pre></td></tr></table></figure></div>
-<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
-<ul>
-<li>provider：NuGet(Bj4)</li>
-<li>api_key：<ul>
-<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
-</ul>
-</li>
-<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
-<li>artifact：查找需要上傳檔案資訊</li>
-</ul>
-<p>這個YML設定檔有下面流程</p>
-<ol>
-<li>nuget restore.</li>
-<li>build .net core專案</li>
-<li>執行unit test</li>
-<li>發布package到Nuget(只限於master)</li>
-</ol>
-<blockquote>
-<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
-</blockquote>
-<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
-<p><img src="https://i.imgur.com/VRbUO5i.png" alt></p>
-<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
-<p>這是之前跑ElectronicInvoice_TW專案<span class="exturl" data-url="aHR0cHM6Ly9jaS5hcHB2ZXlvci5jb20vcHJvamVjdC9pc2RhbmllbC9lbGVjdHJvbmljaW52b2ljZS10dy9idWlsZHMvMzcxMTg5ODU=" title="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄<i class="fa fa-external-link"></i></span>歷程</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
-<p>參考連結：<span class="exturl" data-url="aHR0cHM6Ly93d3cuYXBwdmV5b3IuY29tL2RvY3MvbnVnZXQv" title="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>CICD</category>
-        <category>netcore</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>CICD</tag>
-        <tag>Appveyor</tag>
-        <tag>.netcore</tag>
       </tags>
   </entry>
   <entry>
@@ -3221,99 +3314,6 @@ email_url: dog830228@gmail.com
         <tag>Blog</tag>
         <tag>Github</tag>
         <tag>CICD</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)</title>
-    <url>/high-concurrency-atomic-cas-algorithm/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
-<p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
-<p>本文使用範例在我github上<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvQ0FTX0xvY2s=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/CAS_Lock">CAS_Lock<i class="fa fa-external-link"></i></span>有興趣的人可以參考.</p>
-<h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
-<p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
-<p>下面Sample Code是這樣.</p>
-<p>我用<code>Task</code>假裝高併發，下面有一個<code>Member</code>類別預設給100000元的Balance</p>
-<p>有一個<code>UpdateBalance</code>每呼叫一次就扣10元，我透過<code>For</code>跑10000次</p>
-<p>理論上我預期在跑完下面顯示Balance會員餘額是0 (因為 10000*10 = 100000).</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Balance -= <span class="number">10</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/44M2Jr7.png" alt></p>
-<p>但執行後蠻常會是不等於0!!</p>
-<p>這時我會問面試者兩個問題</p>
-<ul>
-<li>為什麼會不等於0</li>
-<li>如果要解決你會怎麼解決這個問題?</li>
-</ul>
-<p>如果知道的人可以跳到CAS部分，如果不知原因我下面會跟大家分享</p>
-<h3 id="為什麼會不等於0"><a href="#為什麼會不等於0" class="headerlink" title="為什麼會不等於0"></a>為什麼會不等於0</h3><p>這個問題牽扯到Thread是如何對於變數操作的，Thread在操作變數之前會把資料複製一份進Thread Context中在操作我們要步驟</p>
-<p>所以在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
-<ol>
-<li>將執行個體變數中的值載入至register。</li>
-<li>將載入值減10</li>
-<li>將異動後值放回原本值的Memory。</li>
-</ol>
-<p>因為以上步驟，假如同一時間有兩個不同的Thread取到的Balance都是1000，並個別對於Balance減10元，我們原本預期這是兩個操作（預期資料為980）</p>
-<p>但因為取的瞬間都是1000-10=990把數值放回變數中就導致少扣一個10元…</p>
-<p>概念如下圖.</p>
-<p><img src="https://i.imgur.com/zXprOIe.png" alt></p>
-<p>知道原因了要解決就簡單了.</p>
-<h3 id="使用Lock解決"><a href="#使用Lock解決" class="headerlink" title="使用Lock解決"></a>使用Lock解決</h3><p>因為這段程式碼遇到Data Raceing在同一個時間有兩個不同的Thread對於資料競爭</p>
-<p>如果要避免競爭lock是一個比較方便的方式，他可以保證一瞬間只有一個Thread(Session)來執行某段程式碼(通常會放在異動資料那部分)來保證Isolation.</p>
-<p>下面是使用lock版本的程式碼，能看到我在<code>Balance -= 10;</code>這一段使用lock來確保每一個瞬間只有一個Thread可以異動資料，其他的Thread需要blocking等他完成</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="comment">//here</span></span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>使用lock之後能發現不管執行幾次資料都會如我們預期顯示.</p>
-<p>使用lock執行概念圖如下.</p>
-<p>在同一時間我們會把要執行程式 利用一個類似保護網的方式，確保同一時間只有一個Thread來做操作.</p>
-<p>Thread2取得lock在操作Thread1就必須等待Thread2執行完,在取值=&gt;改值..等等動作</p>
-<p><img src="https://i.imgur.com/BUCajHn.png" alt></p>
-<blockquote>
-<p>只是使用lock會降低些許吞吐量(但資料正確性是最重要的)，所以要注意使用lock範圍大小</p>
-</blockquote>
-<h2 id="CAS-compare-and-swap-提高效率"><a href="#CAS-compare-and-swap-提高效率" class="headerlink" title="CAS(compare and swap)提高效率"></a>CAS(compare and swap)提高效率</h2><p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFNiVBRiU5NCVFOCVCRSU4MyVFNSVCOSVCNiVFNCVCQSVBNCVFNiU4RCVBMg==" title="https://zh.wikipedia.org/zh-tw/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2">CAS<i class="fa fa-external-link"></i></span>是利用compare and swap來確保資料Atomic.</p>
-<blockquote>
-<p>因為CAS可以取得數值記憶體空間來比較給值並且他也是一條CPU原語具有原子性 <span class="exturl" data-url="aHR0cHM6Ly93d3cuaXRzZnVuLmNvbS50dy9DQVMvd2lraS01MTQ1NTQxLTQyNzA3MzE=" title="https://www.itsfun.com.tw/CAS/wiki-5145541-4270731">cpu 硬體同步原語<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<p>前面有說過在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
-<ol>
-<li>將執行個體變數中的值載入至register。</li>
-<li>將載入值減10</li>
-<li>將異動後值放回原本值的Memory。</li>
-</ol>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">balance -= <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
-<p>會拆解成類似下面動作</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br></pre></td></tr></table></figure>
-<p>假如在取balance(附值給temp)跟把值重新寫入balance中間有其他Thread來操作，就會造成所謂Data Racing，因為對於我們來說上面後兩部有不可分割性(Atomic).</p>
-<p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
-<h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
-<p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
-<p>下面這段虛擬碼解釋<code>balance -= 10;</code>CAS中類似下面效果</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//original</span></span><br><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CAS </span></span><br><span class="line"><span class="keyword">int</span> oldValue = balance;</span><br><span class="line"><span class="keyword">int</span> newValue = oldValue - <span class="number">1</span>;</span><br><span class="line"><span class="comment">//compare value source and set</span></span><br><span class="line">Interlocked.CompareExchange(<span class="keyword">ref</span> balance,newValue,oldValue);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Interlocked.CompareExchange類似下面做法，但具有Atomic</span></span><br><span class="line"><span class="comment">//if(ref balance == oldValue)&#123;</span></span><br><span class="line"><span class="comment">//	balance = newValue;</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br></pre></td></tr></table></figure>
-<p>主要是把compare value source and set這段包成一個不可分割區段達到Atomic.</p>
-<p>＞ 我上面用<code>ref</code>來表示從記憶體位置取得<code>balance</code>原始資料</p>
-<ul>
-<li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
-<li><code>Decrement</code>:把數值– 具有Atomic</li>
-<li><code>Increment</code>:把數值++ 具有Atomic</li>
-</ul>
-<p>除了上面我們還可以針對Reference Type做Atomic有興趣的人在自行了解</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Stopwatch sw = <span class="keyword">new</span> Stopwatch();</span><br><span class="line">		<span class="keyword">int</span> balanceValue = <span class="number">10000000</span>;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = balanceValue &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		sw.Start();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"Lock Version"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		tasks.Clear();</span><br><span class="line">		member.Balance = balanceValue;</span><br><span class="line">		sw.Restart();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalanceByInterlock()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"InterLocked Version:"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalanceByInterlock</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">int</span> val = <span class="number">0</span>;</span><br><span class="line">		Balance = Interlocked.Exchange(<span class="keyword">ref</span> val, Balance -= <span class="number">10</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>下圖是比較兩者執行時間還有併發計算數值，能發現數值兩個都正確計算出0，但Interlocked執行時間少於lock版本.</p>
-<p><img src="https://i.imgur.com/eMjYN6P.png" alt></p>
-<p>Interlocked效率會比較高是因為block會造成Thread的blocking等待浪費,但Interlocked核心概念是在這段話Atomic<strong>取得資料跟原職比較(如果資料還沒改就把值修改進Memory中)</strong></p>
-<p>所以效率就會比lock好很多</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在有些情境適合使用Lock(例如許多操作需要有一致的Atomic)就比較適合.</p>
-<p>Interlocked適合用在對於數值的Atomic.</p>
-<p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
-<p>因為多執行緒有許多地方需要注意,不然執行效率會不如單執行緒.</p>
-<p>我慢慢可以理解為什麼Redis,Node.js一開始要使用sigel Thread來運作了…</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>atomic</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>atomic</tag>
       </tags>
   </entry>
   <entry>
@@ -6734,7 +6734,7 @@ email_url: dog830228@gmail.com
 <p>每個Object都有Object Header (syncblk + TypeHandle) 8 bytes</p>
 </blockquote>
 <p>在MSDN有一張圖詳細描述Syncblk</p>
-<p><img src="https://images2015.cnblogs.com/blog/250417/201706/250417-20170615102713837-696225938.png" alt></p>
+<p><img src="https://i.imgur.com/Mj8HoFC.png" alt></p>
 <p>下圖是我畫重點流程和關係</p>
 <p><img src="https://i.imgur.com/dWZF6DH.png" alt></p>
 <p>如果對於物件使用lock Syncblk會存放本次使用TheadID，存放指向Syncblk Entry Table.</p>
@@ -6777,7 +6777,8 @@ email_url: dog830228@gmail.com
 <p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2RvdG5ldC9ydW50aW1lL2Jsb2IvNTdiZmU0NzQ1MThhYjViN2NmZTZiZjc0MjRhNzljZTNhZjlkNjY1Ny9zcmMvY29yZWNsci92bS9zeW5jYmxrLmlubCNMNjY1LUw3MDA=" title="https://github.com/dotnet/runtime/blob/57bfe474518ab5b7cfe6bf7424a79ce3af9d6657/src/coreclr/vm/syncblk.inl#L665-L700">syncblk source code(AwareLock::LeaveHelper)<i class="fa fa-external-link"></i></span></p>
 <h2 id="LockState-InterlockedUnlock"><a href="#LockState-InterlockedUnlock" class="headerlink" title="LockState::InterlockedUnlock"></a>LockState::InterlockedUnlock</h2><p><code>InterlockedUnlock</code>方法會將<code>LockState.m_state</code>減1(具有Atomic)，把狀態設定成0讓其他人可以獲得此物件.</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight /cpp"><table><tr><td class="code"><pre><span class="line">FORCEINLINE <span class="keyword">bool</span> AwareLock::LockState::InterlockedUnlock()</span><br><span class="line">&#123;</span><br><span class="line">    WRAPPER_NO_CONTRACT;</span><br><span class="line"></span><br><span class="line">    LockState state = InterlockedDecrementRelease((LONG *)&amp;m_state);</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Keep track of whether a thread has been signaled to wake but has not yet woken from the wait.</span></span><br><span class="line">        <span class="comment">// IsWaiterSignaledToWakeMask is cleared when a signaled thread wakes up by observing a signal. Since threads can</span></span><br><span class="line">        <span class="comment">// preempt waiting threads and acquire the lock (see InterlockedTryLock()), it allows for example, one thread to acquire</span></span><br><span class="line">        <span class="comment">// and release the lock multiple times while there are multiple waiting threads. In such a case, we don't want that</span></span><br><span class="line">        <span class="comment">// thread to signal a waiter every time it releases the lock, as that will cause unnecessary context switches with more</span></span><br><span class="line">        <span class="comment">// and more signaled threads waking up, finding that the lock is still locked, and going right back into a wait state.</span></span><br><span class="line">        <span class="comment">// So, signal only one waiting thread at a time.</span></span><br><span class="line">        <span class="keyword">if</span> (!state.NeedToSignalWaiter())</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        LockState newState = state;</span><br><span class="line">        newState.InvertIsWaiterSignaledToWake();</span><br><span class="line"></span><br><span class="line">        LockState stateBeforeUpdate = CompareExchange(newState, state);</span><br><span class="line">        <span class="keyword">if</span> (stateBeforeUpdate == state)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        state = stateBeforeUpdate;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="補充說明-Lock-Wait環節"><a href="#補充說明-Lock-Wait環節" class="headerlink" title="補充說明 Lock Wait環節"></a>補充說明 Lock Wait環節</h2><p>SyncBlock內部維護一個重要成員變數<code>SLink</code>當作指針，指向<code>WaitEventLink</code>使用鏈結表.</p>
+<h2 id="補充說明-Lock-Wait環節"><a href="#補充說明-Lock-Wait環節" class="headerlink" title="補充說明 Lock Wait環節"></a>補充說明 Lock Wait環節</h2><p>上面有說假如有一個<code>SyncBlock</code>目前已經有Thread在使用中，其他Thread如果要嘗試存取會進入等待鏈結表進行等待.</p>
+<p><code>SyncBlock</code>內部維護一個重要成員變數<code>SLink</code>當作指針，指向<code>WaitEventLink</code>使用鏈結表.</p>
 <p><img src="https://i.imgur.com/q4o9SML.png" alt></p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CPP"><figure class="iseeu highlight /cpp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// We can't afford to use an SList&lt;&gt; here because we only want to burn</span></span><br><span class="line"><span class="comment">// space for the minimum, which is the pointer within an SLink.</span></span><br><span class="line">SLink       m_Link;</span><br></pre></td></tr></table></figure></div>
 <p><code>WaitEventLink</code>程式碼</p>

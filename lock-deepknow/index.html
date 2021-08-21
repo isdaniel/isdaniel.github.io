@@ -152,7 +152,7 @@
 <meta property="og:description" content="前言你知道object lock底層怎麼實作，可重入鎖是底層是怎麼運作的嗎? 本篇就跟大家分享這些細節. 可重入鎖Demo1234567891011121314151617181920212223242526272829303132333435363738class Program&amp;#123;    static object _object = new object();    static v">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/dWZF6DH.png">
-<meta property="og:updated_time" content="2021-08-16T00:55:40.148Z">
+<meta property="og:updated_time" content="2021-08-21T03:26:24.676Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="CLR系列-Lock深入淺出">
 <meta name="twitter:description" content="前言你知道object lock底層怎麼實作，可重入鎖是底層是怎麼運作的嗎? 本篇就跟大家分享這些細節. 可重入鎖Demo1234567891011121314151617181920212223242526272829303132333435363738class Program&amp;#123;    static object _object = new object();    static v">
@@ -516,7 +516,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-08-16 00:55:40" itemprop="dateModified" datetime="2021-08-16T00:55:40+00:00">2021-08-16</time>
+                <time title="Modified: 2021-08-21 03:26:24" itemprop="dateModified" datetime="2021-08-21T03:26:24+00:00">2021-08-21</time>
               
             
           </span>
@@ -589,7 +589,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">10k</span>
+                <span title="Symbols count in article">11k</span>
               
 
               
@@ -653,7 +653,7 @@
 <p>每個Object都有Object Header (syncblk + TypeHandle) 8 bytes</p>
 </blockquote>
 <p>在MSDN有一張圖詳細描述Syncblk</p>
-<p><img src="https://images2015.cnblogs.com/blog/250417/201706/250417-20170615102713837-696225938.png" alt></p>
+<p><img src="https://i.imgur.com/Mj8HoFC.png" alt></p>
 <p>下圖是我畫重點流程和關係</p>
 <p><img src="https://i.imgur.com/dWZF6DH.png" alt></p>
 <p>如果對於物件使用lock Syncblk會存放本次使用TheadID，存放指向Syncblk Entry Table.</p>
@@ -696,7 +696,8 @@
 <p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2RvdG5ldC9ydW50aW1lL2Jsb2IvNTdiZmU0NzQ1MThhYjViN2NmZTZiZjc0MjRhNzljZTNhZjlkNjY1Ny9zcmMvY29yZWNsci92bS9zeW5jYmxrLmlubCNMNjY1LUw3MDA=" title="https://github.com/dotnet/runtime/blob/57bfe474518ab5b7cfe6bf7424a79ce3af9d6657/src/coreclr/vm/syncblk.inl#L665-L700">syncblk source code(AwareLock::LeaveHelper)<i class="fa fa-external-link"></i></span></p>
 <h2 id="LockState-InterlockedUnlock"><a href="#LockState-InterlockedUnlock" class="headerlink" title="LockState::InterlockedUnlock"></a>LockState::InterlockedUnlock</h2><p><code>InterlockedUnlock</code>方法會將<code>LockState.m_state</code>減1(具有Atomic)，把狀態設定成0讓其他人可以獲得此物件.</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CPP"><figure class="iseeu highlight /cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">FORCEINLINE <span class="keyword">bool</span> AwareLock::LockState::InterlockedUnlock()</span><br><span class="line">&#123;</span><br><span class="line">    WRAPPER_NO_CONTRACT;</span><br><span class="line"></span><br><span class="line">    LockState state = InterlockedDecrementRelease((LONG *)&amp;m_state);</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// Keep track of whether a thread has been signaled to wake but has not yet woken from the wait.</span></span><br><span class="line">        <span class="comment">// IsWaiterSignaledToWakeMask is cleared when a signaled thread wakes up by observing a signal. Since threads can</span></span><br><span class="line">        <span class="comment">// preempt waiting threads and acquire the lock (see InterlockedTryLock()), it allows for example, one thread to acquire</span></span><br><span class="line">        <span class="comment">// and release the lock multiple times while there are multiple waiting threads. In such a case, we don't want that</span></span><br><span class="line">        <span class="comment">// thread to signal a waiter every time it releases the lock, as that will cause unnecessary context switches with more</span></span><br><span class="line">        <span class="comment">// and more signaled threads waking up, finding that the lock is still locked, and going right back into a wait state.</span></span><br><span class="line">        <span class="comment">// So, signal only one waiting thread at a time.</span></span><br><span class="line">        <span class="keyword">if</span> (!state.NeedToSignalWaiter())</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        LockState newState = state;</span><br><span class="line">        newState.InvertIsWaiterSignaledToWake();</span><br><span class="line"></span><br><span class="line">        LockState stateBeforeUpdate = CompareExchange(newState, state);</span><br><span class="line">        <span class="keyword">if</span> (stateBeforeUpdate == state)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        state = stateBeforeUpdate;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="補充說明-Lock-Wait環節"><a href="#補充說明-Lock-Wait環節" class="headerlink" title="補充說明 Lock Wait環節"></a>補充說明 Lock Wait環節</h2><p>SyncBlock內部維護一個重要成員變數<code>SLink</code>當作指針，指向<code>WaitEventLink</code>使用鏈結表.</p>
+<h2 id="補充說明-Lock-Wait環節"><a href="#補充說明-Lock-Wait環節" class="headerlink" title="補充說明 Lock Wait環節"></a>補充說明 Lock Wait環節</h2><p>上面有說假如有一個<code>SyncBlock</code>目前已經有Thread在使用中，其他Thread如果要嘗試存取會進入等待鏈結表進行等待.</p>
+<p><code>SyncBlock</code>內部維護一個重要成員變數<code>SLink</code>當作指針，指向<code>WaitEventLink</code>使用鏈結表.</p>
 <p><img src="https://i.imgur.com/q4o9SML.png" alt></p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CPP"><figure class="iseeu highlight /cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// We can't afford to use an SList&lt;&gt; here because we only want to burn</span></span><br><span class="line"><span class="comment">// space for the minimum, which is the pointer within an SLink.</span></span><br><span class="line">SLink       m_Link;</span><br></pre></td></tr></table></figure></div>
 <p><code>WaitEventLink</code>程式碼</p>
@@ -1289,7 +1290,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">396k</span>
+    <span title="Symbols count total">397k</span>
   
 
   
