@@ -622,49 +622,6 @@ A~Z (26)
       </tags>
   </entry>
   <entry>
-    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
-    <url>/c-func-1/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
-<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
-<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
-<hr>
-<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$"delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>執行結果:Yes 委託是一個特別的類別</p>
-</blockquote>
-<p>但委託物件方式很特別 他在宣告時必須傳入<strong>[建構子參數]</strong>  而建構子參數是<strong>[方法]</strong></p>
-<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
-<pre><code>public delegate int calcInt(int arg1,int arg2);
-</code></pre><p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">add</span>(<span class="params"><span class="keyword">int</span> a, <span class="keyword">int</span> b</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>或是</p>
-<p>使用.net提供的 語法糖 如下</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br></pre></td></tr></table></figure></div>
-<p>編譯器會動態幫我們產生一個方法。</p>
-<p>委託就這樣嗎?!</p>
-<hr>
-<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<t></t></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class Calculator&lt;T&gt;</span><br><span class="line">    <span class="keyword">where</span> T : <span class="keyword">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
-<p>重點:我們可以在Client端決定如何使用此方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="keyword">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="keyword">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="keyword">int</span>&gt;(i_List);</span><br><span class="line"><span class="keyword">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="keyword">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$"add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>"</span>);</span><br></pre></td></tr></table></figure></div>
-<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
-<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Delegate</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Func</tag>
-        <tag>Delegate</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>橋接模式(BridgePattern)</title>
     <url>/bridge-pattern/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><h3 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h3><p>如果有兩大類模組是多對多的組合，如本次Smaple Code. Nick和Addidas 包包都有紅、藍、黃….或其他顏色</p>
@@ -1014,6 +971,49 @@ public abstract class MoveBase
         <tag>C#</tag>
         <tag>DesignPattern</tag>
         <tag>BridgePattern</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
+    <url>/c-func-1/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
+<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
+<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
+<hr>
+<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$"delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>執行結果:Yes 委託是一個特別的類別</p>
+</blockquote>
+<p>但委託物件方式很特別 他在宣告時必須傳入<strong>[建構子參數]</strong>  而建構子參數是<strong>[方法]</strong></p>
+<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
+<pre><code>public delegate int calcInt(int arg1,int arg2);
+</code></pre><p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">add</span>(<span class="params"><span class="keyword">int</span> a, <span class="keyword">int</span> b</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>或是</p>
+<p>使用.net提供的 語法糖 如下</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br></pre></td></tr></table></figure></div>
+<p>編譯器會動態幫我們產生一個方法。</p>
+<p>委託就這樣嗎?!</p>
+<hr>
+<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<t></t></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class Calculator&lt;T&gt;</span><br><span class="line">    <span class="keyword">where</span> T : <span class="keyword">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
+<p>重點:我們可以在Client端決定如何使用此方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="keyword">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="keyword">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="keyword">int</span>&gt;(i_List);</span><br><span class="line"><span class="keyword">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="keyword">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$"add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>"</span>);</span><br></pre></td></tr></table></figure></div>
+<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
+<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Delegate</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Func</tag>
+        <tag>Delegate</tag>
       </tags>
   </entry>
   <entry>
@@ -5067,6 +5067,98 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>探討Model驗證標籤(ValidationAttribute) (第21天)</title>
+    <url>/ithelp-day21/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#validationattribute">ValidationAttribute</a><ul>
+<li><a href="#modelvalidatorproviders">ModelValidatorProviders</a></li>
+<li><a href="#modelvalidator">ModelValidator</a></li>
+</ul>
+</li>
+<li><a href="#compositemodelvalidator">CompositeModelValidator</a></li>
+<li><a href="#dataannotationsmodelvalidator">DataAnnotationsModelValidator</a><ul>
+<li><a href="#dataannotationsmodelvalidatorprovider">DataAnnotationsModelValidatorProvider</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>CachedDataAnnotationsMetadataAttributes</code>這個類別攔截某些標籤可被攔截驗證.</p>
+<p>本篇會介紹另一個可以客製化驗證<code>ValidationAttribute</code>,常用驗證標籤並講述是如何參數屬性是如何取得這個標籤和使用過程.</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="ValidationAttribute"><a href="#ValidationAttribute" class="headerlink" title="ValidationAttribute"></a>ValidationAttribute</h2><p><code>ValidationAttribute</code>類別在<code>System.ComponentModel.DataAnnotations</code>命名空間下.</p>
+<p>我們可以建立一個類別繼承<code>ValidationAttribute</code>並<code>bool IsValid(object value)</code>重載方法來製做我們客制化驗證機制.</p>
+<p><code>IsValid</code>方法有一個<code>Bool</code>回傳值回傳<code>true</code>代表驗證通過<code>false</code>反之</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ValidationAttribute</span> : <span class="title">Attribute</span>&#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">bool</span> <span class="title">IsValid</span>(<span class="params"><span class="keyword">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    </span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<ul>
+<li><code>RegularExpressionAttribute</code></li>
+<li><code>StringLengthAttribute</code></li>
+<li><code>RangeAttribute</code></li>
+</ul>
+<p>如果查看上面幾個標籤原始碼可發現這幾個標籤都是繼承於一個<code>ValidationAttribute</code>類別(這也是為什麼我們可以透過繼承<code>ValidationAttribute</code>來擴充自己驗證方式).</p>
+<h3 id="ModelValidatorProviders"><a href="#ModelValidatorProviders" class="headerlink" title="ModelValidatorProviders"></a>ModelValidatorProviders</h3><p><code>ModelValidatorProviders</code>提供</p>
+<ul>
+<li><code>DataAnnotationsModelValidatorProvider</code></li>
+<li><code>DataErrorInfoModelValidatorProvider</code></li>
+<li><code>ClientDataTypeModelValidatorProvider</code></li>
+</ul>
+<p><code>ModelValidatorProviderCollection</code>是一個<code>ModelValidatorProvider</code>集合,可對於此集合加入<code>ModelValidatorProvider</code>物件.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title">ModelValidatorProviders</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> ModelValidatorProviderCollection _providers = <span class="keyword">new</span> ModelValidatorProviderCollection()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">new</span> DataAnnotationsModelValidatorProvider(),</span><br><span class="line">		<span class="keyword">new</span> DataErrorInfoModelValidatorProvider(),</span><br><span class="line">		<span class="keyword">new</span> ClientDataTypeModelValidatorProvider()</span><br><span class="line">	&#125;;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> ModelValidatorProviderCollection Providers</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span> &#123; <span class="keyword">return</span> _providers; &#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">public class ModelValidatorProviderCollection : Collection&lt;ModelValidatorProvider&gt;</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>如果我們需要加入一個客製化<code>ModelValidatorProvider</code>，可以直接將相應物件新增到<code>ModelValidatorProviders</code>的<code>Providers</code>集合中。</p>
+<h3 id="ModelValidator"><a href="#ModelValidator" class="headerlink" title="ModelValidator"></a>ModelValidator</h3><p>所有的參數驗證都繼承自抽像類型<code>ModelValidator</code>,這個抽象類別有幾個重要成員.</p>
+<ul>
+<li><code>IsRequired</code>:表示該<code>ModelValidator</code>是否是對目標屬性進行必要性驗證，默認是<code>False</code></li>
+<li><code>GetClientValidationRules</code>方法：<code>ModelClientValidationRule</code>是對客戶端驗證規則的封裝，我們會在進行客戶端驗證時對其進行詳細介紹。</li>
+<li><code>Validate</code>方法:對於屬性實施驗證,驗證完後回傳一個<code>ModelValidationResult</code>的集合物件.</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ModelValidator</span></span><br><span class="line">&#123;  </span><br><span class="line">	<span class="comment"><span class="doctag">///</span>....</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> IEnumerable&lt;ModelValidationResult&gt; <span class="title">Validate</span>(<span class="params"><span class="keyword">object</span> container</span>)</span>;</span><br><span class="line">    </span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> IEnumerable&lt;ModelClientValidationRule&gt; <span class="title">GetClientValidationRules</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">bool</span> IsRequired &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="CompositeModelValidator"><a href="#CompositeModelValidator" class="headerlink" title="CompositeModelValidator"></a>CompositeModelValidator</h2><p>從類別名稱可看出<code>CompositeModelValidator</code>,實並不是一個真正對<code>Model</code>物件實施驗證<code>ModelValidator</code>，它是一系列<code>ModelValidator</code>組合,根據基於<code>Model</code>本身類型及其屬性的<code>Model</code>元數據動態的取得<code>ModelValidator</code>（通過調用<code>ModelMetadata.GetValidators</code>方法）對<code>Model</code>參數實施驗證。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">class</span> <span class="title">CompositeModelValidator</span> : <span class="title">ModelValidator</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IEnumerable&lt;ModelValidationResult&gt; <span class="title">Validate</span>(<span class="params"><span class="keyword">object</span> container</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">bool</span> propertiesValid = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">		ModelMetadata[] properties = Metadata.PropertiesAsArray;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> propertyIndex = <span class="number">0</span>; propertyIndex &lt; properties.Length; propertyIndex++)</span><br><span class="line">		&#123;</span><br><span class="line">			ModelMetadata propertyMetadata = properties[propertyIndex];</span><br><span class="line">			<span class="keyword">foreach</span> (ModelValidator propertyValidator <span class="keyword">in</span> propertyMetadata.GetValidators(ControllerContext))</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">foreach</span> (ModelValidationResult propertyResult <span class="keyword">in</span> propertyValidator.Validate(Metadata.Model))</span><br><span class="line">				&#123;</span><br><span class="line">					propertiesValid = <span class="literal">false</span>;</span><br><span class="line">					<span class="function"><span class="keyword">yield</span> return <span class="title">CreateSubPropertyResult</span>(<span class="params">propertyMetadata, propertyResult</span>)</span>;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (propertiesValid)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">foreach</span> (ModelValidator typeValidator <span class="keyword">in</span> Metadata.GetValidators(ControllerContext))</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">foreach</span> (ModelValidationResult typeResult <span class="keyword">in</span> typeValidator.Validate(container))</span><br><span class="line">				&#123;</span><br><span class="line">					<span class="keyword">yield</span> <span class="keyword">return</span> typeResult;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>下圖是<code>ModelValidator、ModelValidatorProvider、ModelValidatorProviders</code>UML關係圖</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/20/uml_img.png" alt="UML_Model"></p>
+<h2 id="DataAnnotationsModelValidator"><a href="#DataAnnotationsModelValidator" class="headerlink" title="DataAnnotationsModelValidator"></a>DataAnnotationsModelValidator</h2><p><code>ModelValidator</code>物件是用於進行<code>Model</code>參數驗證的模組類別中的<code>ValidationAttribute</code>透過建構子設定檢驗的標籤.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">DataAnnotationsModelValidator</span> : <span class="title">ModelValidator</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="function"><span class="keyword">public</span> <span class="title">DataAnnotationsModelValidator</span>(<span class="params">ModelMetadata metadata, ControllerContext context, ValidationAttribute attribute</span>)</span>;</span><br><span class="line">	<span class="keyword">protected</span> <span class="keyword">internal</span> ValidationAttribute Attribute &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">bool</span> IsRequired</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span> &#123; <span class="keyword">return</span> Attribute <span class="keyword">is</span> RequiredAttribute; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="keyword">static</span> ModelValidator <span class="title">Create</span>(<span class="params">ModelMetadata metadata, ControllerContext context, ValidationAttribute attribute</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> DataAnnotationsModelValidator(metadata, context, attribute);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IEnumerable&lt;ModelClientValidationRule&gt; <span class="title">GetClientValidationRules</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="comment">//....</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IEnumerable&lt;ModelValidationResult&gt; <span class="title">Validate</span>(<span class="params"><span class="keyword">object</span> container</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="comment">//....</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>###　DataAnnotationsModelValidator<tattribute></tattribute></p>
+<p><code>DataAnnotationsModelValidator&lt;TAttribute&gt;</code>這個泛型類別有一個合約<code>TAttribute</code>必須為<code>ValidationAttribute</code></p>
+<p><code>DataAnnotationsModelValidator&lt;TAttribute&gt;</code>的子類。當我們將這些<code>ValidationAttribute</code>應用到<code>Model</code>型別時，真正用於<code>Model</code>參數驗證是<code>ModelValidator</code>的轉接器類別</p>
+<blockquote>
+<p>在這裡使用<strong>轉接器模式</strong>把每個繼承<code>ValidationAttribute</code>標籤適配給一個<code>ModelValidator</code>物件.</p>
+</blockquote>
+<p>例如下面程式碼每個<code>ModelValidator</code>都有自己的轉接器類別.</p>
+<ul>
+<li><code>RangeAttributeAdapter</code> = <code>RangeAttribute</code></li>
+<li><code>RequiredAttributeAdapter</code> = <code>RequiredAttribute</code></li>
+<li><code>StringLengthAttributeAdapter</code> = <code>StringLengthAttribute</code></li>
+<li><code>RegularExpressionAttributeAdapter</code> = <code>RegularExpressionAttribute</code></li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span></span><br><span class="line">DataAnnotationsModelValidator&lt;TAttribute&gt; : DataAnnotationsModelValidator</span><br><span class="line"><span class="keyword">where</span> TAttribute : ValidationAttribute</span><br><span class="line">&#123;	</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class RequiredAttributeAdapter : DataAnnotationsModelValidator&lt;RequiredAttribute&gt;</span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">public class RangeAttributeAdapter : DataAnnotationsModelValidator&lt;RangeAttribute&gt;</span><br><span class="line">&#123;    </span><br><span class="line">   <span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">public class RegularExpressionAttributeAdapter : DataAnnotationsModelValidator&lt;				RegularExpressionAttribute&gt;</span><br><span class="line">&#123;    </span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">public class StringLengthAttributeAdapter : DataAnnotationsModelValidator&lt;						StringLengthAttribute&gt;</span><br><span class="line">&#123;    </span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="DataAnnotationsModelValidatorProvider"><a href="#DataAnnotationsModelValidatorProvider" class="headerlink" title="DataAnnotationsModelValidatorProvider"></a>DataAnnotationsModelValidatorProvider</h3><p>有一個委派<code>DataAnnotationsModelValidationFactory</code>主要可以存放一個執行動作且回傳一個<code>ModelValidator</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> ModelValidator <span class="title">DataAnnotationsModelValidationFactory</span>(<span class="params">ModelMetadata metadata, ControllerContext context, ValidationAttribute attribute</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> ModelValidator <span class="title">DataAnnotationsValidatableObjectAdapterFactory</span>(<span class="params">ModelMetadata metadata, ControllerContext context</span>)</span>;</span><br></pre></td></tr></table></figure></div>
+<ul>
+<li><code>AttributeFactories</code>：一個字典集合從屬性載入預設擁有<code>ValidationAttribute</code>標籤(上面介紹的轉接器<code>RegularExpressionAttributeAdapter</code>….)</li>
+<li><code>DefaultAttributeFactory</code>：如果從<code>AttributeFactories</code>這個字典無法取得繼承<code>ValidationAttribute</code>標籤(自己客製化)就藉由<code>DataAnnotationsModelValidator</code>取得.</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">static</span> DataAnnotationsModelValidationFactory DefaultAttributeFactory =</span><br><span class="line">	(metadata, context, attribute) =&gt; <span class="keyword">new</span> DataAnnotationsModelValidator(metadata, context, attribute);</span><br><span class="line"></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">static</span> DataAnnotationsValidatableObjectAdapterFactory DefaultValidatableFactory =</span><br><span class="line">            (metadata, context) =&gt; <span class="keyword">new</span> ValidatableObjectAdapter(metadata, context);</span><br><span class="line"></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">static</span> Dictionary&lt;Type, DataAnnotationsModelValidationFactory&gt; AttributeFactories = BuildAttributeFactoriesDictionary();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> IEnumerable&lt;ModelValidator&gt; <span class="title">GetValidators</span>(<span class="params">ModelMetadata metadata, ControllerContext context, IEnumerable&lt;Attribute&gt; attributes</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">//..</span></span><br><span class="line">	<span class="keyword">foreach</span> (ValidationAttribute attribute <span class="keyword">in</span> attributes.OfType&lt;ValidationAttribute&gt;())</span><br><span class="line">	&#123;</span><br><span class="line">		DataAnnotationsModelValidationFactory factory;</span><br><span class="line">		<span class="keyword">if</span> (!AttributeFactories.TryGetValue(attribute.GetType(), <span class="keyword">out</span> factory))</span><br><span class="line">		&#123;</span><br><span class="line">			factory = DefaultAttributeFactory;</span><br><span class="line">		&#125;</span><br><span class="line">		results.Add(factory(metadata, context, attribute));</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Produce a validator if the type supports IValidatableObject</span></span><br><span class="line">	<span class="keyword">if</span> (<span class="keyword">typeof</span>(IValidatableObject).IsAssignableFrom(metadata.ModelType))</span><br><span class="line">	&#123;</span><br><span class="line">		DataAnnotationsValidatableObjectAdapterFactory factory;</span><br><span class="line">		<span class="keyword">if</span> (!ValidatableFactories.TryGetValue(metadata.ModelType, <span class="keyword">out</span> factory))</span><br><span class="line">		&#123;</span><br><span class="line">			factory = DefaultValidatableFactory;</span><br><span class="line">		&#125;</span><br><span class="line">		results.Add(factory(metadata, context));</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>最後從<code>Model</code>元數據中載入所有<code>ValidationAttribute</code>驗證標籤後就會在<code>DefaultModelBinder.BindProperties</code>呼叫方法時被觸發驗證</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>在整個<strong>Model-Binding</strong>流程中,算是蠻複雜的石頭希望可以跟大家簡述一些綁定概念和做法.</p>
+<p><code>ValidationAttribute</code>是舊有的類別,<strong>MVC</strong>利用一系列手法將她很好融入系統中.</p>
+<p>原本<code>ValidationAttribute</code>被多個標籤繼承,透過<code>DataAnnotationsModelValidator&lt;TAttribute&gt;</code>設計(讓我驚豔),變成一個1對1關係(每個<code>ValidationAttribute</code>都有自己的轉接器物件),之後就可以在<code>BuildAttributeFactoriesDictionary()</code>更方便使用.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day21/">https://isdaniel.github.io/ithelp-day21/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>探討Model上客製化標籤如何被解析使用 (第20天)</title>
     <url>/ithelp-day20/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5148,98 +5240,6 @@ email_url: dog830228@gmail.com
 <p>透過<code>CachedDataAnnotationsModelMetadataProvider</code>這個類別來取得以上標籤,並在日後做判斷.</p>
 <p>下篇會和大家分享另一種屬性標籤<code>ValidationAttribute</code>的取得和呼叫過程.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day20/">https://isdaniel.github.io/ithelp-day20/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>探討Model驗證標籤(ValidationAttribute) (第21天)</title>
-    <url>/ithelp-day21/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#validationattribute">ValidationAttribute</a><ul>
-<li><a href="#modelvalidatorproviders">ModelValidatorProviders</a></li>
-<li><a href="#modelvalidator">ModelValidator</a></li>
-</ul>
-</li>
-<li><a href="#compositemodelvalidator">CompositeModelValidator</a></li>
-<li><a href="#dataannotationsmodelvalidator">DataAnnotationsModelValidator</a><ul>
-<li><a href="#dataannotationsmodelvalidatorprovider">DataAnnotationsModelValidatorProvider</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>CachedDataAnnotationsMetadataAttributes</code>這個類別攔截某些標籤可被攔截驗證.</p>
-<p>本篇會介紹另一個可以客製化驗證<code>ValidationAttribute</code>,常用驗證標籤並講述是如何參數屬性是如何取得這個標籤和使用過程.</p>
-<blockquote>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="ValidationAttribute"><a href="#ValidationAttribute" class="headerlink" title="ValidationAttribute"></a>ValidationAttribute</h2><p><code>ValidationAttribute</code>類別在<code>System.ComponentModel.DataAnnotations</code>命名空間下.</p>
-<p>我們可以建立一個類別繼承<code>ValidationAttribute</code>並<code>bool IsValid(object value)</code>重載方法來製做我們客制化驗證機制.</p>
-<p><code>IsValid</code>方法有一個<code>Bool</code>回傳值回傳<code>true</code>代表驗證通過<code>false</code>反之</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ValidationAttribute</span> : <span class="title">Attribute</span>&#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">bool</span> <span class="title">IsValid</span>(<span class="params"><span class="keyword">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    </span><br><span class="line">    &#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<ul>
-<li><code>RegularExpressionAttribute</code></li>
-<li><code>StringLengthAttribute</code></li>
-<li><code>RangeAttribute</code></li>
-</ul>
-<p>如果查看上面幾個標籤原始碼可發現這幾個標籤都是繼承於一個<code>ValidationAttribute</code>類別(這也是為什麼我們可以透過繼承<code>ValidationAttribute</code>來擴充自己驗證方式).</p>
-<h3 id="ModelValidatorProviders"><a href="#ModelValidatorProviders" class="headerlink" title="ModelValidatorProviders"></a>ModelValidatorProviders</h3><p><code>ModelValidatorProviders</code>提供</p>
-<ul>
-<li><code>DataAnnotationsModelValidatorProvider</code></li>
-<li><code>DataErrorInfoModelValidatorProvider</code></li>
-<li><code>ClientDataTypeModelValidatorProvider</code></li>
-</ul>
-<p><code>ModelValidatorProviderCollection</code>是一個<code>ModelValidatorProvider</code>集合,可對於此集合加入<code>ModelValidatorProvider</code>物件.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title">ModelValidatorProviders</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> ModelValidatorProviderCollection _providers = <span class="keyword">new</span> ModelValidatorProviderCollection()</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">new</span> DataAnnotationsModelValidatorProvider(),</span><br><span class="line">		<span class="keyword">new</span> DataErrorInfoModelValidatorProvider(),</span><br><span class="line">		<span class="keyword">new</span> ClientDataTypeModelValidatorProvider()</span><br><span class="line">	&#125;;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> ModelValidatorProviderCollection Providers</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span> &#123; <span class="keyword">return</span> _providers; &#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line">public class ModelValidatorProviderCollection : Collection&lt;ModelValidatorProvider&gt;</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>如果我們需要加入一個客製化<code>ModelValidatorProvider</code>，可以直接將相應物件新增到<code>ModelValidatorProviders</code>的<code>Providers</code>集合中。</p>
-<h3 id="ModelValidator"><a href="#ModelValidator" class="headerlink" title="ModelValidator"></a>ModelValidator</h3><p>所有的參數驗證都繼承自抽像類型<code>ModelValidator</code>,這個抽象類別有幾個重要成員.</p>
-<ul>
-<li><code>IsRequired</code>:表示該<code>ModelValidator</code>是否是對目標屬性進行必要性驗證，默認是<code>False</code></li>
-<li><code>GetClientValidationRules</code>方法：<code>ModelClientValidationRule</code>是對客戶端驗證規則的封裝，我們會在進行客戶端驗證時對其進行詳細介紹。</li>
-<li><code>Validate</code>方法:對於屬性實施驗證,驗證完後回傳一個<code>ModelValidationResult</code>的集合物件.</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ModelValidator</span></span><br><span class="line">&#123;  </span><br><span class="line">	<span class="comment"><span class="doctag">///</span>....</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> IEnumerable&lt;ModelValidationResult&gt; <span class="title">Validate</span>(<span class="params"><span class="keyword">object</span> container</span>)</span>;</span><br><span class="line">    </span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> IEnumerable&lt;ModelClientValidationRule&gt; <span class="title">GetClientValidationRules</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">bool</span> IsRequired &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="CompositeModelValidator"><a href="#CompositeModelValidator" class="headerlink" title="CompositeModelValidator"></a>CompositeModelValidator</h2><p>從類別名稱可看出<code>CompositeModelValidator</code>,實並不是一個真正對<code>Model</code>物件實施驗證<code>ModelValidator</code>，它是一系列<code>ModelValidator</code>組合,根據基於<code>Model</code>本身類型及其屬性的<code>Model</code>元數據動態的取得<code>ModelValidator</code>（通過調用<code>ModelMetadata.GetValidators</code>方法）對<code>Model</code>參數實施驗證。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">class</span> <span class="title">CompositeModelValidator</span> : <span class="title">ModelValidator</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IEnumerable&lt;ModelValidationResult&gt; <span class="title">Validate</span>(<span class="params"><span class="keyword">object</span> container</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">bool</span> propertiesValid = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">		ModelMetadata[] properties = Metadata.PropertiesAsArray;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> propertyIndex = <span class="number">0</span>; propertyIndex &lt; properties.Length; propertyIndex++)</span><br><span class="line">		&#123;</span><br><span class="line">			ModelMetadata propertyMetadata = properties[propertyIndex];</span><br><span class="line">			<span class="keyword">foreach</span> (ModelValidator propertyValidator <span class="keyword">in</span> propertyMetadata.GetValidators(ControllerContext))</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">foreach</span> (ModelValidationResult propertyResult <span class="keyword">in</span> propertyValidator.Validate(Metadata.Model))</span><br><span class="line">				&#123;</span><br><span class="line">					propertiesValid = <span class="literal">false</span>;</span><br><span class="line">					<span class="function"><span class="keyword">yield</span> return <span class="title">CreateSubPropertyResult</span>(<span class="params">propertyMetadata, propertyResult</span>)</span>;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (propertiesValid)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">foreach</span> (ModelValidator typeValidator <span class="keyword">in</span> Metadata.GetValidators(ControllerContext))</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">foreach</span> (ModelValidationResult typeResult <span class="keyword">in</span> typeValidator.Validate(container))</span><br><span class="line">				&#123;</span><br><span class="line">					<span class="keyword">yield</span> <span class="keyword">return</span> typeResult;</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>下圖是<code>ModelValidator、ModelValidatorProvider、ModelValidatorProviders</code>UML關係圖</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/20/uml_img.png" alt="UML_Model"></p>
-<h2 id="DataAnnotationsModelValidator"><a href="#DataAnnotationsModelValidator" class="headerlink" title="DataAnnotationsModelValidator"></a>DataAnnotationsModelValidator</h2><p><code>ModelValidator</code>物件是用於進行<code>Model</code>參數驗證的模組類別中的<code>ValidationAttribute</code>透過建構子設定檢驗的標籤.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">DataAnnotationsModelValidator</span> : <span class="title">ModelValidator</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="function"><span class="keyword">public</span> <span class="title">DataAnnotationsModelValidator</span>(<span class="params">ModelMetadata metadata, ControllerContext context, ValidationAttribute attribute</span>)</span>;</span><br><span class="line">	<span class="keyword">protected</span> <span class="keyword">internal</span> ValidationAttribute Attribute &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">bool</span> IsRequired</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span> &#123; <span class="keyword">return</span> Attribute <span class="keyword">is</span> RequiredAttribute; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="keyword">static</span> ModelValidator <span class="title">Create</span>(<span class="params">ModelMetadata metadata, ControllerContext context, ValidationAttribute attribute</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> DataAnnotationsModelValidator(metadata, context, attribute);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IEnumerable&lt;ModelClientValidationRule&gt; <span class="title">GetClientValidationRules</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="comment">//....</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IEnumerable&lt;ModelValidationResult&gt; <span class="title">Validate</span>(<span class="params"><span class="keyword">object</span> container</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="comment">//....</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>###　DataAnnotationsModelValidator<tattribute></tattribute></p>
-<p><code>DataAnnotationsModelValidator&lt;TAttribute&gt;</code>這個泛型類別有一個合約<code>TAttribute</code>必須為<code>ValidationAttribute</code></p>
-<p><code>DataAnnotationsModelValidator&lt;TAttribute&gt;</code>的子類。當我們將這些<code>ValidationAttribute</code>應用到<code>Model</code>型別時，真正用於<code>Model</code>參數驗證是<code>ModelValidator</code>的轉接器類別</p>
-<blockquote>
-<p>在這裡使用<strong>轉接器模式</strong>把每個繼承<code>ValidationAttribute</code>標籤適配給一個<code>ModelValidator</code>物件.</p>
-</blockquote>
-<p>例如下面程式碼每個<code>ModelValidator</code>都有自己的轉接器類別.</p>
-<ul>
-<li><code>RangeAttributeAdapter</code> = <code>RangeAttribute</code></li>
-<li><code>RequiredAttributeAdapter</code> = <code>RequiredAttribute</code></li>
-<li><code>StringLengthAttributeAdapter</code> = <code>StringLengthAttribute</code></li>
-<li><code>RegularExpressionAttributeAdapter</code> = <code>RegularExpressionAttribute</code></li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span></span><br><span class="line">DataAnnotationsModelValidator&lt;TAttribute&gt; : DataAnnotationsModelValidator</span><br><span class="line"><span class="keyword">where</span> TAttribute : ValidationAttribute</span><br><span class="line">&#123;	</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class RequiredAttributeAdapter : DataAnnotationsModelValidator&lt;RequiredAttribute&gt;</span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">public class RangeAttributeAdapter : DataAnnotationsModelValidator&lt;RangeAttribute&gt;</span><br><span class="line">&#123;    </span><br><span class="line">   <span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">public class RegularExpressionAttributeAdapter : DataAnnotationsModelValidator&lt;				RegularExpressionAttribute&gt;</span><br><span class="line">&#123;    </span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">public class StringLengthAttributeAdapter : DataAnnotationsModelValidator&lt;						StringLengthAttribute&gt;</span><br><span class="line">&#123;    </span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="DataAnnotationsModelValidatorProvider"><a href="#DataAnnotationsModelValidatorProvider" class="headerlink" title="DataAnnotationsModelValidatorProvider"></a>DataAnnotationsModelValidatorProvider</h3><p>有一個委派<code>DataAnnotationsModelValidationFactory</code>主要可以存放一個執行動作且回傳一個<code>ModelValidator</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> ModelValidator <span class="title">DataAnnotationsModelValidationFactory</span>(<span class="params">ModelMetadata metadata, ControllerContext context, ValidationAttribute attribute</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> ModelValidator <span class="title">DataAnnotationsValidatableObjectAdapterFactory</span>(<span class="params">ModelMetadata metadata, ControllerContext context</span>)</span>;</span><br></pre></td></tr></table></figure></div>
-<ul>
-<li><code>AttributeFactories</code>：一個字典集合從屬性載入預設擁有<code>ValidationAttribute</code>標籤(上面介紹的轉接器<code>RegularExpressionAttributeAdapter</code>….)</li>
-<li><code>DefaultAttributeFactory</code>：如果從<code>AttributeFactories</code>這個字典無法取得繼承<code>ValidationAttribute</code>標籤(自己客製化)就藉由<code>DataAnnotationsModelValidator</code>取得.</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">static</span> DataAnnotationsModelValidationFactory DefaultAttributeFactory =</span><br><span class="line">	(metadata, context, attribute) =&gt; <span class="keyword">new</span> DataAnnotationsModelValidator(metadata, context, attribute);</span><br><span class="line"></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">static</span> DataAnnotationsValidatableObjectAdapterFactory DefaultValidatableFactory =</span><br><span class="line">            (metadata, context) =&gt; <span class="keyword">new</span> ValidatableObjectAdapter(metadata, context);</span><br><span class="line"></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">static</span> Dictionary&lt;Type, DataAnnotationsModelValidationFactory&gt; AttributeFactories = BuildAttributeFactoriesDictionary();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> IEnumerable&lt;ModelValidator&gt; <span class="title">GetValidators</span>(<span class="params">ModelMetadata metadata, ControllerContext context, IEnumerable&lt;Attribute&gt; attributes</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">//..</span></span><br><span class="line">	<span class="keyword">foreach</span> (ValidationAttribute attribute <span class="keyword">in</span> attributes.OfType&lt;ValidationAttribute&gt;())</span><br><span class="line">	&#123;</span><br><span class="line">		DataAnnotationsModelValidationFactory factory;</span><br><span class="line">		<span class="keyword">if</span> (!AttributeFactories.TryGetValue(attribute.GetType(), <span class="keyword">out</span> factory))</span><br><span class="line">		&#123;</span><br><span class="line">			factory = DefaultAttributeFactory;</span><br><span class="line">		&#125;</span><br><span class="line">		results.Add(factory(metadata, context, attribute));</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Produce a validator if the type supports IValidatableObject</span></span><br><span class="line">	<span class="keyword">if</span> (<span class="keyword">typeof</span>(IValidatableObject).IsAssignableFrom(metadata.ModelType))</span><br><span class="line">	&#123;</span><br><span class="line">		DataAnnotationsValidatableObjectAdapterFactory factory;</span><br><span class="line">		<span class="keyword">if</span> (!ValidatableFactories.TryGetValue(metadata.ModelType, <span class="keyword">out</span> factory))</span><br><span class="line">		&#123;</span><br><span class="line">			factory = DefaultValidatableFactory;</span><br><span class="line">		&#125;</span><br><span class="line">		results.Add(factory(metadata, context));</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>最後從<code>Model</code>元數據中載入所有<code>ValidationAttribute</code>驗證標籤後就會在<code>DefaultModelBinder.BindProperties</code>呼叫方法時被觸發驗證</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>在整個<strong>Model-Binding</strong>流程中,算是蠻複雜的石頭希望可以跟大家簡述一些綁定概念和做法.</p>
-<p><code>ValidationAttribute</code>是舊有的類別,<strong>MVC</strong>利用一系列手法將她很好融入系統中.</p>
-<p>原本<code>ValidationAttribute</code>被多個標籤繼承,透過<code>DataAnnotationsModelValidator&lt;TAttribute&gt;</code>設計(讓我驚豔),變成一個1對1關係(每個<code>ValidationAttribute</code>都有自己的轉接器物件),之後就可以在<code>BuildAttributeFactoriesDictionary()</code>更方便使用.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day21/">https://isdaniel.github.io/ithelp-day21/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -6848,15 +6848,12 @@ email_url: dog830228@gmail.com
     <title>初探-介紹Kubernetes</title>
     <url>/kubernetes-first/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>k8s前身是Google開發borg系統，用於管理Google系統，後面由許多borg核心開發人用利用Go語言改寫就造就Kubernetes</p>
-<p>能根據聲明式的設定，管理、擴展的容器化應用編排系統</p>
+<p>可以根據<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLWhhbnQvJUU1JUFFJUEzJUU1JTkxJThBJUU1JUJDJThGJUU3JUI3JUE4JUU3JUE4JThC" title="https://zh.wikipedia.org/zh-hant/%E5%AE%A3%E5%91%8A%E5%BC%8F%E7%B7%A8%E7%A8%8B">聲明式<i class="fa fa-external-link"></i></span>設定，管理、擴展我們的容器化應用編排系統</p>
 <ul>
-<li>支援大規模的擴展與調度</li>
-<li>服務的自動 rollout 與 rollback</li>
-<li>資源的邏輯隔離</li>
-<li>提供硬體資源的有效利用</li>
-<li>提供 service discovery 與負載平衡</li>
-<li>自我修復：根據用戶的 health check 導入流量或重啟應用</li>
-<li>高度的功能擴展性: Custom Resource Definition &amp; Operator</li>
+<li>有效安全幫我們執行Container Rollout</li>
+<li>能夠因應系統流量變化，進行伸縮擴容（Scaling）</li>
+<li>Health check實現自動偵測故障及重啟功能</li>
+<li>透過Namespace有效幫我們做資源隔離</li>
 </ul>
 <p>k8s協助我們方便掌控複雜容器系統架構，具有良好伸縮性</p>
 <blockquote>
@@ -6869,52 +6866,36 @@ email_url: dog830228@gmail.com
 <p>透過<code>kubectl api-resources -o wide</code>可以查看目前所有Api Server提供的服務</p>
 <h3 id="master-node"><a href="#master-node" class="headerlink" title="master node"></a>master node</h3><p>master node 又可以稱 control plan，存儲跟掌控Node就像是人類的大腦，所以裡面有些重要成員要跟大家介紹</p>
 <ul>
-<li>kube-apiserver:接收使用者指令來操作Node or Pod.(唯一接受命令的服務)</li>
-<li>etcd:可信賴的分布式key/value存儲服務，保存k8s需要持久化的配置資訊</li>
-<li>kube-scheduler:監控Pod建立，負責調度至對應Node上</li>
-<li>kube-controller-manager:<ul>
-<li>Controller會監控cluster中狀態，透過control loop維持期望狀態，kube-controller-manager是多個內建controller集合體.<ul>
-<li>Node Controller會監控Node存活狀態</li>
-<li>Deployment Controller會將對應的workload維持在期望狀態（e.g. 10個replica）</li>
+<li>kube-apiserver：接收使用者指令來操作Node or Pod.(唯一接受命令的服務)</li>
+<li>etcd：可信賴的分布式key/value存儲服務，保存k8s需要持久化的配置資訊</li>
+<li>kube-scheduler：負責調度Pod至Node並監控</li>
+<li>kube-controller-manager：<ul>
+<li>透過control loop監控cluster狀態並嘗試維持預期狀態，內建由多個controller集合體組成</li>
 </ul>
 </li>
 </ul>
-</li>
-</ul>
-<h3 id="kubectl"><a href="#kubectl" class="headerlink" title="kubectl"></a>kubectl</h3><p>kubectl: 使用者操作 k8s cluster control plan 所使用command line tool，透過 RESTful API 對 master node 進行一切操作 (需要有相應權限)</p>
-<ul>
-<li>建立、更新及刪除 Pod, deployment, config map, service…etc</li>
-<li>需要先透過 ~/.kube/config 設定 cluster, context 及 user<ul>
-<li>設定檔路徑可透過 KUBECONFIG env 或 –kubeconfig 複寫</li>
-</ul>
-</li>
-</ul>
+<h3 id="kubectl"><a href="#kubectl" class="headerlink" title="kubectl"></a>kubectl</h3><p>kubectl 封裝成CLI方便我們下達命令操作我們 k8s cluster control plan，經由 RESTful API 對 master node 進行操作 (需要有相應權限)</p>
+<p>我們須先透過 <code>~/.kube/config</code> 設定使用 cluster, context 及 user，建立完成後我們就可以對於Pod、deployment、 config map、service進行建立、更新，刪除..動作.</p>
 <blockquote>
-<p>透過<code>cat ~/.kube/config</code>或<code>kubectl config view</code>查看目前 kubectl 設定</p>
+<p>透過<code>cat ~/.kube/config</code>或<code>kubectl config view</code>查看目前 kubectl 設定<br>在config中<code>current-context</code>存放當前操作哪個k8s cluster</p>
 </blockquote>
 <h3 id="Pods"><a href="#Pods" class="headerlink" title="Pods"></a>Pods</h3><p>Pod是存放container程式(可以多個Container)，是k8s調度中最小單位</p>
 <p>一開始準備建立一個Pod會依序執行下面Container，在所有Init Container沒有執行成功前，Pod不會變成Ready狀態，Pod會處於Pedding狀態.</p>
-<ul>
-<li>Pause Container =&gt; Init Containers =&gt; Main Container.</li>
-</ul>
-<p>如果Pod重啟，所有Init Container必須可重新執行.</p>
+<p>Pod執行Container順序為Pause Container =&gt; Init Containers =&gt; Main Container</p>
+<blockquote>
+<p>Main Container為我們主要運作Container，如果Pod重啟，所有Init Container必須可重新執行.</p>
+</blockquote>
 <ul>
 <li>Pod 具有自己的生命週期及階段 (Pending, Running, Succeed, Failed, Unknown)</li>
-<li>一般不會直接建立 Pod，而是由更高階的 controller 負責控制<ul>
-<li>e.g. Deployment, CronJob, etc</li>
-</ul>
-</li>
+<li>一般不建議直接建立 Pod，而是由更高階 controller 負責控制(ex：Deployment)，達到更方便的控管</li>
 </ul>
 <p><img src="https://i.imgur.com/A8YNvJV.png" alt></p>
-<h3 id="Work-Node"><a href="#Work-Node" class="headerlink" title="Work Node"></a>Work Node</h3><ul>
-<li>提供CPU，Memory，NetWork…資源</li>
-<li>裡面可以存放許多Pod來執行Container</li>
-</ul>
-<p>每個work node都有下面兩個重要組件</p>
+<h3 id="WorkNode"><a href="#WorkNode" class="headerlink" title="WorkNode"></a>WorkNode</h3><p>WorkNode裡面存放許多Pod來執行Container，提供資源來執行我們Pod</p>
+<p>每個WorkNode都有下面兩個重要組件</p>
 <ul>
-<li><p>kubelet:每一個Node上都有個kubelet(Node上的Agent)，負責與API Server 溝通，管理container生命週期(health check node)，定時和Control plane報平安(heartbeat)</p>
+<li><p>Kubelet：負責與API Server 溝通，管理container生命週期(health check建立Pod)，利用heartbeat定期跟Control plane說我還活著(有點類似Node的管家)</p>
 </li>
-<li><p>kubeproxy:控制Pod和load balance相關網路</p>
+<li><p>Kubeproxy:負責更新 Node 的 iptables，控制Pod跟load balance相關網路(有點類似Node的通訊兵)</p>
 </li>
 </ul>
 <h2 id="k3d-Kubernetes-in-docker"><a href="#k3d-Kubernetes-in-docker" class="headerlink" title="k3d (Kubernetes in docker)"></a>k3d (Kubernetes in docker)</h2><p>要建立k8s集群有點麻煩好在，有k3d可以利用container幫我們模擬k8s讓我們方便練習</p>
