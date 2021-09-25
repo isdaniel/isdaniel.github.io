@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-tw">
+<head><meta name="generator" content="Hexo 3.8.0">
+  
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+    
+    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+
+  <meta name="description" content="前文在處理高併發系統架構時，非同步是一個很好的手段和提升效率的方式. 我今天跟大家分享，如何利用 MQ 搭配 Worker Pool 來提高系統吞吐量且又不失彈性 原始碼連結 MQ Woker 本篇會包含兩個部分解說  如何使用 k3d (k8s) 和 docker-compose 來 Run 起我們 MQ 服務 主要核心程式解說  系統簡介我們透過 MQ 來幫系統作解耦合，前台要處理事情都會先統">
+<meta name="keywords" content="c#,RabbitMq,ThreadPool,SystemDesign">
+<meta property="og:type" content="article">
+<meta property="og:title" content="高併發系統系列-非同步 MQ-WorkerPool 架構 Poc">
+<meta property="og:url" content="https://isdaniel.github.io/mq-worker-system/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="前文在處理高併發系統架構時，非同步是一個很好的手段和提升效率的方式. 我今天跟大家分享，如何利用 MQ 搭配 Worker Pool 來提高系統吞吐量且又不失彈性 原始碼連結 MQ Woker 本篇會包含兩個部分解說  如何使用 k3d (k8s) 和 docker-compose 來 Run 起我們 MQ 服務 主要核心程式解說  系統簡介我們透過 MQ 來幫系統作解耦合，前台要處理事情都會先統">
+<meta property="og:locale" content="zh-tw">
+<meta property="og:image" content="https://i.imgur.com/7VgGyMG.png">
+<meta property="og:image" content="https://i.imgur.com/pag9kJE.png">
+<meta property="og:image" content="https://i.imgur.com/qSWmdOT.png">
+<meta property="og:image" content="https://i.imgur.com/5jeBXWP.png">
+<meta property="og:updated_time" content="2021-09-25T05:35:57.858Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="高併發系統系列-非同步 MQ-WorkerPool 架構 Poc">
+<meta name="twitter:description" content="前文在處理高併發系統架構時，非同步是一個很好的手段和提升效率的方式. 我今天跟大家分享，如何利用 MQ 搭配 Worker Pool 來提高系統吞吐量且又不失彈性 原始碼連結 MQ Woker 本篇會包含兩個部分解說  如何使用 k3d (k8s) 和 docker-compose 來 Run 起我們 MQ 服務 主要核心程式解說  系統簡介我們透過 MQ 來幫系統作解耦合，前台要處理事情都會先統">
+<meta name="twitter:image" content="https://i.imgur.com/7VgGyMG.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://isdaniel.github.io/mq-worker-system/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>高併發系統系列-非同步 MQ-WorkerPool 架構 Poc | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-course">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">96</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">36</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">97</span></a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+    <div class="reading-progress-bar"></div>
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/mq-worker-system/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">高併發系統系列-非同步 MQ-WorkerPool 架構 Poc
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2021-09-25 23:10:43 / Modified: 05:35:57" itemprop="dateCreated datePublished" datetime="2021-09-25T23:10:43+00:00">2021-09-25</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/c/" itemprop="url" rel="index"><span itemprop="name">c#</span></a></span>
+
+                
+                
+                  , 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/c/RabbitMq/" itemprop="url" rel="index"><span itemprop="name">RabbitMq</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/mq-worker-system/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="mq-worker-system/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">8.6k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">16 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>在處理高併發系統架構時，非同步是一個很好的手段和提升效率的方式.</p>
+<p>我今天跟大家分享，如何利用 MQ 搭配 Worker Pool 來提高系統吞吐量且又不失彈性</p>
+<p>原始碼連結 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL01RX1BvYw==" title="https://github.com/isdaniel/MQ_Poc">MQ Woker<i class="fa fa-external-link"></i></span></p>
+<p>本篇會包含兩個部分解說</p>
+<ol>
+<li>如何使用 k3d (k8s) 和 docker-compose 來 Run 起我們 MQ 服務</li>
+<li>主要核心程式解說</li>
+</ol>
+<h2 id="系統簡介"><a href="#系統簡介" class="headerlink" title="系統簡介"></a>系統簡介</h2><p>我們透過 MQ 來幫系統作解耦合，前台要處理事情都會先統一打到 MQ 中之後就可以先回覆，使用者結果，後續處理就交給 MQ 來幫我們派發任務到我們指定的 Worker 上處理業務邏輯，這樣可以把原本架構前台後台高偶合的問題解決提供可承受且快速響應的架構.</p>
+<p>目前支援兩種 Worker.</p>
+<ul>
+<li>ThreadPool：使用 Thread 當作 Worker 來幫我們處理任務</li>
+</ul>
+<p><img src="https://i.imgur.com/7VgGyMG.png" alt></p>
+<ul>
+<li>ProcessPool：使用 Process 當作 Worker 來幫我們處理任務，雖然比起Thread需要多點資源，但多了資源隔離確保系統更穩定</li>
+</ul>
+<p><img src="https://i.imgur.com/pag9kJE.png" alt></p>
+<blockquote>
+<p>另外在 ProcessPool Mode docker-compose 版本支援 DashBoard 方便我們查看收訊息資料統計</p>
+</blockquote>
+<h2 id="How-to-Run"><a href="#How-to-Run" class="headerlink" title="How to Run"></a>How to Run</h2><h3 id="Rrunning-by-docker-compose"><a href="#Rrunning-by-docker-compose" class="headerlink" title="Rrunning by docker-compose"></a>Rrunning by docker-compose</h3><p>執行前請先把CMD路徑設定到本專案根目錄</p>
+<p>使用 <code>docker-compose</code> 執行container.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env up -d</span><br></pre></td></tr></table></figure></div>
+<p>執行完後，會啟動一個MQ Server、publisher、nodeworker</p>
+<p>如果想要scale out 多個 publisher</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env  up -d --scale publisher=2 --no-recreate</span><br></pre></td></tr></table></figure></div>
+<p>如果想要scale out nodeworker</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env  up -d --scale nodeworker=2 --no-recreate</span><br></pre></td></tr></table></figure></div>
+<h4 id="RabbitMQ-連接資訊"><a href="#RabbitMQ-連接資訊" class="headerlink" title="RabbitMQ 連接資訊"></a>RabbitMQ 連接資訊</h4><p>RabbitMQ站台連接資訊</p>
+<ul>
+<li>url : <code>http://localhost:8888/</code></li>
+<li>user : guest</li>
+<li>account : guest</li>
+</ul>
+<h4 id="環境參數"><a href="#環境參數" class="headerlink" title="環境參數"></a>環境參數</h4><p>目前在 <code>.\env\.env</code> 有環境參數檔案可以注入 <code>docker-compose</code> 中</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">RABBITMQ_HOSTNAME=rabbitmq-server</span><br><span class="line">QUEUENAME=worker-queue</span><br><span class="line">RABBITMQ_PORT=5672</span><br></pre></td></tr></table></figure></div>
+<ul>
+<li>RABBITMQ_HOSTNAME:rabbitMq server 主機名稱</li>
+<li>RABBITMQ_PORT:rabbitMq server port</li>
+<li>QUEUENAME:使用queue名稱</li>
+</ul>
+<blockquote>
+<p>Worker 支援 Graceful shutdown所以大膽地做Scale out</p>
+</blockquote>
+<h4 id="ProcessPool-docker-compose"><a href="#ProcessPool-docker-compose" class="headerlink" title="ProcessPool docker-compose"></a>ProcessPool docker-compose</h4><p>目前支援使用 Process Pool 透過<code>docker-compose-process.yml</code>來執行 process Pool 版本</p>
+<p>在 nodeworker 要加上以下環境變數</p>
+<ul>
+<li><code>POOL_TYPE</code>：<ul>
+<li>0 ThreadPool(default)</li>
+<li>1 ProcessPool</li>
+</ul>
+</li>
+<li><code>DBConnection</code>：來串接Dashboard</li>
+</ul>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">environment:</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">POOL_TYPE=1</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">DBConnection=Data</span> <span class="string">Source=sqlserver;Initial</span> <span class="string">Catalog=orleans;User</span> <span class="string">ID=sa;Password=test.123;</span></span><br></pre></td></tr></table></figure></div>
+<p>proceess Pool 支援 Dashboard 來查看請求狀態 透過可以查看<code>http://localhost:8899/</code></p>
+<blockquote>
+<p>帳密 admin/test.123</p>
+</blockquote>
+<p>查看 DashBoard -&gt; MQMessagePrinter 就可以看到如下圖畫面，了解我們收發Message狀態</p>
+<p><img src="https://i.imgur.com/qSWmdOT.png" alt></p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env -f .\docker-compose-process.yml up -d </span><br><span class="line"></span><br><span class="line">docker-compose --env-file .\env\.env -f .\docker-compose-process.yml  up -d --scale publisher=4 --no-recreate</span><br></pre></td></tr></table></figure></div>
+<h3 id="Running-by-k3d"><a href="#Running-by-k3d" class="headerlink" title="Running by k3d"></a>Running by k3d</h3><p>執行前請先把 CMD 路徑設定到本專案根目錄，並且依照下面指示步驟依序往下動作</p>
+<p>我們利用 k3d 建立一個 k8s 在 local container 中</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">k3d cluster create my-k3d -p "<span class="number">8888</span>:<span class="number">80</span>@loadbalancer"</span><br></pre></td></tr></table></figure></div>
+<h4 id="設定-private-registry"><a href="#設定-private-registry" class="headerlink" title="設定 private registry"></a>設定 private registry</h4><div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create secret docker-registry app-docker-dev --docker-server=docker.io --docker-username=&lt;user_name&gt; --docker-password=&lt;user_password&gt;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><code>&lt;user_name&gt;</code> &amp; <code>&lt;user_password&gt;</code> 輸入 login <code>docker.io</code> registry 帳密</p>
+</blockquote>
+<h4 id="設定-configmap-amp-secret"><a href="#設定-configmap-amp-secret" class="headerlink" title="設定 configmap &amp; secret"></a>設定 configmap &amp; secret</h4><div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/mq-poc-secret.yaml</span><br><span class="line">kubectl apply -f  ./k8s/mq-poc-configmap.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="安裝-rabbitmq-cluster-operator"><a href="#安裝-rabbitmq-cluster-operator" class="headerlink" title="安裝 rabbitmq cluster-operator"></a>安裝 rabbitmq cluster-operator</h4><div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml</span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/rabbitmq-cluster-operator.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="建立-Publisher"><a href="#建立-Publisher" class="headerlink" title="建立 Publisher"></a>建立 Publisher</h4><div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/mq-poc-publisher.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="建立-Worker"><a href="#建立-Worker" class="headerlink" title="建立 Worker"></a>建立 Worker</h4><div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/mq-poc-worker.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="建立-ingress"><a href="#建立-ingress" class="headerlink" title="建立 ingress"></a>建立 ingress</h4><p>建立 ingress 對外暴露Rabbitmq</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f  .\k8s\mq-poc-ingress.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="scale-out-publisher-amp-worker"><a href="#scale-out-publisher-amp-worker" class="headerlink" title="scale out publisher &amp; worker"></a>scale out publisher &amp; worker</h4><p>執行完以上動作後就可以看到 k8s 上跑起我們 Worker &amp; Publisher</p>
+<p>k8s scale publisher</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl scale --replicas=<span class="number">8</span> -f .\k8s\mq-poc-publisher.yaml</span><br></pre></td></tr></table></figure></div>
+<p>k8s scale worker</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl scale --replicas=<span class="number">3</span> -f .\k8s\mq-poc-worker.yaml</span><br></pre></td></tr></table></figure></div>
+<h2 id="核心組件程式解說"><a href="#核心組件程式解說" class="headerlink" title="核心組件程式解說"></a>核心組件程式解說</h2><p>此次 Worker 架構核心 UML 圖如下</p>
+<p><img src="https://i.imgur.com/5jeBXWP.png" alt></p>
+<h3 id="Woker-參數介紹"><a href="#Woker-參數介紹" class="headerlink" title="Woker 參數介紹"></a>Woker 參數介紹</h3><p>我們可以透過<code>RabbitMqSetting.ThreadSettings</code>來設定</p>
+<ul>
+<li>WorkUnitCount:此 ThreadPool 提供幾個 Thread 來處理</li>
+<li>Group:哪一個群組(可以處理不同種類的任務)</li>
+</ul>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">PoolSettings = <span class="keyword">new</span> PoolSetting[] <span class="comment">//which can read from setting files.</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">new</span> PoolSetting()&#123;WorkUnitCount = <span class="number">3</span>,Group = <span class="string">"groupA"</span> , FileName = <span class="string">"dotnet"</span>,Arguments = <span class="string">@"./Process/Group/Client.dll"</span>&#125;,</span><br><span class="line">	<span class="keyword">new</span> PoolSetting()&#123;WorkUnitCount = <span class="number">3</span>,Group = <span class="string">"groupB"</span> , FileName = <span class="string">"dotnet"</span>,Arguments = <span class="string">@"./Process/Group/Client.dll"</span>&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>透過上面參數我們可以定義每個 Group 群組 WorkerPool 相關設定.</p>
+<h3 id="RabbitMqWorkerBase"><a href="#RabbitMqWorkerBase" class="headerlink" title="RabbitMqWorkerBase"></a>RabbitMqWorkerBase</h3><p><code>RabbitMqWorkerBase</code>是MQ架構中的抽象類別，提供連線還有關機後等事情，邏輯實現交由實現子類別來處理.</p>
+<p>能看到<code>RabbitMqWorkerBase</code>類別掌管RabbitMq連接相關資訊，這裡特別要提的是我目前版本支援<code>GracefulShutDown</code>讓子類別實現要怎麼去安全關機(目前提供一個 <code>Async</code> Task).</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">RabbitMqWorkerBase</span> </span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> RabbitMqSetting Setting &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">protected</span> AsyncEventHandler&lt;BasicDeliverEventArgs&gt; ReceiveEvent;</span><br><span class="line">	<span class="keyword">private</span> IConnection _conn;</span><br><span class="line">	<span class="keyword">private</span> IModel _channle;</span><br><span class="line">	<span class="keyword">private</span> AsyncEventingBasicConsumer _consumer;</span><br><span class="line">	<span class="keyword">protected</span> ILogger&lt;RabbitMqWorkerBase&gt; Logger &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">RabbitMqWorkerBase</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">		RabbitMqSetting setting,</span></span></span><br><span class="line"><span class="function"><span class="params">		ILogger&lt;RabbitMqWorkerBase&gt; logger</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">this</span>.Logger = logger;</span><br><span class="line">		<span class="keyword">this</span>.Setting = setting;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">var</span> _connFactory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">		&#123;</span><br><span class="line">			Uri = setting.GetUri(),</span><br><span class="line">			DispatchConsumersAsync = <span class="literal">true</span> <span class="comment">// async mode</span></span><br><span class="line">		&#125;;</span><br><span class="line"></span><br><span class="line">		_conn = _connFactory.CreateConnection();</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> 在 subclass 可以返回結果，來代表是否做完此訊息</span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="args"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> Task&lt;<span class="keyword">bool</span>&gt; <span class="title">ExecuteAsync</span>(<span class="params">BasicDeliverEventArgs args</span>)</span>;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CreateWorkUnit</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		_channle = _conn.CreateModel();</span><br><span class="line">		_consumer = <span class="keyword">new</span> AsyncEventingBasicConsumer(_channle);</span><br><span class="line">		_channle.BasicQos(<span class="number">0</span>, Setting.PrefetchTaskCount, <span class="literal">true</span>);</span><br><span class="line">		_channle.BasicConsume(Setting.QueueName, <span class="literal">false</span>, _consumer);</span><br><span class="line">		ReceiveEvent = <span class="keyword">async</span> (<span class="keyword">object</span> sender, BasicDeliverEventArgs e) =&gt;</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">try</span></span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">var</span> ackReuslt = <span class="keyword">await</span> ExecuteAsync(e);</span><br><span class="line">				<span class="keyword">if</span>(ackReuslt)</span><br><span class="line">					_channle.BasicAck(e.DeliveryTag, <span class="literal">false</span>);</span><br><span class="line">				<span class="keyword">else</span></span><br><span class="line">					_channle.BasicNack(e.DeliveryTag, <span class="literal">false</span>, <span class="literal">true</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> (Exception ex)</span><br><span class="line">			&#123;</span><br><span class="line">				_channle.BasicNack(e.DeliveryTag, <span class="literal">false</span>, <span class="literal">true</span>);</span><br><span class="line">				Logger.LogError(ex,ex.ToString());</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">await</span> Task.Yield();</span><br><span class="line">		&#125;;</span><br><span class="line">		_consumer.Received += ReceiveEvent;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">async</span> Task <span class="title">GracefulReleaseAsync</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">await</span> Task.CompletedTask;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">GracefulShutDown</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		_consumer.Received -= ReceiveEvent;</span><br><span class="line">		ReceiveEvent = <span class="literal">null</span>;</span><br><span class="line">		<span class="comment">//wait for all unit tasks be done.</span></span><br><span class="line">		Logger.LogInformation(<span class="string">"Wait for Pool Close!!!!"</span>);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">await</span> GracefulReleaseAsync();</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">if</span> (_channle.IsOpen)</span><br><span class="line">			_channle.Close();</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">if</span> (_conn.IsOpen)</span><br><span class="line">			_conn.Close();</span><br><span class="line">		</span><br><span class="line">		Logger.LogInformation(<span class="string">"RabbitMQ Conn Closed!!!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 <code>RabbitMqGroupWorker</code> 裡我們會使用到我們自己建立 <code>WorkerPool</code> 處理我們要的任務邏輯</p>
+<h3 id="IWokerPool"><a href="#IWokerPool" class="headerlink" title="IWokerPool"></a>IWokerPool</h3><p>有一個 <code>IWorkerPool</code> 抽象提供我們對於 WorkerPool 實現抽象</p>
+<p>目前提供兩種Pool</p>
+<ul>
+<li>ProcessPool</li>
+<li>ThreadPool</li>
+</ul>
+<p>這邊我對於 <code>ProcessPool</code> 來作介紹 (ThreadPool 概念差不多只是 UnitWorker 不一樣)</p>
+<p>之前我對於 <a href="https://isdaniel.github.io/multithread-eventwaithandle/">EventWaitHandle</a> 有篇文章有探討，如果不清楚的夥伴可以先去了解後再看這部分程式.</p>
+<p>使用 <code>EventWaitHandle</code> 主要是為了提高系統效率，不造成 Worker 無效空轉造成 CPU 資源浪費</p>
+<p>至於 <code>volatile bool _finish</code> 一開始是 false ，Pool在接收到關機訊息時會把他設定成 true 告訴 Workers 可以準備下班了.</p>
+<p>對於 <a href="https://isdaniel.github.io/volatile-introduce/">volatile</a> 我之前有文章解釋，他的概念跟使用場景，有興趣的可以再去了解</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ProcessPool</span> : <span class="title">IWorkerPool</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">const</span> <span class="keyword">string</span> CLOSED_SIGNAL = <span class="string">"quit"</span>;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">readonly</span> PoolSetting _poolSetting;</span><br><span class="line">	<span class="keyword">private</span> BlockingCollection&lt;MessageTask&gt; _taskQueue;</span><br><span class="line">	<span class="keyword">private</span> List&lt;Task&gt; _workers = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">int</span> _processCount;</span><br><span class="line">	<span class="keyword">private</span> ManualResetEvent _notify = <span class="keyword">new</span> ManualResetEvent(<span class="literal">false</span>);</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">bool</span> _finish = <span class="literal">false</span>;</span><br><span class="line">	<span class="keyword">private</span> List&lt;Process&gt; _processList = <span class="keyword">new</span> List&lt;Process&gt;();</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ProcessPool</span>(<span class="params">PoolSetting poolSetting</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">this</span>._processCount = poolSetting.WorkUnitCount;</span><br><span class="line">		<span class="keyword">this</span>._poolSetting = poolSetting;</span><br><span class="line">		_taskQueue = <span class="keyword">new</span> BlockingCollection&lt;MessageTask&gt;(poolSetting.WorkUnitCount);</span><br><span class="line">		Init();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">Init</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; _processCount; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">var</span> process = CreateProcess();</span><br><span class="line">			<span class="keyword">this</span>._workers.Add(Task.Run(()=&gt;&#123;</span><br><span class="line">				ProcessHandler(process);</span><br><span class="line">			&#125;));</span><br><span class="line">			_processList.Add(process);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> Process <span class="title">CreateProcess</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">		Process process = <span class="keyword">new</span> Process();</span><br><span class="line">		process.StartInfo = <span class="keyword">new</span> ProcessStartInfo()</span><br><span class="line">			&#123;</span><br><span class="line">				RedirectStandardInput = <span class="literal">true</span>,</span><br><span class="line">				RedirectStandardOutput = <span class="literal">true</span>,</span><br><span class="line">				RedirectStandardError = <span class="literal">true</span>,</span><br><span class="line">				UseShellExecute = <span class="literal">false</span>,</span><br><span class="line">				FileName = _poolSetting.FileName,</span><br><span class="line">				Arguments = _poolSetting.Arguments,</span><br><span class="line">				CreateNoWindow = <span class="literal">true</span></span><br><span class="line">			&#125;;</span><br><span class="line">		process.Start();</span><br><span class="line"></span><br><span class="line">		process.BeginErrorReadLine();</span><br><span class="line">		process.ErrorDataReceived += (<span class="keyword">object</span> sender, DataReceivedEventArgs e) =&gt;</span><br><span class="line">		&#123;</span><br><span class="line">			System.Console.WriteLine(<span class="string">$"Procees Error Information:<span class="subst">&#123;e.Data&#125;</span>"</span>);</span><br><span class="line">		&#125;;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> process;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Task&lt;<span class="keyword">bool</span>&gt; <span class="title">AddTaskAsync</span>(<span class="params">MessageTask task</span>)</span>&#123;</span><br><span class="line"></span><br><span class="line">		_taskQueue.Add(task);</span><br><span class="line">		_notify.Set();</span><br><span class="line">		<span class="keyword">return</span> Task.FromResult(<span class="literal">true</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ProcessHandler</span>(<span class="params">Process process</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">while</span> (<span class="literal">true</span>)&#123;</span><br><span class="line">			<span class="keyword">while</span>(_taskQueue.Count &gt; <span class="number">0</span>)&#123;</span><br><span class="line">				<span class="keyword">if</span> (_taskQueue.TryTake(<span class="keyword">out</span> MessageTask task))</span><br><span class="line">				&#123;</span><br><span class="line">					process.StandardInput.WriteLine(task.ToJsonMessage());</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span>(_finish)</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">			_notify.WaitOne();</span><br><span class="line">			_notify.Reset();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		process.StandardInput.WriteLine(CLOSED_SIGNAL);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">WaitFinishedAsync</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		_finish = <span class="literal">true</span>;</span><br><span class="line">		_notify.Set();</span><br><span class="line">	</span><br><span class="line">		<span class="keyword">foreach</span> (<span class="keyword">var</span> process <span class="keyword">in</span> _processList)</span><br><span class="line">		&#123;</span><br><span class="line">			process.WaitForExit();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">await</span> Task.WhenAll(_workers.ToArray());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="BlockingCollection"><a href="#BlockingCollection" class="headerlink" title="BlockingCollection"></a>BlockingCollection</h3><p>我這邊使用 <code>BlockingCollection</code> 來管控我一個最多能接收多少 Message 原因如下</p>
+<ul>
+<li>k8s 在接收關機指令時最多只給 Pod 30s 左右時間去做 GracefulShutDown，如果超過時間沒做完事情會強制收回Pod，如果我們收的任務太多了 可能就造成 GracefulShutDown 無法正常完成.</li>
+<li>如果沒有設定 <code>BlockingCollection</code> Worker 就會一口氣收下全部訊息，造成 Worker 後續要批次ackback 或是 資源上吃緊都不利</li>
+</ul>
+<p>所以這邊使用　<code>BlockingCollection</code> 透過前面的 <code>PoolSetting</code> 設定檔，來設定一個最多能接收的任務量</p>
+<p><code>BlockingCollection</code> 使用上就如下圖</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9pLmltZ3VyLmNvbS9yRUxHa2JzLnBuZw==" title="https://i.imgur.com/rELGkbs.png"><i class="fa fa-external-link"></i></span></p>
+<p>我們可以用停車場的案例來理解:</p>
+<p>停車場有幾個重要屬性</p>
+<ol>
+<li>停車格數量</li>
+<li>進去閘門</li>
+<li>出去閘門</li>
+<li>多少空位</li>
+</ol>
+<p>上面這四個屬性在 <code>BlockingCollection</code> 都有實現，所以才可以控制我們一次最多能收多少物件進Queue中，而如果塞不下 Thread 會進行 Blocked ，不會一直占著 CPU 資源空轉提高效率.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天介紹的 MQ Worker 架構，對於微服務跟非同步架構基礎建設有很重要的影響，因為有 MQ 當作我們系統核心轉接者，就可以提高我們系統併發乘載量</p>
+<p>在日後要建立 event driven architecture 會有很大的幫助，因為我們事件的轉倒核心可以透過 MQ 來幫我們處理.</p>
+<p>原始碼連結 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL01RX1BvYw==" title="https://github.com/isdaniel/MQ_Poc">MQ Woker<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/mq-worker-system/">https://isdaniel.github.io/mq-worker-system/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+
+      
+    </div>
+
+    
+      
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/c/" rel="tag"># c#</a>
+          
+            <a href="/tags/RabbitMq/" rel="tag"># RabbitMq</a>
+          
+            <a href="/tags/ThreadPool/" rel="tag"># ThreadPool</a>
+          
+            <a href="/tags/SystemDesign/" rel="tag"># SystemDesign</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/rabbitmq-cluster-operator/" rel="next" title="RabbitMQ cluster-operator">
+                <i class="fa fa-chevron-left"></i> RabbitMQ cluster-operator
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+  <br>
+  <div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
+            
+              <p class="site-author-name" itemprop="name">Daniel Shih</p>
+              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">97</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">36</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">96</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前文"><span class="nav-number">1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#系統簡介"><span class="nav-number">2.</span> <span class="nav-text">系統簡介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#How-to-Run"><span class="nav-number">3.</span> <span class="nav-text">How to Run</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Rrunning-by-docker-compose"><span class="nav-number">3.1.</span> <span class="nav-text">Rrunning by docker-compose</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#RabbitMQ-連接資訊"><span class="nav-number">3.1.1.</span> <span class="nav-text">RabbitMQ 連接資訊</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#環境參數"><span class="nav-number">3.1.2.</span> <span class="nav-text">環境參數</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ProcessPool-docker-compose"><span class="nav-number">3.1.3.</span> <span class="nav-text">ProcessPool docker-compose</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Running-by-k3d"><span class="nav-number">3.2.</span> <span class="nav-text">Running by k3d</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#設定-private-registry"><span class="nav-number">3.2.1.</span> <span class="nav-text">設定 private registry</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#設定-configmap-amp-secret"><span class="nav-number">3.2.2.</span> <span class="nav-text">設定 configmap &amp; secret</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#安裝-rabbitmq-cluster-operator"><span class="nav-number">3.2.3.</span> <span class="nav-text">安裝 rabbitmq cluster-operator</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#建立-Publisher"><span class="nav-number">3.2.4.</span> <span class="nav-text">建立 Publisher</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#建立-Worker"><span class="nav-number">3.2.5.</span> <span class="nav-text">建立 Worker</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#建立-ingress"><span class="nav-number">3.2.6.</span> <span class="nav-text">建立 ingress</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#scale-out-publisher-amp-worker"><span class="nav-number">3.2.7.</span> <span class="nav-text">scale out publisher &amp; worker</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#核心組件程式解說"><span class="nav-number">4.</span> <span class="nav-text">核心組件程式解說</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Woker-參數介紹"><span class="nav-number">4.1.</span> <span class="nav-text">Woker 參數介紹</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RabbitMqWorkerBase"><span class="nav-number">4.2.</span> <span class="nav-text">RabbitMqWorkerBase</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IWokerPool"><span class="nav-number">4.3.</span> <span class="nav-text">IWokerPool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BlockingCollection"><span class="nav-number">4.4.</span> <span class="nav-text">BlockingCollection</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+    <span title="Symbols count total">414k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+    <span title="Reading time total">12:33</span>
+  
+</div>
+
+
+
+  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+  
+  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/reading_progress/reading_progress.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-141257985-1');
+</script>
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+  <script src="/js/exturl.js?v=7.1.1"></script>
+
+
+  
+
+  
+  
+  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/mq-worker-system/";
+    this.page.identifier = "mq-worker-system/";
+    this.page.title = '高併發系統系列-非同步 MQ-WorkerPool 架構 Poc';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    $(function() {
+      var offsetTop = $('#comments').offset().top - $(window).height();
+      if (offsetTop <= 0) {
+        // load directly when there's no a scrollbar
+        loadComments();
+      } else {
+        $(window).on('scroll.disqus_scroll', function() {
+          // offsetTop may changes because of manually resizing browser window or lazy loading images.
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          var scrollTop = $(window).scrollTop();
+
+          // pre-load comments a bit? (margin or anything else)
+          if (offsetTop - scrollTop < 60) {
+            $(window).off('.disqus_scroll');
+            loadComments();
+          }
+        });
+      }
+    });
+  
+</script>
+
+
+
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '',
+    clientSecret: '',
+    repo: '',
+    owner: '',
+    admin: [''],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+<script>
+  $('.highlight').not('.gist .highlight').each(function(i, e) {
+    var $wrap = $('<div>').addClass('highlight-wrap');
+    $(e).after($wrap);
+    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
+      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+        return $(e).text();
+      }).toArray().join('\n');
+      var ta = document.createElement('textarea');
+      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+      ta.style.top = yPosition + 'px'; // Prevent page scroll
+      ta.style.position = 'absolute';
+      ta.style.opacity = '0';
+      ta.readOnly = true;
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, code.length);
+      ta.readOnly = false;
+      var result = document.execCommand('copy');
+      
+        if (result) $(this).text('Copied');
+        else $(this).text('Copy failed');
+      
+      ta.blur(); // For iOS
+      $(this).blur();
+    })).on('mouseleave', function(e) {
+      var $b = $(this).find('.copy-btn');
+      setTimeout(function() {
+        $b.text('Copy');
+      }, 300);
+    }).append(e);
+  })
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

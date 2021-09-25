@@ -1721,77 +1721,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>高併發系統系列-不得不了解的Isolation Level(by 錢包被扣到變負值)</title>
-    <url>/db-isolation/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如我跟你說下面語法在高併發系統，UserId = 101餘額會扣到變負值你們知道問題出在哪裡嗎？</p>
-<p>本篇會跟大家解析問題所在(DB Isolation重要性)</p>
-<h2 id="建立樣本資料-amp-問題解釋"><a href="#建立樣本資料-amp-問題解釋" class="headerlink" title="建立樣本資料 &amp; 問題解釋"></a>建立樣本資料 &amp; 問題解釋</h2><p>我建立一個資料表<code>UserAccount</code>並建立一個PK在<code>UserID</code>欄位上，裡面Patch一筆資料Userid = 101餘額有100元</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.UserAccount(</span><br><span class="line">	UserID <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	Balance <span class="built_in">DECIMAL</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> (</span><br><span class="line">		UserID</span><br><span class="line">	)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.UserAccount <span class="keyword">VALUES</span> (<span class="number">101</span>,<span class="number">100</span>);</span><br></pre></td></tr></table></figure></div>
-<p>執行扣款有bug版腳本</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
-<p>明明上面有使用Transatcion但為什麼還是會扣成負值?</p>
-<h3 id="壓力測試數值介紹-amp-問題重現"><a href="#壓力測試數值介紹-amp-問題重現" class="headerlink" title="壓力測試數值介紹 &amp; 問題重現"></a>壓力測試數值介紹 &amp; 問題重現</h3><p>壓力測試我使用SqlQueryStress，工具使用相關介紹可以參考<a href="https://isdaniel.github.io/sqlquerystress-intro/">資料庫壓測好工具-SQLQueryStress</a></p>
-<p>測試使用下面數值</p>
-<ul>
-<li>Thread:100</li>
-<li>Iterator:10</li>
-</ul>
-<p><img src="https://i.imgur.com/wpbx538.png" alt></p>
-<p>執行畫面如上圖</p>
-<p>執行完畢後我們在查詢此表</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span>  dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
-<p><img src="https://i.imgur.com/Md6RyOY.png" alt></p>
-<p>發現數值被扣到-70!!</p>
-<p>明明我有判斷<code>Balance &gt;= @Balance</code>確定有餘額才扣款為什麼會變成負值而不是0元?</p>
-<h2 id="Isolation-Level-介紹"><a href="#Isolation-Level-介紹" class="headerlink" title="Isolation Level 介紹"></a>Isolation Level 介紹</h2><p>此次問題要解釋必須先了解DB的Isolation Level</p>
-<p>交易隔離有分四種</p>
-<ul>
-<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
-<li>ex: (NOLOCK)hint</li>
-</ul>
-</li>
-<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
-<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
-<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
-<li>ex: (Hold Lock) hint</li>
-</ul>
-</li>
-<li>Snapshot<ul>
-<li>Snapshot:在交易中讀取old version資料,就算此物件在執行中已經被commit tran</li>
-<li>Read Committed Snapshot Isolation(RCSI):在交易中讀取old version資料,但如果後續讀取物件(已經被更新且commit tran)就會使用新資料(可能造成Non-repeatable )<blockquote>
-<p>(RCSI)可以使用<code>ReadCommittedLock</code>避免Non-repeatable,假如同時有其他Session在<br>參考資料: <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvc3RhbmxleTE0LzIwMTcvMTIvMTMvcmNzaV92c19zbmFwc2hvdGlzb2xhdGlvbg==" title="https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation">https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-</li>
-</ul>
-</li>
-</ul>
-<p>SqlServer預設使用<code>Read Commited</code>，<code>Read Commited</code>有一個特色是Shared Lock不會保留到交易結束.</p>
-<p>所以假如在高併發系統中，很有可能會有多個connetion通過檢核在扣款那邊blocking，所以就導致檢核餘額大小失效.</p>
-<h2 id="解決問題"><a href="#解決問題" class="headerlink" title="解決問題"></a>解決問題</h2><p>因為我知道<code>UserID</code>是唯一值且當作查詢條件，所以我可以在<code>EXISTS</code>查詢時使用<code>XLOCK</code> hint.</p>
-<blockquote>
-<p>因為shared lock和Xlock互斥</p>
-</blockquote>
-<p>所以blocking位置會從原本<code>UPDATE dbo.UserAccount</code>轉移到<code>SELECT 1 FROM dbo.UserAccount WITH(ROWLOCK,XLOCK) WHERE UserID = @UserID</code>上面就可以保證判斷條件的connection一瞬間只有一個.</p>
-<p>所以這個解法是使用<strong>提高lock層級</strong>並放在<strong>對的位置</strong>來解決shared lock之間不互斥問題.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount <span class="keyword">WITH</span>(ROWLOCK,XLOCK)</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
-<p>我們在查詢<code>UserAccount</code>資料表發現用同樣的Thread和Iterator(甚至更多)來壓測Balance不會變成負值.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本文章希望透過一個小例子跟大家分享DB Isolation Level重要性，在高併發系統中Isolation尤為重要，調整範圍大小需要對於系統有一定了解（調整太大會降低系統吞吐量,Level不足<br>會早成Data Racing甚至是Racing Condition）.</p>
-<p>如果是小型系統遇到此問題機率就很低，但對於中大型系統這個問題不得不重視．</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/db-isolation/">https://isdaniel.github.io/db-isolation/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>DB</category>
-        <category>sql-server</category>
-        <category>Isolation</category>
-        <category>Racing Condition</category>
-      </categories>
-      <tags>
-        <tag>DB</tag>
-        <tag>Isolation</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>資料庫索引深入淺出(一)</title>
     <url>/dbindex-1/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p><code>Index</code>第一個欄位至關重要它會影響資料<strong>統計值</strong>結果，<code>Index</code>一般建立在查詢條件的欄位</p>
@@ -1912,6 +1841,77 @@ class Program
         <tag>Turning</tag>
         <tag>sql-server</tag>
         <tag>Index</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>高併發系統系列-不得不了解的Isolation Level(by 錢包被扣到變負值)</title>
+    <url>/db-isolation/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如我跟你說下面語法在高併發系統，UserId = 101餘額會扣到變負值你們知道問題出在哪裡嗎？</p>
+<p>本篇會跟大家解析問題所在(DB Isolation重要性)</p>
+<h2 id="建立樣本資料-amp-問題解釋"><a href="#建立樣本資料-amp-問題解釋" class="headerlink" title="建立樣本資料 &amp; 問題解釋"></a>建立樣本資料 &amp; 問題解釋</h2><p>我建立一個資料表<code>UserAccount</code>並建立一個PK在<code>UserID</code>欄位上，裡面Patch一筆資料Userid = 101餘額有100元</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.UserAccount(</span><br><span class="line">	UserID <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	Balance <span class="built_in">DECIMAL</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> (</span><br><span class="line">		UserID</span><br><span class="line">	)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.UserAccount <span class="keyword">VALUES</span> (<span class="number">101</span>,<span class="number">100</span>);</span><br></pre></td></tr></table></figure></div>
+<p>執行扣款有bug版腳本</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
+<p>明明上面有使用Transatcion但為什麼還是會扣成負值?</p>
+<h3 id="壓力測試數值介紹-amp-問題重現"><a href="#壓力測試數值介紹-amp-問題重現" class="headerlink" title="壓力測試數值介紹 &amp; 問題重現"></a>壓力測試數值介紹 &amp; 問題重現</h3><p>壓力測試我使用SqlQueryStress，工具使用相關介紹可以參考<a href="https://isdaniel.github.io/sqlquerystress-intro/">資料庫壓測好工具-SQLQueryStress</a></p>
+<p>測試使用下面數值</p>
+<ul>
+<li>Thread:100</li>
+<li>Iterator:10</li>
+</ul>
+<p><img src="https://i.imgur.com/wpbx538.png" alt></p>
+<p>執行畫面如上圖</p>
+<p>執行完畢後我們在查詢此表</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span>  dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://i.imgur.com/Md6RyOY.png" alt></p>
+<p>發現數值被扣到-70!!</p>
+<p>明明我有判斷<code>Balance &gt;= @Balance</code>確定有餘額才扣款為什麼會變成負值而不是0元?</p>
+<h2 id="Isolation-Level-介紹"><a href="#Isolation-Level-介紹" class="headerlink" title="Isolation Level 介紹"></a>Isolation Level 介紹</h2><p>此次問題要解釋必須先了解DB的Isolation Level</p>
+<p>交易隔離有分四種</p>
+<ul>
+<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
+<li>ex: (NOLOCK)hint</li>
+</ul>
+</li>
+<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
+<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
+<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
+<li>ex: (Hold Lock) hint</li>
+</ul>
+</li>
+<li>Snapshot<ul>
+<li>Snapshot:在交易中讀取old version資料,就算此物件在執行中已經被commit tran</li>
+<li>Read Committed Snapshot Isolation(RCSI):在交易中讀取old version資料,但如果後續讀取物件(已經被更新且commit tran)就會使用新資料(可能造成Non-repeatable )<blockquote>
+<p>(RCSI)可以使用<code>ReadCommittedLock</code>避免Non-repeatable,假如同時有其他Session在<br>參考資料: <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvc3RhbmxleTE0LzIwMTcvMTIvMTMvcmNzaV92c19zbmFwc2hvdGlzb2xhdGlvbg==" title="https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation">https://dotblogs.com.tw/stanley14/2017/12/13/rcsi_vs_snapshotisolation<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<p>SqlServer預設使用<code>Read Commited</code>，<code>Read Commited</code>有一個特色是Shared Lock不會保留到交易結束.</p>
+<p>所以假如在高併發系統中，很有可能會有多個connetion通過檢核在扣款那邊blocking，所以就導致檢核餘額大小失效.</p>
+<h2 id="解決問題"><a href="#解決問題" class="headerlink" title="解決問題"></a>解決問題</h2><p>因為我知道<code>UserID</code>是唯一值且當作查詢條件，所以我可以在<code>EXISTS</code>查詢時使用<code>XLOCK</code> hint.</p>
+<blockquote>
+<p>因為shared lock和Xlock互斥</p>
+</blockquote>
+<p>所以blocking位置會從原本<code>UPDATE dbo.UserAccount</code>轉移到<code>SELECT 1 FROM dbo.UserAccount WITH(ROWLOCK,XLOCK) WHERE UserID = @UserID</code>上面就可以保證判斷條件的connection一瞬間只有一個.</p>
+<p>所以這個解法是使用<strong>提高lock層級</strong>並放在<strong>對的位置</strong>來解決shared lock之間不互斥問題.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line">	<span class="keyword">DECLARE</span> @UserID <span class="built_in">INT</span> = <span class="number">101</span>,</span><br><span class="line">			@Balance <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">4</span>) = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">IF</span> <span class="keyword">EXISTS</span>(</span><br><span class="line">		<span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">		<span class="keyword">FROM</span> dbo.UserAccount <span class="keyword">WITH</span>(ROWLOCK,XLOCK)</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">			  <span class="keyword">AND</span> Balance &gt;= @Balance </span><br><span class="line">	)</span><br><span class="line">	<span class="keyword">BEGIN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> dbo.UserAccount</span><br><span class="line">		<span class="keyword">SET</span> Balance = Balance - @Balance</span><br><span class="line">		<span class="keyword">WHERE</span> UserID = @UserID</span><br><span class="line">	<span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span> TRAN</span><br></pre></td></tr></table></figure></div>
+<p>我們在查詢<code>UserAccount</code>資料表發現用同樣的Thread和Iterator(甚至更多)來壓測Balance不會變成負值.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> dbo.UserAccount</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本文章希望透過一個小例子跟大家分享DB Isolation Level重要性，在高併發系統中Isolation尤為重要，調整範圍大小需要對於系統有一定了解（調整太大會降低系統吞吐量,Level不足<br>會早成Data Racing甚至是Racing Condition）.</p>
+<p>如果是小型系統遇到此問題機率就很低，但對於中大型系統這個問題不得不重視．</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/db-isolation/">https://isdaniel.github.io/db-isolation/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DB</category>
+        <category>sql-server</category>
+        <category>Isolation</category>
+        <category>Racing Condition</category>
+      </categories>
+      <tags>
+        <tag>DB</tag>
+        <tag>Isolation</tag>
       </tags>
   </entry>
   <entry>
@@ -3163,6 +3163,52 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
+    <title>建立自己Blog系列(二) github Setting</title>
+    <url>/hexo-github-setting/</url>
+    <content><![CDATA[<p>在Github這邊要先建立兩個Repository</p>
+<ol>
+<li>Blog Code</li>
+<li>Blog Hosting</li>
+</ol>
+<h2 id="Blog-Code"><a href="#Blog-Code" class="headerlink" title="Blog Code"></a>Blog Code</h2><p>這個Repository是利用Hexo cli樣板來撰寫Blog.</p>
+<p>像我目前使用的<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL015QmxvZw==" title="https://github.com/isdaniel/MyBlog">MyBlog<i class="fa fa-external-link"></i></span></p>
+<p>建立完自己的Code Repository後.</p>
+<p>將他clone到自己電腦上面.</p>
+<p>執行下面幾個步驟</p>
+<ol>
+<li>打開此Repository資料夾</li>
+<li>打開<code>CMD</code>並進入此資料夾</li>
+<li>利用<code>NodeJS NPM</code> 打 <code>npm install hexo -g</code> 就會開始下載 <img src="/images/github_hosting1.PNG" alt="img"></li>
+<li>執行完第三步後再打<code>Hexo init</code>指令,安裝看建立Hexo將檔案.</li>
+</ol>
+<h2 id="Blog-Hosting"><a href="#Blog-Hosting" class="headerlink" title="Blog Hosting"></a>Blog Hosting</h2><p>在建立另一個Repository來當html blog靜態託管使用.</p>
+<p>就像石頭使用<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL2lzZGFuaWVsLmdpdGh1Yi5pbw==" title="https://github.com/isdaniel/isdaniel.github.io">isdaniel.github.io<i class="fa fa-external-link"></i></span></p>
+<p>執行下面幾個步驟</p>
+<ol>
+<li>建立一個Repository <img src="/images/github_hosting.PNG" alt="img">名子要取為 <strong>[username]</strong>.github.io，其中的<strong>[username]</strong>是您Github帳號.</li>
+<li>進入此Repository中，並進入<code>Setting</code><img src="/images/github_hosting2.PNG" alt="img"></li>
+<li>確認是否已經成功將此Repository Hosting在你的Github page上<br>如果成功呈現此圖<img src="/images/github_hosting3.PNG" alt="img"></li>
+</ol>
+<p>我們可以嘗試在這個Hosting Repository建立一個<code>index.html</code> 在上面打<code>Hello would</code>並<code>commit push</code></p>
+<p>在訪問<code>https://[username].github.io/</code>應該就可以看到Hello Would文字.</p>
+<ul>
+<li><a href="/github-hexo-appveyor/" title="建立自己Blog系列(一) 介紹 Github (hosting) + Hexo (Blog) + Appveyor(CICD)">建立自己Blog系列(一) 介紹 Github (hosting) + Hexo (Blog) + Appveyor(CICD)</a></li>
+<li><a href="/hexo-blog-theme/" title="建立自己Blog系列(三) Hexo next theme 介紹">建立自己Blog系列(三) Hexo next theme 介紹</a></li>
+<li>建立自己Blog系列(四) Appveyor 介紹 yaml.</li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/hexo-github-setting/">https://isdaniel.github.io/hexo-github-setting/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>WebDesign</tag>
+        <tag>Blog</tag>
+        <tag>Github</tag>
+        <tag>CICD</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>建立自己Blog系列(三) Hexo next theme 介紹</title>
     <url>/hexo-blog-theme/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>為何我會選用Hxeo來當作Blog框架?</p>
@@ -3297,52 +3343,6 @@ email_url: dog830228@gmail.com
 <li>hexo-addlink 在文章最末添加永久鏈接及版權聲明</li>
 </ul>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/hexo-blog-theme/">https://isdaniel.github.io/hexo-blog-theme/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>WebDesign</tag>
-        <tag>Blog</tag>
-        <tag>Github</tag>
-        <tag>CICD</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>建立自己Blog系列(二) github Setting</title>
-    <url>/hexo-github-setting/</url>
-    <content><![CDATA[<p>在Github這邊要先建立兩個Repository</p>
-<ol>
-<li>Blog Code</li>
-<li>Blog Hosting</li>
-</ol>
-<h2 id="Blog-Code"><a href="#Blog-Code" class="headerlink" title="Blog Code"></a>Blog Code</h2><p>這個Repository是利用Hexo cli樣板來撰寫Blog.</p>
-<p>像我目前使用的<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL015QmxvZw==" title="https://github.com/isdaniel/MyBlog">MyBlog<i class="fa fa-external-link"></i></span></p>
-<p>建立完自己的Code Repository後.</p>
-<p>將他clone到自己電腦上面.</p>
-<p>執行下面幾個步驟</p>
-<ol>
-<li>打開此Repository資料夾</li>
-<li>打開<code>CMD</code>並進入此資料夾</li>
-<li>利用<code>NodeJS NPM</code> 打 <code>npm install hexo -g</code> 就會開始下載 <img src="/images/github_hosting1.PNG" alt="img"></li>
-<li>執行完第三步後再打<code>Hexo init</code>指令,安裝看建立Hexo將檔案.</li>
-</ol>
-<h2 id="Blog-Hosting"><a href="#Blog-Hosting" class="headerlink" title="Blog Hosting"></a>Blog Hosting</h2><p>在建立另一個Repository來當html blog靜態託管使用.</p>
-<p>就像石頭使用<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL2lzZGFuaWVsLmdpdGh1Yi5pbw==" title="https://github.com/isdaniel/isdaniel.github.io">isdaniel.github.io<i class="fa fa-external-link"></i></span></p>
-<p>執行下面幾個步驟</p>
-<ol>
-<li>建立一個Repository <img src="/images/github_hosting.PNG" alt="img">名子要取為 <strong>[username]</strong>.github.io，其中的<strong>[username]</strong>是您Github帳號.</li>
-<li>進入此Repository中，並進入<code>Setting</code><img src="/images/github_hosting2.PNG" alt="img"></li>
-<li>確認是否已經成功將此Repository Hosting在你的Github page上<br>如果成功呈現此圖<img src="/images/github_hosting3.PNG" alt="img"></li>
-</ol>
-<p>我們可以嘗試在這個Hosting Repository建立一個<code>index.html</code> 在上面打<code>Hello would</code>並<code>commit push</code></p>
-<p>在訪問<code>https://[username].github.io/</code>應該就可以看到Hello Would文字.</p>
-<ul>
-<li><a href="/github-hexo-appveyor/" title="建立自己Blog系列(一) 介紹 Github (hosting) + Hexo (Blog) + Appveyor(CICD)">建立自己Blog系列(一) 介紹 Github (hosting) + Hexo (Blog) + Appveyor(CICD)</a></li>
-<li><a href="/hexo-blog-theme/" title="建立自己Blog系列(三) Hexo next theme 介紹">建立自己Blog系列(三) Hexo next theme 介紹</a></li>
-<li>建立自己Blog系列(四) Appveyor 介紹 yaml.</li>
-</ul>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/hexo-github-setting/">https://isdaniel.github.io/hexo-github-setting/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>WebDesign</category>
@@ -3747,6 +3747,55 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>透過MvcRouteHandler取得呼叫IHttphandler (第10天)</title>
+    <url>/ithelp-day10/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#mvc%e5%8f%96%e5%be%97%e4%bd%bf%e7%94%a8httphandler-ihttphandler">MVC取得使用HttpHandler (IHttpHandler)</a></li>
+<li><a href="#mvc%e5%91%bc%e5%8f%ab%e7%9a%84httphandler-mvchandler">MVC呼叫的HttpHandler (MvcHandler)</a></li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前一篇介紹路由封裝了Http請求路徑資訊可以讓我們找到相對應的<code>Action</code>和<code>Controller</code>並呼叫執行外，也可透過<code>MapPageRoute</code>來將請求教給<code>.aspx</code>實體檔案來處理請求.</p>
+<p><code>Route</code>甚至可以讓我們自己客製化處理<code>HttpHandler</code> 在Route中建立處理客製化HttpHandler可謂很有彈性</p>
+<p>本篇介紹<code>Route</code>物件建立<code>MvcRouteHandler</code>物件且如何取到<code>IHttpHandler</code>.</p>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+<h2 id="MVC取得使用HttpHandler-IHttpHandler"><a href="#MVC取得使用HttpHandler-IHttpHandler" class="headerlink" title="MVC取得使用HttpHandler (IHttpHandler)"></a>MVC取得使用HttpHandler (IHttpHandler)</h2><p>之前說到我們透過<code>MapRoute</code>擴展方法加入一個<code>Route</code>物件給<code>RouteCollection</code><strong>全域路由集合</strong>.</p>
+<p>在<code>Route</code>使用的<code>IRouteHandler</code>介面是由<code>MvcRouteHandler</code>來實現</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Route route = <span class="keyword">new</span> Route(url, <span class="keyword">new</span> MvcRouteHandler())</span><br><span class="line">&#123;</span><br><span class="line">    Defaults = CreateRouteValueDictionaryUncached(defaults),</span><br><span class="line">    Constraints = CreateRouteValueDictionaryUncached(constraints),</span><br><span class="line">    DataTokens = <span class="keyword">new</span> RouteValueDictionary()</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
+<p><code>IRouteHandler</code>最重要的是<code>IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</code>會取得一個<code>IHttpHandler</code>物件.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MvcRouteHandler</span> : <span class="title">IRouteHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IControllerFactory _controllerFactory;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>(<span class="params">IControllerFactory controllerFactory</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _controllerFactory = controllerFactory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> IHttpHandler <span class="title">GetHttpHandler</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="comment">//設置Session使用</span></span><br><span class="line">        requestContext.HttpContext.SetSessionStateBehavior(GetSessionStateBehavior(requestContext));</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> MvcHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> SessionStateBehavior <span class="title">GetSessionStateBehavior</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">string</span> controllerName = (<span class="keyword">string</span>)requestContext.RouteData.Values[<span class="string">"controller"</span>];</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrWhiteSpace(controllerName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.MvcRouteHandler_RouteValuesHasNoController);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        IControllerFactory controllerFactory = _controllerFactory ?? ControllerBuilder.Current.GetControllerFactory();</span><br><span class="line">        <span class="keyword">return</span> controllerFactory.GetControllerSessionBehavior(requestContext, controllerName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> IRouteHandler Members</span></span><br><span class="line"></span><br><span class="line">    IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetHttpHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面程式碼可以看到<strong>Mvc</strong>使用<code>IHttpHandler</code>是<code>MvcHandler</code></p>
+<h2 id="MVC呼叫的HttpHandler-MvcHandler"><a href="#MVC呼叫的HttpHandler-MvcHandler" class="headerlink" title="MVC呼叫的HttpHandler (MvcHandler)"></a>MVC呼叫的HttpHandler (MvcHandler)</h2><p><code>MvcHandler</code>類別中主要核心的程式碼做了幾件事情.</p>
+<ol>
+<li>使用一個<code>Adapter</code>對於<code>HttpContext</code>物件把他轉成可以繼承於<code>HttpContextBase</code>的<code>HttpContextWrapper</code>類別.</li>
+<li>透過<code>ProcessRequestInit</code>取得執行<code>controller</code>物件並且呼叫執行方法.</li>
+<li>最後透過<code>ReleaseController</code>釋放之前使用過資源</li>
+</ol>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext httpContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    HttpContextBase httpContextBase = <span class="keyword">new</span> HttpContextWrapper(httpContext);</span><br><span class="line">    ProcessRequest(httpContextBase);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">internal</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    IController controller;</span><br><span class="line">    IControllerFactory factory;</span><br><span class="line">    <span class="comment">//取得 控制器工廠(預設DefaultControllerFactory) 和 要執行的Controller</span></span><br><span class="line">    ProcessRequestInit(httpContext, <span class="keyword">out</span> controller, <span class="keyword">out</span> factory);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        controller.Execute(RequestContext);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        factory.ReleaseController(controller);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們知道MVC使用<code>HttpHandler</code>是<code>MvcHandler</code>透過並<code>MvcRouteHandler</code>物件來返回.</p>
+<p>下圖簡單展現MVC使用的<code>HttpModule</code>和<code>HttpHandler</code>關係</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/10/relationship_pic.PNG" alt="relationship_pic.PNG"></p>
+<ol>
+<li>在<code>UrlRoutingMoudule</code>註冊事件.</li>
+<li>取得符合Http請求<code>Route</code>物件</li>
+<li>呼叫<code>MvcRouteHandler</code>取得<code>MvcHandler</code>物件</li>
+<li>執行<code>MvcHandler</code>的<code>ProcessReqeust</code>方法</li>
+</ol>
+<p>下面會陸續介紹<strong>MVC</strong>是如何取得<code>Controller</code>物件</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day10/">https://isdaniel.github.io/ithelp-day10/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)</title>
     <url>/ithelp-day1/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -3839,55 +3888,6 @@ email_url: dog830228@gmail.com
 <p>瀏覽器發出<strong>Http</strong>請求給IIS,IIS透過<code>Http.sys</code>來監聽請求並交給<code>w3wp.exe</code>這個應用程式來判斷是否要交由<code>.net</code>託管處理此次請求.</p>
 <p>下篇我們會來詳細講述<code>Httpmodule &amp; Httphandler</code></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day1/">https://isdaniel.github.io/ithelp-day1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>透過MvcRouteHandler取得呼叫IHttphandler (第10天)</title>
-    <url>/ithelp-day10/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#mvc%e5%8f%96%e5%be%97%e4%bd%bf%e7%94%a8httphandler-ihttphandler">MVC取得使用HttpHandler (IHttpHandler)</a></li>
-<li><a href="#mvc%e5%91%bc%e5%8f%ab%e7%9a%84httphandler-mvchandler">MVC呼叫的HttpHandler (MvcHandler)</a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前一篇介紹路由封裝了Http請求路徑資訊可以讓我們找到相對應的<code>Action</code>和<code>Controller</code>並呼叫執行外，也可透過<code>MapPageRoute</code>來將請求教給<code>.aspx</code>實體檔案來處理請求.</p>
-<p><code>Route</code>甚至可以讓我們自己客製化處理<code>HttpHandler</code> 在Route中建立處理客製化HttpHandler可謂很有彈性</p>
-<p>本篇介紹<code>Route</code>物件建立<code>MvcRouteHandler</code>物件且如何取到<code>IHttpHandler</code>.</p>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-<h2 id="MVC取得使用HttpHandler-IHttpHandler"><a href="#MVC取得使用HttpHandler-IHttpHandler" class="headerlink" title="MVC取得使用HttpHandler (IHttpHandler)"></a>MVC取得使用HttpHandler (IHttpHandler)</h2><p>之前說到我們透過<code>MapRoute</code>擴展方法加入一個<code>Route</code>物件給<code>RouteCollection</code><strong>全域路由集合</strong>.</p>
-<p>在<code>Route</code>使用的<code>IRouteHandler</code>介面是由<code>MvcRouteHandler</code>來實現</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Route route = <span class="keyword">new</span> Route(url, <span class="keyword">new</span> MvcRouteHandler())</span><br><span class="line">&#123;</span><br><span class="line">    Defaults = CreateRouteValueDictionaryUncached(defaults),</span><br><span class="line">    Constraints = CreateRouteValueDictionaryUncached(constraints),</span><br><span class="line">    DataTokens = <span class="keyword">new</span> RouteValueDictionary()</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></div>
-<p><code>IRouteHandler</code>最重要的是<code>IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</code>會取得一個<code>IHttpHandler</code>物件.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MvcRouteHandler</span> : <span class="title">IRouteHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IControllerFactory _controllerFactory;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>(<span class="params">IControllerFactory controllerFactory</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _controllerFactory = controllerFactory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> IHttpHandler <span class="title">GetHttpHandler</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="comment">//設置Session使用</span></span><br><span class="line">        requestContext.HttpContext.SetSessionStateBehavior(GetSessionStateBehavior(requestContext));</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> MvcHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> SessionStateBehavior <span class="title">GetSessionStateBehavior</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">string</span> controllerName = (<span class="keyword">string</span>)requestContext.RouteData.Values[<span class="string">"controller"</span>];</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrWhiteSpace(controllerName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.MvcRouteHandler_RouteValuesHasNoController);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        IControllerFactory controllerFactory = _controllerFactory ?? ControllerBuilder.Current.GetControllerFactory();</span><br><span class="line">        <span class="keyword">return</span> controllerFactory.GetControllerSessionBehavior(requestContext, controllerName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> IRouteHandler Members</span></span><br><span class="line"></span><br><span class="line">    IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetHttpHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面程式碼可以看到<strong>Mvc</strong>使用<code>IHttpHandler</code>是<code>MvcHandler</code></p>
-<h2 id="MVC呼叫的HttpHandler-MvcHandler"><a href="#MVC呼叫的HttpHandler-MvcHandler" class="headerlink" title="MVC呼叫的HttpHandler (MvcHandler)"></a>MVC呼叫的HttpHandler (MvcHandler)</h2><p><code>MvcHandler</code>類別中主要核心的程式碼做了幾件事情.</p>
-<ol>
-<li>使用一個<code>Adapter</code>對於<code>HttpContext</code>物件把他轉成可以繼承於<code>HttpContextBase</code>的<code>HttpContextWrapper</code>類別.</li>
-<li>透過<code>ProcessRequestInit</code>取得執行<code>controller</code>物件並且呼叫執行方法.</li>
-<li>最後透過<code>ReleaseController</code>釋放之前使用過資源</li>
-</ol>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext httpContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    HttpContextBase httpContextBase = <span class="keyword">new</span> HttpContextWrapper(httpContext);</span><br><span class="line">    ProcessRequest(httpContextBase);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">internal</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    IController controller;</span><br><span class="line">    IControllerFactory factory;</span><br><span class="line">    <span class="comment">//取得 控制器工廠(預設DefaultControllerFactory) 和 要執行的Controller</span></span><br><span class="line">    ProcessRequestInit(httpContext, <span class="keyword">out</span> controller, <span class="keyword">out</span> factory);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        controller.Execute(RequestContext);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        factory.ReleaseController(controller);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們知道MVC使用<code>HttpHandler</code>是<code>MvcHandler</code>透過並<code>MvcRouteHandler</code>物件來返回.</p>
-<p>下圖簡單展現MVC使用的<code>HttpModule</code>和<code>HttpHandler</code>關係</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/10/relationship_pic.PNG" alt="relationship_pic.PNG"></p>
-<ol>
-<li>在<code>UrlRoutingMoudule</code>註冊事件.</li>
-<li>取得符合Http請求<code>Route</code>物件</li>
-<li>呼叫<code>MvcRouteHandler</code>取得<code>MvcHandler</code>物件</li>
-<li>執行<code>MvcHandler</code>的<code>ProcessReqeust</code>方法</li>
-</ol>
-<p>下面會陸續介紹<strong>MVC</strong>是如何取得<code>Controller</code>物件</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day10/">https://isdaniel.github.io/ithelp-day10/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -5838,56 +5838,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制 (第29天)</title>
-    <url>/ithelp-day29/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#%e5%a4%9a%e5%9c%8b%e8%b7%af%e7%94%b1%e8%a8%ad%e5%ae%9a">多國路由設定</a></li>
-<li><a href="#%e5%8f%96%e5%be%97%e8%b2%a8%e5%b9%a3%e7%ac%a6%e8%99%9f">取得貨幣符號</a></li>
-<li><a href="#%e6%93%b4%e5%85%85-webviewpagetmodel">擴充 WebViewPage<tmodel></tmodel></a></li>
-<li><a href="#razorview%e4%bd%bf%e7%94%a8%e6%93%b4%e5%85%85%e5%be%8cwebviewpagetmodel">RazorView使用擴充後WebViewPage<tmodel></tmodel></a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
-<p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
-<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>{culture}</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, culture = <span class="string">"en"</span> &#125;);</span><br></pre></td></tr></table></figure></div>
-<h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
-<p>在<code>CurrencyProvider</code>類別透過<code>Routes.Values[&quot;culture&quot;]</code>取得使用者傳遞語系國家.</p>
-<p>透過此參數可以知道使用者想要使用哪個國家貨幣.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CurrencyProvider</span> : <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        HttpContextBase contextWrapper = <span class="keyword">new</span> HttpContextWrapper(HttpContext.Current);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">string</span> culture = RouteTable.Routes.GetRouteData(contextWrapper)?.Values[<span class="string">"culture"</span>] <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> GetSymbol(culture);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">string</span> <span class="title">GetSymbol</span>(<span class="params"><span class="keyword">string</span> culture</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">switch</span> (culture)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"en"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"eu"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"£"</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="擴充-WebViewPage"><a href="#擴充-WebViewPage" class="headerlink" title="擴充 WebViewPage"></a>擴充 WebViewPage<tmodel></tmodel></h2><p>在<code>Autofac</code>多註冊一個</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">builder.RegisterType&lt;CurrencyProvider&gt;().As&lt;ICurrency&gt;();</span><br><span class="line">DependencyResolver.SetResolver(<span class="keyword">new</span> CustomerDependencyResolver(builder.Build()));</span><br></pre></td></tr></table></figure></div>
-<p>最後在建立一個<code>CountryViewPage&lt;TModel&gt;</code>抽象類別繼承於<code>WebViewPage&lt;TModel&gt;</code>.</p>
-<p>在此類別中建立一個<code>ICurrency</code>屬性,並在建構子中透過<code>DependencyResolver.Current.GetService</code>給值</p>
-<blockquote>
-<p>因為這間已經替換成<code>Autofac</code>解析器,所以會吃<code>Autofac</code>註冊的類別.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public abstract class CountryViewPage&lt;TModel&gt; : WebViewPage&lt;TModel&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CountryViewPage</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Currency = DependencyResolver.Current.GetService&lt;ICurrency&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ICurrency Currency &#123; <span class="keyword">get</span>;  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="RazorView使用擴充後WebViewPage"><a href="#RazorView使用擴充後WebViewPage" class="headerlink" title="RazorView使用擴充後WebViewPage"></a>RazorView使用擴充後WebViewPage<tmodel></tmodel></h2><p>在<code>View</code>上使用新<code>WebViewPage&lt;TModel&gt;</code>只需要在最上面加<code>@inherits CountryViewPage&lt;object&gt;</code>.<br>我們就可以透過<code>@</code>呼叫<code>Currency</code>物件.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">@inherits CountryViewPage&lt;<span class="keyword">object</span>&gt;</span><br><span class="line"></span><br><span class="line">@&#123;</span><br><span class="line">    ViewBag.Title = <span class="string">"About"</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;h2&gt;@ViewBag.Title.&lt;/h2&gt;</span><br><span class="line">&lt;h3&gt;@ViewBag.Message @Currency.GetCurrencySymbol()&lt;/h3&gt;</span><br><span class="line"></span><br><span class="line">&lt;p&gt;Use <span class="keyword">this</span> area to provide additional information.&lt;/p&gt;</span><br></pre></td></tr></table></figure></div>
-<p>如果每個頁面都需要使用新的<code>WebViewPage&lt;TModel&gt;</code>可以透過<code>web.config</code>新增加一個<code>&lt;pages pageBaseType=&quot;CountryViewPage&quot;&gt;</code>將<code>Razor</code>產生的<code>C#</code>程式碼繼承於此類別</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">system.web.webPages.razor</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">pages</span> <span class="attr">pageBaseType</span>=<span class="string">"CountryViewPage"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">namespaces</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Ajax"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Html"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Routing"</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">namespaces</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">pages</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">system.web.webPages.razor</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>其實我們也可以繼承<code>WebViewPage&lt;TModel&gt;</code>來擴充<code>View</code>多變性</p>
-<p>這邊有一個題目提供讀者來完成透過上面概念完成多國語系,這裡提供一條方法完成</p>
-<blockquote>
-<p>寫一個<code>string transfer(string key)</code>透過<code>Resource</code>檔案來完成;</p>
-</blockquote>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyV2ViVmlld1BhZ2U=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerWebViewPage">Github範例程式原始碼<i class="fa fa-external-link"></i></span> <code>CustomerWebViewPage</code>分支上</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day29/">https://isdaniel.github.io/ithelp-day29/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>動手DIY改造 Asp.net MVC- 建立自己ActionInvoker和Model綁定機制 (第28天)</title>
     <url>/ithelp-day28/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5965,6 +5915,56 @@ email_url: dog830228@gmail.com
 <p>一個房間很亂經過整理後東西不會變少(排除丟掉東西),但物品位置會變得更有條理</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL2N1c3RvbWVyQWN0aW9uSW52b2tlcg==" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/customerActionInvoker">Github範例程式原始碼<i class="fa fa-external-link"></i></span> <code>customerActionInvoker</code>分支上</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day28/">https://isdaniel.github.io/ithelp-day28/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制 (第29天)</title>
+    <url>/ithelp-day29/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#%e5%a4%9a%e5%9c%8b%e8%b7%af%e7%94%b1%e8%a8%ad%e5%ae%9a">多國路由設定</a></li>
+<li><a href="#%e5%8f%96%e5%be%97%e8%b2%a8%e5%b9%a3%e7%ac%a6%e8%99%9f">取得貨幣符號</a></li>
+<li><a href="#%e6%93%b4%e5%85%85-webviewpagetmodel">擴充 WebViewPage<tmodel></tmodel></a></li>
+<li><a href="#razorview%e4%bd%bf%e7%94%a8%e6%93%b4%e5%85%85%e5%be%8cwebviewpagetmodel">RazorView使用擴充後WebViewPage<tmodel></tmodel></a></li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
+<p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
+<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>{culture}</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">"Default"</span>,</span><br><span class="line">    url: <span class="string">"&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;"</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">"Home"</span>, action = <span class="string">"Index"</span>, culture = <span class="string">"en"</span> &#125;);</span><br></pre></td></tr></table></figure></div>
+<h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
+<p>在<code>CurrencyProvider</code>類別透過<code>Routes.Values[&quot;culture&quot;]</code>取得使用者傳遞語系國家.</p>
+<p>透過此參數可以知道使用者想要使用哪個國家貨幣.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CurrencyProvider</span> : <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">GetCurrencySymbol</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        HttpContextBase contextWrapper = <span class="keyword">new</span> HttpContextWrapper(HttpContext.Current);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">string</span> culture = RouteTable.Routes.GetRouteData(contextWrapper)?.Values[<span class="string">"culture"</span>] <span class="keyword">as</span> <span class="keyword">string</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> GetSymbol(culture);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">string</span> <span class="title">GetSymbol</span>(<span class="params"><span class="keyword">string</span> culture</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">switch</span> (culture)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"en"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">"eu"</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"£"</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">"$"</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="擴充-WebViewPage"><a href="#擴充-WebViewPage" class="headerlink" title="擴充 WebViewPage"></a>擴充 WebViewPage<tmodel></tmodel></h2><p>在<code>Autofac</code>多註冊一個</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">builder.RegisterType&lt;CurrencyProvider&gt;().As&lt;ICurrency&gt;();</span><br><span class="line">DependencyResolver.SetResolver(<span class="keyword">new</span> CustomerDependencyResolver(builder.Build()));</span><br></pre></td></tr></table></figure></div>
+<p>最後在建立一個<code>CountryViewPage&lt;TModel&gt;</code>抽象類別繼承於<code>WebViewPage&lt;TModel&gt;</code>.</p>
+<p>在此類別中建立一個<code>ICurrency</code>屬性,並在建構子中透過<code>DependencyResolver.Current.GetService</code>給值</p>
+<blockquote>
+<p>因為這間已經替換成<code>Autofac</code>解析器,所以會吃<code>Autofac</code>註冊的類別.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public abstract class CountryViewPage&lt;TModel&gt; : WebViewPage&lt;TModel&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CountryViewPage</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Currency = DependencyResolver.Current.GetService&lt;ICurrency&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ICurrency Currency &#123; <span class="keyword">get</span>;  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="RazorView使用擴充後WebViewPage"><a href="#RazorView使用擴充後WebViewPage" class="headerlink" title="RazorView使用擴充後WebViewPage"></a>RazorView使用擴充後WebViewPage<tmodel></tmodel></h2><p>在<code>View</code>上使用新<code>WebViewPage&lt;TModel&gt;</code>只需要在最上面加<code>@inherits CountryViewPage&lt;object&gt;</code>.<br>我們就可以透過<code>@</code>呼叫<code>Currency</code>物件.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">@inherits CountryViewPage&lt;<span class="keyword">object</span>&gt;</span><br><span class="line"></span><br><span class="line">@&#123;</span><br><span class="line">    ViewBag.Title = <span class="string">"About"</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;h2&gt;@ViewBag.Title.&lt;/h2&gt;</span><br><span class="line">&lt;h3&gt;@ViewBag.Message @Currency.GetCurrencySymbol()&lt;/h3&gt;</span><br><span class="line"></span><br><span class="line">&lt;p&gt;Use <span class="keyword">this</span> area to provide additional information.&lt;/p&gt;</span><br></pre></td></tr></table></figure></div>
+<p>如果每個頁面都需要使用新的<code>WebViewPage&lt;TModel&gt;</code>可以透過<code>web.config</code>新增加一個<code>&lt;pages pageBaseType=&quot;CountryViewPage&quot;&gt;</code>將<code>Razor</code>產生的<code>C#</code>程式碼繼承於此類別</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="XML"><figure class="iseeu highlight /xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">system.web.webPages.razor</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">pages</span> <span class="attr">pageBaseType</span>=<span class="string">"CountryViewPage"</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">namespaces</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Ajax"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Mvc.Html"</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">"System.Web.Routing"</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">namespaces</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">pages</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">system.web.webPages.razor</span>&gt;</span></span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>其實我們也可以繼承<code>WebViewPage&lt;TModel&gt;</code>來擴充<code>View</code>多變性</p>
+<p>這邊有一個題目提供讀者來完成透過上面概念完成多國語系,這裡提供一條方法完成</p>
+<blockquote>
+<p>寫一個<code>string transfer(string key)</code>透過<code>Resource</code>檔案來完成;</p>
+</blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0l0SGVscF9NVkNfMTB0aC90cmVlL0N1c3RvbWVyV2ViVmlld1BhZ2U=" title="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerWebViewPage">Github範例程式原始碼<i class="fa fa-external-link"></i></span> <code>CustomerWebViewPage</code>分支上</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day29/">https://isdaniel.github.io/ithelp-day29/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -7149,6 +7149,149 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>高併發系統系列-非同步 MQ-WorkerPool 架構 Poc</title>
+    <url>/mq-worker-system/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>在處理高併發系統架構時，非同步是一個很好的手段和提升效率的方式.</p>
+<p>我今天跟大家分享，如何利用 MQ 搭配 Worker Pool 來提高系統吞吐量且又不失彈性</p>
+<p>原始碼連結 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL01RX1BvYw==" title="https://github.com/isdaniel/MQ_Poc">MQ Woker<i class="fa fa-external-link"></i></span></p>
+<p>本篇會包含兩個部分解說</p>
+<ol>
+<li>如何使用 k3d (k8s) 和 docker-compose 來 Run 起我們 MQ 服務</li>
+<li>主要核心程式解說</li>
+</ol>
+<h2 id="系統簡介"><a href="#系統簡介" class="headerlink" title="系統簡介"></a>系統簡介</h2><p>我們透過 MQ 來幫系統作解耦合，前台要處理事情都會先統一打到 MQ 中之後就可以先回覆，使用者結果，後續處理就交給 MQ 來幫我們派發任務到我們指定的 Worker 上處理業務邏輯，這樣可以把原本架構前台後台高偶合的問題解決提供可承受且快速響應的架構.</p>
+<p>目前支援兩種 Worker.</p>
+<ul>
+<li>ThreadPool：使用 Thread 當作 Worker 來幫我們處理任務</li>
+</ul>
+<p><img src="https://i.imgur.com/7VgGyMG.png" alt></p>
+<ul>
+<li>ProcessPool：使用 Process 當作 Worker 來幫我們處理任務，雖然比起Thread需要多點資源，但多了資源隔離確保系統更穩定</li>
+</ul>
+<p><img src="https://i.imgur.com/pag9kJE.png" alt></p>
+<blockquote>
+<p>另外在 ProcessPool Mode docker-compose 版本支援 DashBoard 方便我們查看收訊息資料統計</p>
+</blockquote>
+<h2 id="How-to-Run"><a href="#How-to-Run" class="headerlink" title="How to Run"></a>How to Run</h2><h3 id="Rrunning-by-docker-compose"><a href="#Rrunning-by-docker-compose" class="headerlink" title="Rrunning by docker-compose"></a>Rrunning by docker-compose</h3><p>執行前請先把CMD路徑設定到本專案根目錄</p>
+<p>使用 <code>docker-compose</code> 執行container.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env up -d</span><br></pre></td></tr></table></figure></div>
+<p>執行完後，會啟動一個MQ Server、publisher、nodeworker</p>
+<p>如果想要scale out 多個 publisher</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env  up -d --scale publisher=2 --no-recreate</span><br></pre></td></tr></table></figure></div>
+<p>如果想要scale out nodeworker</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env  up -d --scale nodeworker=2 --no-recreate</span><br></pre></td></tr></table></figure></div>
+<h4 id="RabbitMQ-連接資訊"><a href="#RabbitMQ-連接資訊" class="headerlink" title="RabbitMQ 連接資訊"></a>RabbitMQ 連接資訊</h4><p>RabbitMQ站台連接資訊</p>
+<ul>
+<li>url : <code>http://localhost:8888/</code></li>
+<li>user : guest</li>
+<li>account : guest</li>
+</ul>
+<h4 id="環境參數"><a href="#環境參數" class="headerlink" title="環境參數"></a>環境參數</h4><p>目前在 <code>.\env\.env</code> 有環境參數檔案可以注入 <code>docker-compose</code> 中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="code"><pre><span class="line">RABBITMQ_HOSTNAME=rabbitmq-server</span><br><span class="line">QUEUENAME=worker-queue</span><br><span class="line">RABBITMQ_PORT=5672</span><br></pre></td></tr></table></figure></div>
+<ul>
+<li>RABBITMQ_HOSTNAME:rabbitMq server 主機名稱</li>
+<li>RABBITMQ_PORT:rabbitMq server port</li>
+<li>QUEUENAME:使用queue名稱</li>
+</ul>
+<blockquote>
+<p>Worker 支援 Graceful shutdown所以大膽地做Scale out</p>
+</blockquote>
+<h4 id="ProcessPool-docker-compose"><a href="#ProcessPool-docker-compose" class="headerlink" title="ProcessPool docker-compose"></a>ProcessPool docker-compose</h4><p>目前支援使用 Process Pool 透過<code>docker-compose-process.yml</code>來執行 process Pool 版本</p>
+<p>在 nodeworker 要加上以下環境變數</p>
+<ul>
+<li><code>POOL_TYPE</code>：<ul>
+<li>0 ThreadPool(default)</li>
+<li>1 ProcessPool</li>
+</ul>
+</li>
+<li><code>DBConnection</code>：來串接Dashboard</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">environment:</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">POOL_TYPE=1</span></span><br><span class="line"><span class="bullet">-</span> <span class="string">DBConnection=Data</span> <span class="string">Source=sqlserver;Initial</span> <span class="string">Catalog=orleans;User</span> <span class="string">ID=sa;Password=test.123;</span></span><br></pre></td></tr></table></figure></div>
+<p>proceess Pool 支援 Dashboard 來查看請求狀態 透過可以查看<code>http://localhost:8899/</code></p>
+<blockquote>
+<p>帳密 admin/test.123</p>
+</blockquote>
+<p>查看 DashBoard -&gt; MQMessagePrinter 就可以看到如下圖畫面，了解我們收發Message狀態</p>
+<p><img src="https://i.imgur.com/qSWmdOT.png" alt></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">docker-compose --env-file .\env\.env -f .\docker-compose-process.yml up -d </span><br><span class="line"></span><br><span class="line">docker-compose --env-file .\env\.env -f .\docker-compose-process.yml  up -d --scale publisher=4 --no-recreate</span><br></pre></td></tr></table></figure></div>
+<h3 id="Running-by-k3d"><a href="#Running-by-k3d" class="headerlink" title="Running by k3d"></a>Running by k3d</h3><p>執行前請先把 CMD 路徑設定到本專案根目錄，並且依照下面指示步驟依序往下動作</p>
+<p>我們利用 k3d 建立一個 k8s 在 local container 中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">k3d cluster create my-k3d -p "<span class="number">8888</span>:<span class="number">80</span>@loadbalancer"</span><br></pre></td></tr></table></figure></div>
+<h4 id="設定-private-registry"><a href="#設定-private-registry" class="headerlink" title="設定 private registry"></a>設定 private registry</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl create secret docker-registry app-docker-dev --docker-server=docker.io --docker-username=&lt;user_name&gt; --docker-password=&lt;user_password&gt;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><code>&lt;user_name&gt;</code> &amp; <code>&lt;user_password&gt;</code> 輸入 login <code>docker.io</code> registry 帳密</p>
+</blockquote>
+<h4 id="設定-configmap-amp-secret"><a href="#設定-configmap-amp-secret" class="headerlink" title="設定 configmap &amp; secret"></a>設定 configmap &amp; secret</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/mq-poc-secret.yaml</span><br><span class="line">kubectl apply -f  ./k8s/mq-poc-configmap.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="安裝-rabbitmq-cluster-operator"><a href="#安裝-rabbitmq-cluster-operator" class="headerlink" title="安裝 rabbitmq cluster-operator"></a>安裝 rabbitmq cluster-operator</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml</span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/rabbitmq-cluster-operator.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="建立-Publisher"><a href="#建立-Publisher" class="headerlink" title="建立 Publisher"></a>建立 Publisher</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/mq-poc-publisher.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="建立-Worker"><a href="#建立-Worker" class="headerlink" title="建立 Worker"></a>建立 Worker</h4><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f  ./k8s/mq-poc-worker.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="建立-ingress"><a href="#建立-ingress" class="headerlink" title="建立 ingress"></a>建立 ingress</h4><p>建立 ingress 對外暴露Rabbitmq</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f  .\k8s\mq-poc-ingress.yaml</span><br></pre></td></tr></table></figure></div>
+<h4 id="scale-out-publisher-amp-worker"><a href="#scale-out-publisher-amp-worker" class="headerlink" title="scale out publisher &amp; worker"></a>scale out publisher &amp; worker</h4><p>執行完以上動作後就可以看到 k8s 上跑起我們 Worker &amp; Publisher</p>
+<p>k8s scale publisher</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl scale --replicas=<span class="number">8</span> -f .\k8s\mq-poc-publisher.yaml</span><br></pre></td></tr></table></figure></div>
+<p>k8s scale worker</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl scale --replicas=<span class="number">3</span> -f .\k8s\mq-poc-worker.yaml</span><br></pre></td></tr></table></figure></div>
+<h2 id="核心組件程式解說"><a href="#核心組件程式解說" class="headerlink" title="核心組件程式解說"></a>核心組件程式解說</h2><p>此次 Worker 架構核心 UML 圖如下</p>
+<p><img src="https://i.imgur.com/5jeBXWP.png" alt></p>
+<h3 id="Woker-參數介紹"><a href="#Woker-參數介紹" class="headerlink" title="Woker 參數介紹"></a>Woker 參數介紹</h3><p>我們可以透過<code>RabbitMqSetting.ThreadSettings</code>來設定</p>
+<ul>
+<li>WorkUnitCount:此 ThreadPool 提供幾個 Thread 來處理</li>
+<li>Group:哪一個群組(可以處理不同種類的任務)</li>
+</ul>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">PoolSettings = <span class="keyword">new</span> PoolSetting[] <span class="comment">//which can read from setting files.</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">new</span> PoolSetting()&#123;WorkUnitCount = <span class="number">3</span>,Group = <span class="string">"groupA"</span> , FileName = <span class="string">"dotnet"</span>,Arguments = <span class="string">@"./Process/Group/Client.dll"</span>&#125;,</span><br><span class="line">	<span class="keyword">new</span> PoolSetting()&#123;WorkUnitCount = <span class="number">3</span>,Group = <span class="string">"groupB"</span> , FileName = <span class="string">"dotnet"</span>,Arguments = <span class="string">@"./Process/Group/Client.dll"</span>&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>透過上面參數我們可以定義每個 Group 群組 WorkerPool 相關設定.</p>
+<h3 id="RabbitMqWorkerBase"><a href="#RabbitMqWorkerBase" class="headerlink" title="RabbitMqWorkerBase"></a>RabbitMqWorkerBase</h3><p><code>RabbitMqWorkerBase</code>是MQ架構中的抽象類別，提供連線還有關機後等事情，邏輯實現交由實現子類別來處理.</p>
+<p>能看到<code>RabbitMqWorkerBase</code>類別掌管RabbitMq連接相關資訊，這裡特別要提的是我目前版本支援<code>GracefulShutDown</code>讓子類別實現要怎麼去安全關機(目前提供一個 <code>Async</code> Task).</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">RabbitMqWorkerBase</span> </span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> RabbitMqSetting Setting &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">protected</span> AsyncEventHandler&lt;BasicDeliverEventArgs&gt; ReceiveEvent;</span><br><span class="line">	<span class="keyword">private</span> IConnection _conn;</span><br><span class="line">	<span class="keyword">private</span> IModel _channle;</span><br><span class="line">	<span class="keyword">private</span> AsyncEventingBasicConsumer _consumer;</span><br><span class="line">	<span class="keyword">protected</span> ILogger&lt;RabbitMqWorkerBase&gt; Logger &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">RabbitMqWorkerBase</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">		RabbitMqSetting setting,</span></span></span><br><span class="line"><span class="function"><span class="params">		ILogger&lt;RabbitMqWorkerBase&gt; logger</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">this</span>.Logger = logger;</span><br><span class="line">		<span class="keyword">this</span>.Setting = setting;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">var</span> _connFactory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">		&#123;</span><br><span class="line">			Uri = setting.GetUri(),</span><br><span class="line">			DispatchConsumersAsync = <span class="literal">true</span> <span class="comment">// async mode</span></span><br><span class="line">		&#125;;</span><br><span class="line"></span><br><span class="line">		_conn = _connFactory.CreateConnection();</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> 在 subclass 可以返回結果，來代表是否做完此訊息</span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="args"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">	<span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> Task&lt;<span class="keyword">bool</span>&gt; <span class="title">ExecuteAsync</span>(<span class="params">BasicDeliverEventArgs args</span>)</span>;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CreateWorkUnit</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		_channle = _conn.CreateModel();</span><br><span class="line">		_consumer = <span class="keyword">new</span> AsyncEventingBasicConsumer(_channle);</span><br><span class="line">		_channle.BasicQos(<span class="number">0</span>, Setting.PrefetchTaskCount, <span class="literal">true</span>);</span><br><span class="line">		_channle.BasicConsume(Setting.QueueName, <span class="literal">false</span>, _consumer);</span><br><span class="line">		ReceiveEvent = <span class="keyword">async</span> (<span class="keyword">object</span> sender, BasicDeliverEventArgs e) =&gt;</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">try</span></span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">var</span> ackReuslt = <span class="keyword">await</span> ExecuteAsync(e);</span><br><span class="line">				<span class="keyword">if</span>(ackReuslt)</span><br><span class="line">					_channle.BasicAck(e.DeliveryTag, <span class="literal">false</span>);</span><br><span class="line">				<span class="keyword">else</span></span><br><span class="line">					_channle.BasicNack(e.DeliveryTag, <span class="literal">false</span>, <span class="literal">true</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> (Exception ex)</span><br><span class="line">			&#123;</span><br><span class="line">				_channle.BasicNack(e.DeliveryTag, <span class="literal">false</span>, <span class="literal">true</span>);</span><br><span class="line">				Logger.LogError(ex,ex.ToString());</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">await</span> Task.Yield();</span><br><span class="line">		&#125;;</span><br><span class="line">		_consumer.Received += ReceiveEvent;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">async</span> Task <span class="title">GracefulReleaseAsync</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">await</span> Task.CompletedTask;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">GracefulShutDown</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		_consumer.Received -= ReceiveEvent;</span><br><span class="line">		ReceiveEvent = <span class="literal">null</span>;</span><br><span class="line">		<span class="comment">//wait for all unit tasks be done.</span></span><br><span class="line">		Logger.LogInformation(<span class="string">"Wait for Pool Close!!!!"</span>);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">await</span> GracefulReleaseAsync();</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">if</span> (_channle.IsOpen)</span><br><span class="line">			_channle.Close();</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">if</span> (_conn.IsOpen)</span><br><span class="line">			_conn.Close();</span><br><span class="line">		</span><br><span class="line">		Logger.LogInformation(<span class="string">"RabbitMQ Conn Closed!!!!"</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 <code>RabbitMqGroupWorker</code> 裡我們會使用到我們自己建立 <code>WorkerPool</code> 處理我們要的任務邏輯</p>
+<h3 id="IWokerPool"><a href="#IWokerPool" class="headerlink" title="IWokerPool"></a>IWokerPool</h3><p>有一個 <code>IWorkerPool</code> 抽象提供我們對於 WorkerPool 實現抽象</p>
+<p>目前提供兩種Pool</p>
+<ul>
+<li>ProcessPool</li>
+<li>ThreadPool</li>
+</ul>
+<p>這邊我對於 <code>ProcessPool</code> 來作介紹 (ThreadPool 概念差不多只是 UnitWorker 不一樣)</p>
+<p>之前我對於 <a href="https://isdaniel.github.io/multithread-eventwaithandle/">EventWaitHandle</a> 有篇文章有探討，如果不清楚的夥伴可以先去了解後再看這部分程式.</p>
+<p>使用 <code>EventWaitHandle</code> 主要是為了提高系統效率，不造成 Worker 無效空轉造成 CPU 資源浪費</p>
+<p>至於 <code>volatile bool _finish</code> 一開始是 false ，Pool在接收到關機訊息時會把他設定成 true 告訴 Workers 可以準備下班了.</p>
+<p>對於 <a href="https://isdaniel.github.io/volatile-introduce/">volatile</a> 我之前有文章解釋，他的概念跟使用場景，有興趣的可以再去了解</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ProcessPool</span> : <span class="title">IWorkerPool</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">const</span> <span class="keyword">string</span> CLOSED_SIGNAL = <span class="string">"quit"</span>;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">readonly</span> PoolSetting _poolSetting;</span><br><span class="line">	<span class="keyword">private</span> BlockingCollection&lt;MessageTask&gt; _taskQueue;</span><br><span class="line">	<span class="keyword">private</span> List&lt;Task&gt; _workers = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">int</span> _processCount;</span><br><span class="line">	<span class="keyword">private</span> ManualResetEvent _notify = <span class="keyword">new</span> ManualResetEvent(<span class="literal">false</span>);</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">bool</span> _finish = <span class="literal">false</span>;</span><br><span class="line">	<span class="keyword">private</span> List&lt;Process&gt; _processList = <span class="keyword">new</span> List&lt;Process&gt;();</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ProcessPool</span>(<span class="params">PoolSetting poolSetting</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">this</span>._processCount = poolSetting.WorkUnitCount;</span><br><span class="line">		<span class="keyword">this</span>._poolSetting = poolSetting;</span><br><span class="line">		_taskQueue = <span class="keyword">new</span> BlockingCollection&lt;MessageTask&gt;(poolSetting.WorkUnitCount);</span><br><span class="line">		Init();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">Init</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; _processCount; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">var</span> process = CreateProcess();</span><br><span class="line">			<span class="keyword">this</span>._workers.Add(Task.Run(()=&gt;&#123;</span><br><span class="line">				ProcessHandler(process);</span><br><span class="line">			&#125;));</span><br><span class="line">			_processList.Add(process);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> Process <span class="title">CreateProcess</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">		Process process = <span class="keyword">new</span> Process();</span><br><span class="line">		process.StartInfo = <span class="keyword">new</span> ProcessStartInfo()</span><br><span class="line">			&#123;</span><br><span class="line">				RedirectStandardInput = <span class="literal">true</span>,</span><br><span class="line">				RedirectStandardOutput = <span class="literal">true</span>,</span><br><span class="line">				RedirectStandardError = <span class="literal">true</span>,</span><br><span class="line">				UseShellExecute = <span class="literal">false</span>,</span><br><span class="line">				FileName = _poolSetting.FileName,</span><br><span class="line">				Arguments = _poolSetting.Arguments,</span><br><span class="line">				CreateNoWindow = <span class="literal">true</span></span><br><span class="line">			&#125;;</span><br><span class="line">		process.Start();</span><br><span class="line"></span><br><span class="line">		process.BeginErrorReadLine();</span><br><span class="line">		process.ErrorDataReceived += (<span class="keyword">object</span> sender, DataReceivedEventArgs e) =&gt;</span><br><span class="line">		&#123;</span><br><span class="line">			System.Console.WriteLine(<span class="string">$"Procees Error Information:<span class="subst">&#123;e.Data&#125;</span>"</span>);</span><br><span class="line">		&#125;;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> process;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Task&lt;<span class="keyword">bool</span>&gt; <span class="title">AddTaskAsync</span>(<span class="params">MessageTask task</span>)</span>&#123;</span><br><span class="line"></span><br><span class="line">		_taskQueue.Add(task);</span><br><span class="line">		_notify.Set();</span><br><span class="line">		<span class="keyword">return</span> Task.FromResult(<span class="literal">true</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ProcessHandler</span>(<span class="params">Process process</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">while</span> (<span class="literal">true</span>)&#123;</span><br><span class="line">			<span class="keyword">while</span>(_taskQueue.Count &gt; <span class="number">0</span>)&#123;</span><br><span class="line">				<span class="keyword">if</span> (_taskQueue.TryTake(<span class="keyword">out</span> MessageTask task))</span><br><span class="line">				&#123;</span><br><span class="line">					process.StandardInput.WriteLine(task.ToJsonMessage());</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span>(_finish)</span><br><span class="line">				<span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">			_notify.WaitOne();</span><br><span class="line">			_notify.Reset();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		process.StandardInput.WriteLine(CLOSED_SIGNAL);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">WaitFinishedAsync</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">		_finish = <span class="literal">true</span>;</span><br><span class="line">		_notify.Set();</span><br><span class="line">	</span><br><span class="line">		<span class="keyword">foreach</span> (<span class="keyword">var</span> process <span class="keyword">in</span> _processList)</span><br><span class="line">		&#123;</span><br><span class="line">			process.WaitForExit();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">await</span> Task.WhenAll(_workers.ToArray());</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="BlockingCollection"><a href="#BlockingCollection" class="headerlink" title="BlockingCollection"></a>BlockingCollection</h3><p>我這邊使用 <code>BlockingCollection</code> 來管控我一個最多能接收多少 Message 原因如下</p>
+<ul>
+<li>k8s 在接收關機指令時最多只給 Pod 30s 左右時間去做 GracefulShutDown，如果超過時間沒做完事情會強制收回Pod，如果我們收的任務太多了 可能就造成 GracefulShutDown 無法正常完成.</li>
+<li>如果沒有設定 <code>BlockingCollection</code> Worker 就會一口氣收下全部訊息，造成 Worker 後續要批次ackback 或是 資源上吃緊都不利</li>
+</ul>
+<p>所以這邊使用　<code>BlockingCollection</code> 透過前面的 <code>PoolSetting</code> 設定檔，來設定一個最多能接收的任務量</p>
+<p><code>BlockingCollection</code> 使用上就如下圖</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9pLmltZ3VyLmNvbS9yRUxHa2JzLnBuZw==" title="https://i.imgur.com/rELGkbs.png"><i class="fa fa-external-link"></i></span></p>
+<p>我們可以用停車場的案例來理解:</p>
+<p>停車場有幾個重要屬性</p>
+<ol>
+<li>停車格數量</li>
+<li>進去閘門</li>
+<li>出去閘門</li>
+<li>多少空位</li>
+</ol>
+<p>上面這四個屬性在 <code>BlockingCollection</code> 都有實現，所以才可以控制我們一次最多能收多少物件進Queue中，而如果塞不下 Thread 會進行 Blocked ，不會一直占著 CPU 資源空轉提高效率.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天介紹的 MQ Worker 架構，對於微服務跟非同步架構基礎建設有很重要的影響，因為有 MQ 當作我們系統核心轉接者，就可以提高我們系統併發乘載量</p>
+<p>在日後要建立 event driven architecture 會有很大的幫助，因為我們事件的轉倒核心可以透過 MQ 來幫我們處理.</p>
+<p>原始碼連結 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL01RX1BvYw==" title="https://github.com/isdaniel/MQ_Poc">MQ Woker<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/mq-worker-system/">https://isdaniel.github.io/mq-worker-system/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>c#</category>
+        <category>RabbitMq</category>
+      </categories>
+      <tags>
+        <tag>c#</tag>
+        <tag>RabbitMq</tag>
+        <tag>ThreadPool</tag>
+        <tag>SystemDesign</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>高併發系統系列-多執行緒中順序 by EventWaitHandle</title>
     <url>/multithread-eventwaithandle/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在多執行緒系統中，Thread的執行和長短是交由OS來幫我處理了</p>
@@ -7294,40 +7437,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>Null Object Pattern</title>
-    <url>/nullobjectpattern/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
-<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure></div>
-<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
-<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
-<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
-<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
-<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
-<blockquote>
-<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Rlc2lnblBhdHRlcm4vdHJlZS9tYXN0ZXIvRGVzaWduUGF0dGVybi9OdWxsT2JqZWN0UGF0dGVybg==" title="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/nullobjectpattern/">https://isdaniel.github.io/nullobjectpattern/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>DesignPattern</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>DesignPattern</tag>
-        <tag>NullObjectPattern</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Oracle [CONNECT BY]</title>
     <url>/oracle-connect-by/</url>
     <content><![CDATA[<p>之前有介紹  在<code>Oracle</code> 有提供一個精簡的語法產生階層資料 <code>CONNECT BY</code></p>
@@ -7400,6 +7509,40 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       <tags>
         <tag>SQL</tag>
         <tag>Oracle</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Null Object Pattern</title>
+    <url>/nullobjectpattern/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
+<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure></div>
+<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
+<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
+<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
+<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
+<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
+<blockquote>
+<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Rlc2lnblBhdHRlcm4vdHJlZS9tYXN0ZXIvRGVzaWduUGF0dGVybi9OdWxsT2JqZWN0UGF0dGVybg==" title="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/nullobjectpattern/">https://isdaniel.github.io/nullobjectpattern/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>DesignPattern</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>DesignPattern</tag>
+        <tag>NullObjectPattern</tag>
       </tags>
   </entry>
   <entry>
@@ -7928,6 +8071,88 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
+    <title>影響Query Optimizer產生執行計畫的關鍵(統計值)</title>
+    <url>/sqlserver-statistics/</url>
+    <content><![CDATA[<h2 id="什麼是統計值"><a href="#什麼是統計值" class="headerlink" title="什麼是統計值"></a>什麼是統計值</h2><p>SQL Server的QO(Query Optimizer)透過<code>cost-based model</code>來選擇一個最合適計畫(估算成本最低)來執行查詢</p>
+<blockquote>
+<p>　注意每個執行計畫是使用CPU來做估算，使用過的執行計畫一般會Cache起來已便下次使用</p>
+</blockquote>
+<p>QO會依照基數估計(Cardinality estimation)來產生執行計畫，基數估計扮演一個很重要的角色</p>
+<p>SQL Server統計值是對於每個Index或欄位資料分布做紀錄，任何型態都支援統計值資料.</p>
+<p>過期的統計值資料導致QO誤判產生不良執行計畫</p>
+<p>在我們建立<code>Index</code>時，統計值會自動創建。此外當欄位在查詢裡被使用(作為WHERE條件的一部分,group by子句,join條件)統計值會被自動建立</p>
+<h3 id="何時建立統計值"><a href="#何時建立統計值" class="headerlink" title="何時建立統計值?"></a>何時建立統計值?</h3><p>每個索引都會有自己個統計資訊，在<code>UI</code>查看統計資訊如下圖.</p>
+<p><img src="https://i.imgur.com/7TiCaUh.png" alt></p>
+<p>如果查詢條件欄位沒有統計值，<code>Query Optimizer</code>會在編譯前將<strong>統計值建立或有門檻條件性的更新</strong>。</p>
+<p>如下圖我們使用<code>C3</code>沒有建立索引欄位來查詢，SQL-Server就會幫我們自動產生<code>_WA_Sys_00000003_6EF57B66</code>這個統計資訊來讓<code>QO</code>產生執行計畫時有個依據.</p>
+<p><img src="https://i.imgur.com/WYcY8VW.png" alt></p>
+<h2 id="查詢資料表統計值-amp-了解統計值欄位含意"><a href="#查詢資料表統計值-amp-了解統計值欄位含意" class="headerlink" title="查詢資料表統計值 &amp; 了解統計值欄位含意"></a>查詢資料表統計值 &amp; 了解統計值欄位含意</h2><p>想要查詢資料表索引的統計值可以輸入<code>DBCC SHOW_STATISTICS</code>，第一個參數是查詢資料表，第二個參數是查詢的索引或統計值.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">DBCC SHOW_STATISTICS('dbo.posts','PK_Posts')</span><br></pre></td></tr></table></figure></div>
+<p>使用上語法查詢會出現三個結果集</p>
+<p><img src="https://i.imgur.com/0IKcsNG.png" alt></p>
+<p>第一個結果集</p>
+<p>顯示出此統計值的基本資訊其中有幾個重要的欄位</p>
+<ul>
+<li>最後更新時間</li>
+<li>密度</li>
+<li>統計值Key的欄位大小</li>
+</ul>
+<p>第二個結果集</p>
+<p>密度分布,使用常數查詢,直接使用子方圖進行資料筆數估計</p>
+<p>第三個結果集</p>
+<p><code>RANGE_HI_KEY</code>:每個區域資料的分佈。<br><code>RANGE_ROWS</code>:上圖列出(120 + 1) ~(126)區間的Row是57.175筆資料<br><code>EQ_ROWS</code>:代表這個區間值。<br><code>DISTINCT_RANGE_ROWS</code>:代表這個區間裏面有幾個特殊/單一(Unique)值。<br><code>AVG_RANGE_ROWS</code>:代表這個區間每個特殊值平均有幾筆</p>
+<h3 id="觸發統計值更新"><a href="#觸發統計值更新" class="headerlink" title="觸發統計值更新"></a>觸發統計值更新</h3><p>假如有設定自動更新統計值，異動資料筆數超過 (500 + 20%)資料，會觸發統計值更新</p>
+<blockquote>
+<p>如果是大資料表容易造成統計值不準確，因為要達到自動更新門檻有點困難</p>
+</blockquote>
+<p>在SQL2017之前版本建議啟用TF2371，可以讓自動更新統計值的門檻數量變平滑點</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">DBCC TRACEON (2371,-1)</span><br></pre></td></tr></table></figure></div>
+<p>啟動後大資料就不會只使用(500 + 20%)條件來更新統計值，會依照資料表筆數來判斷(如下圖)</p>
+<p><img src="https://www.virtual-dba.com/media/sql-server-chart.jpg" alt="image alt"></p>
+<blockquote>
+<p>假如使用執行計畫(估計值)很不準確可以查看，當前的統計值是否是正確</p>
+</blockquote>
+<p>如果要更新統計值可以使用下面語法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> <span class="keyword">STATISTICS</span> dbo.T1;  <span class="comment">--更新統計值</span></span><br><span class="line">DBCC SHOW_STATISTICS ('dbo.T1', idx1) <span class="comment">--顯示統計值</span></span><br></pre></td></tr></table></figure></div>
+<h3 id="刪除重複統計值資料"><a href="#刪除重複統計值資料" class="headerlink" title="刪除重複統計值資料"></a>刪除重複統計值資料</h3><p>我們在建立索引，在下次查詢時<code>SQL-Server</code>會幫我們建立索引的統計值資料,這時候之前建立資料變得是多餘的就可以利用下面<code>Script</code>找尋是否有<strong>同個欄位擁有重複統計值</strong>，可建立刪除<code>Script</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">WITH</span>    autostats(object_id, stats_id, <span class="keyword">name</span>, column_id)</span><br><span class="line"><span class="keyword">AS</span> (</span><br><span class="line"><span class="keyword">SELECT</span>  sys.stats.object_id ,</span><br><span class="line">        sys.stats.stats_id ,</span><br><span class="line">        sys.stats.name ,</span><br><span class="line">        sys.stats_columns.column_id</span><br><span class="line"><span class="keyword">FROM</span>    sys.stats</span><br><span class="line">        <span class="keyword">INNER</span> <span class="keyword">JOIN</span> sys.stats_columns <span class="keyword">ON</span> sys.stats.object_id = sys.stats_columns.object_id</span><br><span class="line">                                        <span class="keyword">AND</span> sys.stats.stats_id = sys.stats_columns.stats_id</span><br><span class="line"><span class="keyword">WHERE</span>   sys.stats.auto_created = <span class="number">1</span></span><br><span class="line">        <span class="keyword">AND</span> sys.stats_columns.stats_column_id = <span class="number">1</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">SELECT</span>  OBJECT_NAME(sys.stats.object_id) <span class="keyword">AS</span> [<span class="keyword">Table</span>] ,</span><br><span class="line">		sys.columns.name <span class="keyword">AS</span> [<span class="keyword">Column</span>] ,</span><br><span class="line">		sys.stats.name <span class="keyword">AS</span> [Overlapped] ,</span><br><span class="line">		autostats.name <span class="keyword">AS</span> [Overlapping] ,</span><br><span class="line">		<span class="string">'DROP STATISTICS ['</span> + OBJECT_SCHEMA_NAME(sys.stats.object_id) + <span class="string">'].['</span> + OBJECT_NAME(sys.stats.object_id) + <span class="string">'].['</span> + autostats.name + <span class="string">']'</span></span><br><span class="line"><span class="keyword">FROM</span>    sys.stats</span><br><span class="line">		<span class="keyword">INNER</span> <span class="keyword">JOIN</span> sys.stats_columns <span class="keyword">ON</span> sys.stats.object_id = sys.stats_columns.object_id</span><br><span class="line">										<span class="keyword">AND</span> sys.stats.stats_id = sys.stats_columns.stats_id</span><br><span class="line">		<span class="keyword">INNER</span> <span class="keyword">JOIN</span> autostats <span class="keyword">ON</span> sys.stats_columns.object_id = autostats.object_id</span><br><span class="line">								<span class="keyword">AND</span> sys.stats_columns.column_id = autostats.column_id</span><br><span class="line">		<span class="keyword">INNER</span> <span class="keyword">JOIN</span> sys.columns <span class="keyword">ON</span> sys.stats.object_id = sys.columns.object_id</span><br><span class="line">									<span class="keyword">AND</span> sys.stats_columns.column_id = sys.columns.column_id</span><br><span class="line"><span class="keyword">WHERE</span>   sys.stats.auto_created = <span class="number">0</span></span><br><span class="line">		<span class="keyword">AND</span> sys.stats_columns.stats_column_id = <span class="number">1</span></span><br><span class="line">		<span class="keyword">AND</span> sys.stats_columns.stats_id != autostats.stats_id</span><br><span class="line">		<span class="keyword">AND</span> OBJECTPROPERTY(sys.stats.object_id, <span class="string">'IsMsShipped'</span>) = <span class="number">0</span>;</span><br></pre></td></tr></table></figure></div>
+<h3 id="統計值和查詢記憶體分配"><a href="#統計值和查詢記憶體分配" class="headerlink" title="統計值和查詢記憶體分配"></a>統計值和查詢記憶體分配</h3><p>SQL-Server查詢不同操作有不同的記憶體分配方式,例如<code>Index Scan</code>不用把資料存在記憶體中(因為一筆一筆取出就可以),但如果是使用<code>Sort</code>相關的操作,需要在執行前訪問rowset</p>
+<p><code>SQL-Server</code>會依照統計值來分配合適的記憶體大小,假如統計值不准會導致記憶體分配不對,就會把資料存在TempDb造成查詢效能低落.</p>
+<p>下面這個範例來演示上面所說的</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> dbo.MemoryGrantDemo </span><br><span class="line">( </span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">int</span> <span class="keyword">not</span> <span class="literal">null</span>, </span><br><span class="line">    <span class="keyword">Col</span> <span class="built_in">int</span> <span class="keyword">not</span> <span class="literal">null</span>, </span><br><span class="line">    Placeholder <span class="built_in">char</span>(<span class="number">8000</span>) </span><br><span class="line">); </span><br><span class="line"> </span><br><span class="line"><span class="keyword">create</span> <span class="keyword">unique</span> clustered <span class="keyword">index</span> IDX_MemoryGrantDemo_ID </span><br><span class="line"> <span class="keyword">on</span> dbo.MemoryGrantDemo(<span class="keyword">ID</span>); </span><br><span class="line"></span><br><span class="line"> ;<span class="keyword">with</span> N1(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">union</span> <span class="keyword">all</span> <span class="keyword">select</span> <span class="number">0</span>) <span class="comment">-- 2 rows </span></span><br><span class="line"> ,N2(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N1 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N1 <span class="keyword">as</span> T2) <span class="comment">-- 4 rows </span></span><br><span class="line"> ,N3(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N2 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N2 <span class="keyword">as</span> T2) <span class="comment">-- 16 rows </span></span><br><span class="line"> ,N4(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N3 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N3 <span class="keyword">as</span> T2) <span class="comment">-- 256 rows </span></span><br><span class="line"> ,N5(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N4 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N4 <span class="keyword">as</span> T2) <span class="comment">-- 65,536 rows </span></span><br><span class="line"> ,IDs(<span class="keyword">ID</span>) <span class="keyword">as</span> (<span class="keyword">select</span> row_number() <span class="keyword">over</span> (<span class="keyword">order</span> <span class="keyword">by</span> (<span class="keyword">select</span> <span class="literal">null</span>)) <span class="keyword">from</span> N5) </span><br><span class="line"> <span class="keyword">insert</span> <span class="keyword">into</span> dbo.MemoryGrantDemo(<span class="keyword">ID</span>,<span class="keyword">Col</span>,Placeholder) </span><br><span class="line">     <span class="keyword">select</span> <span class="keyword">ID</span>, <span class="keyword">ID</span> % <span class="number">100</span>, <span class="keyword">convert</span>(<span class="built_in">char</span>(<span class="number">100</span>),<span class="keyword">ID</span>) <span class="keyword">from</span> IDs; </span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line"><span class="keyword">create</span> nonclustered <span class="keyword">index</span> IDX_MemoryGrantDemo_Col </span><br><span class="line"> <span class="keyword">on</span> dbo.MemoryGrantDemo(<span class="keyword">Col</span>);</span><br></pre></td></tr></table></figure></div>
+<p>建立一張表<code>MemoryGrantDemo</code>並建立<code>Clustered Index</code>跟新增65,536筆資料<code>Col</code>介於1~100之間,最後在建立一個<code>NonClustered Index</code></p>
+<blockquote>
+<p><code>Col</code>介於1~100之間會有統計值</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">;<span class="keyword">with</span> N1(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">union</span> <span class="keyword">all</span> <span class="keyword">select</span> <span class="number">0</span>) <span class="comment">-- 2 rows </span></span><br><span class="line">,N2(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N1 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N1 <span class="keyword">as</span> T2) <span class="comment">-- 4 rows </span></span><br><span class="line">,N3(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N2 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N2 <span class="keyword">as</span> T2) <span class="comment">-- 16 rows </span></span><br><span class="line">,N4(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N3 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N3 <span class="keyword">as</span> T2) <span class="comment">-- 256 rows </span></span><br><span class="line">,N5(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N4 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N2 <span class="keyword">as</span> T2) <span class="comment">-- 1,024 rows </span></span><br><span class="line">,IDs(<span class="keyword">ID</span>) <span class="keyword">as</span> (<span class="keyword">select</span> row_number() <span class="keyword">over</span> (<span class="keyword">order</span> <span class="keyword">by</span> (<span class="keyword">select</span> <span class="literal">null</span>)) <span class="keyword">from</span> N5) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> dbo.MemoryGrantDemo(<span class="keyword">ID</span>,<span class="keyword">Col</span>,Placeholder) </span><br><span class="line">    <span class="keyword">select</span> <span class="number">100000</span> + <span class="keyword">ID</span>, <span class="number">1000</span>, <span class="keyword">convert</span>(<span class="built_in">char</span>(<span class="number">100</span>),<span class="keyword">ID</span>) </span><br><span class="line">    <span class="keyword">from</span> IDs </span><br><span class="line">    <span class="keyword">where</span> <span class="keyword">ID</span> &lt;= <span class="number">656</span>;</span><br></pre></td></tr></table></figure></div>
+<p>最後在新增<code>Col = 1000</code>的<code>656</code>筆資料</p>
+<blockquote>
+<p>因為只有新增<code>656</code>只有原本的1%所以不會觸法更新統計值</p>
+</blockquote>
+<p>如下圖能看到<code>IDX_MemoryGrantDemo_Col</code>並沒有<code>Col=1000</code>的資訊</p>
+<p><img src="https://i.imgur.com/FTykGu7.png" alt></p>
+<p>建立好資料後我們使用<code>statistics</code>和打開執行計畫來看看兩者差別</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">declare</span> </span><br><span class="line">     @Dummy <span class="built_in">int</span> </span><br><span class="line"> </span><br><span class="line"><span class="keyword">set</span> <span class="keyword">statistics</span> <span class="built_in">time</span> <span class="keyword">on</span> </span><br><span class="line"> <span class="keyword">select</span> @Dummy = <span class="keyword">ID</span> <span class="keyword">from</span> dbo.MemoryGrantDemo <span class="keyword">where</span> <span class="keyword">Col</span> = <span class="number">1</span> <span class="keyword">order</span> <span class="keyword">by</span> Placeholder; </span><br><span class="line"> <span class="keyword">select</span> @Dummy = <span class="keyword">ID</span> <span class="keyword">from</span> dbo.MemoryGrantDemo <span class="keyword">where</span> <span class="keyword">Col</span> = <span class="number">1000</span> <span class="keyword">order</span> <span class="keyword">by</span> Placeholder; </span><br><span class="line"> <span class="keyword">set</span> <span class="keyword">statistics</span> <span class="built_in">time</span> <span class="keyword">off</span></span><br></pre></td></tr></table></figure></div>
+<p>在執行計畫中看到第二個查詢有個驚嘆號,移過去看可以發現查詢出來的資料寫入TempDb中</p>
+<p><img src="https://i.imgur.com/fTAZq1T.png" alt></p>
+<p>[訊息]中能看到第二個查詢語法使用時間比較長</p>
+<p><img src="https://i.imgur.com/Pjk1vTs.png" alt></p>
+<blockquote>
+<p>因為SQL-Server依照統計值分配記憶體大小,所以會把統計值預估外資料搬到tempdb資料庫</p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/sqlserver-statistics/">https://isdaniel.github.io/sqlserver-statistics/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DataBase</category>
+        <category>Turning</category>
+      </categories>
+      <tags>
+        <tag>DataBase</tag>
+        <tag>Turning</tag>
+        <tag>sql-server</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>SQL Server Merge condition on declare value problem</title>
     <url>/sqlserver-merge-condition-problem/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如要判斷資料是否存在於資料表中,存在就更新,不存在就新增.</p>
@@ -8008,88 +8233,6 @@ using (var channel = connection.CreateModel())
         <tag>SQL</tag>
         <tag>SQL-Server</tag>
         <tag>Merge</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>影響Query Optimizer產生執行計畫的關鍵(統計值)</title>
-    <url>/sqlserver-statistics/</url>
-    <content><![CDATA[<h2 id="什麼是統計值"><a href="#什麼是統計值" class="headerlink" title="什麼是統計值"></a>什麼是統計值</h2><p>SQL Server的QO(Query Optimizer)透過<code>cost-based model</code>來選擇一個最合適計畫(估算成本最低)來執行查詢</p>
-<blockquote>
-<p>　注意每個執行計畫是使用CPU來做估算，使用過的執行計畫一般會Cache起來已便下次使用</p>
-</blockquote>
-<p>QO會依照基數估計(Cardinality estimation)來產生執行計畫，基數估計扮演一個很重要的角色</p>
-<p>SQL Server統計值是對於每個Index或欄位資料分布做紀錄，任何型態都支援統計值資料.</p>
-<p>過期的統計值資料導致QO誤判產生不良執行計畫</p>
-<p>在我們建立<code>Index</code>時，統計值會自動創建。此外當欄位在查詢裡被使用(作為WHERE條件的一部分,group by子句,join條件)統計值會被自動建立</p>
-<h3 id="何時建立統計值"><a href="#何時建立統計值" class="headerlink" title="何時建立統計值?"></a>何時建立統計值?</h3><p>每個索引都會有自己個統計資訊，在<code>UI</code>查看統計資訊如下圖.</p>
-<p><img src="https://i.imgur.com/7TiCaUh.png" alt></p>
-<p>如果查詢條件欄位沒有統計值，<code>Query Optimizer</code>會在編譯前將<strong>統計值建立或有門檻條件性的更新</strong>。</p>
-<p>如下圖我們使用<code>C3</code>沒有建立索引欄位來查詢，SQL-Server就會幫我們自動產生<code>_WA_Sys_00000003_6EF57B66</code>這個統計資訊來讓<code>QO</code>產生執行計畫時有個依據.</p>
-<p><img src="https://i.imgur.com/WYcY8VW.png" alt></p>
-<h2 id="查詢資料表統計值-amp-了解統計值欄位含意"><a href="#查詢資料表統計值-amp-了解統計值欄位含意" class="headerlink" title="查詢資料表統計值 &amp; 了解統計值欄位含意"></a>查詢資料表統計值 &amp; 了解統計值欄位含意</h2><p>想要查詢資料表索引的統計值可以輸入<code>DBCC SHOW_STATISTICS</code>，第一個參數是查詢資料表，第二個參數是查詢的索引或統計值.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">DBCC SHOW_STATISTICS('dbo.posts','PK_Posts')</span><br></pre></td></tr></table></figure></div>
-<p>使用上語法查詢會出現三個結果集</p>
-<p><img src="https://i.imgur.com/0IKcsNG.png" alt></p>
-<p>第一個結果集</p>
-<p>顯示出此統計值的基本資訊其中有幾個重要的欄位</p>
-<ul>
-<li>最後更新時間</li>
-<li>密度</li>
-<li>統計值Key的欄位大小</li>
-</ul>
-<p>第二個結果集</p>
-<p>密度分布,使用常數查詢,直接使用子方圖進行資料筆數估計</p>
-<p>第三個結果集</p>
-<p><code>RANGE_HI_KEY</code>:每個區域資料的分佈。<br><code>RANGE_ROWS</code>:上圖列出(120 + 1) ~(126)區間的Row是57.175筆資料<br><code>EQ_ROWS</code>:代表這個區間值。<br><code>DISTINCT_RANGE_ROWS</code>:代表這個區間裏面有幾個特殊/單一(Unique)值。<br><code>AVG_RANGE_ROWS</code>:代表這個區間每個特殊值平均有幾筆</p>
-<h3 id="觸發統計值更新"><a href="#觸發統計值更新" class="headerlink" title="觸發統計值更新"></a>觸發統計值更新</h3><p>假如有設定自動更新統計值，異動資料筆數超過 (500 + 20%)資料，會觸發統計值更新</p>
-<blockquote>
-<p>如果是大資料表容易造成統計值不準確，因為要達到自動更新門檻有點困難</p>
-</blockquote>
-<p>在SQL2017之前版本建議啟用TF2371，可以讓自動更新統計值的門檻數量變平滑點</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">DBCC TRACEON (2371,-1)</span><br></pre></td></tr></table></figure></div>
-<p>啟動後大資料就不會只使用(500 + 20%)條件來更新統計值，會依照資料表筆數來判斷(如下圖)</p>
-<p><img src="https://www.virtual-dba.com/media/sql-server-chart.jpg" alt="image alt"></p>
-<blockquote>
-<p>假如使用執行計畫(估計值)很不準確可以查看，當前的統計值是否是正確</p>
-</blockquote>
-<p>如果要更新統計值可以使用下面語法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> <span class="keyword">STATISTICS</span> dbo.T1;  <span class="comment">--更新統計值</span></span><br><span class="line">DBCC SHOW_STATISTICS ('dbo.T1', idx1) <span class="comment">--顯示統計值</span></span><br></pre></td></tr></table></figure></div>
-<h3 id="刪除重複統計值資料"><a href="#刪除重複統計值資料" class="headerlink" title="刪除重複統計值資料"></a>刪除重複統計值資料</h3><p>我們在建立索引，在下次查詢時<code>SQL-Server</code>會幫我們建立索引的統計值資料,這時候之前建立資料變得是多餘的就可以利用下面<code>Script</code>找尋是否有<strong>同個欄位擁有重複統計值</strong>，可建立刪除<code>Script</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">WITH</span>    autostats(object_id, stats_id, <span class="keyword">name</span>, column_id)</span><br><span class="line"><span class="keyword">AS</span> (</span><br><span class="line"><span class="keyword">SELECT</span>  sys.stats.object_id ,</span><br><span class="line">        sys.stats.stats_id ,</span><br><span class="line">        sys.stats.name ,</span><br><span class="line">        sys.stats_columns.column_id</span><br><span class="line"><span class="keyword">FROM</span>    sys.stats</span><br><span class="line">        <span class="keyword">INNER</span> <span class="keyword">JOIN</span> sys.stats_columns <span class="keyword">ON</span> sys.stats.object_id = sys.stats_columns.object_id</span><br><span class="line">                                        <span class="keyword">AND</span> sys.stats.stats_id = sys.stats_columns.stats_id</span><br><span class="line"><span class="keyword">WHERE</span>   sys.stats.auto_created = <span class="number">1</span></span><br><span class="line">        <span class="keyword">AND</span> sys.stats_columns.stats_column_id = <span class="number">1</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">SELECT</span>  OBJECT_NAME(sys.stats.object_id) <span class="keyword">AS</span> [<span class="keyword">Table</span>] ,</span><br><span class="line">		sys.columns.name <span class="keyword">AS</span> [<span class="keyword">Column</span>] ,</span><br><span class="line">		sys.stats.name <span class="keyword">AS</span> [Overlapped] ,</span><br><span class="line">		autostats.name <span class="keyword">AS</span> [Overlapping] ,</span><br><span class="line">		<span class="string">'DROP STATISTICS ['</span> + OBJECT_SCHEMA_NAME(sys.stats.object_id) + <span class="string">'].['</span> + OBJECT_NAME(sys.stats.object_id) + <span class="string">'].['</span> + autostats.name + <span class="string">']'</span></span><br><span class="line"><span class="keyword">FROM</span>    sys.stats</span><br><span class="line">		<span class="keyword">INNER</span> <span class="keyword">JOIN</span> sys.stats_columns <span class="keyword">ON</span> sys.stats.object_id = sys.stats_columns.object_id</span><br><span class="line">										<span class="keyword">AND</span> sys.stats.stats_id = sys.stats_columns.stats_id</span><br><span class="line">		<span class="keyword">INNER</span> <span class="keyword">JOIN</span> autostats <span class="keyword">ON</span> sys.stats_columns.object_id = autostats.object_id</span><br><span class="line">								<span class="keyword">AND</span> sys.stats_columns.column_id = autostats.column_id</span><br><span class="line">		<span class="keyword">INNER</span> <span class="keyword">JOIN</span> sys.columns <span class="keyword">ON</span> sys.stats.object_id = sys.columns.object_id</span><br><span class="line">									<span class="keyword">AND</span> sys.stats_columns.column_id = sys.columns.column_id</span><br><span class="line"><span class="keyword">WHERE</span>   sys.stats.auto_created = <span class="number">0</span></span><br><span class="line">		<span class="keyword">AND</span> sys.stats_columns.stats_column_id = <span class="number">1</span></span><br><span class="line">		<span class="keyword">AND</span> sys.stats_columns.stats_id != autostats.stats_id</span><br><span class="line">		<span class="keyword">AND</span> OBJECTPROPERTY(sys.stats.object_id, <span class="string">'IsMsShipped'</span>) = <span class="number">0</span>;</span><br></pre></td></tr></table></figure></div>
-<h3 id="統計值和查詢記憶體分配"><a href="#統計值和查詢記憶體分配" class="headerlink" title="統計值和查詢記憶體分配"></a>統計值和查詢記憶體分配</h3><p>SQL-Server查詢不同操作有不同的記憶體分配方式,例如<code>Index Scan</code>不用把資料存在記憶體中(因為一筆一筆取出就可以),但如果是使用<code>Sort</code>相關的操作,需要在執行前訪問rowset</p>
-<p><code>SQL-Server</code>會依照統計值來分配合適的記憶體大小,假如統計值不准會導致記憶體分配不對,就會把資料存在TempDb造成查詢效能低落.</p>
-<p>下面這個範例來演示上面所說的</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> dbo.MemoryGrantDemo </span><br><span class="line">( </span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">int</span> <span class="keyword">not</span> <span class="literal">null</span>, </span><br><span class="line">    <span class="keyword">Col</span> <span class="built_in">int</span> <span class="keyword">not</span> <span class="literal">null</span>, </span><br><span class="line">    Placeholder <span class="built_in">char</span>(<span class="number">8000</span>) </span><br><span class="line">); </span><br><span class="line"> </span><br><span class="line"><span class="keyword">create</span> <span class="keyword">unique</span> clustered <span class="keyword">index</span> IDX_MemoryGrantDemo_ID </span><br><span class="line"> <span class="keyword">on</span> dbo.MemoryGrantDemo(<span class="keyword">ID</span>); </span><br><span class="line"></span><br><span class="line"> ;<span class="keyword">with</span> N1(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">union</span> <span class="keyword">all</span> <span class="keyword">select</span> <span class="number">0</span>) <span class="comment">-- 2 rows </span></span><br><span class="line"> ,N2(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N1 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N1 <span class="keyword">as</span> T2) <span class="comment">-- 4 rows </span></span><br><span class="line"> ,N3(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N2 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N2 <span class="keyword">as</span> T2) <span class="comment">-- 16 rows </span></span><br><span class="line"> ,N4(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N3 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N3 <span class="keyword">as</span> T2) <span class="comment">-- 256 rows </span></span><br><span class="line"> ,N5(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N4 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N4 <span class="keyword">as</span> T2) <span class="comment">-- 65,536 rows </span></span><br><span class="line"> ,IDs(<span class="keyword">ID</span>) <span class="keyword">as</span> (<span class="keyword">select</span> row_number() <span class="keyword">over</span> (<span class="keyword">order</span> <span class="keyword">by</span> (<span class="keyword">select</span> <span class="literal">null</span>)) <span class="keyword">from</span> N5) </span><br><span class="line"> <span class="keyword">insert</span> <span class="keyword">into</span> dbo.MemoryGrantDemo(<span class="keyword">ID</span>,<span class="keyword">Col</span>,Placeholder) </span><br><span class="line">     <span class="keyword">select</span> <span class="keyword">ID</span>, <span class="keyword">ID</span> % <span class="number">100</span>, <span class="keyword">convert</span>(<span class="built_in">char</span>(<span class="number">100</span>),<span class="keyword">ID</span>) <span class="keyword">from</span> IDs; </span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line"><span class="keyword">create</span> nonclustered <span class="keyword">index</span> IDX_MemoryGrantDemo_Col </span><br><span class="line"> <span class="keyword">on</span> dbo.MemoryGrantDemo(<span class="keyword">Col</span>);</span><br></pre></td></tr></table></figure></div>
-<p>建立一張表<code>MemoryGrantDemo</code>並建立<code>Clustered Index</code>跟新增65,536筆資料<code>Col</code>介於1~100之間,最後在建立一個<code>NonClustered Index</code></p>
-<blockquote>
-<p><code>Col</code>介於1~100之間會有統計值</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">;<span class="keyword">with</span> N1(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">union</span> <span class="keyword">all</span> <span class="keyword">select</span> <span class="number">0</span>) <span class="comment">-- 2 rows </span></span><br><span class="line">,N2(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N1 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N1 <span class="keyword">as</span> T2) <span class="comment">-- 4 rows </span></span><br><span class="line">,N3(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N2 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N2 <span class="keyword">as</span> T2) <span class="comment">-- 16 rows </span></span><br><span class="line">,N4(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N3 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N3 <span class="keyword">as</span> T2) <span class="comment">-- 256 rows </span></span><br><span class="line">,N5(C) <span class="keyword">as</span> (<span class="keyword">select</span> <span class="number">0</span> <span class="keyword">from</span> N4 <span class="keyword">as</span> T1 <span class="keyword">cross</span> <span class="keyword">join</span> N2 <span class="keyword">as</span> T2) <span class="comment">-- 1,024 rows </span></span><br><span class="line">,IDs(<span class="keyword">ID</span>) <span class="keyword">as</span> (<span class="keyword">select</span> row_number() <span class="keyword">over</span> (<span class="keyword">order</span> <span class="keyword">by</span> (<span class="keyword">select</span> <span class="literal">null</span>)) <span class="keyword">from</span> N5) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> dbo.MemoryGrantDemo(<span class="keyword">ID</span>,<span class="keyword">Col</span>,Placeholder) </span><br><span class="line">    <span class="keyword">select</span> <span class="number">100000</span> + <span class="keyword">ID</span>, <span class="number">1000</span>, <span class="keyword">convert</span>(<span class="built_in">char</span>(<span class="number">100</span>),<span class="keyword">ID</span>) </span><br><span class="line">    <span class="keyword">from</span> IDs </span><br><span class="line">    <span class="keyword">where</span> <span class="keyword">ID</span> &lt;= <span class="number">656</span>;</span><br></pre></td></tr></table></figure></div>
-<p>最後在新增<code>Col = 1000</code>的<code>656</code>筆資料</p>
-<blockquote>
-<p>因為只有新增<code>656</code>只有原本的1%所以不會觸法更新統計值</p>
-</blockquote>
-<p>如下圖能看到<code>IDX_MemoryGrantDemo_Col</code>並沒有<code>Col=1000</code>的資訊</p>
-<p><img src="https://i.imgur.com/FTykGu7.png" alt></p>
-<p>建立好資料後我們使用<code>statistics</code>和打開執行計畫來看看兩者差別</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">declare</span> </span><br><span class="line">     @Dummy <span class="built_in">int</span> </span><br><span class="line"> </span><br><span class="line"><span class="keyword">set</span> <span class="keyword">statistics</span> <span class="built_in">time</span> <span class="keyword">on</span> </span><br><span class="line"> <span class="keyword">select</span> @Dummy = <span class="keyword">ID</span> <span class="keyword">from</span> dbo.MemoryGrantDemo <span class="keyword">where</span> <span class="keyword">Col</span> = <span class="number">1</span> <span class="keyword">order</span> <span class="keyword">by</span> Placeholder; </span><br><span class="line"> <span class="keyword">select</span> @Dummy = <span class="keyword">ID</span> <span class="keyword">from</span> dbo.MemoryGrantDemo <span class="keyword">where</span> <span class="keyword">Col</span> = <span class="number">1000</span> <span class="keyword">order</span> <span class="keyword">by</span> Placeholder; </span><br><span class="line"> <span class="keyword">set</span> <span class="keyword">statistics</span> <span class="built_in">time</span> <span class="keyword">off</span></span><br></pre></td></tr></table></figure></div>
-<p>在執行計畫中看到第二個查詢有個驚嘆號,移過去看可以發現查詢出來的資料寫入TempDb中</p>
-<p><img src="https://i.imgur.com/fTAZq1T.png" alt></p>
-<p>[訊息]中能看到第二個查詢語法使用時間比較長</p>
-<p><img src="https://i.imgur.com/Pjk1vTs.png" alt></p>
-<blockquote>
-<p>因為SQL-Server依照統計值分配記憶體大小,所以會把統計值預估外資料搬到tempdb資料庫</p>
-</blockquote>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/sqlserver-statistics/">https://isdaniel.github.io/sqlserver-statistics/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>DataBase</category>
-        <category>Turning</category>
-      </categories>
-      <tags>
-        <tag>DataBase</tag>
-        <tag>Turning</tag>
-        <tag>sql-server</tag>
       </tags>
   </entry>
   <entry>
