@@ -152,7 +152,7 @@
 <meta property="og:description" content="前文k8s前身是Google開發borg系統，用於管理Google系統，後面由許多borg核心開發人用利用Go語言改寫就造就Kubernetes 可以根據聲明式設定，管理、擴展我們的容器化應用編排系統  有效安全幫我們執行Container Rollout 能夠因應系統流量變化，進行伸縮擴容（Scaling） Health check實現自動偵測故障及重啟功能 透過Namespace有效幫我們做資">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/ROkC1Q2.png">
-<meta property="og:updated_time" content="2021-09-25T05:35:57.843Z">
+<meta property="og:updated_time" content="2021-09-26T07:16:34.270Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="初探-介紹Kubernetes">
 <meta name="twitter:description" content="前文k8s前身是Google開發borg系統，用於管理Google系統，後面由許多borg核心開發人用利用Go語言改寫就造就Kubernetes 可以根據聲明式設定，管理、擴展我們的容器化應用編排系統  有效安全幫我們執行Container Rollout 能夠因應系統流量變化，進行伸縮擴容（Scaling） Health check實現自動偵測故障及重啟功能 透過Namespace有效幫我們做資">
@@ -516,7 +516,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-09-25 05:35:57" itemprop="dateModified" datetime="2021-09-25T05:35:57+00:00">2021-09-25</time>
+                <time title="Modified: 2021-09-26 07:16:34" itemprop="dateModified" datetime="2021-09-26T07:16:34+00:00">2021-09-26</time>
               
             
           </span>
@@ -596,7 +596,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">3k</span>
+                <span title="Symbols count in article">3.4k</span>
               
 
               
@@ -610,7 +610,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">5 mins.</span>
+                <span title="Reading time">6 mins.</span>
               
             </div>
           
@@ -670,7 +670,7 @@
 </li>
 </ul>
 <h3 id="kubectl"><a href="#kubectl" class="headerlink" title="kubectl"></a>kubectl</h3><p>kubectl 封裝成CLI方便我們下達命令操作我們 k8s cluster control plan，經由 RESTful API 對 master node 進行操作 (需要有相應權限)</p>
-<p>我們須先透過 <code>~/.kube/config</code> 設定使用 cluster, context 及 user，建立完成後我們就可以對於Pod、deployment、 config map、service進行建立、更新，刪除..動作.</p>
+<p>我們須先透過 <code>~/.kube/config</code> 設定使用 cluster, context 及 user，建立完成後我們就可以對於Pod、deployment、 config map、service 進行建立、更新，刪除..動作.</p>
 <blockquote>
 <p>透過<code>cat ~/.kube/config</code>或<code>kubectl config view</code>查看目前 kubectl 設定<br>在config中<code>current-context</code>存放當前操作哪個k8s cluster</p>
 </blockquote>
@@ -683,9 +683,10 @@
 <ul>
 <li>Pod 具有自己的生命週期及階段 (Pending, Running, Succeed, Failed, Unknown)</li>
 <li>一般不建議直接建立 Pod，而是由更高階 controller 負責控制(ex：Deployment)，達到更方便的控管</li>
+<li>一個 Pod 內的容器共享同一個網路</li>
 </ul>
 <p><img src="https://i.imgur.com/A8YNvJV.png" alt></p>
-<h3 id="WorkNode"><a href="#WorkNode" class="headerlink" title="WorkNode"></a>WorkNode</h3><p>WorkNode裡面存放許多Pod來執行Container，提供資源來執行我們Pod</p>
+<h3 id="WorkNode"><a href="#WorkNode" class="headerlink" title="WorkNode"></a>WorkNode</h3><p>WorkNode 裡面存放許多 Pod 來執行 Container，提供資源來執行我們Pod</p>
 <p>每個WorkNode都有下面兩個重要組件</p>
 <ul>
 <li><p>Kubelet：負責與API Server 溝通，管理container生命週期(health check建立Pod)，利用heartbeat定期跟Control plane說我還活著(有點類似Node的管家)</p>
@@ -693,6 +694,26 @@
 <li><p>Kubeproxy:負責更新 Node 的 iptables，控制Pod跟load balance相關網路(有點類似Node的通訊兵)</p>
 </li>
 </ul>
+<h4 id="kube-controller-manager"><a href="#kube-controller-manager" class="headerlink" title="kube controller manager"></a>kube controller manager</h4><p>Controller 用更高層次來對待 Pod ，一般來說我們不會手動來管理 Pod 會交由 Controller 來幫我們管理完成.</p>
+<p>在 Controller 種有下面幾中 Kind</p>
+<ul>
+<li>ReplicaSet：確保並掌控預期 Pod 數量</li>
+<li>Deployment：確保並掌控預期 Pod 數量，無狀態部屬，(一般我蠻常使用此模式)方便紅藍部屬</li>
+<li>StatefulSet：有狀態的部屬</li>
+<li>DaemonSet：確保 Node ，都運作指定 Pod (可以當作程式中 單例模式)</li>
+<li>Job：執行一次性任務</li>
+<li>Cronjob：定時執行任務</li>
+</ul>
+<h4 id="Service"><a href="#Service" class="headerlink" title="Service"></a>Service</h4><ul>
+<li>定義一組 Pods 訪問方式 (使用 lable 來圈定服務)</li>
+<li>提供 Pod Load Balance，支援多種方式（ClusterIP,NodePort,LoadBalance）</li>
+</ul>
+<blockquote>
+<p>通常 Service 可以透過 Ingress 來將此組服務暴露給外部作 Http 請求</p>
+</blockquote>
+<blockquote>
+<p>Label 用於對於資源塞選使用</p>
+</blockquote>
 <h2 id="k3d-Kubernetes-in-docker"><a href="#k3d-Kubernetes-in-docker" class="headerlink" title="k3d (Kubernetes in docker)"></a>k3d (Kubernetes in docker)</h2><p>要建立k8s集群有點麻煩好在，有k3d可以利用container幫我們模擬k8s讓我們方便練習</p>
 <p>安裝非常簡單依照<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhbmNoZXIvazNk" title="https://github.com/rancher/k3d">k3d GitHub<i class="fa fa-external-link"></i></span>步驟一步一步就可以完成了.</p>
 <p><strong>linux</strong> 是用<code>wget</code>下載執行shell</p>
@@ -726,7 +747,7 @@
 <p>所以我們可以利用，我們使用<code>port-forward</code>把pod container中的port暴露出來請求 <span class="exturl" data-url="aHR0cDovLzEyNy4wLjAuMTo4ODg4Lw==" title="http://127.0.0.1:8888/">http://127.0.0.1:8888/<i class="fa fa-external-link"></i></span></p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl port-forward nginx 8888:80</span><br></pre></td></tr></table></figure></div>
 <blockquote>
-<p>一般我們會透過Service資源來管理port 相關事情，日後有機會再跟大家說</p>
+<p>一般我們會透過 Service 資源來管理port 相關事情，日後有機會再跟大家說</p>
 </blockquote>
 <p><img src="https://i.imgur.com/2Ktnj3a.png" alt></p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天對於k8s簡單介紹幾個重要成員還有使用，希望對於想要入門k8s的人會有幫助.</p>
@@ -766,14 +787,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\hexo-github-setting\" rel="bookmark">建立自己Blog系列(二) github Setting</a></div>
+      <div class="popular-posts-title"><a href="\hexo-blog-theme\" rel="bookmark">建立自己Blog系列(三) Hexo next theme 介紹</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\hexo-blog-theme\" rel="bookmark">建立自己Blog系列(三) Hexo next theme 介紹</a></div>
+      <div class="popular-posts-title"><a href="\hexo-github-setting\" rel="bookmark">建立自己Blog系列(二) github Setting</a></div>
       
     </li>
   
@@ -1303,7 +1324,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前文"><span class="nav-number">1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#k8s-主要組件介紹"><span class="nav-number">2.</span> <span class="nav-text">k8s 主要組件介紹</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#master-node"><span class="nav-number">2.1.</span> <span class="nav-text">master node</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kubectl"><span class="nav-number">2.2.</span> <span class="nav-text">kubectl</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pods"><span class="nav-number">2.3.</span> <span class="nav-text">Pods</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WorkNode"><span class="nav-number">2.4.</span> <span class="nav-text">WorkNode</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#k3d-Kubernetes-in-docker"><span class="nav-number">3.</span> <span class="nav-text">k3d (Kubernetes in docker)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建立第一個Pod"><span class="nav-number">4.</span> <span class="nav-text">建立第一個Pod</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#請求我們-pod-服務"><span class="nav-number">4.1.</span> <span class="nav-text">請求我們 pod 服務</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前文"><span class="nav-number">1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#k8s-主要組件介紹"><span class="nav-number">2.</span> <span class="nav-text">k8s 主要組件介紹</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#master-node"><span class="nav-number">2.1.</span> <span class="nav-text">master node</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#kubectl"><span class="nav-number">2.2.</span> <span class="nav-text">kubectl</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Pods"><span class="nav-number">2.3.</span> <span class="nav-text">Pods</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WorkNode"><span class="nav-number">2.4.</span> <span class="nav-text">WorkNode</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#kube-controller-manager"><span class="nav-number">2.4.1.</span> <span class="nav-text">kube controller manager</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Service"><span class="nav-number">2.4.2.</span> <span class="nav-text">Service</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#k3d-Kubernetes-in-docker"><span class="nav-number">3.</span> <span class="nav-text">k3d (Kubernetes in docker)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建立第一個Pod"><span class="nav-number">4.</span> <span class="nav-text">建立第一個Pod</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#請求我們-pod-服務"><span class="nav-number">4.1.</span> <span class="nav-text">請求我們 pod 服務</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li></ol></div>
             
 
           </div>
@@ -1345,7 +1366,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">12:33</span>
+    <span title="Reading time total">12:34</span>
   
 </div>
 
