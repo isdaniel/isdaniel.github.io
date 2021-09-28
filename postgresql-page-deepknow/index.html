@@ -159,7 +159,9 @@
 <meta property="og:image" content="https://i.imgur.com/bdl4SrM.png">
 <meta property="og:image" content="https://i.imgur.com/qPYa76M.png">
 <meta property="og:image" content="https://i.imgur.com/0FTwHHe.png">
-<meta property="og:updated_time" content="2021-09-28T00:26:29.193Z">
+<meta property="og:image" content="https://i.imgur.com/3nvd96Y.png">
+<meta property="og:image" content="https://i.imgur.com/r8lkQvi.png">
+<meta property="og:updated_time" content="2021-09-28T04:17:51.949Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="postgresql Page 深入淺出">
 <meta name="twitter:description" content="前言在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原理 如果要了解存儲怎麼辦呢? 關於 page 存儲使用sample data 1234CREATE TABLE t1 (id int PRIMARY KEY);inser">
@@ -506,7 +508,7 @@
                 
               
 
-              <time title="Created: 2021-09-28 00:30:11 / Modified: 00:26:29" itemprop="dateCreated datePublished" datetime="2021-09-28T00:30:11+00:00">2021-09-28</time>
+              <time title="Created: 2021-09-28 00:30:11 / Modified: 04:17:51" itemprop="dateCreated datePublished" datetime="2021-09-28T00:30:11+00:00">2021-09-28</time>
             
 
             
@@ -584,7 +586,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">2.6k</span>
+                <span title="Symbols count in article">4.7k</span>
               
 
               
@@ -598,7 +600,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">5 mins.</span>
+                <span title="Reading time">9 mins.</span>
               
             </div>
           
@@ -672,7 +674,16 @@
 </blockquote>
 <p>經過上面資訊我們可以推導出 <code>36 * 226 + 24 = 8160</code></p>
 <p>證明226列tuple的原理</p>
-<h2 id="TOAST"><a href="#TOAST" class="headerlink" title="TOAST"></a>TOAST</h2><p>TOAST 壓縮資料的壓縮技術是 LZ 系列壓縮技術中相當簡單且非常快速的方法</p>
+<h2 id="TOAST"><a href="#TOAST" class="headerlink" title="TOAST"></a>TOAST</h2><p>下面有個案例關於 <code>text</code> 儲存 Pages 上</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t8 (<span class="keyword">id</span> <span class="built_in">char</span>(<span class="number">2100</span>) PRIMARY <span class="keyword">KEY</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">UNIQUE</span> <span class="keyword">INDEX</span>  ix_t8 <span class="keyword">on</span> t8(<span class="keyword">id</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'A'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'B'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'C'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'D'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'E'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'F'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'G'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'H'</span>,<span class="number">2100</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">--更新統計資訊</span></span><br><span class="line"><span class="keyword">analyze</span> t8;</span><br></pre></td></tr></table></figure></div>
+<p>利用 <code>pg_class</code> 資料表查詢我們資料 Pages 分布，看到明明已經新增8筆 2100 bytes char資料</p>
+<p><code>8 * 2100 byte = 16.8 Kb ~= 3 page</code> 才對，但下圖顯示不管是 heap table 還是 b+tree 都不到3 pages.</p>
+<p>這是因為在</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> relname,relpages,reltuples,relkind,<span class="keyword">oid</span>  </span><br><span class="line"><span class="keyword">from</span> pg_class </span><br><span class="line"><span class="keyword">where</span> relname <span class="keyword">in</span> (<span class="string">'t8'</span>,<span class="string">'t8_pkey'</span>);</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://i.imgur.com/3nvd96Y.png" alt></p>
+<p>我們利用<code>\d+</code>查詢一下，能發現資料表 <code>char(2100)</code> 使用 Storage = extended</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">postgres-# \d+ t8</span><br><span class="line">                                         Table "public.t8"</span><br><span class="line"> Column |      <span class="built_in">Type</span>       | Collation | Nullable | Default | Storage  | Stats target | Description</span><br><span class="line">--------+-----------------+-----------+----------+---------+----------+--------------+-------------</span><br><span class="line"> id     | character(<span class="number">2100</span>) |           | <span class="keyword">not</span> null |         | extended |              |</span><br><span class="line"><span class="function">Indexes:</span></span><br><span class="line"><span class="function">    "<span class="title">t8_pkey</span>" <span class="title">PRIMARY</span> <span class="title">KEY</span>, <span class="title">btree</span> (<span class="title">id</span>)</span></span><br><span class="line"><span class="function">    "<span class="title">ix_t8</span>" <span class="title">UNIQUE</span>, <span class="title">btree</span> (<span class="title">id</span>)</span></span><br></pre></td></tr></table></figure></div>
+<p>因為 postgresql DB 不支援跨表存放 tuple(不像是 sql-server 有 Forwarding Pointers )，所以對於大資料儲存衍伸出 <code>TOAST</code> 概念，<code>TOAST</code>壓縮資料的壓縮技術是 LZ 系列壓縮技術中相當簡單且非常快速的方法</p>
 <p>儲存 TOAST 欄位有四種不同策略：</p>
 <ul>
 <li>PLAIN</li>
@@ -680,7 +691,21 @@
 <li>EXTERNAL</li>
 <li>MAIN</li>
 </ul>
-<p>我們這邊新增4筆 2100 byte 的資料，因為 postgresql toast 預設使用 2KB 就會切片</p>
+<p>因為預設使用 extended 會幫我們壓縮並存放在 toast 資料表區段，不方便我們查看資料存儲原理</p>
+<p>我們可以透過下面語法查詢 t8 資料表上 toast 資訊</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">oid</span>::regclass,</span><br><span class="line">       reltoastrelid::regclass,</span><br><span class="line">       pg_relation_size(reltoastrelid) <span class="keyword">AS</span> toast_size</span><br><span class="line"><span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">WHERE</span> relkind = <span class="string">'r'</span></span><br><span class="line">  <span class="keyword">AND</span> reltoastrelid &lt;&gt; <span class="number">0</span></span><br><span class="line">  <span class="keyword">AND</span> <span class="keyword">oid</span>::regclass = <span class="string">'t8'</span>::regclass;</span><br></pre></td></tr></table></figure></div>
+<p>所以這邊我會建議大家改成使用 external 儲存 id 欄位，因為這個模式會把資料存在 toast 且不會壓縮資料.</p>
+<blockquote>
+<p>修改 column 儲存模式不會回朔修改之前的資料，所以在下面範例中我把資料清除改完模式再重新塞入</p>
+</blockquote>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t8 <span class="keyword">alter</span> <span class="keyword">id</span> <span class="keyword">set</span> <span class="keyword">storage</span> <span class="keyword">external</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">truncate</span> t8;</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'A'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'B'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'C'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'D'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'E'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'F'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'G'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'H'</span>,<span class="number">2100</span>));</span><br></pre></td></tr></table></figure></div>
+<p>一樣透過下面語法查詢</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">oid</span>::regclass,</span><br><span class="line">       reltoastrelid::regclass,</span><br><span class="line">       pg_relation_size(reltoastrelid) <span class="keyword">AS</span> toast_size</span><br><span class="line"><span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">WHERE</span> relkind = <span class="string">'r'</span></span><br><span class="line">  <span class="keyword">AND</span> reltoastrelid &lt;&gt; <span class="number">0</span></span><br><span class="line">  <span class="keyword">AND</span> <span class="keyword">oid</span>::regclass = <span class="string">'t8'</span>::regclass;</span><br></pre></td></tr></table></figure></div>
+<p>我們會發現在 <code>pg_toast</code> 中的資料只要超過 2KB 就會自動幫我們切割，切割完的資料會規在同一個 <code>chunk_id</code> 中並利用 <code>chunk_seq</code> 來還原原始資料.</p>
+<blockquote>
+<p>我們這邊新增8筆 2100 byte 的資料，因為 postgresql toast 預設使用 2KB 就會切片</p>
+</blockquote>
+<p><img src="https://i.imgur.com/r8lkQvi.png" alt></p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>經過本篇文章希望可以幫助大家了解 postgresql DB block (Page) 儲存原理，沒想到 MVCC 會造成儲存上那麼大消耗.</p>
 <p>會有本篇文章是因為之前對於sql server page 有一定了解，但最近在使用 postgresql DB 的 Page 發現跟 sqlserver 有差異，所以在<span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL2dyb3Vwcy9wZ3NxbC50dy9wb3N0cy8yNjQ4MzExMTY4ODA3NDc3Lz9jb21tZW50X2lkPTI2NDgzNTc1MTg4MDI4NDImYW1wO3JlcGx5X2NvbW1lbnRfaWQ9MjY1MzEzNTQyMTY1ODM4NSZhbXA7bm90aWZfaWQ9MTYzMTc2NTUxODE1NzQ0MCZhbXA7bm90aWZfdD1ncm91cF9jb21tZW50JmFtcDtyZWY9bm90aWY=" title="https://www.facebook.com/groups/pgsql.tw/posts/2648311168807477/?comment_id=2648357518802842&amp;reply_comment_id=2653135421658385&amp;notif_id=1631765518157440&amp;notif_t=group_comment&amp;ref=notif">網路上詢問<i class="fa fa-external-link"></i></span>，感協 張友謙大大 熱心回答釐清整個脈絡.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-page-deepknow/">https://isdaniel.github.io/postgresql-page-deepknow/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
@@ -1272,7 +1297,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">417k</span>
+    <span title="Symbols count total">419k</span>
   
 
   
@@ -1281,7 +1306,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">12:38</span>
+    <span title="Reading time total">12:42</span>
   
 </div>
 
