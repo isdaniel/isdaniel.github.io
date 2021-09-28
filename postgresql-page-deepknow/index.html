@@ -143,19 +143,19 @@
 
 
 
-  <meta name="description" content="前言在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原理 如果要了解存儲怎麼辦呢? 關於 page 存儲使用sample data 1234CREATE TABLE t1 (id int PRIMARY KEY);inser">
+  <meta name="description" content="前言因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異 在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原">
 <meta name="keywords" content="DataBase,Turning,postgresql">
 <meta property="og:type" content="article">
 <meta property="og:title" content="postgresql Page 深入淺出">
 <meta property="og:url" content="https://isdaniel.github.io/postgresql-page-deepknow/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="前言在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原理 如果要了解存儲怎麼辦呢? 關於 page 存儲使用sample data 1234CREATE TABLE t1 (id int PRIMARY KEY);inser">
+<meta property="og:description" content="前言因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異 在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/mYYjXFg.jpg">
-<meta property="og:updated_time" content="2021-09-28T04:37:17.860Z">
+<meta property="og:updated_time" content="2021-09-28T05:11:55.806Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="postgresql Page 深入淺出">
-<meta name="twitter:description" content="前言在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原理 如果要了解存儲怎麼辦呢? 關於 page 存儲使用sample data 1234CREATE TABLE t1 (id int PRIMARY KEY);inser">
+<meta name="twitter:description" content="前言因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異 在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原">
 <meta name="twitter:image" content="https://i.imgur.com/mYYjXFg.jpg">
 
 
@@ -499,7 +499,7 @@
                 
               
 
-              <time title="Created: 2021-09-28 00:30:11 / Modified: 04:37:17" itemprop="dateCreated datePublished" datetime="2021-09-28T00:30:11+00:00">2021-09-28</time>
+              <time title="Created: 2021-09-28 00:30:11 / Modified: 05:11:55" itemprop="dateCreated datePublished" datetime="2021-09-28T00:30:11+00:00">2021-09-28</time>
             
 
             
@@ -577,7 +577,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">4.7k</span>
+                <span title="Symbols count in article">5.1k</span>
               
 
               
@@ -623,7 +623,8 @@
       
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在postgresql DB Page size 預設是 8KB</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異</p>
+<p>在postgresql DB Page size 預設是 8KB</p>
 <p>我們想要看page使用大小在 Sql-Server 可以用 <code>DBCC</code>命令在 postgresql DB 沒有 <code>DBCC</code> 還好有其他方式可以查看 Page 儲存原理</p>
 <p>如果要了解存儲怎麼辦呢?</p>
 <h2 id="關於-page-存儲"><a href="#關於-page-存儲" class="headerlink" title="關於 page 存儲"></a>關於 page 存儲</h2><p>使用sample data</p>
@@ -704,12 +705,20 @@
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t8 <span class="keyword">alter</span> <span class="keyword">id</span> <span class="keyword">set</span> <span class="keyword">storage</span> <span class="keyword">external</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">truncate</span> t8;</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'A'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'B'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'C'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'D'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'E'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'F'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'G'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'H'</span>,<span class="number">2100</span>));</span><br></pre></td></tr></table></figure></div>
 <p>一樣透過下面語法查詢</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">oid</span>::regclass,</span><br><span class="line">       reltoastrelid::regclass,</span><br><span class="line">       pg_relation_size(reltoastrelid) <span class="keyword">AS</span> toast_size</span><br><span class="line"><span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">WHERE</span> relkind = <span class="string">'r'</span></span><br><span class="line">  <span class="keyword">AND</span> reltoastrelid &lt;&gt; <span class="number">0</span></span><br><span class="line">  <span class="keyword">AND</span> <span class="keyword">oid</span>::regclass = <span class="string">'t8'</span>::regclass;</span><br></pre></td></tr></table></figure></div>
+<p>利用完語法查完，在我電腦上儲存 t8的toast 是 <code>pg_toast_34504</code> 資料表</p>
+<p><img src="https://i.imgur.com/FKDZFFz.png" alt></p>
+<p>所以我們可以利用下面語法查詢 toast 資料表資訊</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> chunk_id,chunk_seq,<span class="keyword">length</span>(chunk_data)</span><br><span class="line"><span class="keyword">from</span> pg_toast.pg_toast_34504</span><br></pre></td></tr></table></figure></div>
 <p>我們會發現在 <code>pg_toast</code> 中的資料只要超過 2KB 就會自動幫我們切割，切割完的資料會規在同一個 <code>chunk_id</code> 中並利用 <code>chunk_seq</code> 來還原原始資料.</p>
 <blockquote>
 <p>我們這邊新增8筆 2100 byte 的資料，因為 postgresql toast 預設使用 2KB 就會切片</p>
 </blockquote>
 <p><img src="https://i.imgur.com/r8lkQvi.png" alt></p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>經過本篇文章希望可以幫助大家了解 postgresql DB block (Page) 儲存原理，沒想到 MVCC 會造成儲存上那麼大消耗.</p>
+<p>用開車來比較 sql-server 和 postgresql DB 我個人感覺 sql-server 像是自排車很多東西幫你封裝好不能動使用起來比較簡單，postgresql DB 像是手排車可以調整的地方必較多，效能就取決於操作者用的好效能可以很棒，用的不好會很慘…</p>
+<blockquote>
+<p>我上面說的是成本因子部分</p>
+</blockquote>
 <p>會有本篇文章是因為之前對於sql server page 有一定了解，但最近在使用 postgresql DB 的 Page 發現跟 sqlserver 有差異，所以在<span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL2dyb3Vwcy9wZ3NxbC50dy9wb3N0cy8yNjQ4MzExMTY4ODA3NDc3Lz9jb21tZW50X2lkPTI2NDgzNTc1MTg4MDI4NDImYW1wO3JlcGx5X2NvbW1lbnRfaWQ9MjY1MzEzNTQyMTY1ODM4NSZhbXA7bm90aWZfaWQ9MTYzMTc2NTUxODE1NzQ0MCZhbXA7bm90aWZfdD1ncm91cF9jb21tZW50JmFtcDtyZWY9bm90aWY=" title="https://www.facebook.com/groups/pgsql.tw/posts/2648311168807477/?comment_id=2648357518802842&amp;reply_comment_id=2653135421658385&amp;notif_id=1631765518157440&amp;notif_t=group_comment&amp;ref=notif">網路上詢問<i class="fa fa-external-link"></i></span>，感協 張友謙大大 熱心回答釐清整個脈絡.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-page-deepknow/">https://isdaniel.github.io/postgresql-page-deepknow/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 
@@ -732,14 +741,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\dblock-1\" rel="bookmark">淺談SqlServer Lock(一)</a></div>
+      <div class="popular-posts-title"><a href="\dbindex-2\" rel="bookmark">資料庫索引深入淺出(二)</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\dbindex-2\" rel="bookmark">資料庫索引深入淺出(二)</a></div>
+      <div class="popular-posts-title"><a href="\dblock-1\" rel="bookmark">淺談SqlServer Lock(一)</a></div>
       
     </li>
   
@@ -1300,7 +1309,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">419k</span>
+    <span title="Symbols count total">420k</span>
   
 
   
@@ -1309,7 +1318,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">12:42</span>
+    <span title="Reading time total">12:43</span>
   
 </div>
 
