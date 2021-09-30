@@ -251,43 +251,6 @@ return builder.Build();
       </tags>
   </entry>
   <entry>
-    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
-    <url>/automapperinit/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
-<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
-<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
-<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
-<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
-<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
-<blockquote>
-<p>我們可以使用反射來完成</p>
-</blockquote>
-<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
-<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Automapper</tag>
-        <tag>Model</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Autofac (IOC)容器介紹</title>
     <url>/autofac-introduce/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>市面上有許多IoC容器 <span class="exturl" data-url="aHR0cDovL25pbmplY3Qub3JnLw==" title="http://ninject.org/">Ninject<i class="fa fa-external-link"></i></span>,<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3VuaXR5Y29udGFpbmVyL3VuaXR5" title="https://github.com/unitycontainer/unity">Unity<i class="fa fa-external-link"></i></span>….</p>
@@ -389,6 +352,43 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>IOC</tag>
         <tag>Autofac</tag>
         <tag>AOP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
+    <url>/automapperinit/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
+<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
+<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
+<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
+<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
+<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
+<blockquote>
+<p>我們可以使用反射來完成</p>
+</blockquote>
+<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
+<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Automapper</tag>
+        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -2164,66 +2164,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>撰寫SQL的建議</title>
-    <url>/dbnote/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e6%96%87">前文</a></li>
-</ul>
-<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會分享在撰寫SQL時建議和比較分享</p>
-<blockquote>
-<p>永遠先考慮T-SQL改寫</p>
-</blockquote>
-<ol>
-<li>符合SARG Statement進行撰寫<ul>
-<li>&lt;、&gt;、=、&lt;=、&gt;=、LIKE(視%所在位置，前面有%讓DB engine選擇不走INDEX) </li>
-</ul>
-</li>
-<li>不要在<code>Where</code>欄位做運算 </li>
-<li>使用<code>ANSI 92</code>相容的Join方式連接資料庫(避免使用舊式<code>Join</code>)</li>
-<li>避免row by row操作</li>
-</ol>
-<blockquote>
-<p>符合SARG格式的撰寫 + 適當Index設計可以解決大部分的效能問題</p>
-</blockquote>
-<h2 id="使用Like查詢建議"><a href="#使用Like查詢建議" class="headerlink" title="使用Like查詢建議"></a>使用Like查詢建議</h2><ul>
-<li>盡量別把<code>%</code>放在前面</li>
-<li>如果查詢條件是<code>CNAME LIKE &#39;%范&#39;</code>想讓讓查詢走索引(seek 查詢),在後面加一個條件<code>AND CNAME &gt; &#39;&#39;</code>讓查詢走Seek.</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> [<span class="keyword">MID</span>]</span><br><span class="line">      ,[NickName]</span><br><span class="line">      ,[CName]</span><br><span class="line"><span class="keyword">FROM</span> [Member_Basic] <span class="keyword">WITH</span> (NOLOCK)</span><br><span class="line"><span class="keyword">WHERE</span> CNAME <span class="keyword">LIKE</span> <span class="string">'%范'</span> <span class="keyword">AND</span> CNAME &gt; <span class="string">''</span></span><br></pre></td></tr></table></figure></div>
-<h2 id="使用Count函數建議"><a href="#使用Count函數建議" class="headerlink" title="使用Count函數建議"></a>使用Count函數建議</h2><p>如果要取得筆數數量使用<code>COUNT(*)</code>比<code>Count(c1)</code>效能好.</p>
-<blockquote>
-<p><code>Count(c1)</code>會忽略<code>c1 IS NULL</code>數量.</p>
-</blockquote>
-<blockquote>
-<p>另外如果[資料筆數]&gt;2^15-1(大於INT最大值)筆數量可使用<code>count_big(*)</code>方法</p>
-</blockquote>
-<p>如果需要<code>COUNT</code>資料很大造成效能影響可以透過<code>DMV</code>取得當前資料表數量(資料會不準確,因為並非及時更新)</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">SUM</span>(p.rows)</span><br><span class="line"><span class="keyword">FROM</span> sys.partitions p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] = object_id(<span class="string">'dbo.Person'</span>) <span class="keyword">AND</span> p.index_id &lt; <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="keyword">SUM</span>(p.row_count)</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_db_partition_stats p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] = object_id(<span class="string">'dbo.Person'</span>)  <span class="keyword">AND</span> p.index_id &lt; <span class="number">2</span></span><br></pre></td></tr></table></figure></div>
-<p>使用<code>if exists (select 1 from dbo.table)</code>取代<code>count</code>函式判斷資料是否存在</p>
-<h2 id="NOT-IN-vs-NOT-EXISTS"><a href="#NOT-IN-vs-NOT-EXISTS" class="headerlink" title="NOT IN vs NOT EXISTS"></a>NOT IN vs NOT EXISTS</h2><p>在查詢時避免使用<code>NOT IN</code>，因為會被QO改寫成 <code>&lt;&gt; NULL</code>，在SQL中<code>NULL</code>代表不知道(Unknow)，所以會什麼都查不到</p>
-<ul>
-<li>因為此欄位是可空(<code>NULL</code>)時會造成非預期結果(因為<code>NULL</code>會造成判斷失誤<code>NULL</code>不是一個值他代表<strong>未知</strong>)</li>
-<li>使用<code>NOT EXISTS</code>替代<code>NOT IN</code></li>
-<li><code>NOT EXISTS</code>在<strong>可空欄位</strong>效能比<code>NOT IN</code>還要好(如果有建立<code>Index</code>兩個產生執行計畫理論上是一樣)</li>
-</ul>
-<p>下面有一個範例來解說為什麼避免在可空欄位使用<code>NOT IN</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">INT</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">ID</span> <span class="keyword">NOT</span> <span class="keyword">IN</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="keyword">ID</span></span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="literal">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="keyword">ID</span></span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="literal">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">    <span class="keyword">WHERE</span> <span class="keyword">ID</span> = v</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure></div>
-<p>上圖可以看到在<code>T</code>資料表中有兩筆資料，如果我們使用<code>NOT IN</code>和<code>NOT EXISTS</code>結果會不一樣，原因是使用<code>NOT IN</code>在判斷<code>NULL</code>時會造成<code>NULL&lt;&gt;</code>任何值,所以就撈不出任何資料，相反使用<code>NOT EXISTS</code>取得的結果就符合我們預期.</p>
-<h2 id="避免在Where條件中對欄位進行操作運算"><a href="#避免在Where條件中對欄位進行操作運算" class="headerlink" title="避免在Where條件中對欄位進行操作運算"></a>避免在Where條件中對欄位進行操作運算</h2><h3 id="col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’"><a href="#col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’" class="headerlink" title="@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’"></a>@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’</h3><p>我們會有一種需求須要判斷此</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">    <span class="keyword">Col</span> <span class="built_in">VARCHAR</span>(<span class="number">50</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T</span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">100000</span> <span class="literal">NULL</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns c1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">JOIN</span> sys.all_columns c2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">'DANIEL'</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">'DANIEL2'</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">''</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">''</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">--CREATE INDEX</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_Col <span class="keyword">on</span> dbo.T(</span><br><span class="line">    <span class="keyword">Col</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">col</span> &gt; <span class="string">''</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">col</span> <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">AND</span> <span class="keyword">col</span> &lt;&gt; <span class="string">''</span></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure></div>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbnote/">https://isdaniel.github.io/dbnote/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>DataBase</category>
-        <category>Turning</category>
-      </categories>
-      <tags>
-        <tag>sql-server</tag>
-        <tag>DataBase</tag>
-        <tag>Turning</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>SqlServer資料表深入淺出</title>
     <url>/dbtable/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會跟大家對於<code>SQL-Server</code>資料表深入淺出的介紹.</p>
@@ -2319,6 +2259,66 @@ class Program
       <categories>
         <category>Turning</category>
         <category>sql-server</category>
+      </categories>
+      <tags>
+        <tag>sql-server</tag>
+        <tag>DataBase</tag>
+        <tag>Turning</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>撰寫SQL的建議</title>
+    <url>/dbnote/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e6%96%87">前文</a></li>
+</ul>
+<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會分享在撰寫SQL時建議和比較分享</p>
+<blockquote>
+<p>永遠先考慮T-SQL改寫</p>
+</blockquote>
+<ol>
+<li>符合SARG Statement進行撰寫<ul>
+<li>&lt;、&gt;、=、&lt;=、&gt;=、LIKE(視%所在位置，前面有%讓DB engine選擇不走INDEX) </li>
+</ul>
+</li>
+<li>不要在<code>Where</code>欄位做運算 </li>
+<li>使用<code>ANSI 92</code>相容的Join方式連接資料庫(避免使用舊式<code>Join</code>)</li>
+<li>避免row by row操作</li>
+</ol>
+<blockquote>
+<p>符合SARG格式的撰寫 + 適當Index設計可以解決大部分的效能問題</p>
+</blockquote>
+<h2 id="使用Like查詢建議"><a href="#使用Like查詢建議" class="headerlink" title="使用Like查詢建議"></a>使用Like查詢建議</h2><ul>
+<li>盡量別把<code>%</code>放在前面</li>
+<li>如果查詢條件是<code>CNAME LIKE &#39;%范&#39;</code>想讓讓查詢走索引(seek 查詢),在後面加一個條件<code>AND CNAME &gt; &#39;&#39;</code>讓查詢走Seek.</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> [<span class="keyword">MID</span>]</span><br><span class="line">      ,[NickName]</span><br><span class="line">      ,[CName]</span><br><span class="line"><span class="keyword">FROM</span> [Member_Basic] <span class="keyword">WITH</span> (NOLOCK)</span><br><span class="line"><span class="keyword">WHERE</span> CNAME <span class="keyword">LIKE</span> <span class="string">'%范'</span> <span class="keyword">AND</span> CNAME &gt; <span class="string">''</span></span><br></pre></td></tr></table></figure></div>
+<h2 id="使用Count函數建議"><a href="#使用Count函數建議" class="headerlink" title="使用Count函數建議"></a>使用Count函數建議</h2><p>如果要取得筆數數量使用<code>COUNT(*)</code>比<code>Count(c1)</code>效能好.</p>
+<blockquote>
+<p><code>Count(c1)</code>會忽略<code>c1 IS NULL</code>數量.</p>
+</blockquote>
+<blockquote>
+<p>另外如果[資料筆數]&gt;2^15-1(大於INT最大值)筆數量可使用<code>count_big(*)</code>方法</p>
+</blockquote>
+<p>如果需要<code>COUNT</code>資料很大造成效能影響可以透過<code>DMV</code>取得當前資料表數量(資料會不準確,因為並非及時更新)</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">SUM</span>(p.rows)</span><br><span class="line"><span class="keyword">FROM</span> sys.partitions p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] = object_id(<span class="string">'dbo.Person'</span>) <span class="keyword">AND</span> p.index_id &lt; <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="keyword">SUM</span>(p.row_count)</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_db_partition_stats p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] = object_id(<span class="string">'dbo.Person'</span>)  <span class="keyword">AND</span> p.index_id &lt; <span class="number">2</span></span><br></pre></td></tr></table></figure></div>
+<p>使用<code>if exists (select 1 from dbo.table)</code>取代<code>count</code>函式判斷資料是否存在</p>
+<h2 id="NOT-IN-vs-NOT-EXISTS"><a href="#NOT-IN-vs-NOT-EXISTS" class="headerlink" title="NOT IN vs NOT EXISTS"></a>NOT IN vs NOT EXISTS</h2><p>在查詢時避免使用<code>NOT IN</code>，因為會被QO改寫成 <code>&lt;&gt; NULL</code>，在SQL中<code>NULL</code>代表不知道(Unknow)，所以會什麼都查不到</p>
+<ul>
+<li>因為此欄位是可空(<code>NULL</code>)時會造成非預期結果(因為<code>NULL</code>會造成判斷失誤<code>NULL</code>不是一個值他代表<strong>未知</strong>)</li>
+<li>使用<code>NOT EXISTS</code>替代<code>NOT IN</code></li>
+<li><code>NOT EXISTS</code>在<strong>可空欄位</strong>效能比<code>NOT IN</code>還要好(如果有建立<code>Index</code>兩個產生執行計畫理論上是一樣)</li>
+</ul>
+<p>下面有一個範例來解說為什麼避免在可空欄位使用<code>NOT IN</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">INT</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">ID</span> <span class="keyword">NOT</span> <span class="keyword">IN</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="keyword">ID</span></span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="literal">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="keyword">ID</span></span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="literal">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">    <span class="keyword">WHERE</span> <span class="keyword">ID</span> = v</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure></div>
+<p>上圖可以看到在<code>T</code>資料表中有兩筆資料，如果我們使用<code>NOT IN</code>和<code>NOT EXISTS</code>結果會不一樣，原因是使用<code>NOT IN</code>在判斷<code>NULL</code>時會造成<code>NULL&lt;&gt;</code>任何值,所以就撈不出任何資料，相反使用<code>NOT EXISTS</code>取得的結果就符合我們預期.</p>
+<h2 id="避免在Where條件中對欄位進行操作運算"><a href="#避免在Where條件中對欄位進行操作運算" class="headerlink" title="避免在Where條件中對欄位進行操作運算"></a>避免在Where條件中對欄位進行操作運算</h2><h3 id="col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’"><a href="#col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’" class="headerlink" title="@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’"></a>@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’</h3><p>我們會有一種需求須要判斷此</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">    <span class="keyword">Col</span> <span class="built_in">VARCHAR</span>(<span class="number">50</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T</span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">100000</span> <span class="literal">NULL</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns c1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">JOIN</span> sys.all_columns c2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">'DANIEL'</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">'DANIEL2'</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">''</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T <span class="keyword">VALUES</span> (<span class="string">''</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">--CREATE INDEX</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_Col <span class="keyword">on</span> dbo.T(</span><br><span class="line">    <span class="keyword">Col</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">col</span> &gt; <span class="string">''</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">col</span> <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">AND</span> <span class="keyword">col</span> &lt;&gt; <span class="string">''</span></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure></div>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbnote/">https://isdaniel.github.io/dbnote/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DataBase</category>
+        <category>Turning</category>
       </categories>
       <tags>
         <tag>sql-server</tag>
@@ -3435,7 +3435,7 @@ email_url: dog830228@gmail.com
 <p>Interlocked適合用在對於數值的Atomic.</p>
 <p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
 <p>因為多執行緒有許多地方需要注意,不然執行效率會不如單執行緒.</p>
-<p>我慢慢可以理解為什麼Redis,Node.js一開始要使用sigel Thread來運作了…</p>
+<p>我慢慢可以理解為什麼Redis,Node.js一開始要使用 single Thread 來運作了…</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
@@ -5484,88 +5484,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>動態產生程式碼(WebViewPage) View是如何被建立(四) (第25天)</title>
-    <url>/ithelp-day25/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#webviewpage">WebViewPage</a><ul>
-<li><a href="#%e5%91%bc%e5%8f%abwebviewpageexecutepagehierarchy%e6%96%b9%e6%b3%95%e6%99%82%e6%a9%9f">呼叫WebViewPage.ExecutePageHierarchy方法時機</a></li>
-<li><a href="#applicationstartpage-and-webpagerenderingbase">ApplicationStartPage and WebPageRenderingBase</a></li>
-</ul>
-</li>
-<li><a href="#webviewpage-vs-webviewpagetmodel">WebViewPage vs WebViewPage<tmodel></tmodel></a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇說到最終會透過一個實現<code>IView</code>物件(Razor是透過<code>RazorView</code>)來完成,<code>RenderView</code>方法將<code>BuildManagerCompiledView</code>方法取得物件轉換型別成<code>WebViewPage</code>.</p>
-<p><code>.cshtml</code>最終會編譯成一個繼承<code>WebViewPage</code>檔案.</p>
-<p>本篇會來解析<code>View</code>編譯原理</p>
-<blockquote>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="WebViewPage"><a href="#WebViewPage" class="headerlink" title="WebViewPage"></a>WebViewPage</h2><p><code>WebViewPage</code>繼承樹最頂層有個<code>WebPageExecutingBase</code>抽象類別,他擁有一個抽象方法<code>Execute</code>,<code>View</code>轉成<code>c#</code>程式會建立一個類別就會繼承於<code>WebViewPage</code>並把使用者頁面程式碼實現在<code>Execute</code>方法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params"></span>)</span>;</span><br></pre></td></tr></table></figure></div>
-<p>先來看一下<code>View</code>產生的DLL檔案會放在哪裡</p>
-<p>透過在<code>View</code>檔案上寫<code>@GetType().Assembly.Location</code>.</p>
-<p>在頁面上顯示<code>DLL</code>存放位置,一般會放在<code>Temp</code>資料夾區中</p>
-<p>可以根據顯示路徑找到<code>View</code>編譯成<code>DLL</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class _Page_Views_Shared__Layout_cshtml : WebViewPage&lt;object&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">protected</span> global_asax ApplicationInstance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> (global_asax)<span class="keyword">this</span>.get_Context().ApplicationInstance;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="comment">//... user print logic</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>我使用<code>JustDecomplie</code>反編譯工具,查看原始碼.</p>
-<p>下圖對於<code>View</code>檔案產生<code>DLL</code>反編譯</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_decompile.PNG" alt="WebViewPage_decompile.PNG"></p>
-<p>透過反編譯工具可以看到原始碼,每個頁面都會產生相對應的類別並繼承於<code>WebViewPage&lt;object&gt;</code>類別(會因為使用泛型,因為有一個<code>@Model</code>)</p>
-<blockquote>
-<p><code>Page_Views_Home_About_cshtml</code>類別命名有個規則.<br><code>Page_Views_{ViewfolderName}_{ViewFileName}_{ExtensionFileName}</code></p>
-</blockquote>
-<p>我目前看到的是一個<code>About</code>的<code>cshtml</code>檔案(<code>About.cshtml</code>).</p>
-<p>看到<code>override void Execute()</code>將我們頁面上的邏輯透過<code>WriteLiteral</code>將資料寫到<code>Output</code>上,在<code>ApplicationStartPage</code>有<code>WriteLiteral</code>實作方式.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteLiteral</span>(<span class="params"><span class="keyword">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Output.Write(<span class="keyword">value</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="呼叫WebViewPage-ExecutePageHierarchy方法時機"><a href="#呼叫WebViewPage-ExecutePageHierarchy方法時機" class="headerlink" title="呼叫WebViewPage.ExecutePageHierarchy方法時機"></a>呼叫WebViewPage.ExecutePageHierarchy方法時機</h3><p>在<code>RazorView</code>類別中的<code>RenderView</code>方法最下面有一段程式碼.</p>
-<p>先判斷是否取得<code>StartPage</code>在呼叫<code>ExecutePageHierarchy</code>方法進行頁面的渲染.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">WebPageRenderingBase startPage = <span class="literal">null</span>;</span><br><span class="line"><span class="keyword">if</span> (RunViewStartPages)</span><br><span class="line">&#123;</span><br><span class="line">    startPage = StartPageLookup(webViewPage, RazorViewEngine.ViewStartFileName, ViewStartFileExtensions);</span><br><span class="line">&#125;</span><br><span class="line">webViewPage.ExecutePageHierarchy(<span class="keyword">new</span> WebPageContext(context: viewContext.HttpContext, page: <span class="literal">null</span>, model: <span class="literal">null</span>), writer, startPage);</span><br></pre></td></tr></table></figure></div>
-<h3 id="ApplicationStartPage-and-WebPageRenderingBase"><a href="#ApplicationStartPage-and-WebPageRenderingBase" class="headerlink" title="ApplicationStartPage and WebPageRenderingBase"></a>ApplicationStartPage and WebPageRenderingBase</h3><p><code>WebViewPage</code>類別關係圖如下,<code>WebViewPage</code>擁有個複雜繼承樹.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_UML.png" alt="WebViewPage_UML.png"></p>
-<p>主要分為兩派,在微軟官網有張圖來表示上面兩個比較</p>
-<p><img src="https://docs.microsoft.com/zh-tw/aspnet/web-pages/overview/ui-layouts-and-themes/18-customizing-site-wide-behavior/_static/image1.jpg" alt="https://docs.microsoft.com/zh-tw/aspnet/web-pages/overview/ui-layouts-and-themes/18-customizing-site-wide-behavior/_static/image1.jpg"></p>
-<ul>
-<li><code>ApplicationStartPage</code>:當站台被啟動時會使用<code>WebPageHttpModule</code>(<code>IHttpModule</code>)初始化並呼叫<code>ApplicationStartPage</code>的<code>ExecuteStartPageInternal</code>找尋<code>_appstart.cshtml</code>檔案來執行.<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvYXNwbmV0L3dlYi1wYWdlcy9vdmVydmlldy91aS1sYXlvdXRzLWFuZC10aGVtZXMvMTgtY3VzdG9taXppbmctc2l0ZS13aWRlLWJlaGF2aW9y" title="https://docs.microsoft.com/zh-tw/aspnet/web-pages/overview/ui-layouts-and-themes/18-customizing-site-wide-behavior">ASP.NET Web Pages (Razor) 網站的自訂全網站行為<i class="fa fa-external-link"></i></span></li>
-</ul>
-<blockquote>
-<p><code>_AppStart.cshtml</code>頁面上運作。 當要求傳入頁面中，和如果這是第一個要求任何頁面在網站中，<code>ASP.NET</code>會先檢查是否 <code>_AppStart.cshtml</code>頁面存在。 如果是的話，任何程式碼中 <code>_AppStart.cshtml</code>頁面上執行，並執行要求的頁面。</p>
-</blockquote>
-<ul>
-<li><code>WebPageRenderingBase</code>:透過<code>ExecutePageHierarchy</code>呼叫<code>BaseLayout</code>頁面或執行請求<code>Execute</code>方法</li>
-</ul>
-<p><code>WebPageBase</code>類別中<code>ExecutePageHierarchy</code>重載實作,透過<code>ExecutePageHierarchy</code>呼叫開發者實現<code>Execute</code>方法(<code>Page_Views_Home_About_cshtml.Execute</code>方法).</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecutePageHierarchy</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (WebPageHttpHandler.ShouldGenerateSourceHeader(Context))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">string</span> vp = VirtualPath;</span><br><span class="line">			<span class="keyword">if</span> (vp != <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">string</span> path = Context.Request.MapPath(vp);</span><br><span class="line">				<span class="keyword">if</span> (!path.IsEmpty())</span><br><span class="line">				&#123;</span><br><span class="line">					PageContext.SourceFiles.Add(path);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// we really don't care if this ever fails, so we swallow all exceptions</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	TemplateStack.Push(Context, <span class="keyword">this</span>);</span><br><span class="line">	<span class="keyword">try</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Execute the developer-written code of the WebPage</span></span><br><span class="line">		Execute();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">finally</span></span><br><span class="line">	&#123;</span><br><span class="line">		TemplateStack.Pop(Context);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="WebViewPage-vs-WebViewPage"><a href="#WebViewPage-vs-WebViewPage" class="headerlink" title="WebViewPage vs WebViewPage"></a>WebViewPage vs WebViewPage<tmodel></tmodel></h2><p><code>c#</code> 有一個關鍵字<code>new</code>對於類別成員修飾詞</p>
-<blockquote>
-<p><code>new</code>關鍵字做為宣告修飾詞使用時，會明確隱藏繼承自基底類別的成員。當您隱藏繼承的成員時，該成員的衍生版本就會取代基底類別版本</p>
-</blockquote>
-<p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2NzaGFycC9sYW5ndWFnZS1yZWZlcmVuY2Uva2V5d29yZHMvbmV3LW1vZGlmaWVy" title="https://docs.microsoft.com/zh-tw/dotnet/csharp/language-reference/keywords/new-modifier">new 修飾詞 (C# 參考)<i class="fa fa-external-link"></i></span></p>
-<p>我覺得這個關鍵字有點打壞物件導向的概念,因為他會把父類別原本的成員隱藏起來.強制替換成子類.</p>
-<p>但我看到<code>WebViewPage&lt;TModel&gt;</code>實作時覺得<code>new</code>原來可以這麼好用</p>
-<p><code>WebViewPage&lt;TModel&gt;</code>很巧妙使用<code>new</code>把<code>View</code>重點成員物件轉成泛型.可以讓我們在<code>Razor</code>或<code>aspx</code>可以更方便使用.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public abstract class WebViewPage&lt;TModel&gt; : WebViewPage</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> ViewDataDictionary&lt;TModel&gt; _viewData;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> AjaxHelper&lt;TModel&gt; Ajax &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> HtmlHelper&lt;TModel&gt; Html &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> TModel Model</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span> &#123; <span class="keyword">return</span> ViewData.Model; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	[<span class="meta">SuppressMessage(<span class="meta-string">"Microsoft.Usage"</span>, <span class="meta-string">"CA2227:CollectionPropertiesShouldBeReadOnly"</span>, Justification = <span class="meta-string">"This is the mechanism by which the ViewPage gets its ViewDataDictionary object."</span>)</span>]</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> ViewDataDictionary&lt;TModel&gt; ViewData</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_viewData == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				SetViewData(<span class="keyword">new</span> ViewDataDictionary&lt;TModel&gt;());</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _viewData;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">set</span> &#123; SetViewData(<span class="keyword">value</span>); &#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>所以之後如果有遇到類似情況(需要使用泛型替代父類別<code>object</code>類型成員可以考慮使用<code>new</code>)</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>View</code>頁面程式會轉成一個類別繼承於<code>WebViewPage</code>抽象類別,並把我們撰寫邏輯填充在<code>Execute</code>方法中.讓<strong>Asp.net MVC</strong>來呼叫.</p>
-<p>這裡設計非常巧妙透過一個抽象類別和一個動態編譯程式,讓<code>View</code>更有彈性可以透過<code>Razor</code>語法實現<code>View</code>邏輯(更人性化).</p>
-<p><code>WebViewPage&lt;TModel&gt;</code>很巧妙使用<code>new</code>把<code>View</code>重點成員物件轉成泛型.可以讓我們在<code>Razor</code>或<code>aspx</code>可以更方便使用.</p>
-<p>最後透過呼叫<code>ActionResult.ExecuteResult</code>方法將資料塞到<code>Response</code>物件中,提供回傳給<code>Client</code>端,最後執行資源<code>Release</code>動作.</p>
-<p>後面幾篇會利用前面所學來改寫<strong>MVC</strong>框架.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day25/">https://isdaniel.github.io/ithelp-day25/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>探討ViewEngine機制 View是如何被建立(三) (第24天)</title>
     <url>/ithelp-day24/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5680,6 +5598,88 @@ email_url: dog830228@gmail.com
 <li><code>IViewEngine</code>:透過虛擬路徑找到要執行頁面(透過一些機制).</li>
 </ul>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day24/">https://isdaniel.github.io/ithelp-day24/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>動態產生程式碼(WebViewPage) View是如何被建立(四) (第25天)</title>
+    <url>/ithelp-day25/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#webviewpage">WebViewPage</a><ul>
+<li><a href="#%e5%91%bc%e5%8f%abwebviewpageexecutepagehierarchy%e6%96%b9%e6%b3%95%e6%99%82%e6%a9%9f">呼叫WebViewPage.ExecutePageHierarchy方法時機</a></li>
+<li><a href="#applicationstartpage-and-webpagerenderingbase">ApplicationStartPage and WebPageRenderingBase</a></li>
+</ul>
+</li>
+<li><a href="#webviewpage-vs-webviewpagetmodel">WebViewPage vs WebViewPage<tmodel></tmodel></a></li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇說到最終會透過一個實現<code>IView</code>物件(Razor是透過<code>RazorView</code>)來完成,<code>RenderView</code>方法將<code>BuildManagerCompiledView</code>方法取得物件轉換型別成<code>WebViewPage</code>.</p>
+<p><code>.cshtml</code>最終會編譯成一個繼承<code>WebViewPage</code>檔案.</p>
+<p>本篇會來解析<code>View</code>編譯原理</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="WebViewPage"><a href="#WebViewPage" class="headerlink" title="WebViewPage"></a>WebViewPage</h2><p><code>WebViewPage</code>繼承樹最頂層有個<code>WebPageExecutingBase</code>抽象類別,他擁有一個抽象方法<code>Execute</code>,<code>View</code>轉成<code>c#</code>程式會建立一個類別就會繼承於<code>WebViewPage</code>並把使用者頁面程式碼實現在<code>Execute</code>方法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params"></span>)</span>;</span><br></pre></td></tr></table></figure></div>
+<p>先來看一下<code>View</code>產生的DLL檔案會放在哪裡</p>
+<p>透過在<code>View</code>檔案上寫<code>@GetType().Assembly.Location</code>.</p>
+<p>在頁面上顯示<code>DLL</code>存放位置,一般會放在<code>Temp</code>資料夾區中</p>
+<p>可以根據顯示路徑找到<code>View</code>編譯成<code>DLL</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class _Page_Views_Shared__Layout_cshtml : WebViewPage&lt;object&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">protected</span> global_asax ApplicationInstance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> (global_asax)<span class="keyword">this</span>.get_Context().ApplicationInstance;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="comment">//... user print logic</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>我使用<code>JustDecomplie</code>反編譯工具,查看原始碼.</p>
+<p>下圖對於<code>View</code>檔案產生<code>DLL</code>反編譯</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_decompile.PNG" alt="WebViewPage_decompile.PNG"></p>
+<p>透過反編譯工具可以看到原始碼,每個頁面都會產生相對應的類別並繼承於<code>WebViewPage&lt;object&gt;</code>類別(會因為使用泛型,因為有一個<code>@Model</code>)</p>
+<blockquote>
+<p><code>Page_Views_Home_About_cshtml</code>類別命名有個規則.<br><code>Page_Views_{ViewfolderName}_{ViewFileName}_{ExtensionFileName}</code></p>
+</blockquote>
+<p>我目前看到的是一個<code>About</code>的<code>cshtml</code>檔案(<code>About.cshtml</code>).</p>
+<p>看到<code>override void Execute()</code>將我們頁面上的邏輯透過<code>WriteLiteral</code>將資料寫到<code>Output</code>上,在<code>ApplicationStartPage</code>有<code>WriteLiteral</code>實作方式.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteLiteral</span>(<span class="params"><span class="keyword">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Output.Write(<span class="keyword">value</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="呼叫WebViewPage-ExecutePageHierarchy方法時機"><a href="#呼叫WebViewPage-ExecutePageHierarchy方法時機" class="headerlink" title="呼叫WebViewPage.ExecutePageHierarchy方法時機"></a>呼叫WebViewPage.ExecutePageHierarchy方法時機</h3><p>在<code>RazorView</code>類別中的<code>RenderView</code>方法最下面有一段程式碼.</p>
+<p>先判斷是否取得<code>StartPage</code>在呼叫<code>ExecutePageHierarchy</code>方法進行頁面的渲染.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">WebPageRenderingBase startPage = <span class="literal">null</span>;</span><br><span class="line"><span class="keyword">if</span> (RunViewStartPages)</span><br><span class="line">&#123;</span><br><span class="line">    startPage = StartPageLookup(webViewPage, RazorViewEngine.ViewStartFileName, ViewStartFileExtensions);</span><br><span class="line">&#125;</span><br><span class="line">webViewPage.ExecutePageHierarchy(<span class="keyword">new</span> WebPageContext(context: viewContext.HttpContext, page: <span class="literal">null</span>, model: <span class="literal">null</span>), writer, startPage);</span><br></pre></td></tr></table></figure></div>
+<h3 id="ApplicationStartPage-and-WebPageRenderingBase"><a href="#ApplicationStartPage-and-WebPageRenderingBase" class="headerlink" title="ApplicationStartPage and WebPageRenderingBase"></a>ApplicationStartPage and WebPageRenderingBase</h3><p><code>WebViewPage</code>類別關係圖如下,<code>WebViewPage</code>擁有個複雜繼承樹.</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_UML.png" alt="WebViewPage_UML.png"></p>
+<p>主要分為兩派,在微軟官網有張圖來表示上面兩個比較</p>
+<p><img src="https://docs.microsoft.com/zh-tw/aspnet/web-pages/overview/ui-layouts-and-themes/18-customizing-site-wide-behavior/_static/image1.jpg" alt="https://docs.microsoft.com/zh-tw/aspnet/web-pages/overview/ui-layouts-and-themes/18-customizing-site-wide-behavior/_static/image1.jpg"></p>
+<ul>
+<li><code>ApplicationStartPage</code>:當站台被啟動時會使用<code>WebPageHttpModule</code>(<code>IHttpModule</code>)初始化並呼叫<code>ApplicationStartPage</code>的<code>ExecuteStartPageInternal</code>找尋<code>_appstart.cshtml</code>檔案來執行.<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvYXNwbmV0L3dlYi1wYWdlcy9vdmVydmlldy91aS1sYXlvdXRzLWFuZC10aGVtZXMvMTgtY3VzdG9taXppbmctc2l0ZS13aWRlLWJlaGF2aW9y" title="https://docs.microsoft.com/zh-tw/aspnet/web-pages/overview/ui-layouts-and-themes/18-customizing-site-wide-behavior">ASP.NET Web Pages (Razor) 網站的自訂全網站行為<i class="fa fa-external-link"></i></span></li>
+</ul>
+<blockquote>
+<p><code>_AppStart.cshtml</code>頁面上運作。 當要求傳入頁面中，和如果這是第一個要求任何頁面在網站中，<code>ASP.NET</code>會先檢查是否 <code>_AppStart.cshtml</code>頁面存在。 如果是的話，任何程式碼中 <code>_AppStart.cshtml</code>頁面上執行，並執行要求的頁面。</p>
+</blockquote>
+<ul>
+<li><code>WebPageRenderingBase</code>:透過<code>ExecutePageHierarchy</code>呼叫<code>BaseLayout</code>頁面或執行請求<code>Execute</code>方法</li>
+</ul>
+<p><code>WebPageBase</code>類別中<code>ExecutePageHierarchy</code>重載實作,透過<code>ExecutePageHierarchy</code>呼叫開發者實現<code>Execute</code>方法(<code>Page_Views_Home_About_cshtml.Execute</code>方法).</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecutePageHierarchy</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (WebPageHttpHandler.ShouldGenerateSourceHeader(Context))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">string</span> vp = VirtualPath;</span><br><span class="line">			<span class="keyword">if</span> (vp != <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">string</span> path = Context.Request.MapPath(vp);</span><br><span class="line">				<span class="keyword">if</span> (!path.IsEmpty())</span><br><span class="line">				&#123;</span><br><span class="line">					PageContext.SourceFiles.Add(path);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// we really don't care if this ever fails, so we swallow all exceptions</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	TemplateStack.Push(Context, <span class="keyword">this</span>);</span><br><span class="line">	<span class="keyword">try</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Execute the developer-written code of the WebPage</span></span><br><span class="line">		Execute();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">finally</span></span><br><span class="line">	&#123;</span><br><span class="line">		TemplateStack.Pop(Context);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="WebViewPage-vs-WebViewPage"><a href="#WebViewPage-vs-WebViewPage" class="headerlink" title="WebViewPage vs WebViewPage"></a>WebViewPage vs WebViewPage<tmodel></tmodel></h2><p><code>c#</code> 有一個關鍵字<code>new</code>對於類別成員修飾詞</p>
+<blockquote>
+<p><code>new</code>關鍵字做為宣告修飾詞使用時，會明確隱藏繼承自基底類別的成員。當您隱藏繼承的成員時，該成員的衍生版本就會取代基底類別版本</p>
+</blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2NzaGFycC9sYW5ndWFnZS1yZWZlcmVuY2Uva2V5d29yZHMvbmV3LW1vZGlmaWVy" title="https://docs.microsoft.com/zh-tw/dotnet/csharp/language-reference/keywords/new-modifier">new 修飾詞 (C# 參考)<i class="fa fa-external-link"></i></span></p>
+<p>我覺得這個關鍵字有點打壞物件導向的概念,因為他會把父類別原本的成員隱藏起來.強制替換成子類.</p>
+<p>但我看到<code>WebViewPage&lt;TModel&gt;</code>實作時覺得<code>new</code>原來可以這麼好用</p>
+<p><code>WebViewPage&lt;TModel&gt;</code>很巧妙使用<code>new</code>把<code>View</code>重點成員物件轉成泛型.可以讓我們在<code>Razor</code>或<code>aspx</code>可以更方便使用.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public abstract class WebViewPage&lt;TModel&gt; : WebViewPage</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> ViewDataDictionary&lt;TModel&gt; _viewData;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> AjaxHelper&lt;TModel&gt; Ajax &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> HtmlHelper&lt;TModel&gt; Html &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> TModel Model</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span> &#123; <span class="keyword">return</span> ViewData.Model; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	[<span class="meta">SuppressMessage(<span class="meta-string">"Microsoft.Usage"</span>, <span class="meta-string">"CA2227:CollectionPropertiesShouldBeReadOnly"</span>, Justification = <span class="meta-string">"This is the mechanism by which the ViewPage gets its ViewDataDictionary object."</span>)</span>]</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> ViewDataDictionary&lt;TModel&gt; ViewData</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_viewData == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				SetViewData(<span class="keyword">new</span> ViewDataDictionary&lt;TModel&gt;());</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _viewData;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">set</span> &#123; SetViewData(<span class="keyword">value</span>); &#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>所以之後如果有遇到類似情況(需要使用泛型替代父類別<code>object</code>類型成員可以考慮使用<code>new</code>)</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>View</code>頁面程式會轉成一個類別繼承於<code>WebViewPage</code>抽象類別,並把我們撰寫邏輯填充在<code>Execute</code>方法中.讓<strong>Asp.net MVC</strong>來呼叫.</p>
+<p>這裡設計非常巧妙透過一個抽象類別和一個動態編譯程式,讓<code>View</code>更有彈性可以透過<code>Razor</code>語法實現<code>View</code>邏輯(更人性化).</p>
+<p><code>WebViewPage&lt;TModel&gt;</code>很巧妙使用<code>new</code>把<code>View</code>重點成員物件轉成泛型.可以讓我們在<code>Razor</code>或<code>aspx</code>可以更方便使用.</p>
+<p>最後透過呼叫<code>ActionResult.ExecuteResult</code>方法將資料塞到<code>Response</code>物件中,提供回傳給<code>Client</code>端,最後執行資源<code>Release</code>動作.</p>
+<p>後面幾篇會利用前面所學來改寫<strong>MVC</strong>框架.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day25/">https://isdaniel.github.io/ithelp-day25/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
