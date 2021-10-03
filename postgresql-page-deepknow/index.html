@@ -152,7 +152,7 @@
 <meta property="og:description" content="前言因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異 在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/mYYjXFg.jpg">
-<meta property="og:updated_time" content="2021-09-30T02:41:59.298Z">
+<meta property="og:updated_time" content="2021-10-03T09:13:09.197Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="postgresql Page 深入淺出">
 <meta name="twitter:description" content="前言因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異 在postgresql DB Page size 預設是 8KB 我們想要看page使用大小在 Sql-Server 可以用 DBCC命令在 postgresql DB 沒有 DBCC 還好有其他方式可以查看 Page 儲存原">
@@ -516,7 +516,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-09-30 02:41:59" itemprop="dateModified" datetime="2021-09-30T02:41:59+00:00">2021-09-30</time>
+                <time title="Modified: 2021-10-03 09:13:09" itemprop="dateModified" datetime="2021-10-03T09:13:09+00:00">2021-10-03</time>
               
             
           </span>
@@ -589,7 +589,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">5.1k</span>
+                <span title="Symbols count in article">5.8k</span>
               
 
               
@@ -603,7 +603,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">9 mins.</span>
+                <span title="Reading time">11 mins.</span>
               
             </div>
           
@@ -690,6 +690,24 @@
 </blockquote>
 <p>經過上面資訊我們可以推導出 <code>36 * 226 + 24 = 8160</code></p>
 <p>證明226列tuple的原理</p>
+<h3 id="關於-lp-len"><a href="#關於-lp-len" class="headerlink" title="關於 lp_len"></a>關於 lp_len</h3><p>所以每個 tuple 會存放 16 <code>(4*4)</code> + 6 + 4 + 1 + 1 <code>(NullBitMap)</code> + 4 <code>(RealDat)</code> = 32</p>
+<blockquote>
+<p>此外 postgressql DB 用 t_bits 來儲存 null 數值，另外 tuple 大小會對於 8 bit 倍數進行對齊</p>
+</blockquote>
+<p>關鍵資訊我在這邊標註跟提供連結有興趣的在自己研究</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="C"><figure class="iseeu highlight /c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">define</span> MAXALIGN(LEN) TYPEALIGN(MAXIMUM_ALIGNOF, (LEN))</span></span><br><span class="line"><span class="comment">//....</span></span><br><span class="line">MAXIMUM_ALIGNOF                          =&gt; <span class="number">8</span>,</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3Bvc3RncmVzL3Bvc3RncmVzL2Jsb2IvZTUyOWIyZGMzN2FjODBjY2ViZDc2Y2RiYjE0OTY2ZDNiNDA4MTljOS9zcmMvdG9vbHMvbXN2Yy9Tb2x1dGlvbi5wbSNMNDU3" title="https://github.com/postgres/postgres/blob/e529b2dc37ac80ccebd76cdbb14966d3b40819c9/src/tools/msvc/Solution.pm#L457">https://github.com/postgres/postgres/blob/e529b2dc37ac80ccebd76cdbb14966d3b40819c9/src/tools/msvc/Solution.pm#L457<i class="fa fa-external-link"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3Bvc3RncmVzL3Bvc3RncmVzL2Jsb2IvYzMwZjU0YWQ3MzJjYTVjODc2MmJiNjhiYmUwZjUxZGU5MTM3ZGQ3Mi9zcmMvaW5jbHVkZS9jLmgjTDc0NS1MNzU3" title="https://github.com/postgres/postgres/blob/c30f54ad732ca5c8762bb68bbe0f51de9137dd72/src/include/c.h#L745-L757">https://github.com/postgres/postgres/blob/c30f54ad732ca5c8762bb68bbe0f51de9137dd72/src/include/c.h#L745-L757<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<p>我們再使用一個例子來了解</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> tt1 (a <span class="built_in">char</span>(<span class="number">2</span>),b <span class="built_in">int</span>,c <span class="built_in">char</span>(<span class="number">1</span>));</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> tt1 (a,b,c) </span><br><span class="line"><span class="keyword">SELECT</span> <span class="string">'aa'</span>,<span class="keyword">id</span>,<span class="string">'c'</span></span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">2000</span>) v(<span class="keyword">id</span>);</span><br></pre></td></tr></table></figure></div>
+<p>使用 <code>heap_page_items</code> 查詢如下圖</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> *                                </span><br><span class="line"><span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">'tt1'</span>, <span class="number">0</span>));</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://i.imgur.com/corjLq6.png" alt></p>
+<p><code>lp_len</code> = 27 (tupleHeader) + 7 = 34 + 6 (NullBitMap) =&gt; 40</p>
+<blockquote>
+<p><code>lp_len</code> 下一個 8 倍數就是 40 byte，8152-8112 = 40 就能證明我上面說的</p>
+</blockquote>
 <h2 id="TOAST"><a href="#TOAST" class="headerlink" title="TOAST"></a>TOAST</h2><p>下面有個案例關於 <code>text</code> 儲存 Pages 上</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> t8 (<span class="keyword">id</span> <span class="built_in">char</span>(<span class="number">2100</span>) PRIMARY <span class="keyword">KEY</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">UNIQUE</span> <span class="keyword">INDEX</span>  ix_t8 <span class="keyword">on</span> t8(<span class="keyword">id</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'A'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'B'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'C'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'D'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'E'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'F'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'G'</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> t8 (<span class="keyword">id</span>) <span class="keyword">values</span> (<span class="keyword">repeat</span>(<span class="string">'H'</span>,<span class="number">2100</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">--更新統計資訊</span></span><br><span class="line"><span class="keyword">analyze</span> t8;</span><br></pre></td></tr></table></figure></div>
 <p>利用 <code>pg_class</code> 資料表查詢我們資料 Pages 分布，看到明明已經新增8筆 2100 bytes char資料</p>
@@ -767,14 +785,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\dbtable\" rel="bookmark">SqlServer資料表深入淺出</a></div>
+      <div class="popular-posts-title"><a href="\dbnote\" rel="bookmark">撰寫SQL的建議</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\dbnote\" rel="bookmark">撰寫SQL的建議</a></div>
+      <div class="popular-posts-title"><a href="\dbtable\" rel="bookmark">SqlServer資料表深入淺出</a></div>
       
     </li>
   
@@ -1288,7 +1306,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#關於-page-存儲"><span class="nav-number">2.</span> <span class="nav-text">關於 page 存儲</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pageinspect-extension"><span class="nav-number">2.1.</span> <span class="nav-text">pageinspect extension</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Database-Page-Layout"><span class="nav-number">2.2.</span> <span class="nav-text">Database Page Layout</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TOAST"><span class="nav-number">3.</span> <span class="nav-text">TOAST</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">4.</span> <span class="nav-text">小結</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#關於-page-存儲"><span class="nav-number">2.</span> <span class="nav-text">關於 page 存儲</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pageinspect-extension"><span class="nav-number">2.1.</span> <span class="nav-text">pageinspect extension</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Database-Page-Layout"><span class="nav-number">2.2.</span> <span class="nav-text">Database Page Layout</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#關於-lp-len"><span class="nav-number">2.3.</span> <span class="nav-text">關於 lp_len</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TOAST"><span class="nav-number">3.</span> <span class="nav-text">TOAST</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">4.</span> <span class="nav-text">小結</span></a></li></ol></div>
             
 
           </div>
@@ -1330,7 +1348,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">12:43</span>
+    <span title="Reading time total">12:44</span>
   
 </div>
 
