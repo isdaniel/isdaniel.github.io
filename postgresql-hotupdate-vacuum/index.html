@@ -151,7 +151,7 @@
 <meta property="og:site_name" content="石頭的coding之路">
 <meta property="og:description" content="前言Postgresql DB 目前預設在更新資料時會在 Heap Table 新增一條新版本資料，舊版本會先存在直到使用 VACUUM 回收 HOT update 作用在，當資料更新時通過 Heap Block 內部串聯所有 tuple 版本，則 Index 索引不變 HOT update 必須滿足以下兩個條件:  索引欄位值不變。(其中任意一個索引字段的值發生了變化，則所有索引都需要新增版本)">
 <meta property="og:locale" content="zh-tw">
-<meta property="og:updated_time" content="2021-10-03T10:02:06.027Z">
+<meta property="og:updated_time" content="2021-10-05T00:49:11.641Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="postgresql HOT (heap only tuple) update 深入淺出">
 <meta name="twitter:description" content="前言Postgresql DB 目前預設在更新資料時會在 Heap Table 新增一條新版本資料，舊版本會先存在直到使用 VACUUM 回收 HOT update 作用在，當資料更新時通過 Heap Block 內部串聯所有 tuple 版本，則 Index 索引不變 HOT update 必須滿足以下兩個條件:  索引欄位值不變。(其中任意一個索引字段的值發生了變化，則所有索引都需要新增版本)">
@@ -497,12 +497,24 @@
                 
               
 
-              <time title="Created: 2021-10-03 20:30:11 / Modified: 10:02:06" itemprop="dateCreated datePublished" datetime="2021-10-03T20:30:11+00:00">2021-10-03</time>
+              <time title="Created: 2021-10-03 20:30:11" itemprop="dateCreated datePublished" datetime="2021-10-03T20:30:11+00:00">2021-10-03</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-10-05 00:49:11" itemprop="dateModified" datetime="2021-10-05T00:49:11+00:00">2021-10-05</time>
               
             
           </span>
@@ -668,6 +680,7 @@
 <p>會發現不只 Heap Table 空間被釋放了，就連 Index <code>t_ctid</code> 位置也改變了</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">postgres=<span class="comment"># SELECT * FROM heap_page_items(get_raw_page('tt2', 0));</span></span><br><span class="line"></span><br><span class="line"> lp | lp_off | lp_flags | lp_len | t_xmin | t_xmax | t_field3 | t_ctid | t_infomask2 | t_infomask | t_hoff | t_bits | t_oid |           t_data           </span><br><span class="line"><span class="comment">----+--------+----------+--------+--------+--------+----------+--------+-------------+------------+--------+--------+-------+----------------------------</span></span><br><span class="line">  1 |   8152 |        1 |     36 |    539 |      0 |        0 | (0,1)  |           3 |       2816 |     24 |        |       | \x010000001800000032000000</span><br><span class="line">  2 |   8112 |        1 |     36 |    539 |      0 |        0 | (0,2)  |           3 |       2816 |     24 |        |       | \x020000003e00000041000000</span><br><span class="line">  3 |   8072 |        1 |     36 |    539 |      0 |        0 | (0,3)  |           3 |       2816 |     24 |        |       | \x03000000320000004e000000</span><br><span class="line">  4 |   8032 |        1 |     36 |    539 |      0 |        0 | (0,4)  |           3 |       2816 |     24 |        |       | \x040000000e00000033000000</span><br><span class="line">  5 |   7992 |        1 |     36 |    539 |      0 |        0 | (0,5)  |           3 |       2816 |     24 |        |       | \x05000000160000002e000000</span><br><span class="line">  6 |   7952 |        1 |     36 |    543 |      0 |        0 | (0,6)  |           3 |      11008 |     24 |        |       | \x06000000490000002e000000</span><br><span class="line">  7 |   7912 |        1 |     36 |    543 |      0 |        0 | (0,7)  |           3 |      11008 |     24 |        |       | \x070000004100000036000000</span><br><span class="line">  8 |   7872 |        1 |     36 |    543 |      0 |        0 | (0,8)  |           3 |      11008 |     24 |        |       | \x080000005b0000001e000000</span><br><span class="line">  9 |   7832 |        1 |     36 |    543 |      0 |        0 | (0,9)  |           3 |      11008 |     24 |        |       | \x090000001a00000048000000</span><br><span class="line"> 10 |   7792 |        1 |     36 |    543 |      0 |        0 | (0,10) |           3 |      11008 |     24 |        |       | \x0a0000002700000049000000</span><br><span class="line">(10 rows)</span><br></pre></td></tr></table></figure></div>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>HOT Update 機制對於我們在 Postgres DB 更新寫入資料上有效能提升（減少IO操作），但就變成我們在設計 Index 需要慎思考慮不要把資料建立在太常更新的欄位.</p>
+<p>這個就跟在 Sql-Server 我們查看 Update 執行計畫，可以發現 update 會吃 Index 但也會對於所有更新相關的 Index column 異動.</p>
 <p>另外我們可以理解用下面介紹理解<code>vacuum</code>和<code>vacuum full</code>動作</p>
 <ul>
 <li><code>vacuum</code>：像把東西暫時整理但垃圾還是放在家裡</li>
@@ -695,28 +708,28 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\DBIndex-1\" rel="bookmark">資料庫索引深入淺出(一)</a></div>
+      <div class="popular-posts-title"><a href="\dbindex-1\" rel="bookmark">資料庫索引深入淺出(一)</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\DBIndex-2\" rel="bookmark">資料庫索引深入淺出(二)</a></div>
+      <div class="popular-posts-title"><a href="\dbindex-2\" rel="bookmark">資料庫索引深入淺出(二)</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\DBLock-1\" rel="bookmark">淺談SqlServer Lock(一)</a></div>
+      <div class="popular-posts-title"><a href="\dblock-1\" rel="bookmark">淺談SqlServer Lock(一)</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\DBNote\" rel="bookmark">撰寫SQL的建議</a></div>
+      <div class="popular-posts-title"><a href="\dbnote\" rel="bookmark">撰寫SQL的建議</a></div>
       
     </li>
   
@@ -1263,7 +1276,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">434k</span>
+    <span title="Symbols count total">435k</span>
   
 
   

@@ -147,11 +147,11 @@
 <meta name="keywords" content="C#,IOC,Autofac,AOP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ACID">
-<meta property="og:url" content="https://isdaniel.github.io/ACID/index.html">
+<meta property="og:url" content="https://isdaniel.github.io/acid/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
 <meta property="og:description" content="前言資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備  原子性（atomicity，稱不可分割性） 一致性（consistency） 隔離性（isolation，稱獨立性） 持久性（durability）  這就是我們說的ACID. 下面我會跟大家簡述ACID. Atomicity(原子性)所有Logical Unit都必須符合原子性  整個流程要不是全部成功，不然就整段失敗，不會有">
 <meta property="og:locale" content="zh-tw">
-<meta property="og:updated_time" content="2021-10-03T10:02:06.756Z">
+<meta property="og:updated_time" content="2021-10-05T00:49:11.625Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ACID">
 <meta name="twitter:description" content="前言資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備  原子性（atomicity，稱不可分割性） 一致性（consistency） 隔離性（isolation，稱獨立性） 持久性（durability）  這就是我們說的ACID. 下面我會跟大家簡述ACID. Atomicity(原子性)所有Logical Unit都必須符合原子性  整個流程要不是全部成功，不然就整段失敗，不會有">
@@ -162,7 +162,7 @@
 
   
   
-  <link rel="canonical" href="https://isdaniel.github.io/ACID/">
+  <link rel="canonical" href="https://isdaniel.github.io/acid/">
 
 
 
@@ -454,7 +454,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ACID/">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/acid/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Daniel Shih">
@@ -514,7 +514,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-10-03 10:02:06" itemprop="dateModified" datetime="2021-10-03T10:02:06+00:00">2021-10-03</time>
+                <time title="Modified: 2021-10-05 00:49:11" itemprop="dateModified" datetime="2021-10-05T00:49:11+00:00">2021-10-05</time>
               
             
           </span>
@@ -557,8 +557,8 @@
                 </span>
             
                 <span class="post-meta-item-text">Comments: </span>
-                <a href="/ACID/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ACID/" itemprop="commentCount"></span>
+                <a href="/acid/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="acid/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -678,7 +678,7 @@
 <h2 id="Durability"><a href="#Durability" class="headerlink" title="Durability"></a>Durability</h2><p>當你完成<code>Transaction</code>後,不管發生什麼事情資料都會完整保留在DB中，一般來說<code>Transaction</code>完成前後都會寫<code>Transaction log</code></p>
 <p>假如DB遇到非預期錯誤(ex:停電),在DB Server重啟後，DB會依照之前紀錄嘗試Recovery.</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ACID/">https://isdaniel.github.io/ACID/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/acid/">https://isdaniel.github.io/acid/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 
       
     </div>
@@ -692,21 +692,21 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\AOP-Lock-Mechanism\" rel="bookmark">AOP Lock Architecture</a></div>
+      <div class="popular-posts-title"><a href="\aop-lock-mechanism\" rel="bookmark">AOP Lock Architecture</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\Autofac-AOP\" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
+      <div class="popular-posts-title"><a href="\autofac-introduce\" rel="bookmark">Autofac (IOC)容器介紹</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\Autofac-introduce\" rel="bookmark">Autofac (IOC)容器介紹</a></div>
+      <div class="popular-posts-title"><a href="\autofac-aop\" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
       
     </li>
   
@@ -720,7 +720,7 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\AwesomeProxy-Net\" rel="bookmark">【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</a></div>
+      <div class="popular-posts-title"><a href="\awesomeproxy-net\" rel="bookmark">【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</a></div>
       
     </li>
   
@@ -775,7 +775,7 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/SQLServer-Merge-condition-problem/" rel="prev" title="SQL Server Merge condition on declare value problem">
+              <a href="/sqlserver-merge-condition-problem/" rel="prev" title="SQL Server Merge condition on declare value problem">
                 SQL Server Merge condition on declare value problem <i class="fa fa-chevron-right"></i>
               </a>
             
@@ -1273,7 +1273,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">434k</span>
+    <span title="Symbols count total">435k</span>
   
 
   
@@ -1462,8 +1462,8 @@
 
 <script>
   var disqus_config = function() {
-    this.page.url = "https://isdaniel.github.io/ACID/";
-    this.page.identifier = "ACID/";
+    this.page.url = "https://isdaniel.github.io/acid/";
+    this.page.identifier = "acid/";
     this.page.title = 'ACID';
     };
   function loadComments() {
