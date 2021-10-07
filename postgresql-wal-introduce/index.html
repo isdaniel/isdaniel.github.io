@@ -147,12 +147,12 @@
 <meta name="keywords" content="DataBase,Turning,postgresql,WAL">
 <meta property="og:type" content="article">
 <meta property="og:title" content="postgresql WAL (Write-Ahead Logging) 機制">
-<meta property="og:url" content="https://isdaniel.github.io/postgresql-hotupdate-vacuum copy/index.html">
+<meta property="og:url" content="https://isdaniel.github.io/postgresql-wal-introduce/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
 <meta property="og:description" content="前言WAL 是一種 Tx Log實踐機制 WAL 核心概念是先寫 tx log，在把資料寫資料，資料的修改必须發生在寫入 Tx Log之後，使用 WAL 紀錄資料庫系統在commit transaction 使用 WAL 機制後我們不需要在每次 Commit Transaction 後就把資料 flush 到 Disk 上(提高IO效率)， WAL 需要保證 Dirty Block flush 到">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/oAARCvo.png">
-<meta property="og:updated_time" content="2021-10-07T10:43:43.117Z">
+<meta property="og:updated_time" content="2021-10-07T10:45:21.197Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="postgresql WAL (Write-Ahead Logging) 機制">
 <meta name="twitter:description" content="前言WAL 是一種 Tx Log實踐機制 WAL 核心概念是先寫 tx log，在把資料寫資料，資料的修改必须發生在寫入 Tx Log之後，使用 WAL 紀錄資料庫系統在commit transaction 使用 WAL 機制後我們不需要在每次 Commit Transaction 後就把資料 flush 到 Disk 上(提高IO效率)， WAL 需要保證 Dirty Block flush 到">
@@ -164,7 +164,7 @@
 
   
   
-  <link rel="canonical" href="https://isdaniel.github.io/postgresql-hotupdate-vacuum copy/">
+  <link rel="canonical" href="https://isdaniel.github.io/postgresql-wal-introduce/">
 
 
 
@@ -456,7 +456,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-hotupdate-vacuum copy/">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-wal-introduce/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Daniel Shih">
@@ -499,7 +499,7 @@
                 
               
 
-              <time title="Created: 2021-10-07 20:30:11 / Modified: 10:43:43" itemprop="dateCreated datePublished" datetime="2021-10-07T20:30:11+00:00">2021-10-07</time>
+              <time title="Created: 2021-10-07 20:30:11 / Modified: 10:45:21" itemprop="dateCreated datePublished" datetime="2021-10-07T20:30:11+00:00">2021-10-07</time>
             
 
             
@@ -547,8 +547,8 @@
                 </span>
             
                 <span class="post-meta-item-text">Comments: </span>
-                <a href="/postgresql-hotupdate-vacuum copy/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-hotupdate-vacuum copy/" itemprop="commentCount"></span>
+                <a href="/postgresql-wal-introduce/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-wal-introduce/" itemprop="commentCount"></span>
                 </a>
               </span>
             
@@ -667,7 +667,7 @@
 </ul>
 <h3 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h3><p>PostgreSQL WAL 用一句話來解釋是 先寫 Tx Log 歷程，後寫 Dirty Block ，但實際過程中會有許多細節需要考慮 (ex: checkpoint機制，資料庫突然崩潰…等等)</p>
 <p>透過 <code>pg_waldump</code> 可以讓我們更好學習 WAL 檔案中的內容</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-hotupdate-vacuum copy/">https://isdaniel.github.io/postgresql-hotupdate-vacuum copy/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-wal-introduce/">https://isdaniel.github.io/postgresql-wal-introduce/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 
       
     </div>
@@ -681,14 +681,14 @@
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\postgresql-hotupdate-vacuum\" rel="bookmark">postgresql HOT (heap only tuple) update 深入淺出</a></div>
+      <div class="popular-posts-title"><a href="\postgresql-page-deepknow\" rel="bookmark">postgresql Page 深入淺出</a></div>
       
     </li>
   
     <li class="popular-posts-item">
       
       
-      <div class="popular-posts-title"><a href="\postgresql-page-deepknow\" rel="bookmark">postgresql Page 深入淺出</a></div>
+      <div class="popular-posts-title"><a href="\postgresql-hotupdate-vacuum\" rel="bookmark">postgresql HOT (heap only tuple) update 深入淺出</a></div>
       
     </li>
   
@@ -1449,8 +1449,8 @@
 
 <script>
   var disqus_config = function() {
-    this.page.url = "https://isdaniel.github.io/postgresql-hotupdate-vacuum copy/";
-    this.page.identifier = "postgresql-hotupdate-vacuum copy/";
+    this.page.url = "https://isdaniel.github.io/postgresql-wal-introduce/";
+    this.page.identifier = "postgresql-wal-introduce/";
     this.page.title = 'postgresql WAL (Write-Ahead Logging) 機制';
     };
   function loadComments() {
