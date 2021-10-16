@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-tw">
+<head><meta name="generator" content="Hexo 3.8.0">
+  
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+      
+    
+
+    
+  
+
+  
+    
+    
+    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
+  
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+
+  <meta name="description" content="前言執行計畫代表此次查詢要怎麼樣的演算法查詢我們的資料，而成本是決定使用哪個執行計畫的重要因素 在 postgreSQL DB query optimizer 會選擇成本最低的執行計劃，當作查詢資料使用算法 在 Sql-sevrer 成本計算封裝在程式內部，我們無法透過一些因子來調整，但 postgreSQL 可以 我認為 query optimizer 判斷成本概念有點類似 google map">
+<meta name="keywords" content="DataBase,Turning,postgresql,cost">
+<meta property="og:type" content="article">
+<meta property="og:title" content="postgresql 執行計畫重要因子 (成本因子調教)">
+<meta property="og:url" content="https://isdaniel.github.io/postgresql-cost-factor-tuning/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="前言執行計畫代表此次查詢要怎麼樣的演算法查詢我們的資料，而成本是決定使用哪個執行計畫的重要因素 在 postgreSQL DB query optimizer 會選擇成本最低的執行計劃，當作查詢資料使用算法 在 Sql-sevrer 成本計算封裝在程式內部，我們無法透過一些因子來調整，但 postgreSQL 可以 我認為 query optimizer 判斷成本概念有點類似 google map">
+<meta property="og:locale" content="zh-tw">
+<meta property="og:image" content="https://i.imgur.com/ZAs54l8.png">
+<meta property="og:updated_time" content="2021-10-16T16:15:41.337Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="postgresql 執行計畫重要因子 (成本因子調教)">
+<meta name="twitter:description" content="前言執行計畫代表此次查詢要怎麼樣的演算法查詢我們的資料，而成本是決定使用哪個執行計畫的重要因素 在 postgreSQL DB query optimizer 會選擇成本最低的執行計劃，當作查詢資料使用算法 在 Sql-sevrer 成本計算封裝在程式內部，我們無法透過一些因子來調整，但 postgreSQL 可以 我認為 query optimizer 判斷成本概念有點類似 google map">
+<meta name="twitter:image" content="https://i.imgur.com/ZAs54l8.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="https://isdaniel.github.io/postgresql-cost-factor-tuning/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>postgresql 執行計畫重要因子 (成本因子調教) | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+      
+        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
+      
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="Toggle navigation bar">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-about">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-course">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">101</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">31</span></a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">101</span></a>
+
+  </li>
+
+      
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
+        </li>
+      
+    </ul>
+  
+
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+    <div class="reading-progress-bar"></div>
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-cost-factor-tuning/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">postgresql 執行計畫重要因子 (成本因子調教)
+
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2021-10-17 20:30:11" itemprop="dateCreated datePublished" datetime="2021-10-17T20:30:11+00:00">2021-10-17</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-10-16 16:15:41" itemprop="dateModified" datetime="2021-10-16T16:15:41+00:00">2021-10-16</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a></span>
+
+                
+                
+                  , 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Turning/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/postgresql-cost-factor-tuning/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-cost-factor-tuning/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="post-meta-item-icon">
+            <i class="fa fa-eye"></i>
+             Views:  
+            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+            </span>
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">9.9k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">18 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+        <div class="post-gallery" itemscope itemtype="http://schema.org/ImageGallery">
+          
+          
+            <div class="post-gallery-row">
+              <img src="https://i.imgur.com/ZAs54l8.png" itemprop="contentUrl">
+            
+          
+
+          
+          </div>
+        </div>
+      
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>執行計畫代表此次查詢要怎麼樣的演算法查詢我們的資料，而<strong>成本</strong>是決定使用哪個執行計畫的重要因素</p>
+<p>在 postgreSQL DB query optimizer 會選擇成本最低的執行計劃，當作查詢資料使用算法</p>
+<p>在 Sql-sevrer 成本計算封裝在程式內部，我們無法透過一些因子來調整，但 postgreSQL 可以</p>
+<p>我認為 query optimizer 判斷成本概念有點類似 google map 在找尋最佳路徑</p>
+<blockquote>
+<p>我對於資料庫有定義一個，<strong>地圖理論</strong>來說明 RDBMS 執行計畫相關的事情</p>
+</blockquote>
+<p>本篇成本因子效能調教會涉 Linux kernel systemtap ，國中數學，postgreSQL 運作模型，篇幅可能會有點多且複雜</p>
+<p>但我認為本篇學會可以對於　query optimizer 有更進一步了解</p>
+<h2 id="預設成本因子潛在問題"><a href="#預設成本因子潛在問題" class="headerlink" title="預設成本因子潛在問題"></a>預設成本因子潛在問題</h2><p>下面我使用一個例子來</p>
+<p>我們利用一樣的查詢 explain (analyze,verbose,costs,buffers,timing) select id from tbl where id &gt; 70000;</p>
+<p>查看使用 <code>table scan</code> &amp; <code>index scan only</code> 執行計畫預估值跟實際查詢差異.</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">postgres=<span class="comment"># explain (analyze,verbose,costs,buffers,timing) select info from tbl where info ='girl';</span></span><br><span class="line">                                                    QUERY PLAN                                                     </span><br><span class="line">-------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> Seq Scan on public.tbl  (cost=0.00..5456.48 rows=300016 width=4) (actual time=0.013..216.970 rows=299999 loops=1)</span><br><span class="line">   Output: info</span><br><span class="line">   Filter: (tbl.info = <span class="string">'girl'</span>::text)</span><br><span class="line">   Rows Removed by Filter: 4999</span><br><span class="line">   Buffers: shared hit=1644</span><br><span class="line"> Planning Time: 0.067 ms</span><br><span class="line"> Execution Time: 404.836 ms</span><br><span class="line">(7 rows)</span><br><span class="line"></span><br><span class="line">postgres=<span class="comment"># </span></span><br><span class="line">SET</span><br><span class="line">postgres=<span class="comment"># set enable_seqscan=off; explain (analyze,verbose,costs,buffers,timing) select info from tbl where info ='girl';</span></span><br><span class="line">                                                              QUERY PLAN                                                               </span><br><span class="line">---------------------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> Index Only Scan using tbl_ix on public.tbl  (cost=0.30..6202.58 rows=300016 width=4) (actual time=0.025..196.965 rows=299999 loops=1)</span><br><span class="line">   Output: info</span><br><span class="line">   Index Cond: (tbl.info = <span class="string">'girl'</span>::text)</span><br><span class="line">   Heap Fetches: 0</span><br><span class="line">   Buffers: shared hit=237</span><br><span class="line"> Planning Time: 0.067 ms</span><br><span class="line"> Execution Time: 377.856 ms</span><br><span class="line">(7 rows)</span><br></pre></td></tr></table></figure></div>
+<p>發現明明查詢語法都一樣，只是透過 Setting 發現明明是 <code>Index Only Scan</code> 執行實際時間成本比較低，但 query optimizer 卻選擇 table scan，會造成上面問題是因為成本因子沒有調教所造成</p>
+<blockquote>
+<p>這也是我一開始說成本因子的重要性</p>
+</blockquote>
+<p>另外上面 cost 代表含意也不明，只是一個數字，首先我們要先知道成本是一個概念，重點我們是要看哪種成本?</p>
+<blockquote>
+<p>像成本有分 時間成本，金錢成本…..都是不同維度的成本</p>
+</blockquote>
+<p>我們的做法會把成本校準成 <strong>時間成本</strong> 也就是實際執行時間和預估執行成本校準</p>
+<h2 id="調教成本因子前置作業"><a href="#調教成本因子前置作業" class="headerlink" title="調教成本因子前置作業"></a>調教成本因子前置作業</h2><h3 id="下載-systemtap"><a href="#下載-systemtap" class="headerlink" title="下載 systemtap"></a>下載 systemtap</h3><p>我是在 AWS EC2 建立一個 ubuntu Linux server．所以目前我操作步驟是針對　ubuntu Linux 說明</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvU3lzdGVtVGFw" title="https://en.wikipedia.org/wiki/SystemTap">systemtap<i class="fa fa-external-link"></i></span> 這個工具可以監測 Linux 核心底層 本次我會藉由他來幫我們了解實際查詢平均 IO 讀取時間</p>
+<p>透過 uname 命令查看 kernel 版本</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root:<span class="comment"># uname -r</span></span><br><span class="line">5.4.0-1045-aws</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>下載 systemtap 需要特別注意使用 Linux kernel 版本還有平台<br>因為 systemtap dbgsym 對於 kernel 版本需要對應一致，像我機器版本是 <code>5.4.0-1045-aws</code> 所以會需要下載 <code>5.4.0-1045-aws</code> 版本</p>
+</blockquote>
+<p>我們需要在 update list 新增含有 dbgsym 下載路徑，所以可以跑下面語法</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">codename=$(lsb_release -c | awk  <span class="string">'&#123;print $2&#125;'</span>)</span><br><span class="line">sudo tee /etc/apt/sources.list.d/ddebs.list &lt;&lt; EOF</span><br><span class="line">  deb http://ddebs.ubuntu.com/ <span class="variable">$&#123;codename&#125;</span>      main restricted universe multiverse</span><br><span class="line">  deb http://ddebs.ubuntu.com/ <span class="variable">$&#123;codename&#125;</span>-security main restricted universe multiverse</span><br><span class="line">  deb http://ddebs.ubuntu.com/ <span class="variable">$&#123;codename&#125;</span>-updates  main restricted universe multiverse</span><br><span class="line">  deb http://ddebs.ubuntu.com/ <span class="variable">$&#123;codename&#125;</span>-proposed main restricted universe multiverse</span><br><span class="line">EOF</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install systemtap -y</span><br><span class="line">sudo apt-get install gcc -y</span><br><span class="line">sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C8CAB6595FDFF622</span><br><span class="line">sudo apt-get install linux-image-$(uname -r)-dbgsym -y</span><br><span class="line">sudo apt-get install linux-headers-$(uname -r) -y</span><br></pre></td></tr></table></figure></div>
+<p>如果下載完畢會顯示下載完畢的資訊如下</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">root/pg_log<span class="comment"># sudo apt-get install linux-image-$(uname -r)-dbgsym -y</span></span><br><span class="line">Reading package lists... Done</span><br><span class="line">Building dependency tree       </span><br><span class="line">Reading state information... Done</span><br><span class="line">linux-image-5.4.0-1045-aws-dbgsym is already the newest version (5.4.0-1045.47).</span><br><span class="line">0 upgraded, 0 newly installed, 0 to remove and 64 not upgraded.</span><br><span class="line">root/pg_log<span class="comment"># sudo apt-get install linux-headers-$(uname -r) -y</span></span><br><span class="line">Reading package lists... Done</span><br><span class="line">Building dependency tree       </span><br><span class="line">Reading state information... Done</span><br><span class="line">linux-headers-5.4.0-1045-aws is already the newest version (5.4.0-1045.47).</span><br><span class="line">0 upgraded, 0 newly installed, 0 to remove and 64 not upgraded.</span><br></pre></td></tr></table></figure></div>
+<p>安裝完後使用 <code>stap</code> 應該可以看到類似下面提示</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root:/pg_log<span class="comment"># stap</span></span><br><span class="line">A script must be specified.</span><br><span class="line">Try <span class="string">'-i'</span> <span class="keyword">for</span> building a script interactively.</span><br><span class="line">Try <span class="string">'--help'</span> <span class="keyword">for</span> more information.</span><br></pre></td></tr></table></figure></div>
+<h2 id="調教成本因子"><a href="#調教成本因子" class="headerlink" title="調教成本因子"></a>調教成本因子</h2><p>首先我們要先知道成本是一個概念，重點我們是要看哪種成本?</p>
+<blockquote>
+<p>像成本有分 時間成本，金錢成本…..都是不同維度的成本</p>
+</blockquote>
+<p>我們的做法會把成本校準成 <strong>時間成本</strong> 也就是實際執行時間和預估執行成本校準</p>
+<p>在執行計畫中 QO 會利用 成本 (cost) 來判斷使用哪個執行計畫，而成本 (cost)是透過公式來計算出來 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3Bvc3RncmVzL3Bvc3RncmVzL2Jsb2IvbWFzdGVyL3NyYy9iYWNrZW5kL29wdGltaXplci9wYXRoL2Nvc3RzaXplLmM=" title="https://github.com/postgres/postgres/blob/master/src/backend/optimizer/path/costsize.c">costsize.c<i class="fa fa-external-link"></i></span></p>
+<p>在公式中有幾個變數可以讓我們來調整<strong>執行計畫成本估算</strong>，就是所謂的成本因子</p>
+<p>postgreSQL 預設給的成本因子並不能符合所有機器算法．不同的硬體環境CPU性能，IO性能各不相同，預設的成本因子可能不適合當前硬體.</p>
+<blockquote>
+<p>EX: 同樣硬體設備，但 CPU 2 core 和 32 core 跑起來查詢時間就會有差異<br>我們在 <code>SET ENABLE_SEQSACN = OFF;</code> 在計算成本時 SEQSACN 起始成本會是 <code>1.0e10</code></p>
+</blockquote>
+<p>本次我們要調教的成本因子有下面五個，關於每個成本的意涵我都有說明</p>
+<ul>
+<li>seq_page_cost : 1 – Table Scan 每個 Block 成本因子</li>
+<li>: 4   – Index Scan Block 成本因子</li>
+<li>cpu_tuple_cost : 0.01   – CPU 處理每個 tuple 成本因子</li>
+<li>cpu_index_tuple_cost : 0.005   – Index scan tuple 成本因子</li>
+<li>cpu_operator_cost : 0.0025   – 操作符或函数成本因子</li>
+</ul>
+<p>下面這張表是調教成本因子 sample data</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> tbl (<span class="keyword">id</span> <span class="built_in">int</span>,val <span class="built_in">int</span>, info <span class="built_in">text</span>, create_time <span class="built_in">timestamp</span>);  </span><br><span class="line"><span class="keyword">create</span> <span class="keyword">index</span> ix_tbl <span class="keyword">on</span> tbl (<span class="keyword">id</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> tbl </span><br><span class="line"><span class="keyword">select</span> (random()*<span class="number">2000000000</span>)::<span class="built_in">int</span>, (random()*<span class="number">2000000000</span>)::<span class="built_in">int</span>,<span class="keyword">md5</span>(random()::<span class="built_in">text</span>),  clock_timestamp() <span class="keyword">from</span> generate_series(<span class="number">1</span>,<span class="number">15000000</span>);  </span><br><span class="line"><span class="keyword">analyze</span> tbl;  </span><br><span class="line">vacuum  tbl;</span><br></pre></td></tr></table></figure></div>
+<h3 id="成本因子說明"><a href="#成本因子說明" class="headerlink" title="成本因子說明"></a>成本因子說明</h3><p>校準方法我們利用一元一次方程式 + 基準點校準每個因子</p>
+<p>seq_page_cost和cpu_tuple_cost的校準<br>seq_page_cost通過stap測試得到.<br>cpu_tuple_cost通過公式得到.</p>
+<h3 id="使用-stap-監聽-process"><a href="#使用-stap-監聽-process" class="headerlink" title="使用 stap 監聽 process"></a>使用 stap 監聽 process</h3><p>我們後面就可以利用 <code>stap</code> 來監聽我們 postgreSQL Client 連接的 porcess，這邊有兩個參數我們需要替換</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">stap -e <span class="string">' </span></span><br><span class="line"><span class="string">global a  </span></span><br><span class="line"><span class="string">probe process("&#123;&#123;postgreSQL Bin Path&#125;&#125;").mark("query__start") &#123;  </span></span><br><span class="line"><span class="string">  delete a  </span></span><br><span class="line"><span class="string">  println("query__start ", user_string($arg1), "pid:", pid())  </span></span><br><span class="line"><span class="string">&#125;  </span></span><br><span class="line"><span class="string">probe vfs.read.return &#123;  </span></span><br><span class="line"><span class="string">  t = gettimeofday_ns() - @entry(gettimeofday_ns())  </span></span><br><span class="line"><span class="string">  # if (execname() == "postgres" &amp;&amp; devname != "N/A")  </span></span><br><span class="line"><span class="string">    a[pid()] &lt;&lt;&lt; t  </span></span><br><span class="line"><span class="string">&#125;  </span></span><br><span class="line"><span class="string">probe process("&#123;&#123;postgreSQL Bin Path&#125;&#125;").mark("query__done") &#123;  </span></span><br><span class="line"><span class="string">  if (@count(a[pid()]))   </span></span><br><span class="line"><span class="string">    printdln("**", pid(), @count(a[pid()]), @avg(a[pid()]))  </span></span><br><span class="line"><span class="string">  println("query__done ", user_string($arg1), "pid:", pid())  </span></span><br><span class="line"><span class="string">  if (@count(a[pid()])) &#123;  </span></span><br><span class="line"><span class="string">    println(@hist_log(a[pid()]))  </span></span><br><span class="line"><span class="string">    #println(@hist_linear(a[pid()],1024,4096,100))  </span></span><br><span class="line"><span class="string">  &#125;  </span></span><br><span class="line"><span class="string">  delete a  </span></span><br><span class="line"><span class="string">&#125;'</span> -x &#123;&#123;postgreSQL pid&#125;&#125; -v</span><br></pre></td></tr></table></figure></div>
+<ul>
+<li>postgreSQL Bin Path：利用此指令 <code>ps auxw |  grep postgres | grep -- -</code> 查看 postgres DB process 啟動路徑 &amp; postgres.conf 位置</li>
+<li>postgreSQL pid： 透過 <code>select pg_backend_pid();</code> 可以查詢到資訊</li>
+</ul>
+<p>透過 <code>ps auxw |  grep postgres | grep -- -</code> 命令可以查找到 <code>/usr/lib/postgresql/14/bin/postgres</code> 執行程式路徑</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@:/pg_log<span class="comment"># ps auxw |  grep postgres | grep -- -</span></span><br><span class="line">postgres   57842  0.0  1.8 219248 18332 ?        Ss   12:55   0:00 /usr/lib/postgresql/14/bin/postgres -D /var/lib/postgresql/14/main -c config_file=/etc/postgresql/14/main/postgresql.conf</span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">postgres=<span class="comment"># select pg_backend_pid();</span></span><br><span class="line">pg_backend_pid </span><br><span class="line"><span class="comment">----------------</span></span><br><span class="line">        57865</span><br><span class="line">(1 row)</span><br></pre></td></tr></table></figure></div>
+<p>依照上面參數我們替換後的樣板變成</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">stap -e <span class="string">' </span></span><br><span class="line"><span class="string">global a  </span></span><br><span class="line"><span class="string">probe process("/usr/lib/postgresql/14/bin/postgres").mark("query__start") &#123;  </span></span><br><span class="line"><span class="string">  delete a  </span></span><br><span class="line"><span class="string">  println("query__start ", user_string($arg1), "pid:", pid())  </span></span><br><span class="line"><span class="string">&#125;  </span></span><br><span class="line"><span class="string">probe vfs.read.return &#123;  </span></span><br><span class="line"><span class="string">  t = gettimeofday_ns() - @entry(gettimeofday_ns())  </span></span><br><span class="line"><span class="string">  # if (execname() == "postgres" &amp;&amp; devname != "N/A")  </span></span><br><span class="line"><span class="string">    a[pid()] &lt;&lt;&lt; t  </span></span><br><span class="line"><span class="string">&#125;  </span></span><br><span class="line"><span class="string">probe process("/usr/lib/postgresql/14/bin/postgres").mark("query__done") &#123;  </span></span><br><span class="line"><span class="string">  if (@count(a[pid()]))   </span></span><br><span class="line"><span class="string">    printdln("**", pid(), @count(a[pid()]), @avg(a[pid()]))  </span></span><br><span class="line"><span class="string">  println("query__done ", user_string($arg1), "pid:", pid())  </span></span><br><span class="line"><span class="string">  if (@count(a[pid()])) &#123;  </span></span><br><span class="line"><span class="string">    println(@hist_log(a[pid()]))  </span></span><br><span class="line"><span class="string">    #println(@hist_linear(a[pid()],1024,4096,100))  </span></span><br><span class="line"><span class="string">  &#125;  </span></span><br><span class="line"><span class="string">  delete a  </span></span><br><span class="line"><span class="string">&#125;'</span> -x 57865 -v</span><br></pre></td></tr></table></figure></div>
+<p>替換完畢後我們可以嘗試使用 root 執行上面命令，執行成功應該會出現類似下面訊息，代表我們已經成功監聽了</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Pass 1: parsed user script and 476 library scripts using 103952virt/90464res/7496shr/82980data kb, <span class="keyword">in</span> 240usr/60sys/485real ms.</span><br><span class="line">Pass 2: analyzed script: 4 probes, 11 <span class="built_in">functions</span>, 9 embeds, 19 globals using 346192virt/331912res/6960shr/325220data kb, <span class="keyword">in</span> 2510usr/730sys/8867real ms.</span><br><span class="line">Pass 3: using cached /root/.systemtap/cache/66/stap_66dcbdbebf362f424bfd78405d2e262b_16109.c</span><br><span class="line">Pass 4: using cached /root/.systemtap/cache/66/stap_66dcbdbebf362f424bfd78405d2e262b_16109.ko</span><br><span class="line">Pass 5: starting run.</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>後面會需要重複幾次上面操作，為了怕篇幅太長我只會貼上替換後的樣版</p>
+</blockquote>
+<h3 id="校準-seq-page-cost-amp-amp-cpu-tuple-cost"><a href="#校準-seq-page-cost-amp-amp-cpu-tuple-cost" class="headerlink" title="校準 seq_page_cost &amp;&amp; cpu_tuple_cost"></a>校準 seq_page_cost &amp;&amp; cpu_tuple_cost</h3><p>因為上面有說我們要校準<strong>時間成本</strong></p>
+<p>公式：<code>實際執行時間 = (search blocks from disk) * (seq_page_cost) + (search rows) * (cpu_tuple_cost)</code></p>
+<p>seq_page_cost = stap 監聽平均執行 IO 來當作成本因子，所以得到　seq_page_cost 後我們就可以求出 <code>cpu_tuple_cost</code>.</p>
+<blockquote>
+<p><code>實際執行時間</code>、<code>search blocks from disk</code>、<code>search rows</code> 都可以透過執行計畫取得，所以上面公式變成一元一次方程式</p>
+</blockquote>
+<p>在一個視窗開啟 stap 後，我們就可以進行查詢下面語法取得執行計畫，會發現 cost 跟實際執行時間差異很大（沒關係我們要調教）</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">postgres=<span class="comment">#  explain (analyze,verbose,costs,buffers,timing) select * from tbl; </span></span><br><span class="line">                                                         QUERY PLAN                                                         </span><br><span class="line"><span class="comment">----------------------------------------------------------------------------------------------------------------------------</span></span><br><span class="line"> Seq Scan on public.tbl  (cost=0.00..304640.80 rows=15000080 width=49) (actual time=0.736..14004.456 rows=15000000 loops=1)</span><br><span class="line">   Output: id, val, info, create_time</span><br><span class="line">   Buffers: shared read=154640</span><br><span class="line"> Query Identifier: -2758408114362091780</span><br><span class="line"> Planning:</span><br><span class="line">   Buffers: shared hit=65 read=16</span><br><span class="line"> Planning Time: 8.525 ms</span><br><span class="line"> Execution Time: 26056.658 ms</span><br><span class="line">(8 rows)</span><br></pre></td></tr></table></figure></div>
+<p>後面在 stap 那個視窗會出現下面資訊</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">query__start explain (analyze,verbose,costs,buffers,timing) select * from tbl;pid:58916</span><br><span class="line">58916**154665**6662</span><br><span class="line">query__done explain (analyze,verbose,costs,buffers,timing) select * from tbl;pid:58916</span><br><span class="line">   value |-------------------------------------------------- count</span><br><span class="line">     256 |                                                       0</span><br><span class="line">     512 |                                                       0</span><br><span class="line">    1024 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  80687</span><br><span class="line">    2048 |@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@            63125</span><br><span class="line">    4096 |                                                     498</span><br><span class="line">    8192 |                                                     643</span><br><span class="line">   16384 |                                                      20</span><br><span class="line">   32768 |@@@@@                                               8767</span><br><span class="line">   65536 |                                                     832</span><br><span class="line">  131072 |                                                       6</span><br><span class="line">  262144 |                                                      18</span><br><span class="line">  524288 |                                                       8</span><br><span class="line"> 1048576 |                                                       2</span><br><span class="line"> 2097152 |                                                      57</span><br><span class="line"> 4194304 |                                                       2</span><br><span class="line"> 8388608 |                                                       0</span><br><span class="line">16777216 |                                                       0</span><br></pre></td></tr></table></figure></div>
+<p>有了執行計畫跟平均執行 IO 就可以套入我們的公式了</p>
+<blockquote>
+<p>6662 是奈秒（ns）我們需要轉換成毫秒（ms）</p>
+</blockquote>
+<p>公式：<code>實際執行時間 = (search blocks from disk) * (seq_page_cost) + (search rows) * (cpu_tuple_cost)</code></p>
+<ul>
+<li>Buffers: shared read=154640</li>
+<li>seq_page_cost:6662 ns = 0.006662 ms</li>
+<li>search rows:15000000</li>
+<li>實際執行時間 : 14004.456 - 0.736 = 14003.72</li>
+</ul>
+<p>14003.72= 154640 <em> 0.006662 + 15000000 </em> cpu_tuple_cost<br>cpu_tuple_cost = 0.0008649005546666667</p>
+<p>所以我們可以得到</p>
+<ul>
+<li>cpu_tuple_cost = 0.0008649005546666667;</li>
+<li>seq_page_cost = 0.006662;</li>
+</ul>
+<p>每次執行完為了精準度，我們需要清除cache並重新啟動 postgreSQL 清除 shared buffer 資料，讓每次資料都可以從 disk 撈取，所以都會執行下面兩個語法</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root:/pg_log<span class="comment"># sync; echo 3 &gt; /proc/sys/vm/drop_caches</span></span><br><span class="line">root:/pg_log<span class="comment"># service postgresql restart</span></span><br></pre></td></tr></table></figure></div>
+<p>清除 cache &amp; postgresql restart 後我們利用校準後的因子來查詢是否有效</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">postgres=<span class="comment"># SET cpu_tuple_cost = 0.0008649005546666667;</span></span><br><span class="line">SET</span><br><span class="line">postgres=<span class="comment"># SET seq_page_cost = 0.006662;</span></span><br><span class="line">SET</span><br><span class="line">postgres=<span class="comment">#  explain (analyze,verbose,costs,buffers,timing) select * from tbl; </span></span><br><span class="line">                                                        QUERY PLAN                                                         </span><br><span class="line">---------------------------------------------------------------------------------------------------------------------------</span><br><span class="line"> Seq Scan on public.tbl  (cost=0.00..14003.79 rows=15000080 width=49) (actual time=0.905..10640.263 rows=15000000 loops=1)</span><br><span class="line">   Output: id, val, info, create_time</span><br><span class="line">   Buffers: shared <span class="built_in">read</span>=154640</span><br><span class="line"> Query Identifier: -2758408114362091780</span><br><span class="line"> Planning:</span><br><span class="line">   Buffers: shared hit=65 <span class="built_in">read</span>=16</span><br><span class="line"> Planning Time: 11.077 ms</span><br><span class="line"> Execution Time: 19876.149 ms</span><br><span class="line">(8 rows)</span><br></pre></td></tr></table></figure></div>
+<p>能看到預估時間成本跟實際時間成本已經很接近了</p>
+<blockquote>
+<p>因為使用 stap 會有一些時間消耗，可以多取幾次找到平均值這裡就不多說了</p>
+</blockquote>
+<h3 id="取得-random-page-cost-以及-cpu-index-tuple-cost-cpu-operator-cost"><a href="#取得-random-page-cost-以及-cpu-index-tuple-cost-cpu-operator-cost" class="headerlink" title="取得 random_page_cost 以及 cpu_index_tuple_cost , cpu_operator_cost"></a>取得 random_page_cost 以及 cpu_index_tuple_cost , cpu_operator_cost</h3><p>–todo</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>假如對於上面說的覺得太複雜，可以參考網路上別人較為通用的設定值</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS9xdWVzdGlvbnMvMzM4ODU5ODYvdHVuaW5nLXJlbHN0b3JhZ2UtYW5kLXBhcmFtZXRlcnMtb2YtcG9zdGdyZXNxbC1vbi1wbG9uZS1zaXRl" title="https://stackoverflow.com/questions/33885986/tuning-relstorage-and-parameters-of-postgresql-on-plone-site">Tuning RelStorage and parameters of PostgreSQL on Plone site<i class="fa fa-external-link"></i></span></p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">set</span> cpu_tuple_cost = 0.0030;</span><br><span class="line"><span class="built_in">set</span> cpu_index_tuple_cost = 0.0001;</span><br><span class="line"><span class="built_in">set</span> cpu_operator_cost = 0.0005;</span><br><span class="line"><span class="built_in">set</span> random_page_cost = 1.5;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>建議如果有能力還是自己 tuning，因為這樣會更準確</p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-cost-factor-tuning/">https://isdaniel.github.io/postgresql-cost-factor-tuning/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+
+      
+    </div>
+
+    
+      
+
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\postgresql-hotupdate-vacuum\" rel="bookmark">postgresql HOT (heap only tuple) update 深入淺出</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\postgresql-page-deepknow\" rel="bookmark">postgresql Page 深入淺出</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\postgresql-wal-introduce\" rel="bookmark">postgresql WAL (Write-Ahead Logging) 機制</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\join-index-improve\" rel="bookmark">JOIN範圍條件Index優化</a></div>
+      
+    </li>
+  
+    <li class="popular-posts-item">
+      
+      
+      <div class="popular-posts-title"><a href="\dbtable\" rel="bookmark">SqlServer資料表深入淺出</a></div>
+      
+    </li>
+  
+  </ul>
+
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/DataBase/" rel="tag"># DataBase</a>
+          
+            <a href="/tags/Turning/" rel="tag"># Turning</a>
+          
+            <a href="/tags/postgresql/" rel="tag"># postgresql</a>
+          
+            <a href="/tags/cost/" rel="tag"># cost</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/aws-first-lambda/" rel="next" title="AWS Lambda 初體驗 by .net core">
+                <i class="fa fa-chevron-left"></i> AWS Lambda 初體驗 by .net core
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+  <br>
+  <div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
+            
+              <p class="site-author-name" itemprop="name">Daniel Shih</p>
+              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">101</span>
+                    <span class="site-state-item-name">posts</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">31</span>
+                    <span class="site-state-item-name">categories</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags/">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">101</span>
+                    <span class="site-state-item-name">tags</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+            <div class="links-of-author motion-element">
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
+                </span>
+              
+                <span class="links-of-author-item">
+                  
+                  
+                    
+                  
+                  
+                    
+                  
+                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
+                </span>
+              
+            </div>
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#預設成本因子潛在問題"><span class="nav-number">2.</span> <span class="nav-text">預設成本因子潛在問題</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#調教成本因子前置作業"><span class="nav-number">3.</span> <span class="nav-text">調教成本因子前置作業</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#下載-systemtap"><span class="nav-number">3.1.</span> <span class="nav-text">下載 systemtap</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#調教成本因子"><span class="nav-number">4.</span> <span class="nav-text">調教成本因子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#成本因子說明"><span class="nav-number">4.1.</span> <span class="nav-text">成本因子說明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-stap-監聽-process"><span class="nav-number">4.2.</span> <span class="nav-text">使用 stap 監聽 process</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#校準-seq-page-cost-amp-amp-cpu-tuple-cost"><span class="nav-number">4.3.</span> <span class="nav-text">校準 seq_page_cost &amp;&amp; cpu_tuple_cost</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#取得-random-page-cost-以及-cpu-index-tuple-cost-cpu-operator-cost"><span class="nav-number">4.4.</span> <span class="nav-text">取得 random_page_cost 以及 cpu_index_tuple_cost , cpu_operator_cost</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2021</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+    <span title="Symbols count total">456k</span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    
+    <span title="Reading time total">13:49</span>
+  
+</div>
+
+
+
+  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="Total Visitors">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+
+  
+    <span class="post-meta-divider">|</span>
+  
+
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="Total Views">
+      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    
+    
+  
+  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/reading_progress/reading_progress.js"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-141257985-1');
+</script>
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+  <script src="/js/exturl.js?v=7.1.1"></script>
+
+
+  
+
+  
+  
+  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
+
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/postgresql-cost-factor-tuning/";
+    this.page.identifier = "postgresql-cost-factor-tuning/";
+    this.page.title = 'postgresql 執行計畫重要因子 (成本因子調教)';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    $(function() {
+      var offsetTop = $('#comments').offset().top - $(window).height();
+      if (offsetTop <= 0) {
+        // load directly when there's no a scrollbar
+        loadComments();
+      } else {
+        $(window).on('scroll.disqus_scroll', function() {
+          // offsetTop may changes because of manually resizing browser window or lazy loading images.
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          var scrollTop = $(window).scrollTop();
+
+          // pre-load comments a bit? (margin or anything else)
+          if (offsetTop - scrollTop < 60) {
+            $(window).off('.disqus_scroll');
+            loadComments();
+          }
+        });
+      }
+    });
+  
+</script>
+
+
+
+
+
+  
+    
+
+<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+
+
+<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
+
+<script>
+  var gitalk = new Gitalk({
+    clientID: '',
+    clientSecret: '',
+    repo: '',
+    owner: '',
+    admin: [''],
+    id: md5(location.pathname),
+    
+      language: window.navigator.language || window.navigator.userLanguage,
+    
+    distractionFreeMode: 'true'
+  });
+  gitalk.render('gitalk-container');
+</script>
+
+  
+
+
+  
+  <script>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script>
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+<script>
+  $('.highlight').not('.gist .highlight').each(function(i, e) {
+    var $wrap = $('<div>').addClass('highlight-wrap');
+    $(e).after($wrap);
+    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
+      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
+        return $(e).text();
+      }).toArray().join('\n');
+      var ta = document.createElement('textarea');
+      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
+      ta.style.top = yPosition + 'px'; // Prevent page scroll
+      ta.style.position = 'absolute';
+      ta.style.opacity = '0';
+      ta.readOnly = true;
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, code.length);
+      ta.readOnly = false;
+      var result = document.execCommand('copy');
+      
+        if (result) $(this).text('Copied');
+        else $(this).text('Copy failed');
+      
+      ta.blur(); // For iOS
+      $(this).blur();
+    })).on('mouseleave', function(e) {
+      var $b = $(this).find('.copy-btn');
+      setTimeout(function() {
+        $b.text('Copy');
+      }, 300);
+    }).append(e);
+  })
+</script>
+
+
+  
+
+  
+
+</body>
+</html>
