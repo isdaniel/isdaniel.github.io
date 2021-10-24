@@ -3008,85 +3008,6 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
-    <title>淺談-編碼(encoding) vs 加解密 vs 雜湊(Hash)</title>
-    <url>/hash-encoding/</url>
-    <content><![CDATA[<p>這一邊有三筆資料</p>
-<ul>
-<li>U2FsdGVkX19FJsgVyam+Gh2EwmGs4BEJjJJsWxCXHWw84gp3uHvozWsHY8gfAx0C</li>
-<li>VG9kYXkgaXMgYSBnb29kIERheQ==</li>
-<li>046a484a529ecfc7693753ee65802b5cfcafd548252d0e5f1bca845ad2208b91</li>
-</ul>
-<p>這三個東西看起來都是亂碼，但所代表含意完全不一樣</p>
-<p>這邊會跟大家分享這三個東西特性和差異性</p>
-<p>此文同步發布 Blog <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvZGFuaWVsLzIwMTkvMDUvMDYvMjIzMDA0" title="https://dotblogs.com.tw/daniel/2019/05/06/223004">[淺談] 編碼(encoding) vs 加解密 vs 雜湊(Hash)<i class="fa fa-external-link"></i></span></p>
-<h1 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h1><p>會想分享這篇文章是因為蠻多人把</p>
-<ul>
-<li>編碼(encoding)</li>
-<li>加解密</li>
-<li>雜湊(Hash) </li>
-</ul>
-<p>這三個東西搞混，尤其是把編碼當作加密….這是非常危險的事情. </p>
-<pre><code>編碼!= 加密 兩個是完全不一樣的東西
-編碼!= 加密 兩個是完全不一樣的東西
-編碼!= 加密 兩個是完全不一樣的東西
-</code></pre><p>很重要所以要說三次XD! </p>
-<hr>
-<h1 id="編碼"><a href="#編碼" class="headerlink" title="編碼"></a>編碼</h1><h2 id="說明："><a href="#說明：" class="headerlink" title="說明："></a>說明：</h2><p>這邊用<code>Base64</code>編碼來介紹，我們可以看到下圖資料轉換是雙向的．</p>
-<pre><code>Hello Daniel　=&gt;  SGVsbG8gRGFuaWVs
-</code></pre><p>如果我們想要把<code>SGVsbG8gRGFuaWVs</code> 變回 <code>Hello Daniel</code> 只需進行<code>Base64</code>解碼即可</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557148998_19694.png" alt></p>
-<p>編碼是將原本的資料經過一個運算轉換成另一組資料,如果要還原成原本資料解碼</p>
-<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>在網路傳輸會使用到編碼主要是資料在傳輸時有些特殊字元,有特殊用途(ex:Http 傳參數  &amp;….)</p>
-<p>這時就可使用編碼將資料轉換成不會衝突到字串.</p>
-<p>如果想要了解 Base64 原理和演算法的話可以看我另一篇<a href="/base64-principle/" title="【深入淺出】Base編碼 (Base64為例子)">【深入淺出】Base編碼 (Base64為例子)</a></p>
-<hr>
-<h1 id="加解密"><a href="#加解密" class="headerlink" title="加解密"></a>加解密</h1><h2 id="說明：-1"><a href="#說明：-1" class="headerlink" title="說明："></a>說明：</h2><p>這邊以<code>AES</code>來介紹，我們可以看到下圖資料轉換是雙向，但會透過一個Key來做轉換(這邊是和編碼最大的差別)</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557149615_79307.png" alt></p>
-<p>要還原成原始資料我們只能透過一樣的Key才可以達成，就像一個寶相只有唯一一把鑰匙可以打開一樣．</p>
-<p>這邊補充一個簡單加密法(凱薩算法)，他是使用字元位移的數字來當作Key</p>
-<p>如果位移數量是1 <code>ABCD =&gt; BCDE</code></p>
-<p>如圖</p>
-<p><img src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Caesar3.svg" alt></p>
-<h2 id="用途：-1"><a href="#用途：-1" class="headerlink" title="用途："></a>用途：</h2><p>加密可以確保資料的安全性（只有相同的Key才可還原成原本資料）很適合用在機密資料且須要還原使用</p>
-<hr>
-<h1 id="雜湊-Hash"><a href="#雜湊-Hash" class="headerlink" title="雜湊(Hash)"></a>雜湊(Hash)</h1><h2 id="說明：-2"><a href="#說明：-2" class="headerlink" title="說明："></a>說明：</h2><p>這裡用<code>Sha256</code>來當作範例</p>
-<p>Hash有幾個特點</p>
-<ol>
-<li>不管資料量多大經過SHA256運算字串長度都是一樣的</li>
-<li><code>SHA256</code>的原因是運算完的資料大小一定是 <code>256 bit</code></li>
-<li>她是一個不可逆的算法所以我們可以看到箭頭是單向.</li>
-<li>相同的值用SHA運算過後值都是一樣的</li>
-</ol>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557152092_14191.png" alt></p>
-<p>一定會有小夥伴好奇,運算完都是固定長度 那會不會出現一個情況,原始資料不一樣但算完<code>Hash</code>結果是一樣的</p>
-<pre><code>會 這個我們稱之為雜湊碰撞 這個機率很小
-</code></pre><h2 id="用途：-2"><a href="#用途：-2" class="headerlink" title="用途："></a>用途：</h2><p>一般我們可以把使用者密碼經<code>Hash</code>運算存入資料庫中,當作使用唯一識別碼(像指紋)下次使用者登入用運一樣的<code>Hash</code>算法 再將值拿來比較辨識使用者合法性.</p>
-<hr>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>對於這邊有一個簡單的比較表格</p>
-<ul>
-<li>編碼(encoding)</li>
-<li>加解密</li>
-<li>雜湊(Hash) </li>
-</ul>
-<p><img src="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png" alt="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png"></p>
-<p>加解密和編碼最常被大家誤會搞錯地方是以為使用<code>Base64</code>編碼就很安全(但有心人事取得你的資料只要知道你使用編碼就可以還原成原始資料)</p>
-<p>如果要確保資料隱密性時可以使用加解密而不是編碼</p>
-<p>所以別再把<code>Base64</code>編碼當作加密工具來使用.</p>
-<p>這是很危險低</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/hash-encoding/">https://isdaniel.github.io/hash-encoding/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>Base64</tag>
-        <tag>Encoding</tag>
-        <tag>AES</tag>
-        <tag>SHA256</tag>
-        <tag>Hash</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>建立自己Blog系列(三) Hexo next theme 介紹</title>
     <url>/hexo-blog-theme/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>為何我會選用Hxeo來當作Blog框架?</p>
@@ -3230,6 +3151,85 @@ email_url: dog830228@gmail.com
         <tag>Blog</tag>
         <tag>Github</tag>
         <tag>CICD</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>淺談-編碼(encoding) vs 加解密 vs 雜湊(Hash)</title>
+    <url>/hash-encoding/</url>
+    <content><![CDATA[<p>這一邊有三筆資料</p>
+<ul>
+<li>U2FsdGVkX19FJsgVyam+Gh2EwmGs4BEJjJJsWxCXHWw84gp3uHvozWsHY8gfAx0C</li>
+<li>VG9kYXkgaXMgYSBnb29kIERheQ==</li>
+<li>046a484a529ecfc7693753ee65802b5cfcafd548252d0e5f1bca845ad2208b91</li>
+</ul>
+<p>這三個東西看起來都是亂碼，但所代表含意完全不一樣</p>
+<p>這邊會跟大家分享這三個東西特性和差異性</p>
+<p>此文同步發布 Blog <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvZGFuaWVsLzIwMTkvMDUvMDYvMjIzMDA0" title="https://dotblogs.com.tw/daniel/2019/05/06/223004">[淺談] 編碼(encoding) vs 加解密 vs 雜湊(Hash)<i class="fa fa-external-link"></i></span></p>
+<h1 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h1><p>會想分享這篇文章是因為蠻多人把</p>
+<ul>
+<li>編碼(encoding)</li>
+<li>加解密</li>
+<li>雜湊(Hash) </li>
+</ul>
+<p>這三個東西搞混，尤其是把編碼當作加密….這是非常危險的事情. </p>
+<pre><code>編碼!= 加密 兩個是完全不一樣的東西
+編碼!= 加密 兩個是完全不一樣的東西
+編碼!= 加密 兩個是完全不一樣的東西
+</code></pre><p>很重要所以要說三次XD! </p>
+<hr>
+<h1 id="編碼"><a href="#編碼" class="headerlink" title="編碼"></a>編碼</h1><h2 id="說明："><a href="#說明：" class="headerlink" title="說明："></a>說明：</h2><p>這邊用<code>Base64</code>編碼來介紹，我們可以看到下圖資料轉換是雙向的．</p>
+<pre><code>Hello Daniel　=&gt;  SGVsbG8gRGFuaWVs
+</code></pre><p>如果我們想要把<code>SGVsbG8gRGFuaWVs</code> 變回 <code>Hello Daniel</code> 只需進行<code>Base64</code>解碼即可</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557148998_19694.png" alt></p>
+<p>編碼是將原本的資料經過一個運算轉換成另一組資料,如果要還原成原本資料解碼</p>
+<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>在網路傳輸會使用到編碼主要是資料在傳輸時有些特殊字元,有特殊用途(ex:Http 傳參數  &amp;….)</p>
+<p>這時就可使用編碼將資料轉換成不會衝突到字串.</p>
+<p>如果想要了解 Base64 原理和演算法的話可以看我另一篇<a href="/base64-principle/" title="【深入淺出】Base編碼 (Base64為例子)">【深入淺出】Base編碼 (Base64為例子)</a></p>
+<hr>
+<h1 id="加解密"><a href="#加解密" class="headerlink" title="加解密"></a>加解密</h1><h2 id="說明：-1"><a href="#說明：-1" class="headerlink" title="說明："></a>說明：</h2><p>這邊以<code>AES</code>來介紹，我們可以看到下圖資料轉換是雙向，但會透過一個Key來做轉換(這邊是和編碼最大的差別)</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557149615_79307.png" alt></p>
+<p>要還原成原始資料我們只能透過一樣的Key才可以達成，就像一個寶相只有唯一一把鑰匙可以打開一樣．</p>
+<p>這邊補充一個簡單加密法(凱薩算法)，他是使用字元位移的數字來當作Key</p>
+<p>如果位移數量是1 <code>ABCD =&gt; BCDE</code></p>
+<p>如圖</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Caesar3.svg" alt></p>
+<h2 id="用途：-1"><a href="#用途：-1" class="headerlink" title="用途："></a>用途：</h2><p>加密可以確保資料的安全性（只有相同的Key才可還原成原本資料）很適合用在機密資料且須要還原使用</p>
+<hr>
+<h1 id="雜湊-Hash"><a href="#雜湊-Hash" class="headerlink" title="雜湊(Hash)"></a>雜湊(Hash)</h1><h2 id="說明：-2"><a href="#說明：-2" class="headerlink" title="說明："></a>說明：</h2><p>這裡用<code>Sha256</code>來當作範例</p>
+<p>Hash有幾個特點</p>
+<ol>
+<li>不管資料量多大經過SHA256運算字串長度都是一樣的</li>
+<li><code>SHA256</code>的原因是運算完的資料大小一定是 <code>256 bit</code></li>
+<li>她是一個不可逆的算法所以我們可以看到箭頭是單向.</li>
+<li>相同的值用SHA運算過後值都是一樣的</li>
+</ol>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557152092_14191.png" alt></p>
+<p>一定會有小夥伴好奇,運算完都是固定長度 那會不會出現一個情況,原始資料不一樣但算完<code>Hash</code>結果是一樣的</p>
+<pre><code>會 這個我們稱之為雜湊碰撞 這個機率很小
+</code></pre><h2 id="用途：-2"><a href="#用途：-2" class="headerlink" title="用途："></a>用途：</h2><p>一般我們可以把使用者密碼經<code>Hash</code>運算存入資料庫中,當作使用唯一識別碼(像指紋)下次使用者登入用運一樣的<code>Hash</code>算法 再將值拿來比較辨識使用者合法性.</p>
+<hr>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>對於這邊有一個簡單的比較表格</p>
+<ul>
+<li>編碼(encoding)</li>
+<li>加解密</li>
+<li>雜湊(Hash) </li>
+</ul>
+<p><img src="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png" alt="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png"></p>
+<p>加解密和編碼最常被大家誤會搞錯地方是以為使用<code>Base64</code>編碼就很安全(但有心人事取得你的資料只要知道你使用編碼就可以還原成原始資料)</p>
+<p>如果要確保資料隱密性時可以使用加解密而不是編碼</p>
+<p>所以別再把<code>Base64</code>編碼當作加密工具來使用.</p>
+<p>這是很危險低</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/hash-encoding/">https://isdaniel.github.io/hash-encoding/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>Base64</tag>
+        <tag>Encoding</tag>
+        <tag>AES</tag>
+        <tag>SHA256</tag>
+        <tag>Hash</tag>
       </tags>
   </entry>
   <entry>
@@ -5177,94 +5177,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>6個基本(ActionResult) View是如何被建立(二) (第23天)</title>
-    <url>/ithelp-day23/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#6%e7%a8%ae%e5%9f%ba%e6%9c%ac%e7%9a%84actionresult">6種基本的ActionResult</a></li>
-<li><a href="#contentresult">ContentResult</a></li>
-<li><a href="#redirectresult--redirecttorouteresult">RedirectResult &amp; RedirectToRouteResult</a></li>
-<li><a href="#emptyresult">EmptyResult</a></li>
-<li><a href="#fileresult">FileResult</a><ul>
-<li><a href="#filecontentresult">FileContentResult</a></li>
-<li><a href="#filepathresult">FilePathResult</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇介紹到<code>CreateActionResult</code>方法會產生一個<code>ActionResult</code>物件利用<code>MethodInfo</code>資訊.</p>
-<p>最後透過<code>InvokeActionResult</code>來呼叫<code>ExecuteResult</code>方法來執行<code>ActionResult</code>的<code>ExecuteResult</code>方法,基本上<strong>MVC</strong>找到且執行<strong>Action</strong>方法後面就沒再做甚麼特別的事情了(後面做資源釋放…)</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">InvokeActionResult</span>(<span class="params">ControllerContext controllerContext, ActionResult actionResult</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	actionResult.ExecuteResult(controllerContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>本篇來介紹常用的<code>ActionResult</code>其內部運作程式碼</p>
-<blockquote>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="6種基本的ActionResult"><a href="#6種基本的ActionResult" class="headerlink" title="6種基本的ActionResult"></a>6種基本的ActionResult</h2><p>下面這六個類別是直接繼承於<code>ActionResult</code>的類別(其中有標註<strong>Base class</strong>代表這是抽象類別另外有類別繼承它)</p>
-<ul>
-<li><code>ContentResult</code>:回傳一組字串,利用<code>response.Write</code>方法</li>
-<li><code>EmptyResult</code>:什麼都不動作(當<code>Action</code>回傳<code>void</code>使用)</li>
-<li><code>FileResult(Base class)</code>:把檔案當作回傳</li>
-<li><code>HttpStatusCodeResult</code>:回傳<strong>HTTP</strong>狀態碼</li>
-<li><code>RedirectResult &amp; RedirectToRouteResult</code>:使用<code>Response.Redirect</code>轉導到其他頁面</li>
-<li><code>ViewResultBase(Base class)</code>:會找尋相對應<code>View</code>檔案(<code>cshtml</code>會編譯成一個<code>DLL</code>)來執行</li>
-</ul>
-<blockquote>
-<p><code>ViewResultBase</code>會在另一篇介紹(因為機制比較複雜)</p>
-</blockquote>
-<h2 id="ContentResult"><a href="#ContentResult" class="headerlink" title="ContentResult"></a>ContentResult</h2><p>在<code>ContentResult</code>有三個屬性</p>
-<ul>
-<li><code>Content</code>:響應內容.</li>
-<li><code>ContentType</code>:設置Http <code>Header</code>攔位<code>ContentType</code></li>
-<li><code>ContentEncoding</code>:設置<code>Encoding</code>方式</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ContentResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Content &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Encoding ContentEncoding &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!String.IsNullOrEmpty(ContentType))</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ContentEncoding != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentEncoding = ContentEncoding;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (Content != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.Write(Content);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><code>ContentResult</code>操作很簡單透過<code>response.Write</code>把內容<code>Print</code>出來</p>
-<h2 id="RedirectResult-amp-RedirectToRouteResult"><a href="#RedirectResult-amp-RedirectToRouteResult" class="headerlink" title="RedirectResult &amp; RedirectToRouteResult"></a>RedirectResult &amp; RedirectToRouteResult</h2><p><code>RedirectResult</code>這個<code>ActionResult</code>如其名就是導轉頁面.</p>
-<ul>
-<li><code>Permanent</code>:屬性判斷是否需要<code>Permanently</code>導轉頁面(<strong>Http-Code</strong>:<code>RedirectPermanent=301</code>,<code>Redirect=302</code>)</li>
-<li><code>Url</code>:轉導的<code>URL</code>透過<code>UrlHelper.GenerateContentUrl</code>產生<code>URL</code>.(在<code>GenerateContentUrl</code>會判斷第一個字元是否是<code>~</code>波浪號,如果是代表站內導轉.)</li>
-</ul>
-<p>最後利用<code>Permanent</code>布林判斷使用<code>RedirectPermanent</code>還是<code>Redirect</code>方法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedirectResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> Permanent &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (context.IsChildAction)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.RedirectAction_CannotRedirectInChildAction);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">string</span> destinationUrl = UrlHelper.GenerateContentUrl(Url, context.HttpContext);</span><br><span class="line">		context.Controller.TempData.Keep();</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (Permanent)</span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.RedirectPermanent(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.Redirect(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p><code>RedirectToRouteResult</code>基本流程跟上面一樣只是透過<code>UrlHelper.GenerateUrl</code>產生要導轉URL</p>
-</blockquote>
-<h2 id="EmptyResult"><a href="#EmptyResult" class="headerlink" title="EmptyResult"></a>EmptyResult</h2><p><code>EmptyResult</code>這個類別很有趣,只有override <code>ExecuteResult</code>方法但沒有實做,上篇小結有提到這裡使用一個設計模式<span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvTnVsbF9vYmplY3RfcGF0dGVybg==" title="https://en.wikipedia.org/wiki/Null_object_pattern">null object pattern<i class="fa fa-external-link"></i></span>.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">EmptyResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> EmptyResult _singleton = <span class="keyword">new</span> EmptyResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">internal</span> <span class="keyword">static</span> EmptyResult Instance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _singleton; &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="FileResult"><a href="#FileResult" class="headerlink" title="FileResult"></a>FileResult</h2><p><code>FileResult</code>是一個抽象類別,提供一個抽象方法給<code>abstract void WriteFile(HttpResponseBase response)</code>子類提供覆寫.</p>
-<p>有兩個類別繼承於<code>FileResult</code>抽象類別</p>
-<ul>
-<li><code>FilePathResult</code></li>
-<li><code>FileContentResult</code></li>
-</ul>
-<p><code>FileResult</code>抽象類別在<code>ExecuteResult</code>設置傳輸檔案需要的前置作業(設置<code>Content-Type</code>…),最後的資料傳輸透過各個子類別去實現.</p>
-<blockquote>
-<p>其中<code>headerValue</code>實做Http回應擋頭對於<code>RFC</code>規範.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// From RFC 2183, Sec. 2.3:</span></span><br><span class="line"><span class="comment">// The sender may want to suggest a filename to be used if the entity is</span></span><br><span class="line"><span class="comment">// detached and stored in a separate file. If the receiving MUA writes</span></span><br><span class="line"><span class="comment">// the entity to a file, the suggested filename should be used as a</span></span><br><span class="line"><span class="comment">// basis for the actual filename, where possible.</span></span><br><span class="line"><span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br></pre></td></tr></table></figure></div>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">FileResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">string</span> _fileDownloadName;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">FileResult</span>(<span class="params"><span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (String.IsNullOrEmpty(contentType))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"contentType"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ContentType = contentType;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> FileDownloadName</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">get</span> &#123; <span class="keyword">return</span> _fileDownloadName ?? String.Empty; &#125;</span><br><span class="line">            <span class="keyword">set</span> &#123; _fileDownloadName = <span class="keyword">value</span>; &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!String.IsNullOrEmpty(FileDownloadName))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br><span class="line">                context.HttpContext.Response.AddHeader(<span class="string">"Content-Disposition"</span>, headerValue);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            WriteFile(response);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="FileContentResult"><a href="#FileContentResult" class="headerlink" title="FileContentResult"></a>FileContentResult</h3><p><code>FileContentResult</code>將檔案已位元組方式轉存給<code>Client</code>端.</p>
-<p>透過<code>HttpResponseBase.OutputStream.Write</code>方法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FileContentResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FileContentResult</span>(<span class="params"><span class="keyword">byte</span>[] fileContents, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (fileContents == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"fileContents"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileContents = fileContents;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">byte</span>[] FileContents &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.OutputStream.Write(FileContents, <span class="number">0</span>, FileContents.Length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="FilePathResult"><a href="#FilePathResult" class="headerlink" title="FilePathResult"></a>FilePathResult</h3><p><code>FilePathResult</code>透過檔案名稱<code>FileName</code>將檔案提供給<code>Client</code></p>
-<p>藉由<code>HttpResponseBase.TransmitFile</code>方法.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FilePathResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FilePathResult</span>(<span class="params"><span class="keyword">string</span> fileName, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrEmpty(fileName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"fileName"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileName = fileName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> FileName &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.TransmitFile(FileName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>本篇介紹了幾個實現<code>ActionResult</code>類別,跟其內部程式碼,這裡能了解到<strong>MVC</strong>返回結果機於<code>ActionResult</code>方法.(這個概念我運用在<code>Web Api</code>服務,建立<code>ResponseBase</code>共同簽章,因為在做服務串接每個服務都有自己的加解密,回傳格式攔位.我可以統一透過一個<code>ResponseBase</code>類別裝載資料再藉由過濾器來幫忙組成相對應的資料回傳….)</p>
-<p>下篇會來介紹繼承<code>ActionResult</code>最複雜的<code>ViewResultBase</code>相關程式碼.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day23/">https://isdaniel.github.io/ithelp-day23/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>View是如何被建立(一) (第22天)</title>
     <url>/ithelp-day22/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5395,6 +5307,94 @@ email_url: dog830228@gmail.com
 </blockquote>
 <p>至於有那些<code>ActionResult</code>可以呼叫我們在下篇會再詳細介紹</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day22/">https://isdaniel.github.io/ithelp-day22/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>6個基本(ActionResult) View是如何被建立(二) (第23天)</title>
+    <url>/ithelp-day23/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#6%e7%a8%ae%e5%9f%ba%e6%9c%ac%e7%9a%84actionresult">6種基本的ActionResult</a></li>
+<li><a href="#contentresult">ContentResult</a></li>
+<li><a href="#redirectresult--redirecttorouteresult">RedirectResult &amp; RedirectToRouteResult</a></li>
+<li><a href="#emptyresult">EmptyResult</a></li>
+<li><a href="#fileresult">FileResult</a><ul>
+<li><a href="#filecontentresult">FileContentResult</a></li>
+<li><a href="#filepathresult">FilePathResult</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇介紹到<code>CreateActionResult</code>方法會產生一個<code>ActionResult</code>物件利用<code>MethodInfo</code>資訊.</p>
+<p>最後透過<code>InvokeActionResult</code>來呼叫<code>ExecuteResult</code>方法來執行<code>ActionResult</code>的<code>ExecuteResult</code>方法,基本上<strong>MVC</strong>找到且執行<strong>Action</strong>方法後面就沒再做甚麼特別的事情了(後面做資源釋放…)</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">InvokeActionResult</span>(<span class="params">ControllerContext controllerContext, ActionResult actionResult</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	actionResult.ExecuteResult(controllerContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>本篇來介紹常用的<code>ActionResult</code>其內部運作程式碼</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="6種基本的ActionResult"><a href="#6種基本的ActionResult" class="headerlink" title="6種基本的ActionResult"></a>6種基本的ActionResult</h2><p>下面這六個類別是直接繼承於<code>ActionResult</code>的類別(其中有標註<strong>Base class</strong>代表這是抽象類別另外有類別繼承它)</p>
+<ul>
+<li><code>ContentResult</code>:回傳一組字串,利用<code>response.Write</code>方法</li>
+<li><code>EmptyResult</code>:什麼都不動作(當<code>Action</code>回傳<code>void</code>使用)</li>
+<li><code>FileResult(Base class)</code>:把檔案當作回傳</li>
+<li><code>HttpStatusCodeResult</code>:回傳<strong>HTTP</strong>狀態碼</li>
+<li><code>RedirectResult &amp; RedirectToRouteResult</code>:使用<code>Response.Redirect</code>轉導到其他頁面</li>
+<li><code>ViewResultBase(Base class)</code>:會找尋相對應<code>View</code>檔案(<code>cshtml</code>會編譯成一個<code>DLL</code>)來執行</li>
+</ul>
+<blockquote>
+<p><code>ViewResultBase</code>會在另一篇介紹(因為機制比較複雜)</p>
+</blockquote>
+<h2 id="ContentResult"><a href="#ContentResult" class="headerlink" title="ContentResult"></a>ContentResult</h2><p>在<code>ContentResult</code>有三個屬性</p>
+<ul>
+<li><code>Content</code>:響應內容.</li>
+<li><code>ContentType</code>:設置Http <code>Header</code>攔位<code>ContentType</code></li>
+<li><code>ContentEncoding</code>:設置<code>Encoding</code>方式</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ContentResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Content &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Encoding ContentEncoding &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!String.IsNullOrEmpty(ContentType))</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ContentEncoding != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentEncoding = ContentEncoding;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (Content != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.Write(Content);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><code>ContentResult</code>操作很簡單透過<code>response.Write</code>把內容<code>Print</code>出來</p>
+<h2 id="RedirectResult-amp-RedirectToRouteResult"><a href="#RedirectResult-amp-RedirectToRouteResult" class="headerlink" title="RedirectResult &amp; RedirectToRouteResult"></a>RedirectResult &amp; RedirectToRouteResult</h2><p><code>RedirectResult</code>這個<code>ActionResult</code>如其名就是導轉頁面.</p>
+<ul>
+<li><code>Permanent</code>:屬性判斷是否需要<code>Permanently</code>導轉頁面(<strong>Http-Code</strong>:<code>RedirectPermanent=301</code>,<code>Redirect=302</code>)</li>
+<li><code>Url</code>:轉導的<code>URL</code>透過<code>UrlHelper.GenerateContentUrl</code>產生<code>URL</code>.(在<code>GenerateContentUrl</code>會判斷第一個字元是否是<code>~</code>波浪號,如果是代表站內導轉.)</li>
+</ul>
+<p>最後利用<code>Permanent</code>布林判斷使用<code>RedirectPermanent</code>還是<code>Redirect</code>方法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedirectResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> Permanent &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (context.IsChildAction)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.RedirectAction_CannotRedirectInChildAction);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">string</span> destinationUrl = UrlHelper.GenerateContentUrl(Url, context.HttpContext);</span><br><span class="line">		context.Controller.TempData.Keep();</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (Permanent)</span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.RedirectPermanent(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.Redirect(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><code>RedirectToRouteResult</code>基本流程跟上面一樣只是透過<code>UrlHelper.GenerateUrl</code>產生要導轉URL</p>
+</blockquote>
+<h2 id="EmptyResult"><a href="#EmptyResult" class="headerlink" title="EmptyResult"></a>EmptyResult</h2><p><code>EmptyResult</code>這個類別很有趣,只有override <code>ExecuteResult</code>方法但沒有實做,上篇小結有提到這裡使用一個設計模式<span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvTnVsbF9vYmplY3RfcGF0dGVybg==" title="https://en.wikipedia.org/wiki/Null_object_pattern">null object pattern<i class="fa fa-external-link"></i></span>.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">EmptyResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> EmptyResult _singleton = <span class="keyword">new</span> EmptyResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">internal</span> <span class="keyword">static</span> EmptyResult Instance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _singleton; &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="FileResult"><a href="#FileResult" class="headerlink" title="FileResult"></a>FileResult</h2><p><code>FileResult</code>是一個抽象類別,提供一個抽象方法給<code>abstract void WriteFile(HttpResponseBase response)</code>子類提供覆寫.</p>
+<p>有兩個類別繼承於<code>FileResult</code>抽象類別</p>
+<ul>
+<li><code>FilePathResult</code></li>
+<li><code>FileContentResult</code></li>
+</ul>
+<p><code>FileResult</code>抽象類別在<code>ExecuteResult</code>設置傳輸檔案需要的前置作業(設置<code>Content-Type</code>…),最後的資料傳輸透過各個子類別去實現.</p>
+<blockquote>
+<p>其中<code>headerValue</code>實做Http回應擋頭對於<code>RFC</code>規範.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// From RFC 2183, Sec. 2.3:</span></span><br><span class="line"><span class="comment">// The sender may want to suggest a filename to be used if the entity is</span></span><br><span class="line"><span class="comment">// detached and stored in a separate file. If the receiving MUA writes</span></span><br><span class="line"><span class="comment">// the entity to a file, the suggested filename should be used as a</span></span><br><span class="line"><span class="comment">// basis for the actual filename, where possible.</span></span><br><span class="line"><span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">FileResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">string</span> _fileDownloadName;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">FileResult</span>(<span class="params"><span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (String.IsNullOrEmpty(contentType))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"contentType"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ContentType = contentType;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">string</span> FileDownloadName</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">get</span> &#123; <span class="keyword">return</span> _fileDownloadName ?? String.Empty; &#125;</span><br><span class="line">            <span class="keyword">set</span> &#123; _fileDownloadName = <span class="keyword">value</span>; &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"context"</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!String.IsNullOrEmpty(FileDownloadName))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br><span class="line">                context.HttpContext.Response.AddHeader(<span class="string">"Content-Disposition"</span>, headerValue);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            WriteFile(response);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="FileContentResult"><a href="#FileContentResult" class="headerlink" title="FileContentResult"></a>FileContentResult</h3><p><code>FileContentResult</code>將檔案已位元組方式轉存給<code>Client</code>端.</p>
+<p>透過<code>HttpResponseBase.OutputStream.Write</code>方法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FileContentResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FileContentResult</span>(<span class="params"><span class="keyword">byte</span>[] fileContents, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (fileContents == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"fileContents"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileContents = fileContents;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">byte</span>[] FileContents &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.OutputStream.Write(FileContents, <span class="number">0</span>, FileContents.Length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="FilePathResult"><a href="#FilePathResult" class="headerlink" title="FilePathResult"></a>FilePathResult</h3><p><code>FilePathResult</code>透過檔案名稱<code>FileName</code>將檔案提供給<code>Client</code></p>
+<p>藉由<code>HttpResponseBase.TransmitFile</code>方法.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FilePathResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FilePathResult</span>(<span class="params"><span class="keyword">string</span> fileName, <span class="keyword">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrEmpty(fileName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">"fileName"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileName = fileName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> FileName &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        response.TransmitFile(FileName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>本篇介紹了幾個實現<code>ActionResult</code>類別,跟其內部程式碼,這裡能了解到<strong>MVC</strong>返回結果機於<code>ActionResult</code>方法.(這個概念我運用在<code>Web Api</code>服務,建立<code>ResponseBase</code>共同簽章,因為在做服務串接每個服務都有自己的加解密,回傳格式攔位.我可以統一透過一個<code>ResponseBase</code>類別裝載資料再藉由過濾器來幫忙組成相對應的資料回傳….)</p>
+<p>下篇會來介紹繼承<code>ActionResult</code>最複雜的<code>ViewResultBase</code>相關程式碼.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day23/">https://isdaniel.github.io/ithelp-day23/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -6414,6 +6414,78 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler (第7天)</title>
+    <url>/ithelp-day7/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#%e5%91%bc%e5%8f%abhttpappliaction%e5%8f%96%e5%be%97httphandler%e4%b8%a6%e5%91%bc%e5%8f%ab">呼叫HttpAppliaction取得HttpHandler並呼叫</a><ul>
+<li><a href="#maphandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">MapHandlerExecutionStep程式碼解說</a></li>
+<li><a href="#callhandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">CallHandlerExecutionStep程式碼解說</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面和大家分享<code>StepManager</code>是如何建立管道和依序呼叫<code>IHttpModule</code>註冊事件</p>
+<blockquote>
+<p>查看原始碼好站 <span class="exturl" data-url="aHR0cHM6Ly9yZWZlcmVuY2Vzb3VyY2UubWljcm9zb2Z0LmNvbS8=" title="https://referencesource.microsoft.com/">Reference Source<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<blockquote>
+<p>此文的程式碼比較多我會在原始碼上邊上說明相對應編號方便大家觀看</p>
+</blockquote>
+<p>今天跟大家分享<code>HttpAppliaction</code>是如何找到要執行的<code>IHttpHandler</code>物件.</p>
+<h2 id="呼叫HttpAppliaction取得HttpHandler並呼叫"><a href="#呼叫HttpAppliaction取得HttpHandler並呼叫" class="headerlink" title="呼叫HttpAppliaction取得HttpHandler並呼叫"></a>呼叫HttpAppliaction取得HttpHandler並呼叫</h2><p>在<code>ApplicationStepManager</code>的<code>IExecutionStep</code>中重要的實現類別有兩個</p>
+<ol>
+<li><code>MapHandlerExecutionStep</code>:找到執行<code>IHttpHander</code></li>
+<li><code>CallHandlerExecutionStep</code></li>
+</ol>
+<h3 id="MapHandlerExecutionStep程式碼解說"><a href="#MapHandlerExecutionStep程式碼解說" class="headerlink" title="MapHandlerExecutionStep程式碼解說"></a>MapHandlerExecutionStep程式碼解說</h3><p>前面說過<code>IExecutionStep</code>最核心就是要找到一個<code>Execute</code>方法</p>
+<p><code>MapHandlerExecutionStep</code>的<code>Execute</code>方法是為了找到一個要執行的<code>HttpHander</code></p>
+<blockquote>
+<p>每次請求都會呼叫<code>HttpContext.Handler</code>屬性.</p>
+</blockquote>
+<p><code>MapHttpHandler</code>會依照下面權重來取得<code>HttpHander</code>物件.</p>
+<ol>
+<li><code>context.RemapHandlerInstance</code>如果有物件就優先返回(很重要因為這就是Asp.net MVC使用的<code>HttpHander</code>物件)</li>
+<li>透過<code>IHttpHandlerFactory</code>工廠來取得物件,依照我們在<code>Config</code>註冊的<code>HttpHander</code>對應資料<ul>
+<li>副檔名<code>*.ashx</code>泛型處理常式透過<code>SimpleHandlerFactory</code></li>
+<li>副檔名<code>*.aspx</code>泛型處理常式透過<code>PageHandlerFactory</code></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>想知道更多可以查看<code>applicationhost.config</code>註冊表</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">MapHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">        HttpContext context = _application.Context;</span><br><span class="line">        HttpRequest request = context.Request;</span><br><span class="line"></span><br><span class="line">        context.Handler = _application.MapHttpHandler(</span><br><span class="line">            context,</span><br><span class="line">            request.RequestType,</span><br><span class="line">            request.FilePathObject,</span><br><span class="line">            request.PhysicalPathInternal,</span><br><span class="line">            <span class="literal">false</span> <span class="comment">/*useAppConfig*/</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">internal</span> IHttpHandler <span class="title">MapHttpHandler</span>(<span class="params">HttpContext context, String requestType, VirtualPath path, String pathTranslated, <span class="keyword">bool</span> useAppConfig</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">		IHttpHandler handler = (context.ServerExecuteDepth == <span class="number">0</span>) ? context.RemapHandlerInstance : <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">using</span> (<span class="keyword">new</span> ApplicationImpersonationContext()) &#123;</span><br><span class="line">			<span class="comment">// Use remap handler if possible</span></span><br><span class="line">			<span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">				<span class="keyword">return</span> handler;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Map new handler</span></span><br><span class="line">			HttpHandlerAction mapping = GetHandlerMapping(context, requestType, path, useAppConfig);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (mapping == <span class="literal">null</span>) &#123;</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_NOT_FOUND);</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_FAILED);</span><br><span class="line">				<span class="keyword">throw</span> <span class="keyword">new</span> HttpException(SR.GetString(SR.Http_handler_not_found_for_request_type, requestType));</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			IHttpHandlerFactory factory = GetFactory(mapping);</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				IHttpHandlerFactory2 factory2 = factory <span class="keyword">as</span> IHttpHandlerFactory2;</span><br><span class="line"></span><br><span class="line">				<span class="keyword">if</span> (factory2 != <span class="literal">null</span>) &#123;</span><br><span class="line">					handler = factory2.GetHandler(context, requestType, path, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">else</span> &#123;</span><br><span class="line">					handler = factory.GetHandler(context, requestType, path.VirtualPathString, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> (FileNotFoundException e) &#123;</span><br><span class="line">				<span class="comment">//...丟Exception</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Remember for recycling</span></span><br><span class="line">			<span class="keyword">if</span> (_handlerRecycleList == <span class="literal">null</span>)</span><br><span class="line">				_handlerRecycleList = <span class="keyword">new</span> ArrayList();</span><br><span class="line">			_handlerRecycleList.Add(<span class="keyword">new</span> HandlerWithFactory(handler, factory));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><code>MapHandlerExecutionStep</code>是為了找到我們要執行的<code>HttpHandler</code>物件.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">	<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在一開始先判斷<code>handler</code>是否已經有值如果有就直接返回(這個很重要因為這是為什麼<code>MVC</code>,<code>WebAPI</code>可以運作且不用在<code>Config</code>設定配對<code>IHttpHandlerFactory</code>原因).</p>
+<blockquote>
+<p>只需要在<code>MapHandlerExecutionStep</code>執行前將<code>context.RemapHandlerInstance</code>給一個<code>HttpHandler</code>物件即可.</p>
+</blockquote>
+<h3 id="CallHandlerExecutionStep程式碼解說"><a href="#CallHandlerExecutionStep程式碼解說" class="headerlink" title="CallHandlerExecutionStep程式碼解說"></a>CallHandlerExecutionStep程式碼解說</h3><p><code>CallHandlerExecutionStep</code>物件透過<code>context.Handler</code>可以找到要執行的<code>HttpHandler</code>,這邊也是優先判斷是否可執行異步請求.</p>
+<ul>
+<li>異步呼叫<code>beginProcessRequestDelegate</code>方法(此方法將實現<code>IHttpAsyncHandler</code>物件封裝成一個<code>Func&lt;T, AsyncCallback, object, IAsyncResult&gt;</code>委派方法),之後再調用返回一個<code>IAsyncResult</code>物件(處理後結果最後呼叫<code>EndProcessRequest</code>方法).</li>
+<li>同步呼叫<code>ProcessRequest</code>:判斷<code>context.Handler</code>不是<code>IHttpAsyncHandler</code>型別就值型同步動作</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// execution step -- call HTTP handler (used to be a separate module)</span></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">CallHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> HttpApplication   _application;</span><br><span class="line">	<span class="keyword">private</span> AsyncCallback     _completionCallback;</span><br><span class="line">	<span class="keyword">private</span> IHttpAsyncHandler _handler;       <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> AsyncStepCompletionInfo _asyncStepCompletionInfo; <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">bool</span>              _sync;          <span class="comment">// per call</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">CallHandlerExecutionStep</span>(<span class="params">HttpApplication app</span>)</span> &#123;</span><br><span class="line">		_application = app;</span><br><span class="line">		_completionCallback = <span class="keyword">new</span> AsyncCallback(<span class="keyword">this</span>.OnAsyncHandlerCompletion);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...其他方法</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">		HttpContext context = _application.Context;</span><br><span class="line">		IHttpHandler handler = context.Handler;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler != <span class="literal">null</span> &amp;&amp; HttpRuntime.UseIntegratedPipeline) &#123;</span><br><span class="line">			IIS7WorkerRequest wr = context.WorkerRequest <span class="keyword">as</span> IIS7WorkerRequest;</span><br><span class="line">			<span class="keyword">if</span> (wr != <span class="literal">null</span> &amp;&amp; wr.IsHandlerExecutionDenied()) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				HttpException error = <span class="keyword">new</span> HttpException(<span class="number">403</span>, SR.GetString(SR.Handler_access_denied));</span><br><span class="line">				error.SetFormatter(<span class="keyword">new</span> PageForbiddenErrorFormatter(context.Request.Path, SR.GetString(SR.Handler_access_denied)));</span><br><span class="line">				<span class="keyword">throw</span> error;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler == <span class="literal">null</span>) &#123;</span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> <span class="keyword">if</span> (handler <span class="keyword">is</span> IHttpAsyncHandler) &#123;</span><br><span class="line">			<span class="comment">// asynchronous handler</span></span><br><span class="line">			IHttpAsyncHandler asyncHandler = (IHttpAsyncHandler)handler;</span><br><span class="line"></span><br><span class="line">			_sync = <span class="literal">false</span>;</span><br><span class="line">			_handler = asyncHandler;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> beginProcessRequestDelegate = AppVerifier.WrapBeginMethod&lt;HttpContext&gt;(_application, asyncHandler.BeginProcessRequest);</span><br><span class="line"></span><br><span class="line">			_asyncStepCompletionInfo.Reset();</span><br><span class="line">			context.SyncContext.AllowVoidAsyncOperations();</span><br><span class="line">			IAsyncResult ar;</span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				ar = beginProcessRequestDelegate(context, _completionCallback, <span class="literal">null</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> &#123;</span><br><span class="line">				<span class="comment">// The asynchronous step has completed, so we should disallow further</span></span><br><span class="line">				<span class="comment">// async operations until the next step.</span></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line">				<span class="keyword">throw</span>;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">bool</span> operationCompleted;</span><br><span class="line">			<span class="keyword">bool</span> mustCallEndHandler;</span><br><span class="line">			_asyncStepCompletionInfo.RegisterBeginUnwound(ar, <span class="keyword">out</span> operationCompleted, <span class="keyword">out</span> mustCallEndHandler);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (operationCompleted) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				_handler = <span class="literal">null</span>; <span class="comment">// not to remember</span></span><br><span class="line"></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line"></span><br><span class="line">				<span class="keyword">try</span> &#123;</span><br><span class="line">					<span class="keyword">if</span> (mustCallEndHandler) &#123;</span><br><span class="line">						asyncHandler.EndProcessRequest(ar);</span><br><span class="line">					&#125;</span><br><span class="line"></span><br><span class="line">					_asyncStepCompletionInfo.ReportError();</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">finally</span> &#123;</span><br><span class="line">					SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">					context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// synchronous handler</span></span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">			context.SyncContext.SetSyncCaller();</span><br><span class="line"></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				handler.ProcessRequest(context);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">finally</span> &#123;</span><br><span class="line">				context.SyncContext.ResetSyncCaller();</span><br><span class="line"></span><br><span class="line">				SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">				context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>希望可以讓大家對於為什麼<code>Asp.net</code>為何可以針對<code>IHttpModule</code>擴充且為何最後都會請求一個<code>IHttpHandler</code>有更深入的了解.</p>
+<p>微軟透過一系列的管道設計模式提供有高度擴展的系統對外提供一個<code>IHttpHandler</code>讓我們可以客製化擴充要執行的請求.</p>
+<p>對於此次請求又有<code>IHttpModule</code>可對於<code>HttpApplication</code>事件做擴充(透過AOP編成方式).</p>
+<p>今天之後我們會開始講解<strong>Asp.net MVC</strong>相關的原始程式碼.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day7/">https://isdaniel.github.io/ithelp-day7/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>揭密Mvc使用IHttpHandler by UrlRoutingModule-4.0 (第8天)</title>
     <url>/ithelp-day8/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -6481,78 +6553,6 @@ email_url: dog830228@gmail.com
 </ol>
 <p>基本上<code>Asp.net</code>部分已經介紹完了,接下來會進入<code>Asp.net MVC</code>的世界.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day8/">https://isdaniel.github.io/ithelp-day8/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler (第7天)</title>
-    <url>/ithelp-day7/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#%e5%91%bc%e5%8f%abhttpappliaction%e5%8f%96%e5%be%97httphandler%e4%b8%a6%e5%91%bc%e5%8f%ab">呼叫HttpAppliaction取得HttpHandler並呼叫</a><ul>
-<li><a href="#maphandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">MapHandlerExecutionStep程式碼解說</a></li>
-<li><a href="#callhandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">CallHandlerExecutionStep程式碼解說</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面和大家分享<code>StepManager</code>是如何建立管道和依序呼叫<code>IHttpModule</code>註冊事件</p>
-<blockquote>
-<p>查看原始碼好站 <span class="exturl" data-url="aHR0cHM6Ly9yZWZlcmVuY2Vzb3VyY2UubWljcm9zb2Z0LmNvbS8=" title="https://referencesource.microsoft.com/">Reference Source<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<blockquote>
-<p>此文的程式碼比較多我會在原始碼上邊上說明相對應編號方便大家觀看</p>
-</blockquote>
-<p>今天跟大家分享<code>HttpAppliaction</code>是如何找到要執行的<code>IHttpHandler</code>物件.</p>
-<h2 id="呼叫HttpAppliaction取得HttpHandler並呼叫"><a href="#呼叫HttpAppliaction取得HttpHandler並呼叫" class="headerlink" title="呼叫HttpAppliaction取得HttpHandler並呼叫"></a>呼叫HttpAppliaction取得HttpHandler並呼叫</h2><p>在<code>ApplicationStepManager</code>的<code>IExecutionStep</code>中重要的實現類別有兩個</p>
-<ol>
-<li><code>MapHandlerExecutionStep</code>:找到執行<code>IHttpHander</code></li>
-<li><code>CallHandlerExecutionStep</code></li>
-</ol>
-<h3 id="MapHandlerExecutionStep程式碼解說"><a href="#MapHandlerExecutionStep程式碼解說" class="headerlink" title="MapHandlerExecutionStep程式碼解說"></a>MapHandlerExecutionStep程式碼解說</h3><p>前面說過<code>IExecutionStep</code>最核心就是要找到一個<code>Execute</code>方法</p>
-<p><code>MapHandlerExecutionStep</code>的<code>Execute</code>方法是為了找到一個要執行的<code>HttpHander</code></p>
-<blockquote>
-<p>每次請求都會呼叫<code>HttpContext.Handler</code>屬性.</p>
-</blockquote>
-<p><code>MapHttpHandler</code>會依照下面權重來取得<code>HttpHander</code>物件.</p>
-<ol>
-<li><code>context.RemapHandlerInstance</code>如果有物件就優先返回(很重要因為這就是Asp.net MVC使用的<code>HttpHander</code>物件)</li>
-<li>透過<code>IHttpHandlerFactory</code>工廠來取得物件,依照我們在<code>Config</code>註冊的<code>HttpHander</code>對應資料<ul>
-<li>副檔名<code>*.ashx</code>泛型處理常式透過<code>SimpleHandlerFactory</code></li>
-<li>副檔名<code>*.aspx</code>泛型處理常式透過<code>PageHandlerFactory</code></li>
-</ul>
-</li>
-</ol>
-<blockquote>
-<p>想知道更多可以查看<code>applicationhost.config</code>註冊表</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">MapHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">        HttpContext context = _application.Context;</span><br><span class="line">        HttpRequest request = context.Request;</span><br><span class="line"></span><br><span class="line">        context.Handler = _application.MapHttpHandler(</span><br><span class="line">            context,</span><br><span class="line">            request.RequestType,</span><br><span class="line">            request.FilePathObject,</span><br><span class="line">            request.PhysicalPathInternal,</span><br><span class="line">            <span class="literal">false</span> <span class="comment">/*useAppConfig*/</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">internal</span> IHttpHandler <span class="title">MapHttpHandler</span>(<span class="params">HttpContext context, String requestType, VirtualPath path, String pathTranslated, <span class="keyword">bool</span> useAppConfig</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">		IHttpHandler handler = (context.ServerExecuteDepth == <span class="number">0</span>) ? context.RemapHandlerInstance : <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">using</span> (<span class="keyword">new</span> ApplicationImpersonationContext()) &#123;</span><br><span class="line">			<span class="comment">// Use remap handler if possible</span></span><br><span class="line">			<span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">				<span class="keyword">return</span> handler;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Map new handler</span></span><br><span class="line">			HttpHandlerAction mapping = GetHandlerMapping(context, requestType, path, useAppConfig);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (mapping == <span class="literal">null</span>) &#123;</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_NOT_FOUND);</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_FAILED);</span><br><span class="line">				<span class="keyword">throw</span> <span class="keyword">new</span> HttpException(SR.GetString(SR.Http_handler_not_found_for_request_type, requestType));</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			IHttpHandlerFactory factory = GetFactory(mapping);</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				IHttpHandlerFactory2 factory2 = factory <span class="keyword">as</span> IHttpHandlerFactory2;</span><br><span class="line"></span><br><span class="line">				<span class="keyword">if</span> (factory2 != <span class="literal">null</span>) &#123;</span><br><span class="line">					handler = factory2.GetHandler(context, requestType, path, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">else</span> &#123;</span><br><span class="line">					handler = factory.GetHandler(context, requestType, path.VirtualPathString, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> (FileNotFoundException e) &#123;</span><br><span class="line">				<span class="comment">//...丟Exception</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Remember for recycling</span></span><br><span class="line">			<span class="keyword">if</span> (_handlerRecycleList == <span class="literal">null</span>)</span><br><span class="line">				_handlerRecycleList = <span class="keyword">new</span> ArrayList();</span><br><span class="line">			_handlerRecycleList.Add(<span class="keyword">new</span> HandlerWithFactory(handler, factory));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><code>MapHandlerExecutionStep</code>是為了找到我們要執行的<code>HttpHandler</code>物件.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">	<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>在一開始先判斷<code>handler</code>是否已經有值如果有就直接返回(這個很重要因為這是為什麼<code>MVC</code>,<code>WebAPI</code>可以運作且不用在<code>Config</code>設定配對<code>IHttpHandlerFactory</code>原因).</p>
-<blockquote>
-<p>只需要在<code>MapHandlerExecutionStep</code>執行前將<code>context.RemapHandlerInstance</code>給一個<code>HttpHandler</code>物件即可.</p>
-</blockquote>
-<h3 id="CallHandlerExecutionStep程式碼解說"><a href="#CallHandlerExecutionStep程式碼解說" class="headerlink" title="CallHandlerExecutionStep程式碼解說"></a>CallHandlerExecutionStep程式碼解說</h3><p><code>CallHandlerExecutionStep</code>物件透過<code>context.Handler</code>可以找到要執行的<code>HttpHandler</code>,這邊也是優先判斷是否可執行異步請求.</p>
-<ul>
-<li>異步呼叫<code>beginProcessRequestDelegate</code>方法(此方法將實現<code>IHttpAsyncHandler</code>物件封裝成一個<code>Func&lt;T, AsyncCallback, object, IAsyncResult&gt;</code>委派方法),之後再調用返回一個<code>IAsyncResult</code>物件(處理後結果最後呼叫<code>EndProcessRequest</code>方法).</li>
-<li>同步呼叫<code>ProcessRequest</code>:判斷<code>context.Handler</code>不是<code>IHttpAsyncHandler</code>型別就值型同步動作</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// execution step -- call HTTP handler (used to be a separate module)</span></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">CallHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> HttpApplication   _application;</span><br><span class="line">	<span class="keyword">private</span> AsyncCallback     _completionCallback;</span><br><span class="line">	<span class="keyword">private</span> IHttpAsyncHandler _handler;       <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> AsyncStepCompletionInfo _asyncStepCompletionInfo; <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">bool</span>              _sync;          <span class="comment">// per call</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">CallHandlerExecutionStep</span>(<span class="params">HttpApplication app</span>)</span> &#123;</span><br><span class="line">		_application = app;</span><br><span class="line">		_completionCallback = <span class="keyword">new</span> AsyncCallback(<span class="keyword">this</span>.OnAsyncHandlerCompletion);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...其他方法</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">		HttpContext context = _application.Context;</span><br><span class="line">		IHttpHandler handler = context.Handler;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler != <span class="literal">null</span> &amp;&amp; HttpRuntime.UseIntegratedPipeline) &#123;</span><br><span class="line">			IIS7WorkerRequest wr = context.WorkerRequest <span class="keyword">as</span> IIS7WorkerRequest;</span><br><span class="line">			<span class="keyword">if</span> (wr != <span class="literal">null</span> &amp;&amp; wr.IsHandlerExecutionDenied()) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				HttpException error = <span class="keyword">new</span> HttpException(<span class="number">403</span>, SR.GetString(SR.Handler_access_denied));</span><br><span class="line">				error.SetFormatter(<span class="keyword">new</span> PageForbiddenErrorFormatter(context.Request.Path, SR.GetString(SR.Handler_access_denied)));</span><br><span class="line">				<span class="keyword">throw</span> error;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler == <span class="literal">null</span>) &#123;</span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> <span class="keyword">if</span> (handler <span class="keyword">is</span> IHttpAsyncHandler) &#123;</span><br><span class="line">			<span class="comment">// asynchronous handler</span></span><br><span class="line">			IHttpAsyncHandler asyncHandler = (IHttpAsyncHandler)handler;</span><br><span class="line"></span><br><span class="line">			_sync = <span class="literal">false</span>;</span><br><span class="line">			_handler = asyncHandler;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> beginProcessRequestDelegate = AppVerifier.WrapBeginMethod&lt;HttpContext&gt;(_application, asyncHandler.BeginProcessRequest);</span><br><span class="line"></span><br><span class="line">			_asyncStepCompletionInfo.Reset();</span><br><span class="line">			context.SyncContext.AllowVoidAsyncOperations();</span><br><span class="line">			IAsyncResult ar;</span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				ar = beginProcessRequestDelegate(context, _completionCallback, <span class="literal">null</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> &#123;</span><br><span class="line">				<span class="comment">// The asynchronous step has completed, so we should disallow further</span></span><br><span class="line">				<span class="comment">// async operations until the next step.</span></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line">				<span class="keyword">throw</span>;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">bool</span> operationCompleted;</span><br><span class="line">			<span class="keyword">bool</span> mustCallEndHandler;</span><br><span class="line">			_asyncStepCompletionInfo.RegisterBeginUnwound(ar, <span class="keyword">out</span> operationCompleted, <span class="keyword">out</span> mustCallEndHandler);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (operationCompleted) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				_handler = <span class="literal">null</span>; <span class="comment">// not to remember</span></span><br><span class="line"></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line"></span><br><span class="line">				<span class="keyword">try</span> &#123;</span><br><span class="line">					<span class="keyword">if</span> (mustCallEndHandler) &#123;</span><br><span class="line">						asyncHandler.EndProcessRequest(ar);</span><br><span class="line">					&#125;</span><br><span class="line"></span><br><span class="line">					_asyncStepCompletionInfo.ReportError();</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">finally</span> &#123;</span><br><span class="line">					SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">					context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// synchronous handler</span></span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">			context.SyncContext.SetSyncCaller();</span><br><span class="line"></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				handler.ProcessRequest(context);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">finally</span> &#123;</span><br><span class="line">				context.SyncContext.ResetSyncCaller();</span><br><span class="line"></span><br><span class="line">				SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">				context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>希望可以讓大家對於為什麼<code>Asp.net</code>為何可以針對<code>IHttpModule</code>擴充且為何最後都會請求一個<code>IHttpHandler</code>有更深入的了解.</p>
-<p>微軟透過一系列的管道設計模式提供有高度擴展的系統對外提供一個<code>IHttpHandler</code>讓我們可以客製化擴充要執行的請求.</p>
-<p>對於此次請求又有<code>IHttpModule</code>可對於<code>HttpApplication</code>事件做擴充(透過AOP編成方式).</p>
-<p>今天之後我們會開始講解<strong>Asp.net MVC</strong>相關的原始程式碼.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day7/">https://isdaniel.github.io/ithelp-day7/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -7037,63 +7037,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>沒有Source Code 如何修改程式??</title>
-    <url>/modify-sourcecode/</url>
-    <content><![CDATA[<p>某些專案因為歷史久遠沒有Source Code,但有個需求需要異動裡面的程式該怎麼辦??</p>
-<p>難道只能整個反組譯,查看程式碼翻一份做新的嗎?</p>
-<p>不~~其實有辦法直接對於DLL進行修改</p>
-<p>只需使用  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbA==" title="https://github.com/sailro/Reflexil">Reflexil<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5" title="https://github.com/icsharpcode/ILSpy">ILSpy<i class="fa fa-external-link"></i></span> 或其他支援的反組譯軟體 </p>
-<blockquote>
-<p>Reflexil 是一個組譯編輯器插件目前支援 Reflector, ILSpy 和 Telerik’s JustDecompile.</p>
-</blockquote>
-<p>下載連結</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbC9yZWxlYXNlcy90YWcvdjIuMg==" title="https://github.com/sailro/Reflexil/releases/tag/v2.2">Reflexil Release 2.2<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5L3JlbGVhc2VzL3RhZy92My4yLjA=" title="https://github.com/icsharpcode/ILSpy/releases/tag/v3.2.0">ILSpy version 3.2<i class="fa fa-external-link"></i></span> </p>
-<h1 id="前置動作，安裝"><a href="#前置動作，安裝" class="headerlink" title="前置動作，安裝"></a>前置動作，安裝</h1><h2 id="Reflexil-下載"><a href="#Reflexil-下載" class="headerlink" title="Reflexil 下載"></a>Reflexil 下載</h2><p>下載 <code>reflexil.for.ILSpy.2.2.bin.zip</code>，不用下載<code>AIO</code></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445075_84536.png" alt></p>
-<p>作者有說</p>
-<blockquote>
-<p>ILSpy version 3.2 (ILSpy 4 is not currently compatible with Reflexil, given the use of System.Reflection.Metadata, deprecating Mono.Cecil usage)<br>ILSpy 4 當前版本 ILSpy.2.2 並不支援</p>
-</blockquote>
-<h2 id="ILSpy-3-2-下載"><a href="#ILSpy-3-2-下載" class="headerlink" title="ILSpy 3.2 下載"></a>ILSpy 3.2 下載</h2><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445185_3282.png" alt></p>
-<p>下載完後就把全部的DLL放在同一個資料夾下,並開啟 <code>ILSpy.exe</code></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445435_24298.png" alt></p>
-<p>按下上方的齒輪UI 就可獲得下方藍色的Reflexil 修改框框.</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445493_79646.png" alt></p>
-<hr>
-<h1 id="組件修改"><a href="#組件修改" class="headerlink" title="組件修改"></a>組件修改</h1><h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><blockquote>
-<p>目前組件 有個ClassA 類別,裡面有一個prop1屬性 型態是string, 我們希望在這新增另一個屬性</p>
-</blockquote>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446072_21457.png" alt></p>
-<p>使用滑鼠右鍵點擊類別<code>ClassA</code>,我們可以看到很多方式可以注入新的程式碼</p>
-<p>在這我們選擇<code>inject property</code>. </p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446266_25885.png" alt></p>
-<p>我們需要修改的是</p>
-<ul>
-<li>Item Name (使用屬性的名稱)</li>
-<li>Property Type(使用屬性類別)</li>
-<li><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446422_66604.png" alt></li>
-</ul>
-<p>選擇完後按下OK,我們就會發現<code>prop2</code>新屬性會出現在<code>ClassA</code>中.</p>
-<blockquote>
-<p>新增完後不代表已經將修改儲存!!</p>
-</blockquote>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446504_58205.png" alt></p>
-<p>我們需要點選組件，之後再按下<code>Save AS</code> 把本次修改儲存</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446789_43637.png" alt></p>
-<p>日後我們就可以使用新的屬性在我們程式中了!!</p>
-<h3 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h3><p>此插件還可以新增,插入許多東西時屬非常強大,有興趣的玩家可再自行深入琢磨.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/modify-sourcecode/">https://isdaniel.github.io/modify-sourcecode/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Reflection</tag>
-        <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>高併發系統系列-非同步 MQ-WorkerPool 架構 Poc</title>
     <url>/mq-worker-system/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>在處理高併發系統架構時，非同步是一個很好的手段和提升效率的方式.</p>
@@ -7233,6 +7176,63 @@ email_url: dog830228@gmail.com
         <tag>RabbitMq</tag>
         <tag>ThreadPool</tag>
         <tag>SystemDesign</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>沒有Source Code 如何修改程式??</title>
+    <url>/modify-sourcecode/</url>
+    <content><![CDATA[<p>某些專案因為歷史久遠沒有Source Code,但有個需求需要異動裡面的程式該怎麼辦??</p>
+<p>難道只能整個反組譯,查看程式碼翻一份做新的嗎?</p>
+<p>不~~其實有辦法直接對於DLL進行修改</p>
+<p>只需使用  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbA==" title="https://github.com/sailro/Reflexil">Reflexil<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5" title="https://github.com/icsharpcode/ILSpy">ILSpy<i class="fa fa-external-link"></i></span> 或其他支援的反組譯軟體 </p>
+<blockquote>
+<p>Reflexil 是一個組譯編輯器插件目前支援 Reflector, ILSpy 和 Telerik’s JustDecompile.</p>
+</blockquote>
+<p>下載連結</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbC9yZWxlYXNlcy90YWcvdjIuMg==" title="https://github.com/sailro/Reflexil/releases/tag/v2.2">Reflexil Release 2.2<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5L3JlbGVhc2VzL3RhZy92My4yLjA=" title="https://github.com/icsharpcode/ILSpy/releases/tag/v3.2.0">ILSpy version 3.2<i class="fa fa-external-link"></i></span> </p>
+<h1 id="前置動作，安裝"><a href="#前置動作，安裝" class="headerlink" title="前置動作，安裝"></a>前置動作，安裝</h1><h2 id="Reflexil-下載"><a href="#Reflexil-下載" class="headerlink" title="Reflexil 下載"></a>Reflexil 下載</h2><p>下載 <code>reflexil.for.ILSpy.2.2.bin.zip</code>，不用下載<code>AIO</code></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445075_84536.png" alt></p>
+<p>作者有說</p>
+<blockquote>
+<p>ILSpy version 3.2 (ILSpy 4 is not currently compatible with Reflexil, given the use of System.Reflection.Metadata, deprecating Mono.Cecil usage)<br>ILSpy 4 當前版本 ILSpy.2.2 並不支援</p>
+</blockquote>
+<h2 id="ILSpy-3-2-下載"><a href="#ILSpy-3-2-下載" class="headerlink" title="ILSpy 3.2 下載"></a>ILSpy 3.2 下載</h2><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445185_3282.png" alt></p>
+<p>下載完後就把全部的DLL放在同一個資料夾下,並開啟 <code>ILSpy.exe</code></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445435_24298.png" alt></p>
+<p>按下上方的齒輪UI 就可獲得下方藍色的Reflexil 修改框框.</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445493_79646.png" alt></p>
+<hr>
+<h1 id="組件修改"><a href="#組件修改" class="headerlink" title="組件修改"></a>組件修改</h1><h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><blockquote>
+<p>目前組件 有個ClassA 類別,裡面有一個prop1屬性 型態是string, 我們希望在這新增另一個屬性</p>
+</blockquote>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446072_21457.png" alt></p>
+<p>使用滑鼠右鍵點擊類別<code>ClassA</code>,我們可以看到很多方式可以注入新的程式碼</p>
+<p>在這我們選擇<code>inject property</code>. </p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446266_25885.png" alt></p>
+<p>我們需要修改的是</p>
+<ul>
+<li>Item Name (使用屬性的名稱)</li>
+<li>Property Type(使用屬性類別)</li>
+<li><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446422_66604.png" alt></li>
+</ul>
+<p>選擇完後按下OK,我們就會發現<code>prop2</code>新屬性會出現在<code>ClassA</code>中.</p>
+<blockquote>
+<p>新增完後不代表已經將修改儲存!!</p>
+</blockquote>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446504_58205.png" alt></p>
+<p>我們需要點選組件，之後再按下<code>Save AS</code> 把本次修改儲存</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446789_43637.png" alt></p>
+<p>日後我們就可以使用新的屬性在我們程式中了!!</p>
+<h3 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h3><p>此插件還可以新增,插入許多東西時屬非常強大,有興趣的玩家可再自行深入琢磨.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/modify-sourcecode/">https://isdaniel.github.io/modify-sourcecode/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Reflection</tag>
+        <tag>Assembly</tag>
       </tags>
   </entry>
   <entry>
@@ -8033,6 +8033,60 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       </tags>
   </entry>
   <entry>
+    <title>RabbitMQ cluster-operator</title>
+    <url>/rabbitmq-cluster-operator/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 Rabbitmq 官方 Github 有開源一個 k8s 操作管理  RabbitMQ clusters 環境 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3I=" title="https://github.com/rabbitmq/cluster-operator">cluster-operator<i class="fa fa-external-link"></i></span>.</p>
+<p>這個專案在2020啟動，我個人覺得官方有些說明還沒很完善，本篇文章跟大家介紹如何去使用</p>
+<h2 id="建立-operator"><a href="#建立-operator" class="headerlink" title="建立 operator"></a>建立 operator</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml</span><br></pre></td></tr></table></figure></div>
+<p>下面的yaml檔案是建立一個<code>RabbitmqCluster</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure></div>
+<p>透過 <code>kubectl apply -f {your yaml filename}</code> 後就可以透過 <code>kubectl get all</code> 查看 RabbitMQ cluster 是否建立完成</p>
+<p>如果建立完成會出現類似下圖</p>
+<p><img src="https://i.imgur.com/5qtQixT.png" alt></p>
+<p>綠色框框是這次建立的 RabbitMQ cluster 能看到 Pod 有三台</p>
+<p>我們可以利用 Ingress Rule &amp; Ingress 把我們的服務對外出來，可以執行下面yaml</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">rabbitmq-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">http:</span></span><br><span class="line">      <span class="attr">paths:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/</span></span><br><span class="line">        <span class="attr">pathType:</span> <span class="string">Prefix</span></span><br><span class="line">        <span class="attr">backend:</span> <span class="comment">## to service</span></span><br><span class="line">          <span class="attr">service:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line">            <span class="attr">port:</span></span><br><span class="line">              <span class="attr">number:</span> <span class="number">15672</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>注意 <code>backend.service.name</code> 名稱要對應上面的 <code>metadata.name</code> 不然 Ingress Endpoint會綁定不到</p>
+</blockquote>
+<p>能看到畫面後會發現利用 <code>guest/guest</code> 登入會失敗，稍後會跟大家說明原因</p>
+<h2 id="修改登入預設密碼"><a href="#修改登入預設密碼" class="headerlink" title="修改登入預設密碼"></a>修改登入預設密碼</h2><p>啟動完 RabbitMQ clusters 透過 ingress controller 對外暴露，服務但會發現使用RabbitMq預設密碼不能登入….</p>
+<p>那是因為他的預設密碼有透過特別處理.</p>
+<p>在官方Guide文件中 <span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2t1YmVybmV0ZXMvb3BlcmF0b3Ivb3BlcmF0b3Itb3ZlcnZpZXcuaHRtbCNsaW1pdGF0aW9ucw==" title="https://www.rabbitmq.com/kubernetes/operator/operator-overview.html#limitations">Limitations<i class="fa fa-external-link"></i></span> 由提到</p>
+<blockquote>
+<p>Deleted <strong>Secret</strong> objects will be recreated by the Kubernetes Operator but the newly generated <strong>secret</strong> value will not be deployed to the RabbitMQ cluster</p>
+</blockquote>
+<p>經由上面我們可以知道密碼可能藏在<strong>secret</strong>上</p>
+<p>利用<code>kubectl get secret</code>可以看到有多了幾個RabbitMQ Secret</p>
+<p><img src="https://i.imgur.com/y7026UN.png" alt></p>
+<blockquote>
+<p><code>secret</code>可以透過 base64 解碼，就可以看到原始的資料(就可以看到 RabbitmqCluster 幫我們預設建立 password &amp; username)</p>
+</blockquote>
+<p>但我下面會介紹如何透過 yaml 檔案設定預設帳號密碼</p>
+<p>我們把剛剛建立的 RabbitmqCluster 稍微改一下，新增 <code>additionalConfig</code> 區段</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">rabbitmq:</span></span><br><span class="line">    <span class="attr">additionalConfig:</span> <span class="string">|</span></span><br><span class="line">      <span class="string">default_user=guest</span></span><br><span class="line">      <span class="string">default_pass=guest</span></span><br></pre></td></tr></table></figure></div>
+<p>改完後再執行刪除跟重建</p>
+<blockquote>
+<p>因為要把<code>secret</code>更新 這樣做比較快XDD</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">kubectl</span> <span class="string">delete</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br><span class="line"><span class="string">kubectl</span> <span class="string">apply</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br></pre></td></tr></table></figure></div>
+<p>再次利用 <code>guest/guest</code> 理論上就可以登入進去了</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Rabbitmq 官方很佛心 幫我們建立 k8s cluster 機制，讓我們可以方便操作，雖然目前有一些 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3IvdHJlZS9tYWluL2RvY3MvZXhhbXBsZXM=" title="https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples">sample<i class="fa fa-external-link"></i></span> 可以參考</p>
+<p>但我覺得Sample 文件資訊還是有點少，到導致有些需求要花蠻多時間去查找的</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-cluster-operator/">https://isdaniel.github.io/rabbitmq-cluster-operator/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>k8s</category>
+        <category>Kubernetes</category>
+        <category>RabbitMQ</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+        <tag>Kubernetes</tag>
+        <tag>RabbitMQ</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>RabbitMQ (三) 簡單實作一個MQ</title>
     <url>/rabbitmq-fanout/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本篇利用RabbitMQ client來簡單實現MQ功能.</p>
@@ -8134,60 +8188,6 @@ using (var channel = connection.CreateModel())
         <tag>C#</tag>
         <tag>RabbitMQ</tag>
         <tag>MQ</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RabbitMQ cluster-operator</title>
-    <url>/rabbitmq-cluster-operator/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 Rabbitmq 官方 Github 有開源一個 k8s 操作管理  RabbitMQ clusters 環境 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3I=" title="https://github.com/rabbitmq/cluster-operator">cluster-operator<i class="fa fa-external-link"></i></span>.</p>
-<p>這個專案在2020啟動，我個人覺得官方有些說明還沒很完善，本篇文章跟大家介紹如何去使用</p>
-<h2 id="建立-operator"><a href="#建立-operator" class="headerlink" title="建立 operator"></a>建立 operator</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml</span><br></pre></td></tr></table></figure></div>
-<p>下面的yaml檔案是建立一個<code>RabbitmqCluster</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure></div>
-<p>透過 <code>kubectl apply -f {your yaml filename}</code> 後就可以透過 <code>kubectl get all</code> 查看 RabbitMQ cluster 是否建立完成</p>
-<p>如果建立完成會出現類似下圖</p>
-<p><img src="https://i.imgur.com/5qtQixT.png" alt></p>
-<p>綠色框框是這次建立的 RabbitMQ cluster 能看到 Pod 有三台</p>
-<p>我們可以利用 Ingress Rule &amp; Ingress 把我們的服務對外出來，可以執行下面yaml</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">rabbitmq-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">http:</span></span><br><span class="line">      <span class="attr">paths:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/</span></span><br><span class="line">        <span class="attr">pathType:</span> <span class="string">Prefix</span></span><br><span class="line">        <span class="attr">backend:</span> <span class="comment">## to service</span></span><br><span class="line">          <span class="attr">service:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line">            <span class="attr">port:</span></span><br><span class="line">              <span class="attr">number:</span> <span class="number">15672</span></span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>注意 <code>backend.service.name</code> 名稱要對應上面的 <code>metadata.name</code> 不然 Ingress Endpoint會綁定不到</p>
-</blockquote>
-<p>能看到畫面後會發現利用 <code>guest/guest</code> 登入會失敗，稍後會跟大家說明原因</p>
-<h2 id="修改登入預設密碼"><a href="#修改登入預設密碼" class="headerlink" title="修改登入預設密碼"></a>修改登入預設密碼</h2><p>啟動完 RabbitMQ clusters 透過 ingress controller 對外暴露，服務但會發現使用RabbitMq預設密碼不能登入….</p>
-<p>那是因為他的預設密碼有透過特別處理.</p>
-<p>在官方Guide文件中 <span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2t1YmVybmV0ZXMvb3BlcmF0b3Ivb3BlcmF0b3Itb3ZlcnZpZXcuaHRtbCNsaW1pdGF0aW9ucw==" title="https://www.rabbitmq.com/kubernetes/operator/operator-overview.html#limitations">Limitations<i class="fa fa-external-link"></i></span> 由提到</p>
-<blockquote>
-<p>Deleted <strong>Secret</strong> objects will be recreated by the Kubernetes Operator but the newly generated <strong>secret</strong> value will not be deployed to the RabbitMQ cluster</p>
-</blockquote>
-<p>經由上面我們可以知道密碼可能藏在<strong>secret</strong>上</p>
-<p>利用<code>kubectl get secret</code>可以看到有多了幾個RabbitMQ Secret</p>
-<p><img src="https://i.imgur.com/y7026UN.png" alt></p>
-<blockquote>
-<p><code>secret</code>可以透過 base64 解碼，就可以看到原始的資料(就可以看到 RabbitmqCluster 幫我們預設建立 password &amp; username)</p>
-</blockquote>
-<p>但我下面會介紹如何透過 yaml 檔案設定預設帳號密碼</p>
-<p>我們把剛剛建立的 RabbitmqCluster 稍微改一下，新增 <code>additionalConfig</code> 區段</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">rabbitmq:</span></span><br><span class="line">    <span class="attr">additionalConfig:</span> <span class="string">|</span></span><br><span class="line">      <span class="string">default_user=guest</span></span><br><span class="line">      <span class="string">default_pass=guest</span></span><br></pre></td></tr></table></figure></div>
-<p>改完後再執行刪除跟重建</p>
-<blockquote>
-<p>因為要把<code>secret</code>更新 這樣做比較快XDD</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">kubectl</span> <span class="string">delete</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br><span class="line"><span class="string">kubectl</span> <span class="string">apply</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br></pre></td></tr></table></figure></div>
-<p>再次利用 <code>guest/guest</code> 理論上就可以登入進去了</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Rabbitmq 官方很佛心 幫我們建立 k8s cluster 機制，讓我們可以方便操作，雖然目前有一些 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3IvdHJlZS9tYWluL2RvY3MvZXhhbXBsZXM=" title="https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples">sample<i class="fa fa-external-link"></i></span> 可以參考</p>
-<p>但我覺得Sample 文件資訊還是有點少，到導致有些需求要花蠻多時間去查找的</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-cluster-operator/">https://isdaniel.github.io/rabbitmq-cluster-operator/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>k8s</category>
-        <category>Kubernetes</category>
-        <category>RabbitMQ</category>
-      </categories>
-      <tags>
-        <tag>k8s</tag>
-        <tag>Kubernetes</tag>
-        <tag>RabbitMQ</tag>
       </tags>
   </entry>
   <entry>
