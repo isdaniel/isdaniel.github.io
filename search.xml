@@ -2088,6 +2088,145 @@ class Program
       </tags>
   </entry>
   <entry>
+    <title>淺談SqlServer Lock(一)</title>
+    <url>/dblock-1/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#前文">前文</a></li>
+<li><a href="#兩種圍度的lock">兩種圍度的Lock</a><ul>
+<li><a href="#lock範圍">Lock範圍</a></li>
+<li><a href="#lock類型">Lock類型</a><ul>
+<li><a href="#update-lock-存在的意義">Update Lock 存在的意義</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#lock互斥demo">Lock互斥Demo</a><ul>
+<li><a href="#nolock的隱憂">NoLock的隱憂</a><ul>
+<li><a href="#read-uncommitted-髒讀取">Read Uncommitted 髒讀取</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#小結">小結</a><h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2></li>
+</ul>
+<p>之前有跟大家介紹資料庫交易中的<a href="https://isdaniel.github.io/ACID/">ACID</a>,今天我們就來談談常常聽到<strong>Lock</strong></p>
+<p>在討論Lock前我們必須先了解,為什麼會有Lock?</p>
+<p>假如你的系統能保證只有一個使用著操作每個資源,其實也就不用lock存在,但現實生活中往往有個命令對於同一個資源操作.這時候我們為了確保資料正確性,必須使用lock來避免<span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvUmFjZV9jb25kaXRpb24=" title="https://en.wikipedia.org/wiki/Race_condition">Racing Condition<i class="fa fa-external-link"></i></span>.</p>
+<p>在早期系統我們要儲存資料會存放檔案在Disk並使用類似Excel方式來儲存,但這會導致每次讀取只有有一個使用者(因為對於檔案上Lock),被lock資源其他人就無法存入</p>
+<h2 id="兩種圍度的Lock"><a href="#兩種圍度的Lock" class="headerlink" title="兩種圍度的Lock"></a>兩種圍度的Lock</h2><p>在<code>Sql-Server</code> Lock有分兩種圍度</p>
+<ol>
+<li>Lock範圍</li>
+<li>Lock類型</li>
+</ol>
+<h3 id="Lock範圍"><a href="#Lock範圍" class="headerlink" title="Lock範圍"></a>Lock範圍</h3><p><code>Sql-Server</code>支援我們在同一時間能建立不同交易執行命令<br>是因為<code>Sql-Server</code>有許多不一樣力度範圍Lock.</p>
+<blockquote>
+<p>下表表示鎖範圍等級由上到下越來越大. </p>
+</blockquote>
+<ul>
+<li>Row (•RID) </li>
+<li>Key (•KEY) </li>
+<li>Page (•PAG) </li>
+<li>Extent (•    EXT) </li>
+<li>Heap or B-tree (•    HoBT) </li>
+<li>Table (•    TAB) </li>
+<li>File (•    FIL) </li>
+<li>Application (•    APP) </li>
+<li>MetaData (•    MDT) </li>
+<li>Allocation Unit (•    AU) </li>
+<li>Database (•DB)</li>
+</ul>
+<h3 id="Lock類型"><a href="#Lock類型" class="headerlink" title="Lock類型"></a>Lock類型</h3><p>在SqlServer有許多類型Lock</p>
+<ul>
+<li>Shared Locks (s)</li>
+<li>Update Locks (U)</li>
+<li>Exclusive Locks (X)</li>
+<li>Intent Locks (I)</li>
+<li>Schema Locks (Sch)</li>
+<li>Bulk Update Locks (BU)</li>
+<li>Key-range</li>
+</ul>
+<p>下表是Lock類型互斥或相容對應表</p>
+<p><img src="https://i.imgur.com/YaBZcaT.png" alt></p>
+<p>例如:你在使用查詢(Shared Lock),除了上XLock資源外其餘資料都可同步被查找出來.</p>
+<h4 id="Update-Lock-存在的意義"><a href="#Update-Lock-存在的意義" class="headerlink" title="Update Lock 存在的意義"></a>Update Lock 存在的意義</h4><p>我們在更新資料時使用Lock類型會如下</p>
+<blockquote>
+<p>Shared Lock =&gt; Update Lock =&gt; XLock</p>
+</blockquote>
+<ul>
+<li>Shared Lock:查詢更新的資料.</li>
+<li>Update Lock:更新前把資料改成Update Lock.</li>
+<li>XLock:確定要更新當下改成XLock.</li>
+</ul>
+<p>但為什麼會多一個Update Lock呢?</p>
+<blockquote>
+<p>因為可以避免DeadLock產生機率.</p>
+</blockquote>
+<p>假如有一個Update語法同時被執行.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">Update</span> T</span><br><span class="line"><span class="keyword">Set</span> Val = @Val</span><br><span class="line"><span class="keyword">Where</span> <span class="keyword">id</span> = <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
+<p>如果只有Shared Lock =&gt; XLock</p>
+<ol>
+<li>語法1 產生Shared Lock</li>
+<li>語法2 產生Shared Lock</li>
+<li>因為Shared Lock 和 XLock 互斥,所以互相等待對方Shared Lock釋放，造成死結(Dead Lock)</li>
+</ol>
+<p>假如我們多一個ULock會變成</p>
+<ol>
+<li>語法1 產生Shared Lock</li>
+<li>語法2 產生Shared Lock</li>
+<li>語法1 產生ULock(釋放Shared Lock)</li>
+<li>語法2 想要產生ULock發現語法1已經先產生(ULock)，所以等待語法1執行完畢(Block)</li>
+<li>語法1 Update完後產生XLock直到Commit結束才釋放XLock</li>
+<li>語法2 產生ULock執行後面更新動作.</li>
+</ol>
+<blockquote>
+<p>Shared Lock執行完查詢後立即釋放資源<br>關鍵在於Shared Lcok不互斥,ULock互斥</p>
+</blockquote>
+<h2 id="Lock互斥Demo"><a href="#Lock互斥Demo" class="headerlink" title="Lock互斥Demo"></a>Lock互斥Demo</h2><p>我們建立一張<code>T2</code>資料表</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="keyword">IF</span> <span class="keyword">EXISTS</span> T2</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T2 (<span class="keyword">Id</span> <span class="built_in">int</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T2 <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T2 <span class="keyword">VALUES</span> (<span class="number">2</span>)</span><br></pre></td></tr></table></figure></div>
+<p>在使用Transaction + XLOCK hint在查詢語法(這時T2查詢的資料就會被上XLock了)</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * </span><br><span class="line"><span class="keyword">FROM</span> T2 <span class="keyword">WITH</span>(XLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">Id</span> = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">'00:00:10'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure></div>
+<p>我們馬上開另一個Session,執行查詢<code>ID=1</code>語法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">Id</span> = <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
+<p>會發現我們需要等上面語法執行完才能查出資料,那是因為我們Shared Lock跟X Lock會互斥我們,必須等到XLock執行完我們才可以得到資料.</p>
+<h3 id="NoLock的隱憂"><a href="#NoLock的隱憂" class="headerlink" title="NoLock的隱憂"></a>NoLock的隱憂</h3><p>上文有提到Shard Lock會被XLock給Block住,如果我非得在資料上XLock時查詢資料有辦法嗎?</p>
+<p>有,我們在第二句查詢加上<code>With(Nolock)</code>hint或者是(設定<code>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</code>)不然Shard Lock會被XLock給Block住.</p>
+<blockquote>
+<p>但使用<code>With(Nolock)</code> Read Uncommitted要慎用,因為是髒讀取,(Read Uncommitted顧名思義就是讀取未<code>commite</code>資料)</p>
+</blockquote>
+<h4 id="Read-Uncommitted-髒讀取"><a href="#Read-Uncommitted-髒讀取" class="headerlink" title="Read Uncommitted 髒讀取"></a>Read Uncommitted 髒讀取</h4><p>我們試著把上面範例稍微修改一下第一個查詢語法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">UPDATE</span> dbo.T2</span><br><span class="line"><span class="keyword">Set</span> <span class="keyword">id</span> = <span class="number">100</span></span><br><span class="line"><span class="keyword">where</span> <span class="keyword">id</span> = <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">'00:00:10'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure></div>
+<p>第二個查詢語法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> *</span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">with</span>(nolock)</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">Id</span> = <span class="number">100</span></span><br></pre></td></tr></table></figure></div>
+<p>在資料上XLock時使用<code>with(nolock)</code>來查詢資料,會發現可以查詢出Id=100資訊</p>
+<p><img src="https://i.imgur.com/aMvPo4W.png" alt></p>
+<p>但因為第一句語法因為一些原因RollBack,過段時間再查詢</p>
+<p><img src="https://i.imgur.com/5BqG419.png" alt></p>
+<p>我們會得到空的結果集…那是因為<code>with(nolock)</code>是髒讀取,在查詢時他會直接拿取目前資料最新狀態(這個資料狀態可能不一定,最後結果),假如RollBack就會導致資料錯誤問題.</p>
+<blockquote>
+<p>有時候NoLock會讀到重複資料<br>所以建議在跟算錢或交易有關程式碼,請別使用<code>with(nolock)</code></p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本篇對於Lock做了基本介紹</p>
+<ol>
+<li>Lock範圍</li>
+<li>Lock類型</li>
+</ol>
+<p><code>with(nolock)</code>記得要慎用,他會造成資料讀取上有誤差,建議在高併發系統且交易有關程式碼,請別使用<code>with(nolock)</code>,這會造成資料不正確(有資料執行到一半RollBack,剛好被NoLock查詢讀到)</p>
+<p>日後有機會再慢慢介紹更多Lock運用時間和注意事項.</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvc3FsL3JlbGF0aW9uYWwtZGF0YWJhc2VzL3NxbC1zZXJ2ZXItdHJhbnNhY3Rpb24tbG9ja2luZy1hbmQtcm93LXZlcnNpb25pbmctZ3VpZGU/dmlldz1zcWwtc2VydmVyLTIwMTc=" title="https://docs.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide?view=sql-server-2017">Transaction Locking and Row Versioning Guide<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dblock-1/">https://isdaniel.github.io/dblock-1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DataBase</category>
+        <category>Turning</category>
+      </categories>
+      <tags>
+        <tag>Lock</tag>
+        <tag>DataBase</tag>
+        <tag>Turning</tag>
+        <tag>Sql-server</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>撰寫SQL的建議</title>
     <url>/dbnote/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -3008,6 +3147,85 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
+    <title>淺談-編碼(encoding) vs 加解密 vs 雜湊(Hash)</title>
+    <url>/hash-encoding/</url>
+    <content><![CDATA[<p>這一邊有三筆資料</p>
+<ul>
+<li>U2FsdGVkX19FJsgVyam+Gh2EwmGs4BEJjJJsWxCXHWw84gp3uHvozWsHY8gfAx0C</li>
+<li>VG9kYXkgaXMgYSBnb29kIERheQ==</li>
+<li>046a484a529ecfc7693753ee65802b5cfcafd548252d0e5f1bca845ad2208b91</li>
+</ul>
+<p>這三個東西看起來都是亂碼，但所代表含意完全不一樣</p>
+<p>這邊會跟大家分享這三個東西特性和差異性</p>
+<p>此文同步發布 Blog <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvZGFuaWVsLzIwMTkvMDUvMDYvMjIzMDA0" title="https://dotblogs.com.tw/daniel/2019/05/06/223004">[淺談] 編碼(encoding) vs 加解密 vs 雜湊(Hash)<i class="fa fa-external-link"></i></span></p>
+<h1 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h1><p>會想分享這篇文章是因為蠻多人把</p>
+<ul>
+<li>編碼(encoding)</li>
+<li>加解密</li>
+<li>雜湊(Hash) </li>
+</ul>
+<p>這三個東西搞混，尤其是把編碼當作加密….這是非常危險的事情. </p>
+<pre><code>編碼!= 加密 兩個是完全不一樣的東西
+編碼!= 加密 兩個是完全不一樣的東西
+編碼!= 加密 兩個是完全不一樣的東西
+</code></pre><p>很重要所以要說三次XD! </p>
+<hr>
+<h1 id="編碼"><a href="#編碼" class="headerlink" title="編碼"></a>編碼</h1><h2 id="說明："><a href="#說明：" class="headerlink" title="說明："></a>說明：</h2><p>這邊用<code>Base64</code>編碼來介紹，我們可以看到下圖資料轉換是雙向的．</p>
+<pre><code>Hello Daniel　=&gt;  SGVsbG8gRGFuaWVs
+</code></pre><p>如果我們想要把<code>SGVsbG8gRGFuaWVs</code> 變回 <code>Hello Daniel</code> 只需進行<code>Base64</code>解碼即可</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557148998_19694.png" alt></p>
+<p>編碼是將原本的資料經過一個運算轉換成另一組資料,如果要還原成原本資料解碼</p>
+<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>在網路傳輸會使用到編碼主要是資料在傳輸時有些特殊字元,有特殊用途(ex:Http 傳參數  &amp;….)</p>
+<p>這時就可使用編碼將資料轉換成不會衝突到字串.</p>
+<p>如果想要了解 Base64 原理和演算法的話可以看我另一篇<a href="/base64-principle/" title="【深入淺出】Base編碼 (Base64為例子)">【深入淺出】Base編碼 (Base64為例子)</a></p>
+<hr>
+<h1 id="加解密"><a href="#加解密" class="headerlink" title="加解密"></a>加解密</h1><h2 id="說明：-1"><a href="#說明：-1" class="headerlink" title="說明："></a>說明：</h2><p>這邊以<code>AES</code>來介紹，我們可以看到下圖資料轉換是雙向，但會透過一個Key來做轉換(這邊是和編碼最大的差別)</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557149615_79307.png" alt></p>
+<p>要還原成原始資料我們只能透過一樣的Key才可以達成，就像一個寶相只有唯一一把鑰匙可以打開一樣．</p>
+<p>這邊補充一個簡單加密法(凱薩算法)，他是使用字元位移的數字來當作Key</p>
+<p>如果位移數量是1 <code>ABCD =&gt; BCDE</code></p>
+<p>如圖</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Caesar3.svg" alt></p>
+<h2 id="用途：-1"><a href="#用途：-1" class="headerlink" title="用途："></a>用途：</h2><p>加密可以確保資料的安全性（只有相同的Key才可還原成原本資料）很適合用在機密資料且須要還原使用</p>
+<hr>
+<h1 id="雜湊-Hash"><a href="#雜湊-Hash" class="headerlink" title="雜湊(Hash)"></a>雜湊(Hash)</h1><h2 id="說明：-2"><a href="#說明：-2" class="headerlink" title="說明："></a>說明：</h2><p>這裡用<code>Sha256</code>來當作範例</p>
+<p>Hash有幾個特點</p>
+<ol>
+<li>不管資料量多大經過SHA256運算字串長度都是一樣的</li>
+<li><code>SHA256</code>的原因是運算完的資料大小一定是 <code>256 bit</code></li>
+<li>她是一個不可逆的算法所以我們可以看到箭頭是單向.</li>
+<li>相同的值用SHA運算過後值都是一樣的</li>
+</ol>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557152092_14191.png" alt></p>
+<p>一定會有小夥伴好奇,運算完都是固定長度 那會不會出現一個情況,原始資料不一樣但算完<code>Hash</code>結果是一樣的</p>
+<pre><code>會 這個我們稱之為雜湊碰撞 這個機率很小
+</code></pre><h2 id="用途：-2"><a href="#用途：-2" class="headerlink" title="用途："></a>用途：</h2><p>一般我們可以把使用者密碼經<code>Hash</code>運算存入資料庫中,當作使用唯一識別碼(像指紋)下次使用者登入用運一樣的<code>Hash</code>算法 再將值拿來比較辨識使用者合法性.</p>
+<hr>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>對於這邊有一個簡單的比較表格</p>
+<ul>
+<li>編碼(encoding)</li>
+<li>加解密</li>
+<li>雜湊(Hash) </li>
+</ul>
+<p><img src="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png" alt="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png"></p>
+<p>加解密和編碼最常被大家誤會搞錯地方是以為使用<code>Base64</code>編碼就很安全(但有心人事取得你的資料只要知道你使用編碼就可以還原成原始資料)</p>
+<p>如果要確保資料隱密性時可以使用加解密而不是編碼</p>
+<p>所以別再把<code>Base64</code>編碼當作加密工具來使用.</p>
+<p>這是很危險低</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/hash-encoding/">https://isdaniel.github.io/hash-encoding/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>Base64</tag>
+        <tag>Encoding</tag>
+        <tag>AES</tag>
+        <tag>SHA256</tag>
+        <tag>Hash</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>建立自己Blog系列(三) Hexo next theme 介紹</title>
     <url>/hexo-blog-theme/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>為何我會選用Hxeo來當作Blog框架?</p>
@@ -3151,85 +3369,6 @@ email_url: dog830228@gmail.com
         <tag>Blog</tag>
         <tag>Github</tag>
         <tag>CICD</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>淺談-編碼(encoding) vs 加解密 vs 雜湊(Hash)</title>
-    <url>/hash-encoding/</url>
-    <content><![CDATA[<p>這一邊有三筆資料</p>
-<ul>
-<li>U2FsdGVkX19FJsgVyam+Gh2EwmGs4BEJjJJsWxCXHWw84gp3uHvozWsHY8gfAx0C</li>
-<li>VG9kYXkgaXMgYSBnb29kIERheQ==</li>
-<li>046a484a529ecfc7693753ee65802b5cfcafd548252d0e5f1bca845ad2208b91</li>
-</ul>
-<p>這三個東西看起來都是亂碼，但所代表含意完全不一樣</p>
-<p>這邊會跟大家分享這三個東西特性和差異性</p>
-<p>此文同步發布 Blog <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvZGFuaWVsLzIwMTkvMDUvMDYvMjIzMDA0" title="https://dotblogs.com.tw/daniel/2019/05/06/223004">[淺談] 編碼(encoding) vs 加解密 vs 雜湊(Hash)<i class="fa fa-external-link"></i></span></p>
-<h1 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h1><p>會想分享這篇文章是因為蠻多人把</p>
-<ul>
-<li>編碼(encoding)</li>
-<li>加解密</li>
-<li>雜湊(Hash) </li>
-</ul>
-<p>這三個東西搞混，尤其是把編碼當作加密….這是非常危險的事情. </p>
-<pre><code>編碼!= 加密 兩個是完全不一樣的東西
-編碼!= 加密 兩個是完全不一樣的東西
-編碼!= 加密 兩個是完全不一樣的東西
-</code></pre><p>很重要所以要說三次XD! </p>
-<hr>
-<h1 id="編碼"><a href="#編碼" class="headerlink" title="編碼"></a>編碼</h1><h2 id="說明："><a href="#說明：" class="headerlink" title="說明："></a>說明：</h2><p>這邊用<code>Base64</code>編碼來介紹，我們可以看到下圖資料轉換是雙向的．</p>
-<pre><code>Hello Daniel　=&gt;  SGVsbG8gRGFuaWVs
-</code></pre><p>如果我們想要把<code>SGVsbG8gRGFuaWVs</code> 變回 <code>Hello Daniel</code> 只需進行<code>Base64</code>解碼即可</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557148998_19694.png" alt></p>
-<p>編碼是將原本的資料經過一個運算轉換成另一組資料,如果要還原成原本資料解碼</p>
-<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>在網路傳輸會使用到編碼主要是資料在傳輸時有些特殊字元,有特殊用途(ex:Http 傳參數  &amp;….)</p>
-<p>這時就可使用編碼將資料轉換成不會衝突到字串.</p>
-<p>如果想要了解 Base64 原理和演算法的話可以看我另一篇<a href="/base64-principle/" title="【深入淺出】Base編碼 (Base64為例子)">【深入淺出】Base編碼 (Base64為例子)</a></p>
-<hr>
-<h1 id="加解密"><a href="#加解密" class="headerlink" title="加解密"></a>加解密</h1><h2 id="說明：-1"><a href="#說明：-1" class="headerlink" title="說明："></a>說明：</h2><p>這邊以<code>AES</code>來介紹，我們可以看到下圖資料轉換是雙向，但會透過一個Key來做轉換(這邊是和編碼最大的差別)</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557149615_79307.png" alt></p>
-<p>要還原成原始資料我們只能透過一樣的Key才可以達成，就像一個寶相只有唯一一把鑰匙可以打開一樣．</p>
-<p>這邊補充一個簡單加密法(凱薩算法)，他是使用字元位移的數字來當作Key</p>
-<p>如果位移數量是1 <code>ABCD =&gt; BCDE</code></p>
-<p>如圖</p>
-<p><img src="https://upload.wikimedia.org/wikipedia/commons/2/2b/Caesar3.svg" alt></p>
-<h2 id="用途：-1"><a href="#用途：-1" class="headerlink" title="用途："></a>用途：</h2><p>加密可以確保資料的安全性（只有相同的Key才可還原成原本資料）很適合用在機密資料且須要還原使用</p>
-<hr>
-<h1 id="雜湊-Hash"><a href="#雜湊-Hash" class="headerlink" title="雜湊(Hash)"></a>雜湊(Hash)</h1><h2 id="說明：-2"><a href="#說明：-2" class="headerlink" title="說明："></a>說明：</h2><p>這裡用<code>Sha256</code>來當作範例</p>
-<p>Hash有幾個特點</p>
-<ol>
-<li>不管資料量多大經過SHA256運算字串長度都是一樣的</li>
-<li><code>SHA256</code>的原因是運算完的資料大小一定是 <code>256 bit</code></li>
-<li>她是一個不可逆的算法所以我們可以看到箭頭是單向.</li>
-<li>相同的值用SHA運算過後值都是一樣的</li>
-</ol>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/be1dd9ce-3ce4-4404-ac0a-fe66ae2c64c1/1557152092_14191.png" alt></p>
-<p>一定會有小夥伴好奇,運算完都是固定長度 那會不會出現一個情況,原始資料不一樣但算完<code>Hash</code>結果是一樣的</p>
-<pre><code>會 這個我們稱之為雜湊碰撞 這個機率很小
-</code></pre><h2 id="用途：-2"><a href="#用途：-2" class="headerlink" title="用途："></a>用途：</h2><p>一般我們可以把使用者密碼經<code>Hash</code>運算存入資料庫中,當作使用唯一識別碼(像指紋)下次使用者登入用運一樣的<code>Hash</code>算法 再將值拿來比較辨識使用者合法性.</p>
-<hr>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>對於這邊有一個簡單的比較表格</p>
-<ul>
-<li>編碼(encoding)</li>
-<li>加解密</li>
-<li>雜湊(Hash) </li>
-</ul>
-<p><img src="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png" alt="https://ithelp.ithome.com.tw/upload/images/20190510/20096630rEP4mvVyso.png"></p>
-<p>加解密和編碼最常被大家誤會搞錯地方是以為使用<code>Base64</code>編碼就很安全(但有心人事取得你的資料只要知道你使用編碼就可以還原成原始資料)</p>
-<p>如果要確保資料隱密性時可以使用加解密而不是編碼</p>
-<p>所以別再把<code>Base64</code>編碼當作加密工具來使用.</p>
-<p>這是很危險低</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/hash-encoding/">https://isdaniel.github.io/hash-encoding/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>Base64</tag>
-        <tag>Encoding</tag>
-        <tag>AES</tag>
-        <tag>SHA256</tag>
-        <tag>Hash</tag>
       </tags>
   </entry>
   <entry>
@@ -7037,6 +7176,63 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>沒有Source Code 如何修改程式??</title>
+    <url>/modify-sourcecode/</url>
+    <content><![CDATA[<p>某些專案因為歷史久遠沒有Source Code,但有個需求需要異動裡面的程式該怎麼辦??</p>
+<p>難道只能整個反組譯,查看程式碼翻一份做新的嗎?</p>
+<p>不~~其實有辦法直接對於DLL進行修改</p>
+<p>只需使用  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbA==" title="https://github.com/sailro/Reflexil">Reflexil<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5" title="https://github.com/icsharpcode/ILSpy">ILSpy<i class="fa fa-external-link"></i></span> 或其他支援的反組譯軟體 </p>
+<blockquote>
+<p>Reflexil 是一個組譯編輯器插件目前支援 Reflector, ILSpy 和 Telerik’s JustDecompile.</p>
+</blockquote>
+<p>下載連結</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbC9yZWxlYXNlcy90YWcvdjIuMg==" title="https://github.com/sailro/Reflexil/releases/tag/v2.2">Reflexil Release 2.2<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5L3JlbGVhc2VzL3RhZy92My4yLjA=" title="https://github.com/icsharpcode/ILSpy/releases/tag/v3.2.0">ILSpy version 3.2<i class="fa fa-external-link"></i></span> </p>
+<h1 id="前置動作，安裝"><a href="#前置動作，安裝" class="headerlink" title="前置動作，安裝"></a>前置動作，安裝</h1><h2 id="Reflexil-下載"><a href="#Reflexil-下載" class="headerlink" title="Reflexil 下載"></a>Reflexil 下載</h2><p>下載 <code>reflexil.for.ILSpy.2.2.bin.zip</code>，不用下載<code>AIO</code></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445075_84536.png" alt></p>
+<p>作者有說</p>
+<blockquote>
+<p>ILSpy version 3.2 (ILSpy 4 is not currently compatible with Reflexil, given the use of System.Reflection.Metadata, deprecating Mono.Cecil usage)<br>ILSpy 4 當前版本 ILSpy.2.2 並不支援</p>
+</blockquote>
+<h2 id="ILSpy-3-2-下載"><a href="#ILSpy-3-2-下載" class="headerlink" title="ILSpy 3.2 下載"></a>ILSpy 3.2 下載</h2><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445185_3282.png" alt></p>
+<p>下載完後就把全部的DLL放在同一個資料夾下,並開啟 <code>ILSpy.exe</code></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445435_24298.png" alt></p>
+<p>按下上方的齒輪UI 就可獲得下方藍色的Reflexil 修改框框.</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445493_79646.png" alt></p>
+<hr>
+<h1 id="組件修改"><a href="#組件修改" class="headerlink" title="組件修改"></a>組件修改</h1><h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><blockquote>
+<p>目前組件 有個ClassA 類別,裡面有一個prop1屬性 型態是string, 我們希望在這新增另一個屬性</p>
+</blockquote>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446072_21457.png" alt></p>
+<p>使用滑鼠右鍵點擊類別<code>ClassA</code>,我們可以看到很多方式可以注入新的程式碼</p>
+<p>在這我們選擇<code>inject property</code>. </p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446266_25885.png" alt></p>
+<p>我們需要修改的是</p>
+<ul>
+<li>Item Name (使用屬性的名稱)</li>
+<li>Property Type(使用屬性類別)</li>
+<li><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446422_66604.png" alt></li>
+</ul>
+<p>選擇完後按下OK,我們就會發現<code>prop2</code>新屬性會出現在<code>ClassA</code>中.</p>
+<blockquote>
+<p>新增完後不代表已經將修改儲存!!</p>
+</blockquote>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446504_58205.png" alt></p>
+<p>我們需要點選組件，之後再按下<code>Save AS</code> 把本次修改儲存</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446789_43637.png" alt></p>
+<p>日後我們就可以使用新的屬性在我們程式中了!!</p>
+<h3 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h3><p>此插件還可以新增,插入許多東西時屬非常強大,有興趣的玩家可再自行深入琢磨.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/modify-sourcecode/">https://isdaniel.github.io/modify-sourcecode/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Reflection</tag>
+        <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>高併發系統系列-非同步 MQ-WorkerPool 架構 Poc</title>
     <url>/mq-worker-system/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>在處理高併發系統架構時，非同步是一個很好的手段和提升效率的方式.</p>
@@ -7176,63 +7372,6 @@ email_url: dog830228@gmail.com
         <tag>RabbitMq</tag>
         <tag>ThreadPool</tag>
         <tag>SystemDesign</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>沒有Source Code 如何修改程式??</title>
-    <url>/modify-sourcecode/</url>
-    <content><![CDATA[<p>某些專案因為歷史久遠沒有Source Code,但有個需求需要異動裡面的程式該怎麼辦??</p>
-<p>難道只能整個反組譯,查看程式碼翻一份做新的嗎?</p>
-<p>不~~其實有辦法直接對於DLL進行修改</p>
-<p>只需使用  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbA==" title="https://github.com/sailro/Reflexil">Reflexil<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5" title="https://github.com/icsharpcode/ILSpy">ILSpy<i class="fa fa-external-link"></i></span> 或其他支援的反組譯軟體 </p>
-<blockquote>
-<p>Reflexil 是一個組譯編輯器插件目前支援 Reflector, ILSpy 和 Telerik’s JustDecompile.</p>
-</blockquote>
-<p>下載連結</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhaWxyby9SZWZsZXhpbC9yZWxlYXNlcy90YWcvdjIuMg==" title="https://github.com/sailro/Reflexil/releases/tag/v2.2">Reflexil Release 2.2<i class="fa fa-external-link"></i></span> 搭配 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2ljc2hhcnBjb2RlL0lMU3B5L3JlbGVhc2VzL3RhZy92My4yLjA=" title="https://github.com/icsharpcode/ILSpy/releases/tag/v3.2.0">ILSpy version 3.2<i class="fa fa-external-link"></i></span> </p>
-<h1 id="前置動作，安裝"><a href="#前置動作，安裝" class="headerlink" title="前置動作，安裝"></a>前置動作，安裝</h1><h2 id="Reflexil-下載"><a href="#Reflexil-下載" class="headerlink" title="Reflexil 下載"></a>Reflexil 下載</h2><p>下載 <code>reflexil.for.ILSpy.2.2.bin.zip</code>，不用下載<code>AIO</code></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445075_84536.png" alt></p>
-<p>作者有說</p>
-<blockquote>
-<p>ILSpy version 3.2 (ILSpy 4 is not currently compatible with Reflexil, given the use of System.Reflection.Metadata, deprecating Mono.Cecil usage)<br>ILSpy 4 當前版本 ILSpy.2.2 並不支援</p>
-</blockquote>
-<h2 id="ILSpy-3-2-下載"><a href="#ILSpy-3-2-下載" class="headerlink" title="ILSpy 3.2 下載"></a>ILSpy 3.2 下載</h2><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445185_3282.png" alt></p>
-<p>下載完後就把全部的DLL放在同一個資料夾下,並開啟 <code>ILSpy.exe</code></p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445435_24298.png" alt></p>
-<p>按下上方的齒輪UI 就可獲得下方藍色的Reflexil 修改框框.</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545445493_79646.png" alt></p>
-<hr>
-<h1 id="組件修改"><a href="#組件修改" class="headerlink" title="組件修改"></a>組件修改</h1><h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><blockquote>
-<p>目前組件 有個ClassA 類別,裡面有一個prop1屬性 型態是string, 我們希望在這新增另一個屬性</p>
-</blockquote>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446072_21457.png" alt></p>
-<p>使用滑鼠右鍵點擊類別<code>ClassA</code>,我們可以看到很多方式可以注入新的程式碼</p>
-<p>在這我們選擇<code>inject property</code>. </p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446266_25885.png" alt></p>
-<p>我們需要修改的是</p>
-<ul>
-<li>Item Name (使用屬性的名稱)</li>
-<li>Property Type(使用屬性類別)</li>
-<li><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446422_66604.png" alt></li>
-</ul>
-<p>選擇完後按下OK,我們就會發現<code>prop2</code>新屬性會出現在<code>ClassA</code>中.</p>
-<blockquote>
-<p>新增完後不代表已經將修改儲存!!</p>
-</blockquote>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446504_58205.png" alt></p>
-<p>我們需要點選組件，之後再按下<code>Save AS</code> 把本次修改儲存</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/68939397-ab27-4f33-9bff-a6e1fe570acb/1545446789_43637.png" alt></p>
-<p>日後我們就可以使用新的屬性在我們程式中了!!</p>
-<h3 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h3><p>此插件還可以新增,插入許多東西時屬非常強大,有興趣的玩家可再自行深入琢磨.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/modify-sourcecode/">https://isdaniel.github.io/modify-sourcecode/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Reflection</tag>
-        <tag>Assembly</tag>
       </tags>
   </entry>
   <entry>
