@@ -355,43 +355,6 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
       </tags>
   </entry>
   <entry>
-    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
-    <url>/automapperinit/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
-<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
-<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
-<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
-<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
-<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
-<blockquote>
-<p>我們可以使用反射來完成</p>
-</blockquote>
-<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
-<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Automapper</tag>
-        <tag>Model</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</title>
     <url>/awesomeproxy-net/</url>
     <content><![CDATA[<p>今天和大家分享<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F3ZXNvbWVQcm94eS5OZXQ=" title="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net<i class="fa fa-external-link"></i></span>小弟開源AOP輕型框架</p>
@@ -442,6 +405,43 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>Asp.net</tag>
         <tag>Design-Pattern</tag>
         <tag>Open-Source</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
+    <url>/automapperinit/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
+<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
+<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
+<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
+<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
+<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
+<blockquote>
+<p>我們可以使用反射來完成</p>
+</blockquote>
+<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
+<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Automapper</tag>
+        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -1946,7 +1946,19 @@ class Program
 <blockquote>
 <p>沒有<code>Clustered Index</code>的資料表我們稱為<code>Heap</code>資料表</p>
 </blockquote>
+<p><img src="https://i.imgur.com/e87YROd.png" alt></p>
+<p>我們可以透過下面語法利用上圖 <code>HEAP RID</code> 找到資料儲存位置</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">--HEAP RID:0x40110F0001002900</span></span><br><span class="line"><span class="comment">--共8 bytes FID（2 bytes）,PID（4 bytes）,slot（2 bytes）。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">--轉換RID為 FID:PID:slot格式</span></span><br><span class="line"><span class="keyword">declare</span> @Heaprid <span class="built_in">binary</span>(<span class="number">8</span>)</span><br><span class="line"><span class="keyword">set</span> @Heaprid = <span class="number">0x40110F0001002900</span></span><br><span class="line"><span class="keyword">select</span> [FID:PID:Slot]=      </span><br><span class="line">       <span class="keyword">CONVERT</span> (<span class="built_in">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="built_in">INT</span>, <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">6</span>, <span class="number">1</span>)</span><br><span class="line">       + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">5</span>, <span class="number">1</span>)))</span><br><span class="line">     + <span class="string">':'</span></span><br><span class="line">     + <span class="keyword">CONVERT</span>(<span class="built_in">VARCHAR</span>(<span class="number">10</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="built_in">INT</span>, <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">4</span>, <span class="number">1</span>)</span><br><span class="line">        + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">3</span>, <span class="number">1</span>)</span><br><span class="line">        + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">2</span>, <span class="number">1</span>)</span><br><span class="line">        + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">1</span>, <span class="number">1</span>)))</span><br><span class="line">     + <span class="string">':'</span></span><br><span class="line">          + <span class="keyword">CONVERT</span>(<span class="built_in">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">          <span class="keyword">CONVERT</span>(<span class="built_in">INT</span>, <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">8</span>, <span class="number">1</span>)</span><br><span class="line">          + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">7</span>, <span class="number">1</span>)))</span><br><span class="line"><span class="comment">--1:987456:41--找到c3和c4完整資料</span></span><br><span class="line">DBCC PAGE(AdventureWorks2012_Data,<span class="number">1</span>,<span class="number">987456</span>,<span class="number">3</span>)</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>Heap RID Key:8 byte.(FID 2 Bytes,PID 4 Bytes,SLOT 2 Bytes)</p>
+</blockquote>
 <h3 id="Key-Lookup"><a href="#Key-Lookup" class="headerlink" title="Key Lookup"></a>Key Lookup</h3><p><code>NonClustered Index</code>中會存放此Row在<code>Clustered Index</code>相對位置，假如單單靠搜尋<code>Non-Clustered Index</code>沒有辦法滿足所有查詢需要資料就會去<code>Key Lookup</code>(by Clustered key)回找<code>Clustered Index</code>取出相對應的資料.</p>
+<p>Nonclustered Index Lookup I/O 操作計算公式</p>
+<p><code>Index層數 + 讀取幾個Page + (幾筆資料 * clustered index層數)</code></p>
+<p>此存取就稱為<code>Lookup</code>，<code>lookup</code>會消耗<code>Disk I/O</code>，所以所耗的時間相對會比較大</p>
+<blockquote>
+<p>在<code>NonClustered Index</code>中頁層會包含<code>Clustered Index</code>的<code>Key</code></p>
+</blockquote>
 <h2 id="範例演示"><a href="#範例演示" class="headerlink" title="範例演示"></a>範例演示</h2><p>我們先準備10000筆樣本資料</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">	<span class="keyword">Id</span> <span class="built_in">INT</span> <span class="keyword">identity</span>(<span class="number">1</span>,<span class="number">1</span>),</span><br><span class="line">	UserId <span class="built_in">INT</span>,</span><br><span class="line">	UserGroup <span class="built_in">INT</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T (UserId,UserGroup)</span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">10000</span> <span class="number">1.0</span> + <span class="keyword">floor</span>(<span class="number">10000</span> * <span class="keyword">RAND</span>(<span class="keyword">convert</span>(varbinary, newid()))),</span><br><span class="line">	   (<span class="number">1.0</span> + <span class="keyword">floor</span>(<span class="number">10000</span> * <span class="keyword">RAND</span>(<span class="keyword">convert</span>(varbinary, newid())))/<span class="number">1000</span>)+<span class="number">1</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns t1 <span class="keyword">CROSS</span> <span class="keyword">JOIN</span>  sys.all_columns t2</span><br></pre></td></tr></table></figure></div>
 <p>建立完資料後我們利用下面條件來查找資料.</p>
@@ -1989,11 +2001,12 @@ class Program
 <li><a href="#filter-index的限制">filter index的限制</a></li>
 <li><a href="#index-intersection">Index Intersection</a></li>
 <li><a href="#primary-key">Primary Key</a></li>
+<li><a href="#選擇clustered-index要訣">選擇Clustered Index要訣</a></li>
 </ul>
 <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本系列文章</p>
 <ul>
-<li><a href="https://isdaniel.github.io/DBIndex-1/">資料庫索引深入淺出(一)</a></li>
-<li><a href="https://isdaniel.github.io/DBIndex-2/">資料庫索引深入淺出(二)</a></li>
+<li><a href="https://isdaniel.github.io/dbindex-1/">資料庫索引深入淺出(一)</a></li>
+<li><a href="https://isdaniel.github.io/dbindex-2/">資料庫索引深入淺出(二)</a></li>
 </ul>
 <p>兩種基本索引</p>
 <ul>
@@ -2011,10 +2024,7 @@ class Program
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> NONCLUSTERED <span class="keyword">INDEX</span> IX_T_Id_Convering <span class="keyword">on</span> dbo.T(</span><br><span class="line">	<span class="keyword">id</span></span><br><span class="line">) <span class="keyword">INCLUDE</span> (</span><br><span class="line">	UserId,</span><br><span class="line">	UserGroup</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
 <h3 id="加入INCLUDE欄位含意"><a href="#加入INCLUDE欄位含意" class="headerlink" title="加入INCLUDE欄位含意"></a>加入INCLUDE欄位含意</h3><p>在<code>NONCLUSTERED INDEX</code>把<code>Column</code>加入<code>INCLUDE</code>區域後此<code>NONCLUSTERED INDEX</code>會把此欄位資料加入至子頁層.之後如果要查找資料時就不用在<code>Lookup</code>回去</p>
 <blockquote>
-<p>所以我們可以把<code>Covering Index</code>當作是偽<code>CLUSTERED INDEX</code>.</p>
-</blockquote>
-<blockquote>
-<p>如果每次只需要<code>SELECT</code>少部分欄位且範圍較大又須排序，<code>Covering Index</code>執行效率會比<code>CLUSTERED INDEX</code>來的快.</p>
+<p>所以我們可以把<code>Covering Index</code>當作是偽<code>CLUSTERED INDEX</code>.<br>如果每次只需要<code>SELECT</code>少部分欄位且範圍較大又須排序，<code>Covering Index</code>執行效率會比<code>CLUSTERED INDEX</code>來的快.</p>
 </blockquote>
 <p><code>Covering</code>欄位只會在子頁層儲存資料，並不會在中葉層儲存相關資訊。</p>
 <p>儲存方式如下圖會把資料存在子頁層中，並不會把Include資料存在中葉層</p>
@@ -2074,6 +2084,28 @@ class Program
 </blockquote>
 <p>如下範例我們可以建立一個<code>NONCLUSTERED</code>的PRIMARY KEY</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,  </span><br><span class="line">    <span class="keyword">CONSTRAINT</span> [PK_T] PRIMARY <span class="keyword">KEY</span> NONCLUSTERED (</span><br><span class="line">        <span class="keyword">ID</span></span><br><span class="line">    )</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<h2 id="選擇Clustered-Index要訣"><a href="#選擇Clustered-Index要訣" class="headerlink" title="選擇Clustered Index要訣"></a>選擇Clustered Index要訣</h2><p>在 SQL-Server 每張資料表只有一個 Clustered Index，每個資料表只能有一個<code>Cluster index</code>，資料表會依照<code>cluster index</code>方式排列，<code>Clustered Index</code>跟資料一起放置在<code>left pag</code>子頁層，<code>Cluster index</code>好比書籍目錄。每本書只能有一個目錄</p>
+<p>所以選擇合適 Clustered Index 就尤為重要</p>
+<p>建立<code>Clustered Index</code>欄位有幾個重點</p>
+<ol>
+<li>常用於查詢欄位</li>
+<li>可識別度高(唯一性較高 or 密度高)</li>
+<li>避免過多欄位在Clustered Index中(因為NonClustered會包含Clustered Index Key)</li>
+</ol>
+<p>我個人建議選擇 Clustered Index 可以依照下面幾個準則</p>
+<ul>
+<li>最好是唯一性：提高查詢效率</li>
+<li>寬度窄或窄複合組成：因為NonClustered Index中頁層會包含Clustered Index資訊，如果Clustered Index太肥會造成NonClustered Index page變多.</li>
+<li>靜態性：Clustered Index盡量少被Update(更新時需要一併更新NonClustered Index中Clustered Key資料,會造成I/O效能消耗)</li>
+<li>連續性佳：避免索引破碎(能避免就避免使用GUID當Clustered Index)</li>
+</ul>
+<p>假如確定建立的Clustered index資料是唯一的,請加上<code>Unique</code>,因為沒加上<code>Unique</code>的<code>Clustered index</code>會在Page中的每列資料加上一個<code>uniquifiers</code> 2 bytes的Column</p>
+<p>下圖是我使用<code>DBCC PAGE</code>查看三種不一樣的<code>Clustered Index</code>結果</p>
+<p>其中第一,第二個結果集顯示就算<code>Clustered Index</code>資料不重複沒加上<code>Unique</code>對於儲存上會有差異</p>
+<p><img src="https://i.imgur.com/6y3XwDz.png" alt></p>
+<blockquote>
+<p>所以確定建立的Clustered index資料是唯一的,請加上<code>Unique</code></p>
+</blockquote>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbindex-2/">https://isdaniel.github.io/dbindex-2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>

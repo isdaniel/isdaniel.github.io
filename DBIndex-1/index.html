@@ -155,11 +155,12 @@
 <meta property="og:image" content="https://i.imgur.com/FnQlBUl.png">
 <meta property="og:image" content="https://i.imgur.com/XrVqq2q.png">
 <meta property="og:image" content="https://i.imgur.com/iDZPu76.png">
+<meta property="og:image" content="https://i.imgur.com/e87YROd.png">
 <meta property="og:image" content="https://i.imgur.com/J2BctqU.png">
 <meta property="og:image" content="https://i.imgur.com/37rnlmn.png">
 <meta property="og:image" content="https://i.imgur.com/E6WS5qL.png">
 <meta property="og:image" content="https://i.imgur.com/PPTDYcG.png">
-<meta property="og:updated_time" content="2021-10-25T06:22:21.238Z">
+<meta property="og:updated_time" content="2021-10-29T14:29:24.380Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="資料庫索引深入淺出(一)">
 <meta name="twitter:description" content="前文Index第一個欄位至關重要它會影響資料統計值結果，Index一般建立在查詢條件的欄位  每個Index都擁有自己的B+ tree.  Index使用的資料結構(B+ tree)B+ tree是一種資料結構這個資料結構被Index拿來使用，關於B+ tree網路上有很多資源可再自行尋找，所以我們來談談為什麼DataBase會使用B+ tree 在Wiki講述B+ tree有其中一段  B+ t">
@@ -523,7 +524,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-10-25 06:22:21" itemprop="dateModified" datetime="2021-10-25T06:22:21+00:00">2021-10-25</time>
+                <time title="Modified: 2021-10-29 14:29:24" itemprop="dateModified" datetime="2021-10-29T14:29:24+00:00">2021-10-29</time>
               
             
           </span>
@@ -596,7 +597,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">3.3k</span>
+                <span title="Symbols count in article">4.1k</span>
               
 
               
@@ -610,7 +611,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">6 mins.</span>
+                <span title="Reading time">7 mins.</span>
               
             </div>
           
@@ -721,7 +722,19 @@
 <blockquote>
 <p>沒有<code>Clustered Index</code>的資料表我們稱為<code>Heap</code>資料表</p>
 </blockquote>
+<p><img src="https://i.imgur.com/e87YROd.png" alt></p>
+<p>我們可以透過下面語法利用上圖 <code>HEAP RID</code> 找到資料儲存位置</p>
+<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--HEAP RID:0x40110F0001002900</span></span><br><span class="line"><span class="comment">--共8 bytes FID（2 bytes）,PID（4 bytes）,slot（2 bytes）。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">--轉換RID為 FID:PID:slot格式</span></span><br><span class="line"><span class="keyword">declare</span> @Heaprid <span class="built_in">binary</span>(<span class="number">8</span>)</span><br><span class="line"><span class="keyword">set</span> @Heaprid = <span class="number">0x40110F0001002900</span></span><br><span class="line"><span class="keyword">select</span> [FID:PID:Slot]=      </span><br><span class="line">       <span class="keyword">CONVERT</span> (<span class="built_in">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="built_in">INT</span>, <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">6</span>, <span class="number">1</span>)</span><br><span class="line">       + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">5</span>, <span class="number">1</span>)))</span><br><span class="line">     + <span class="string">':'</span></span><br><span class="line">     + <span class="keyword">CONVERT</span>(<span class="built_in">VARCHAR</span>(<span class="number">10</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="built_in">INT</span>, <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">4</span>, <span class="number">1</span>)</span><br><span class="line">        + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">3</span>, <span class="number">1</span>)</span><br><span class="line">        + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">2</span>, <span class="number">1</span>)</span><br><span class="line">        + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">1</span>, <span class="number">1</span>)))</span><br><span class="line">     + <span class="string">':'</span></span><br><span class="line">          + <span class="keyword">CONVERT</span>(<span class="built_in">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">          <span class="keyword">CONVERT</span>(<span class="built_in">INT</span>, <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">8</span>, <span class="number">1</span>)</span><br><span class="line">          + <span class="keyword">SUBSTRING</span>(@Heaprid, <span class="number">7</span>, <span class="number">1</span>)))</span><br><span class="line"><span class="comment">--1:987456:41--找到c3和c4完整資料</span></span><br><span class="line">DBCC PAGE(AdventureWorks2012_Data,<span class="number">1</span>,<span class="number">987456</span>,<span class="number">3</span>)</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>Heap RID Key:8 byte.(FID 2 Bytes,PID 4 Bytes,SLOT 2 Bytes)</p>
+</blockquote>
 <h3 id="Key-Lookup"><a href="#Key-Lookup" class="headerlink" title="Key Lookup"></a>Key Lookup</h3><p><code>NonClustered Index</code>中會存放此Row在<code>Clustered Index</code>相對位置，假如單單靠搜尋<code>Non-Clustered Index</code>沒有辦法滿足所有查詢需要資料就會去<code>Key Lookup</code>(by Clustered key)回找<code>Clustered Index</code>取出相對應的資料.</p>
+<p>Nonclustered Index Lookup I/O 操作計算公式</p>
+<p><code>Index層數 + 讀取幾個Page + (幾筆資料 * clustered index層數)</code></p>
+<p>此存取就稱為<code>Lookup</code>，<code>lookup</code>會消耗<code>Disk I/O</code>，所以所耗的時間相對會比較大</p>
+<blockquote>
+<p>在<code>NonClustered Index</code>中頁層會包含<code>Clustered Index</code>的<code>Key</code></p>
+</blockquote>
 <h2 id="範例演示"><a href="#範例演示" class="headerlink" title="範例演示"></a>範例演示</h2><p>我們先準備10000筆樣本資料</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">	<span class="keyword">Id</span> <span class="built_in">INT</span> <span class="keyword">identity</span>(<span class="number">1</span>,<span class="number">1</span>),</span><br><span class="line">	UserId <span class="built_in">INT</span>,</span><br><span class="line">	UserGroup <span class="built_in">INT</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T (UserId,UserGroup)</span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">10000</span> <span class="number">1.0</span> + <span class="keyword">floor</span>(<span class="number">10000</span> * <span class="keyword">RAND</span>(<span class="keyword">convert</span>(varbinary, newid()))),</span><br><span class="line">	   (<span class="number">1.0</span> + <span class="keyword">floor</span>(<span class="number">10000</span> * <span class="keyword">RAND</span>(<span class="keyword">convert</span>(varbinary, newid())))/<span class="number">1000</span>)+<span class="number">1</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns t1 <span class="keyword">CROSS</span> <span class="keyword">JOIN</span>  sys.all_columns t2</span><br></pre></td></tr></table></figure></div>
 <p>建立完資料後我們利用下面條件來查找資料.</p>
@@ -1352,7 +1365,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">473k</span>
+    <span title="Symbols count total">475k</span>
   
 
   
@@ -1361,7 +1374,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">14:20</span>
+    <span title="Reading time total">14:23</span>
   
 </div>
 

@@ -143,21 +143,22 @@
 
 
 
-  <meta name="description" content="Agenda 前文 Covering Index 加入INCLUDE欄位含意 案例解說   Filter Index filter index的限制 Index Intersection Primary Key  前文本系列文章  資料庫索引深入淺出(一) 資料庫索引深入淺出(二)  兩種基本索引  Clustered Index(叢集索引) NonClustered Index(非叢集索引)">
+  <meta name="description" content="Agenda 前文 Covering Index 加入INCLUDE欄位含意 案例解說   Filter Index filter index的限制 Index Intersection Primary Key 選擇Clustered Index要訣  前文本系列文章  資料庫索引深入淺出(一) 資料庫索引深入淺出(二)  兩種基本索引  Clustered Index(叢集索引) NonClus">
 <meta name="keywords" content="DataBase,Turning,sql-server,Index">
 <meta property="og:type" content="article">
 <meta property="og:title" content="資料庫索引深入淺出(二)">
 <meta property="og:url" content="https://isdaniel.github.io/dbindex-2/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="Agenda 前文 Covering Index 加入INCLUDE欄位含意 案例解說   Filter Index filter index的限制 Index Intersection Primary Key  前文本系列文章  資料庫索引深入淺出(一) 資料庫索引深入淺出(二)  兩種基本索引  Clustered Index(叢集索引) NonClustered Index(非叢集索引)">
+<meta property="og:description" content="Agenda 前文 Covering Index 加入INCLUDE欄位含意 案例解說   Filter Index filter index的限制 Index Intersection Primary Key 選擇Clustered Index要訣  前文本系列文章  資料庫索引深入淺出(一) 資料庫索引深入淺出(二)  兩種基本索引  Clustered Index(叢集索引) NonClus">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/8TvUoRY.png">
 <meta property="og:image" content="https://i.imgur.com/ivgZPGm.png">
 <meta property="og:image" content="https://i.imgur.com/8TvUoRY.png">
-<meta property="og:updated_time" content="2021-10-25T06:22:21.238Z">
+<meta property="og:image" content="https://i.imgur.com/6y3XwDz.png">
+<meta property="og:updated_time" content="2021-10-29T14:29:24.380Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="資料庫索引深入淺出(二)">
-<meta name="twitter:description" content="Agenda 前文 Covering Index 加入INCLUDE欄位含意 案例解說   Filter Index filter index的限制 Index Intersection Primary Key  前文本系列文章  資料庫索引深入淺出(一) 資料庫索引深入淺出(二)  兩種基本索引  Clustered Index(叢集索引) NonClustered Index(非叢集索引)">
+<meta name="twitter:description" content="Agenda 前文 Covering Index 加入INCLUDE欄位含意 案例解說   Filter Index filter index的限制 Index Intersection Primary Key 選擇Clustered Index要訣  前文本系列文章  資料庫索引深入淺出(一) 資料庫索引深入淺出(二)  兩種基本索引  Clustered Index(叢集索引) NonClus">
 <meta name="twitter:image" content="https://i.imgur.com/8TvUoRY.png">
 
 
@@ -518,7 +519,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-10-25 06:22:21" itemprop="dateModified" datetime="2021-10-25T06:22:21+00:00">2021-10-25</time>
+                <time title="Modified: 2021-10-29 14:29:24" itemprop="dateModified" datetime="2021-10-29T14:29:24+00:00">2021-10-29</time>
               
             
           </span>
@@ -591,7 +592,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">3k</span>
+                <span title="Symbols count in article">3.8k</span>
               
 
               
@@ -605,7 +606,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">6 mins.</span>
+                <span title="Reading time">7 mins.</span>
               
             </div>
           
@@ -636,11 +637,12 @@
 <li><a href="#filter-index的限制">filter index的限制</a></li>
 <li><a href="#index-intersection">Index Intersection</a></li>
 <li><a href="#primary-key">Primary Key</a></li>
+<li><a href="#選擇clustered-index要訣">選擇Clustered Index要訣</a></li>
 </ul>
 <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本系列文章</p>
 <ul>
-<li><a href="https://isdaniel.github.io/DBIndex-1/">資料庫索引深入淺出(一)</a></li>
-<li><a href="https://isdaniel.github.io/DBIndex-2/">資料庫索引深入淺出(二)</a></li>
+<li><a href="https://isdaniel.github.io/dbindex-1/">資料庫索引深入淺出(一)</a></li>
+<li><a href="https://isdaniel.github.io/dbindex-2/">資料庫索引深入淺出(二)</a></li>
 </ul>
 <p>兩種基本索引</p>
 <ul>
@@ -658,10 +660,7 @@
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> NONCLUSTERED <span class="keyword">INDEX</span> IX_T_Id_Convering <span class="keyword">on</span> dbo.T(</span><br><span class="line">	<span class="keyword">id</span></span><br><span class="line">) <span class="keyword">INCLUDE</span> (</span><br><span class="line">	UserId,</span><br><span class="line">	UserGroup</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
 <h3 id="加入INCLUDE欄位含意"><a href="#加入INCLUDE欄位含意" class="headerlink" title="加入INCLUDE欄位含意"></a>加入INCLUDE欄位含意</h3><p>在<code>NONCLUSTERED INDEX</code>把<code>Column</code>加入<code>INCLUDE</code>區域後此<code>NONCLUSTERED INDEX</code>會把此欄位資料加入至子頁層.之後如果要查找資料時就不用在<code>Lookup</code>回去</p>
 <blockquote>
-<p>所以我們可以把<code>Covering Index</code>當作是偽<code>CLUSTERED INDEX</code>.</p>
-</blockquote>
-<blockquote>
-<p>如果每次只需要<code>SELECT</code>少部分欄位且範圍較大又須排序，<code>Covering Index</code>執行效率會比<code>CLUSTERED INDEX</code>來的快.</p>
+<p>所以我們可以把<code>Covering Index</code>當作是偽<code>CLUSTERED INDEX</code>.<br>如果每次只需要<code>SELECT</code>少部分欄位且範圍較大又須排序，<code>Covering Index</code>執行效率會比<code>CLUSTERED INDEX</code>來的快.</p>
 </blockquote>
 <p><code>Covering</code>欄位只會在子頁層儲存資料，並不會在中葉層儲存相關資訊。</p>
 <p>儲存方式如下圖會把資料存在子頁層中，並不會把Include資料存在中葉層</p>
@@ -721,6 +720,28 @@
 </blockquote>
 <p>如下範例我們可以建立一個<code>NONCLUSTERED</code>的PRIMARY KEY</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T(</span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,  </span><br><span class="line">    <span class="keyword">CONSTRAINT</span> [PK_T] PRIMARY <span class="keyword">KEY</span> NONCLUSTERED (</span><br><span class="line">        <span class="keyword">ID</span></span><br><span class="line">    )</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<h2 id="選擇Clustered-Index要訣"><a href="#選擇Clustered-Index要訣" class="headerlink" title="選擇Clustered Index要訣"></a>選擇Clustered Index要訣</h2><p>在 SQL-Server 每張資料表只有一個 Clustered Index，每個資料表只能有一個<code>Cluster index</code>，資料表會依照<code>cluster index</code>方式排列，<code>Clustered Index</code>跟資料一起放置在<code>left pag</code>子頁層，<code>Cluster index</code>好比書籍目錄。每本書只能有一個目錄</p>
+<p>所以選擇合適 Clustered Index 就尤為重要</p>
+<p>建立<code>Clustered Index</code>欄位有幾個重點</p>
+<ol>
+<li>常用於查詢欄位</li>
+<li>可識別度高(唯一性較高 or 密度高)</li>
+<li>避免過多欄位在Clustered Index中(因為NonClustered會包含Clustered Index Key)</li>
+</ol>
+<p>我個人建議選擇 Clustered Index 可以依照下面幾個準則</p>
+<ul>
+<li>最好是唯一性：提高查詢效率</li>
+<li>寬度窄或窄複合組成：因為NonClustered Index中頁層會包含Clustered Index資訊，如果Clustered Index太肥會造成NonClustered Index page變多.</li>
+<li>靜態性：Clustered Index盡量少被Update(更新時需要一併更新NonClustered Index中Clustered Key資料,會造成I/O效能消耗)</li>
+<li>連續性佳：避免索引破碎(能避免就避免使用GUID當Clustered Index)</li>
+</ul>
+<p>假如確定建立的Clustered index資料是唯一的,請加上<code>Unique</code>,因為沒加上<code>Unique</code>的<code>Clustered index</code>會在Page中的每列資料加上一個<code>uniquifiers</code> 2 bytes的Column</p>
+<p>下圖是我使用<code>DBCC PAGE</code>查看三種不一樣的<code>Clustered Index</code>結果</p>
+<p>其中第一,第二個結果集顯示就算<code>Clustered Index</code>資料不重複沒加上<code>Unique</code>對於儲存上會有差異</p>
+<p><img src="https://i.imgur.com/6y3XwDz.png" alt></p>
+<blockquote>
+<p>所以確定建立的Clustered index資料是唯一的,請加上<code>Unique</code></p>
+</blockquote>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbindex-2/">https://isdaniel.github.io/dbindex-2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 
       
@@ -1303,7 +1324,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#前文"><span class="nav-number">1.1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Covering-Index"><span class="nav-number">1.2.</span> <span class="nav-text">Covering Index</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#加入INCLUDE欄位含意"><span class="nav-number">1.2.1.</span> <span class="nav-text">加入INCLUDE欄位含意</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#案例解說"><span class="nav-number">1.2.2.</span> <span class="nav-text">案例解說</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Filter-Index"><span class="nav-number">1.3.</span> <span class="nav-text">Filter Index</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#filter-index的限制"><span class="nav-number">1.4.</span> <span class="nav-text">filter index的限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Index-Intersection"><span class="nav-number">1.5.</span> <span class="nav-text">Index Intersection</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Primary-Key"><span class="nav-number">1.6.</span> <span class="nav-text">Primary Key</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#前文"><span class="nav-number">1.1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Covering-Index"><span class="nav-number">1.2.</span> <span class="nav-text">Covering Index</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#加入INCLUDE欄位含意"><span class="nav-number">1.2.1.</span> <span class="nav-text">加入INCLUDE欄位含意</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#案例解說"><span class="nav-number">1.2.2.</span> <span class="nav-text">案例解說</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Filter-Index"><span class="nav-number">1.3.</span> <span class="nav-text">Filter Index</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#filter-index的限制"><span class="nav-number">1.4.</span> <span class="nav-text">filter index的限制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Index-Intersection"><span class="nav-number">1.5.</span> <span class="nav-text">Index Intersection</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Primary-Key"><span class="nav-number">1.6.</span> <span class="nav-text">Primary Key</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#選擇Clustered-Index要訣"><span class="nav-number">1.7.</span> <span class="nav-text">選擇Clustered Index要訣</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -1336,7 +1357,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">473k</span>
+    <span title="Symbols count total">475k</span>
   
 
   
@@ -1345,7 +1366,7 @@
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">14:20</span>
+    <span title="Reading time total">14:23</span>
   
 </div>
 
