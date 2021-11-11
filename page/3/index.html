@@ -332,7 +332,7 @@
       
     
 
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">105</span></a>
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">107</span></a>
 
   </li>
         
@@ -351,7 +351,7 @@
       
     
 
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">33</span></a>
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">35</span></a>
 
   </li>
         
@@ -370,7 +370,7 @@
       
     
 
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">105</span></a>
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">106</span></a>
 
   </li>
 
@@ -452,6 +452,254 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/sqlserver-create-column-tips/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/sqlserver-create-column-tips/" class="post-title-link" itemprop="url">資料庫新增欄造成Page split</a>
+              
+            
+          </h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2021-05-11 16:00:00" itemprop="dateCreated datePublished" datetime="2021-05-11T16:00:00+00:00">2021-05-11</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">In</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a></span>
+
+                
+                
+                  , 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Turning/sql-server/" itemprop="url" rel="index"><span itemprop="name">sql-server</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+              
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+            
+                <span class="post-meta-item-text">Comments: </span>
+                <a href="/sqlserver-create-column-tips/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="sqlserver-create-column-tips/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+            <div class="post-symbolscount">
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Symbols count in article: </span>
+                
+                <span title="Symbols count in article">2.3k</span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Reading time &asymp;</span>
+                
+                <span title="Reading time">4 mins.</span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+        <div class="post-gallery" itemscope itemtype="http://schema.org/ImageGallery">
+          
+          
+            <div class="post-gallery-row">
+              <img src="https://i.imgur.com/uuyIRuC.png" itemprop="contentUrl">
+            
+          
+
+          
+          </div>
+        </div>
+      
+
+      
+        
+          
+            <p>
+              前言:使用DB新增欄位一般很快就可以執行完畢,但最近我們在prod新增一個bit欄位卻需要跑快45分鐘…
+經後面追查找到原因才有本篇文章.
+問題重現下面語法會建立兩個Table.
+
+Test：新增10,000,000筆Sample Data
+TestSplit：新增1,000,000筆Sample 
+              ...
+            </p>
+          <!--noindex-->
+          
+            <div class="post-button text-center">
+              <a class="btn" href="/sqlserver-create-column-tips/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/expression-vs-reflection/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -514,7 +762,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -741,7 +989,7 @@ Expression vs Reflection pe
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -983,7 +1231,7 @@ Expression vs Reflection pe
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -1210,7 +1458,7 @@ Docker建立MS
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -1445,7 +1693,7 @@ SQLQuery
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -1680,7 +1928,7 @@ SQLQuery
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -1924,7 +2172,7 @@ Heap ：
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -2187,7 +2435,7 @@ Read Uncommitted 髒讀取
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -2426,7 +2674,7 @@ Product表:擁有1-10編號產品
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
+                <time title="Modified: 2021-11-11 15:31:18" itemprop="dateModified" datetime="2021-11-11T15:31:18+00:00">2021-11-11</time>
               
             
           </span>
@@ -2587,246 +2835,6 @@ Product表:擁有1-10編號產品
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/acid/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/acid/" class="post-title-link" itemprop="url">ACID</a>
-              
-            
-          </h2>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-
-              
-                
-              
-
-              <time title="Created: 2020-06-02 22:30:11" itemprop="dateCreated datePublished" datetime="2020-06-02T22:30:11+00:00">2020-06-02</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2021-11-08 13:43:49" itemprop="dateModified" datetime="2021-11-08T13:43:49+00:00">2021-11-08</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">In</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a></span>
-
-                
-                
-                  , 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/C/IOC/" itemprop="url" rel="index"><span itemprop="name">IOC</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-              
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
-                </span>
-            
-                <span class="post-meta-item-text">Comments: </span>
-                <a href="/acid/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="acid/" itemprop="commentCount"></span>
-                </a>
-              </span>
-            
-          
-
-          
-          
-
-          
-
-          
-            <div class="post-symbolscount">
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Symbols count in article: </span>
-                
-                <span title="Symbols count in article">2.6k</span>
-              
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Reading time &asymp;</span>
-                
-                <span title="Reading time">5 mins.</span>
-              
-            </div>
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          
-            <p>
-              前言資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備
-
-原子性（atomicity，稱不可分割性）
-一致性（consistency）
-隔離性（isolation，稱獨立性）
-持久性（durability）
-
-這就是我們說的ACID.
-下面我會跟大家簡述ACID.
-Atomicity(原
-              ...
-            </p>
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/acid/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2875,7 +2883,7 @@ Atomicity(原
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">105</span>
+                    <span class="site-state-item-count">106</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
@@ -2958,7 +2966,11 @@ Atomicity(原
                     
                       
                     
-                    <span class="site-state-item-count">33</span>
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">35</span>
                     <span class="site-state-item-name">categories</span>
                   </a>
                 </div>
@@ -3185,7 +3197,11 @@ Atomicity(原
                     
                       
                     
-                    <span class="site-state-item-count">105</span>
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">107</span>
                     <span class="site-state-item-name">tags</span>
                   </a>
                 </div>
@@ -3294,7 +3310,7 @@ Atomicity(原
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">477k</span>
+    <span title="Symbols count total">480k</span>
   
 
   
@@ -3303,7 +3319,7 @@ Atomicity(原
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">14:26</span>
+    <span title="Reading time total">14:34</span>
   
 </div>
 
