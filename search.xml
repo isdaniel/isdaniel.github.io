@@ -1,77 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>AOP Lock Architecture</title>
-    <url>/aop-lock-mechanism/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
-<p>在我們當前系統中有許多動作間需要互斥,不然會有DeadLock問題</p>
-<p>藉由已經分析DeadLock Report後,我開始構思如何讓建立Lock可以變得更容易且好理解.</p>
-<p>所以就建構出此Lock架構.</p>
-<h2 id="如何在此框架使用Lock機制"><a href="#如何在此框架使用Lock機制" class="headerlink" title="如何在此框架使用Lock機制"></a>如何在此框架使用Lock機制</h2><p>我們只需要做幾個步驟:</p>
-<ol>
-<li>在使用Lock類別上掛<code>LockerInterceptor</code>攔截器標籤.  </li>
-<li>使用Lock方法上使用<code>LockAttribute</code>標籤<code>[Lock(LockKey = &quot;Your lock Key&quot;)]</code>(<code>Key</code>屬性是必填的)</li>
-<li>設定Lock屬性.</li>
-</ol>
-<blockquote>
-<p>目前寫法是針對單一Server Mutiple Thread來建立互斥Lock. 假如有遇到多台Servers需要建立互斥模式可以,參考Redis的<code>Redlock.Net</code>.</p>
-</blockquote>
-<p>使用方法如下,這樣在多執行緒系統中<code>MethodA1</code>跟<code>MethodB_A</code>就不會有同時執行問題,這樣就可以造成這兩個動作互斥.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="架構解說"><a href="#架構解說" class="headerlink" title="架構解說"></a>架構解說</h2><p>我是使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnJlYWRlcndyaXRlcmxvY2tzbGltP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim<i class="fa fa-external-link"></i></span></p>
-<blockquote>
-<p>因為支援ReadLock不互斥,WriteLock互斥邏輯</p>
-</blockquote>
-<p><img src="https://i.imgur.com/kESEvl4.png" alt></p>
-<p>我是如何讓使用者輸入<code>Key</code>來建立不同lock呢?</p>
-<blockquote>
-<p>我是使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0uY29sbGVjdGlvbnMuY29uY3VycmVudC5jb25jdXJyZW50ZGljdGlvbmFyeS0yP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2?view=netcore-3.1">ConcurrentDictionary<i class="fa fa-external-link"></i></span>來處理此問題,每個<code>Key</code>都有不同<code>Lock</code>物件</p>
-</blockquote>
-<h3 id="LockAttribute"><a href="#LockAttribute" class="headerlink" title="LockAttribute"></a>LockAttribute</h3><p><code>LockAttribute</code>有幾個屬性.</p>
-<ul>
-<li><code>Key</code>:鎖名稱</li>
-<li><code>Mode</code>:鎖的模式<ol>
-<li><code>LockMode.XLock</code>:獨占鎖會排斥其他資源請求此鎖,須等待資源釋放.</li>
-<li><code>LockMode.Shared</code>:Shared lock之間不互斥.</li>
-</ol>
-</li>
-<li><code>Order</code>:因為支援多個<code>LockAttribute</code>,此屬性決定執行此方法前要求鎖順序</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">AttributeUsage(AttributeTargets.Method, AllowMultiple = true)</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">LockAttribute</span> : <span class="title">Attribute</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> LockMode Mode &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; = LockMode.XLock;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Order &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="LockerInterceptor"><a href="#LockerInterceptor" class="headerlink" title="LockerInterceptor"></a>LockerInterceptor</h3><p>我們直接來<code>IInterceptor</code>物件最核心邏輯方法<code>Intercept(IInvocation invocation)</code>.</p>
-<p>利用<code>GetCustomAttributes</code>取得方法上所有<code>LockAttribute</code>並在方法執行前要求拿到,所需要<code>Lock</code>資源才可以執行方法,最後在<code>finally</code>時釋放lock資源</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Intercept</span>(<span class="params">IInvocation invocation</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> methodName = invocation.Method.Name;</span><br><span class="line">    <span class="keyword">var</span> lockAttributes = invocation.Method.GetCustomAttributes(<span class="keyword">typeof</span>(LockAttribute), <span class="literal">true</span>) <span class="keyword">as</span> LockAttribute[];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (IsMarkLockLockAttribute(lockAttributes))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> lockProviders = GetLockProviders(lockAttributes);</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.AddLock();</span><br><span class="line">            &#125;</span><br><span class="line">            invocation.Proceed();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Exception e)</span><br><span class="line">        &#123;</span><br><span class="line">            _log.Exception(<span class="string">"Something wrong!"</span>, e);</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.ReleaseLock();</span><br><span class="line">            &#125;</span><br><span class="line">            _log.Info(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> <span class="subst">&#123;methodName&#125;</span> Release Lock"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        invocation.Proceed();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="SampleCode"><a href="#SampleCode" class="headerlink" title="SampleCode"></a>SampleCode</h2><p>我利用Nunit寫一個簡單程式Print在console讓我們方便觀看結果.</p>
-<ul>
-<li><code>MethodA</code>:Shared lock mode on key A</li>
-<li><code>MethodA1</code>:X lock mode on key A</li>
-<li><code>MethodB_A</code>:X lock mode on key A and B</li>
-<li><code>MethodB</code>:X lock mode on key B</li>
-</ul>
-<p>理論上<code>MethodB</code>只會對於<code>MethodB_A</code>互斥,<code>MethodB</code>並不會跟<code>MethodA</code>,<code>MethodA1</code>有互斥反應.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>, Mode = LockMode.SharedLock)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA</span> (<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"B"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"B"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span>  <span class="keyword">void</span> <span class="title">MethodB</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA</span>(<span class="params"></span>)</span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AutofacConfig</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> IContainer Container &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Register</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line">        builder.RegisterType&lt;LockerInterceptor&gt;().AsSelf();</span><br><span class="line">        builder.RegisterType&lt;LockerContext&gt;().As&lt;ILockerContext&gt;().EnableClassInterceptors();</span><br><span class="line">        builder.RegisterType&lt;ConsoleProvider&gt;().As&lt;ISysLog&gt;().SingleInstance();</span><br><span class="line">        Container = builder.Build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">[<span class="meta">TestFixture</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerTest</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//You can use the following additional attributes as you write your tests:</span></span><br><span class="line">    [<span class="meta">OneTimeSetUp</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">OneTimeSetUp</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        AutofacConfig.Register();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Test</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">LockGroupTest</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123; </span><br><span class="line">        <span class="keyword">var</span> lockerContext= AutofacConfig.Container.Resolve&lt;ILockerContext&gt;();</span><br><span class="line">        </span><br><span class="line">        List&lt;Task&gt; taskList =<span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA1(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB_A(); &#125;));                </span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB(); &#125;));</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Task.WaitAll(taskList.ToArray());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><strong>Result</strong></p>
-<p>我們發現<code>MethodB_A</code>這個方法會對於,所有key是<code>A</code>,<code>B</code>方法互斥,<code>MethodA</code>則不會對於<code>MethodA</code>,<code>MethodB</code>互斥.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="code"><pre><span class="line">14:26:59 815 MethodA1 Done</span><br><span class="line">14:26:59 816 MethodB Done</span><br><span class="line">14:26:59 919 MethodA1 Release Lock</span><br><span class="line">14:26:59 920 MethodB Release Lock</span><br><span class="line">14:27:00 020 MethodB Done</span><br><span class="line">14:27:00 120 MethodB Release Lock</span><br><span class="line">14:27:00 220 MethodB_A Done</span><br><span class="line">14:27:00 320 MethodB_A Release Lock</span><br><span class="line">14:27:00 420 MethodA1 Done</span><br><span class="line">14:27:00 520 MethodA1 Release Lock</span><br><span class="line">14:27:00 620 MethodB_A Done</span><br><span class="line">14:27:00 720 MethodB_A Release Lock</span><br><span class="line">14:27:00 820 MethodB Done</span><br><span class="line">14:27:00 820 MethodA1 Done</span><br><span class="line">14:27:00 920 MethodB Release Lock</span><br><span class="line">14:27:00 920 MethodA1 Release Lock</span><br><span class="line">14:27:01 020 MethodB_A Done</span><br><span class="line">14:27:01 120 MethodB_A Release Lock</span><br><span class="line">14:27:01 220 MethodB_A Done</span><br><span class="line">14:27:01 320 MethodB_A Release Lock</span><br><span class="line">14:27:01 420 MethodB Done</span><br><span class="line">14:27:01 420 MethodA1 Done</span><br><span class="line">14:27:01 520 MethodB Release Lock</span><br><span class="line">14:27:01 520 MethodA1 Release Lock</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 820 MethodB Done</span><br><span class="line">14:27:01 920 MethodB Release Lock</span><br><span class="line">14:27:02 020 MethodB Done</span><br><span class="line">14:27:02 120 MethodB Release Lock</span><br><span class="line">14:27:02 220 MethodB_A Done</span><br><span class="line">14:27:02 320 MethodB_A Release Lock</span><br><span class="line">14:27:02 420 MethodA1 Done</span><br><span class="line">14:27:02 520 MethodA1 Release Lock</span><br><span class="line">14:27:02 620 MethodB_A Done</span><br><span class="line">14:27:02 720 MethodB_A Release Lock</span><br><span class="line">14:27:02 820 MethodB_A Done</span><br><span class="line">14:27:02 920 MethodB_A Release Lock</span><br><span class="line">14:27:03 020 MethodA1 Done</span><br><span class="line">14:27:03 020 MethodB Done</span><br><span class="line">14:27:03 120 MethodA1 Release Lock</span><br><span class="line">14:27:03 120 MethodB Release Lock</span><br><span class="line">14:27:03 220 MethodA1 Done</span><br><span class="line">14:27:03 220 MethodB Done</span><br><span class="line">14:27:03 320 MethodA1 Release Lock</span><br><span class="line">14:27:03 320 MethodB Release Lock</span><br><span class="line">14:27:03 420 MethodB_A Done</span><br><span class="line">14:27:03 520 MethodB_A Release Lock</span><br><span class="line">14:27:03 620 MethodA1 Done</span><br><span class="line">14:27:03 720 MethodA1 Release Lock</span><br><span class="line">14:27:03 820 MethodB_A Done</span><br><span class="line">14:27:03 920 MethodB_A Release Lock</span><br><span class="line">14:27:04 020 MethodA1 Done</span><br><span class="line">14:27:04 020 MethodB Done</span><br><span class="line">14:27:04 120 MethodA1 Release Lock</span><br><span class="line">14:27:04 120 MethodB Release Lock</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 420 MethodB Done</span><br><span class="line">14:27:04 520 MethodB Release Lock</span><br><span class="line">14:27:04 620 MethodB_A Done</span><br><span class="line">14:27:04 720 MethodB_A Release Lock</span><br><span class="line">14:27:04 820 MethodA1 Done</span><br><span class="line">14:27:04 920 MethodA1 Release Lock</span><br><span class="line">14:27:05 020 MethodA Done</span><br><span class="line">14:27:05 120 MethodA Release Lock</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本篇主要想要介紹使用Lock機制.</p>
-<p>利用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnJlYWRlcndyaXRlcmxvY2tzbGltP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim<i class="fa fa-external-link"></i></span>就可以建立如DB lock,實在非常方便.</p>
-<p>假如想要細部了解<a href="https://isdaniel.github.io/Autofac-AOP/">Autofac + Interceptors(AOP) 動態代理</a>可以參考我之前寫文章,這裡我就不多敘述了.</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbC90cmVlL21hc3Rlci9zcmMvRXh0ZW5zaW9uVG9vbC9UaGlyZFBhcnR5RXh0ZW5zaW9uL0xvY2tTZXJ2aWNl" title="https://github.com/isdaniel/ExtenionTool/tree/master/src/ExtensionTool/ThirdPartyExtension/LockService">SourceCode LockService<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/aop-lock-mechanism/">https://isdaniel.github.io/aop-lock-mechanism/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Lock</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>IOC</tag>
-        <tag>Autofac</tag>
-        <tag>AOP</tag>
-        <tag>Lock</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>ACID</title>
     <url>/acid/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備</p>
@@ -142,6 +71,77 @@
         <tag>IOC</tag>
         <tag>Autofac</tag>
         <tag>AOP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>AOP Lock Architecture</title>
+    <url>/aop-lock-mechanism/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
+<p>在我們當前系統中有許多動作間需要互斥,不然會有DeadLock問題</p>
+<p>藉由已經分析DeadLock Report後,我開始構思如何讓建立Lock可以變得更容易且好理解.</p>
+<p>所以就建構出此Lock架構.</p>
+<h2 id="如何在此框架使用Lock機制"><a href="#如何在此框架使用Lock機制" class="headerlink" title="如何在此框架使用Lock機制"></a>如何在此框架使用Lock機制</h2><p>我們只需要做幾個步驟:</p>
+<ol>
+<li>在使用Lock類別上掛<code>LockerInterceptor</code>攔截器標籤.  </li>
+<li>使用Lock方法上使用<code>LockAttribute</code>標籤<code>[Lock(LockKey = &quot;Your lock Key&quot;)]</code>(<code>Key</code>屬性是必填的)</li>
+<li>設定Lock屬性.</li>
+</ol>
+<blockquote>
+<p>目前寫法是針對單一Server Mutiple Thread來建立互斥Lock. 假如有遇到多台Servers需要建立互斥模式可以,參考Redis的<code>Redlock.Net</code>.</p>
+</blockquote>
+<p>使用方法如下,這樣在多執行緒系統中<code>MethodA1</code>跟<code>MethodB_A</code>就不會有同時執行問題,這樣就可以造成這兩個動作互斥.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="架構解說"><a href="#架構解說" class="headerlink" title="架構解說"></a>架構解說</h2><p>我是使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnJlYWRlcndyaXRlcmxvY2tzbGltP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim<i class="fa fa-external-link"></i></span></p>
+<blockquote>
+<p>因為支援ReadLock不互斥,WriteLock互斥邏輯</p>
+</blockquote>
+<p><img src="https://i.imgur.com/kESEvl4.png" alt></p>
+<p>我是如何讓使用者輸入<code>Key</code>來建立不同lock呢?</p>
+<blockquote>
+<p>我是使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0uY29sbGVjdGlvbnMuY29uY3VycmVudC5jb25jdXJyZW50ZGljdGlvbmFyeS0yP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2?view=netcore-3.1">ConcurrentDictionary<i class="fa fa-external-link"></i></span>來處理此問題,每個<code>Key</code>都有不同<code>Lock</code>物件</p>
+</blockquote>
+<h3 id="LockAttribute"><a href="#LockAttribute" class="headerlink" title="LockAttribute"></a>LockAttribute</h3><p><code>LockAttribute</code>有幾個屬性.</p>
+<ul>
+<li><code>Key</code>:鎖名稱</li>
+<li><code>Mode</code>:鎖的模式<ol>
+<li><code>LockMode.XLock</code>:獨占鎖會排斥其他資源請求此鎖,須等待資源釋放.</li>
+<li><code>LockMode.Shared</code>:Shared lock之間不互斥.</li>
+</ol>
+</li>
+<li><code>Order</code>:因為支援多個<code>LockAttribute</code>,此屬性決定執行此方法前要求鎖順序</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">AttributeUsage(AttributeTargets.Method, AllowMultiple = true)</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">LockAttribute</span> : <span class="title">Attribute</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> LockMode Mode &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; = LockMode.XLock;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Order &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="LockerInterceptor"><a href="#LockerInterceptor" class="headerlink" title="LockerInterceptor"></a>LockerInterceptor</h3><p>我們直接來<code>IInterceptor</code>物件最核心邏輯方法<code>Intercept(IInvocation invocation)</code>.</p>
+<p>利用<code>GetCustomAttributes</code>取得方法上所有<code>LockAttribute</code>並在方法執行前要求拿到,所需要<code>Lock</code>資源才可以執行方法,最後在<code>finally</code>時釋放lock資源</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Intercept</span>(<span class="params">IInvocation invocation</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> methodName = invocation.Method.Name;</span><br><span class="line">    <span class="keyword">var</span> lockAttributes = invocation.Method.GetCustomAttributes(<span class="keyword">typeof</span>(LockAttribute), <span class="literal">true</span>) <span class="keyword">as</span> LockAttribute[];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (IsMarkLockLockAttribute(lockAttributes))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> lockProviders = GetLockProviders(lockAttributes);</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.AddLock();</span><br><span class="line">            &#125;</span><br><span class="line">            invocation.Proceed();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Exception e)</span><br><span class="line">        &#123;</span><br><span class="line">            _log.Exception(<span class="string">"Something wrong!"</span>, e);</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.ReleaseLock();</span><br><span class="line">            &#125;</span><br><span class="line">            _log.Info(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> <span class="subst">&#123;methodName&#125;</span> Release Lock"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        invocation.Proceed();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="SampleCode"><a href="#SampleCode" class="headerlink" title="SampleCode"></a>SampleCode</h2><p>我利用Nunit寫一個簡單程式Print在console讓我們方便觀看結果.</p>
+<ul>
+<li><code>MethodA</code>:Shared lock mode on key A</li>
+<li><code>MethodA1</code>:X lock mode on key A</li>
+<li><code>MethodB_A</code>:X lock mode on key A and B</li>
+<li><code>MethodB</code>:X lock mode on key B</li>
+</ul>
+<p>理論上<code>MethodB</code>只會對於<code>MethodB_A</code>互斥,<code>MethodB</code>並不會跟<code>MethodA</code>,<code>MethodA1</code>有互斥反應.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>, Mode = LockMode.SharedLock)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA</span> (<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"B"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"B"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span>  <span class="keyword">void</span> <span class="title">MethodB</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA</span>(<span class="params"></span>)</span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AutofacConfig</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> IContainer Container &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Register</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line">        builder.RegisterType&lt;LockerInterceptor&gt;().AsSelf();</span><br><span class="line">        builder.RegisterType&lt;LockerContext&gt;().As&lt;ILockerContext&gt;().EnableClassInterceptors();</span><br><span class="line">        builder.RegisterType&lt;ConsoleProvider&gt;().As&lt;ISysLog&gt;().SingleInstance();</span><br><span class="line">        Container = builder.Build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">[<span class="meta">TestFixture</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerTest</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//You can use the following additional attributes as you write your tests:</span></span><br><span class="line">    [<span class="meta">OneTimeSetUp</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">OneTimeSetUp</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        AutofacConfig.Register();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Test</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">LockGroupTest</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123; </span><br><span class="line">        <span class="keyword">var</span> lockerContext= AutofacConfig.Container.Resolve&lt;ILockerContext&gt;();</span><br><span class="line">        </span><br><span class="line">        List&lt;Task&gt; taskList =<span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA1(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB_A(); &#125;));                </span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB(); &#125;));</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Task.WaitAll(taskList.ToArray());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><strong>Result</strong></p>
+<p>我們發現<code>MethodB_A</code>這個方法會對於,所有key是<code>A</code>,<code>B</code>方法互斥,<code>MethodA</code>則不會對於<code>MethodA</code>,<code>MethodB</code>互斥.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="code"><pre><span class="line">14:26:59 815 MethodA1 Done</span><br><span class="line">14:26:59 816 MethodB Done</span><br><span class="line">14:26:59 919 MethodA1 Release Lock</span><br><span class="line">14:26:59 920 MethodB Release Lock</span><br><span class="line">14:27:00 020 MethodB Done</span><br><span class="line">14:27:00 120 MethodB Release Lock</span><br><span class="line">14:27:00 220 MethodB_A Done</span><br><span class="line">14:27:00 320 MethodB_A Release Lock</span><br><span class="line">14:27:00 420 MethodA1 Done</span><br><span class="line">14:27:00 520 MethodA1 Release Lock</span><br><span class="line">14:27:00 620 MethodB_A Done</span><br><span class="line">14:27:00 720 MethodB_A Release Lock</span><br><span class="line">14:27:00 820 MethodB Done</span><br><span class="line">14:27:00 820 MethodA1 Done</span><br><span class="line">14:27:00 920 MethodB Release Lock</span><br><span class="line">14:27:00 920 MethodA1 Release Lock</span><br><span class="line">14:27:01 020 MethodB_A Done</span><br><span class="line">14:27:01 120 MethodB_A Release Lock</span><br><span class="line">14:27:01 220 MethodB_A Done</span><br><span class="line">14:27:01 320 MethodB_A Release Lock</span><br><span class="line">14:27:01 420 MethodB Done</span><br><span class="line">14:27:01 420 MethodA1 Done</span><br><span class="line">14:27:01 520 MethodB Release Lock</span><br><span class="line">14:27:01 520 MethodA1 Release Lock</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 820 MethodB Done</span><br><span class="line">14:27:01 920 MethodB Release Lock</span><br><span class="line">14:27:02 020 MethodB Done</span><br><span class="line">14:27:02 120 MethodB Release Lock</span><br><span class="line">14:27:02 220 MethodB_A Done</span><br><span class="line">14:27:02 320 MethodB_A Release Lock</span><br><span class="line">14:27:02 420 MethodA1 Done</span><br><span class="line">14:27:02 520 MethodA1 Release Lock</span><br><span class="line">14:27:02 620 MethodB_A Done</span><br><span class="line">14:27:02 720 MethodB_A Release Lock</span><br><span class="line">14:27:02 820 MethodB_A Done</span><br><span class="line">14:27:02 920 MethodB_A Release Lock</span><br><span class="line">14:27:03 020 MethodA1 Done</span><br><span class="line">14:27:03 020 MethodB Done</span><br><span class="line">14:27:03 120 MethodA1 Release Lock</span><br><span class="line">14:27:03 120 MethodB Release Lock</span><br><span class="line">14:27:03 220 MethodA1 Done</span><br><span class="line">14:27:03 220 MethodB Done</span><br><span class="line">14:27:03 320 MethodA1 Release Lock</span><br><span class="line">14:27:03 320 MethodB Release Lock</span><br><span class="line">14:27:03 420 MethodB_A Done</span><br><span class="line">14:27:03 520 MethodB_A Release Lock</span><br><span class="line">14:27:03 620 MethodA1 Done</span><br><span class="line">14:27:03 720 MethodA1 Release Lock</span><br><span class="line">14:27:03 820 MethodB_A Done</span><br><span class="line">14:27:03 920 MethodB_A Release Lock</span><br><span class="line">14:27:04 020 MethodA1 Done</span><br><span class="line">14:27:04 020 MethodB Done</span><br><span class="line">14:27:04 120 MethodA1 Release Lock</span><br><span class="line">14:27:04 120 MethodB Release Lock</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 420 MethodB Done</span><br><span class="line">14:27:04 520 MethodB Release Lock</span><br><span class="line">14:27:04 620 MethodB_A Done</span><br><span class="line">14:27:04 720 MethodB_A Release Lock</span><br><span class="line">14:27:04 820 MethodA1 Done</span><br><span class="line">14:27:04 920 MethodA1 Release Lock</span><br><span class="line">14:27:05 020 MethodA Done</span><br><span class="line">14:27:05 120 MethodA Release Lock</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本篇主要想要介紹使用Lock機制.</p>
+<p>利用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnJlYWRlcndyaXRlcmxvY2tzbGltP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim<i class="fa fa-external-link"></i></span>就可以建立如DB lock,實在非常方便.</p>
+<p>假如想要細部了解<a href="https://isdaniel.github.io/Autofac-AOP/">Autofac + Interceptors(AOP) 動態代理</a>可以參考我之前寫文章,這裡我就不多敘述了.</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbC90cmVlL21hc3Rlci9zcmMvRXh0ZW5zaW9uVG9vbC9UaGlyZFBhcnR5RXh0ZW5zaW9uL0xvY2tTZXJ2aWNl" title="https://github.com/isdaniel/ExtenionTool/tree/master/src/ExtensionTool/ThirdPartyExtension/LockService">SourceCode LockService<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/aop-lock-mechanism/">https://isdaniel.github.io/aop-lock-mechanism/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Lock</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>IOC</tag>
+        <tag>Autofac</tag>
+        <tag>AOP</tag>
+        <tag>Lock</tag>
       </tags>
   </entry>
   <entry>
@@ -1130,6 +1130,153 @@ public abstract class MoveBase
       </tags>
   </entry>
   <entry>
+    <title>(C#) 委託delegate,Func&lt;&gt;,Action 解說系列(二)</title>
+    <url>/c-func-2/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
+<p>最後帶著大家來實現自己的<code>Linq Where</code></p>
+<p>先來看 <code>Func&lt;&gt; ，Action&lt;&gt;</code>原始定義</p>
+<p>我們發現<code>Func&lt;&gt; ，Action&lt;&gt;</code> 其實本質就是委託 ，雖然有十幾個重載 但大同小異</p>
+<pre><code>public delegate TResult Func&lt;out TResult&gt;();
+
+public delegate void Action&lt;in T&gt;(T obj);
+</code></pre><p><code>Func</code>固定最後一個泛型參數為方法回傳值，其餘是傳入參數</p>
+<pre><code>public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
+</code></pre><h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
+<pre><code>public class Person
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
+
+/// &lt;summary&gt;
+/// 年紀超過10歲算老人
+/// &lt;/summary&gt;
+/// &lt;param name=&quot;person&quot;&gt;&lt;/param&gt;
+/// &lt;returns&gt;&lt;/returns&gt;
+public static string CheckAge(Person person)
+{
+    string result = &quot;年紀剛剛好&quot;;
+    if (person.Age &gt;= 10)
+    {
+        result = &quot;老人&quot;;
+    }
+    return result;
+}
+static void Main(string[] args)
+{
+    //Init一個Person物件
+    Person p = new Person()
+    {
+        Age = 10,
+        Name = &quot;tom&quot;
+    };
+
+    #region Func
+    //宣告一個Func&lt;Person,string&gt;委託 _thunkCheckAge
+    Func&lt;Person, string&gt; _thunkCheckAge;
+
+    //_thunkCheckAge委託指向CheckAge方法
+    _thunkCheckAge = new Func&lt;Person, string&gt;(CheckAge);
+
+    //執行_thunkCheckAge委託 (執行CheckAge方法)
+    string result = _thunkCheckAge(p);
+
+    //最後將結果顯示出來
+    Console.WriteLine(result); 
+    #endregion
+    Console.ReadKey();
+}
+</code></pre><h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
+<pre><code>public delegate void Action&lt;in T&gt;(T obj);
+</code></pre><p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
+<pre><code>public class Person
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
+static void Main(string[] args)
+{
+    //宣告_thunkPerson為Action&lt;Person&gt;委託
+    //此Action傳入參數是Person由泛型來決定
+    Action&lt;Person&gt; _thunkPerson;
+    //Init一個Person物件
+    Person p = new Person()
+    {
+        Age = 10,
+        Name = &quot;tom&quot;
+    };
+    //將CallPersonInfo方法 賦予給_thunkPerson
+    _thunkPerson = new Action&lt;Person&gt;(CallPersonInfo);
+
+    //執行_thunkPerson (就是執行CallPersonInfo方法)
+    _thunkPerson(p);
+    Console.ReadKey();
+}
+
+public static void CallPersonInfo(Person person)
+{
+    Console.WriteLine($&quot;Age:{person.Age} Name:{person.Name}&quot;);
+}
+</code></pre><h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action<code></code>和<code>Func</code>差別是</p>
+<ul>
+<li><code>Action</code>是<code>void</code>不回傳值得委託</li>
+<li><code>Func</code>是有回傳值得委託</li>
+</ul>
+<p>有了以上的基礎，我們就來實現我們自己的<code>Linq Where</code> 和 <code>Linq Select</code></p>
+<p>先來分析 <code>Where</code> 方法簽章</p>
+<pre><code>public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source, Func&lt;TSource, bool&gt; predicate)
+</code></pre><h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
+<p>重點在於<strong>[執行塞選條件]</strong>這個動作</p>
+<pre><code>List&lt;Person&gt; pList = new List&lt;Person&gt;()
+{
+    new Person() { Age=100,Name=&quot;daniel&quot;},
+    new Person() { Age=20,Name=&quot;Tom&quot; },
+    new Person() { Age = 10,Name = &quot;Amy&quot;},
+    new Person() { Age=5,Name = &quot;rjo&quot;}
+};
+pList.Where(per =&gt; per.Age &gt; 10);
+</code></pre><p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
+<p>重點在<code>if(where(item))</code> 判斷物件是否符合條件，如符合就回傳此物件</p>
+<pre><code>public static class LinqExtension
+{
+    /// &lt;summary&gt;
+    /// 自訂一個Where 
+    /// &lt;/summary&gt;
+    /// &lt;typeparam name=&quot;TSource&quot;&gt;&lt;/typeparam&gt;
+    /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
+    /// &lt;param name=&quot;where&quot;&gt;&lt;/param&gt;
+    /// &lt;returns&gt;&lt;/returns&gt;
+    public static IEnumerable&lt;TSource&gt; MyWhere&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source
+        ,Func&lt;TSource, bool&gt; where)
+    {
+        foreach (var item in source)
+        {
+            if (where(item))
+            {
+                yield return item;
+            }
+        }
+    }
+}
+</code></pre><hr>
+<h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p>委託把不確定的動作，轉移給呼叫端來撰寫。  </p>
+<p>而不是寫死在程式中</p>
+<p>上面的<code>MyWhere</code>挖了一個洞，關於判斷是否符合條件，給呼叫端實現</p>
+<p>雖然在裡面一樣是一個一個判斷是否符合條件，符合再返回，但利用委託和泛型就可以對於任何條件和任何型別來做比較　大大提升了程式效率</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-2/">https://isdaniel.github.io/c-func-2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Delegate</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Func</tag>
+        <tag>Delegate</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(三)</title>
     <url>/c-func-3/</url>
     <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>在Func和Action泛型委託中 有 In , Out 兩個關鍵字</p>
@@ -1287,153 +1434,6 @@ class Program
 <p><span class="exturl" data-url="aHR0cHM6Ly9tc2RuLm1pY3Jvc29mdC5jb20vemgtdHcvbGlicmFyeS9kZDc5OTUxNyh2PXZzLjExMA==" title="https://msdn.microsoft.com/zh-tw/library/dd799517(v=vs.110">泛型中的共變數和反變數<i class="fa fa-external-link"></i></span>.aspx)</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2NzaGFycC9sYW5ndWFnZS1yZWZlcmVuY2Uva2V5d29yZHMvb3V0LWdlbmVyaWMtbW9kaWZpZXI=" title="https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/out-generic-modifier">out (generic modifier) (C# Reference)<i class="fa fa-external-link"></i></span></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-3/">https://isdaniel.github.io/c-func-3/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Delegate</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Func</tag>
-        <tag>Delegate</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>(C#) 委託delegate,Func&lt;&gt;,Action 解說系列(二)</title>
-    <url>/c-func-2/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
-<p>最後帶著大家來實現自己的<code>Linq Where</code></p>
-<p>先來看 <code>Func&lt;&gt; ，Action&lt;&gt;</code>原始定義</p>
-<p>我們發現<code>Func&lt;&gt; ，Action&lt;&gt;</code> 其實本質就是委託 ，雖然有十幾個重載 但大同小異</p>
-<pre><code>public delegate TResult Func&lt;out TResult&gt;();
-
-public delegate void Action&lt;in T&gt;(T obj);
-</code></pre><p><code>Func</code>固定最後一個泛型參數為方法回傳值，其餘是傳入參數</p>
-<pre><code>public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
-</code></pre><h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
-<pre><code>public class Person
-{
-    public int Age { get; set; }
-    public string Name { get; set; }
-}
-
-/// &lt;summary&gt;
-/// 年紀超過10歲算老人
-/// &lt;/summary&gt;
-/// &lt;param name=&quot;person&quot;&gt;&lt;/param&gt;
-/// &lt;returns&gt;&lt;/returns&gt;
-public static string CheckAge(Person person)
-{
-    string result = &quot;年紀剛剛好&quot;;
-    if (person.Age &gt;= 10)
-    {
-        result = &quot;老人&quot;;
-    }
-    return result;
-}
-static void Main(string[] args)
-{
-    //Init一個Person物件
-    Person p = new Person()
-    {
-        Age = 10,
-        Name = &quot;tom&quot;
-    };
-
-    #region Func
-    //宣告一個Func&lt;Person,string&gt;委託 _thunkCheckAge
-    Func&lt;Person, string&gt; _thunkCheckAge;
-
-    //_thunkCheckAge委託指向CheckAge方法
-    _thunkCheckAge = new Func&lt;Person, string&gt;(CheckAge);
-
-    //執行_thunkCheckAge委託 (執行CheckAge方法)
-    string result = _thunkCheckAge(p);
-
-    //最後將結果顯示出來
-    Console.WriteLine(result); 
-    #endregion
-    Console.ReadKey();
-}
-</code></pre><h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
-<pre><code>public delegate void Action&lt;in T&gt;(T obj);
-</code></pre><p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
-<pre><code>public class Person
-{
-    public int Age { get; set; }
-    public string Name { get; set; }
-}
-static void Main(string[] args)
-{
-    //宣告_thunkPerson為Action&lt;Person&gt;委託
-    //此Action傳入參數是Person由泛型來決定
-    Action&lt;Person&gt; _thunkPerson;
-    //Init一個Person物件
-    Person p = new Person()
-    {
-        Age = 10,
-        Name = &quot;tom&quot;
-    };
-    //將CallPersonInfo方法 賦予給_thunkPerson
-    _thunkPerson = new Action&lt;Person&gt;(CallPersonInfo);
-
-    //執行_thunkPerson (就是執行CallPersonInfo方法)
-    _thunkPerson(p);
-    Console.ReadKey();
-}
-
-public static void CallPersonInfo(Person person)
-{
-    Console.WriteLine($&quot;Age:{person.Age} Name:{person.Name}&quot;);
-}
-</code></pre><h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action<code></code>和<code>Func</code>差別是</p>
-<ul>
-<li><code>Action</code>是<code>void</code>不回傳值得委託</li>
-<li><code>Func</code>是有回傳值得委託</li>
-</ul>
-<p>有了以上的基礎，我們就來實現我們自己的<code>Linq Where</code> 和 <code>Linq Select</code></p>
-<p>先來分析 <code>Where</code> 方法簽章</p>
-<pre><code>public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source, Func&lt;TSource, bool&gt; predicate)
-</code></pre><h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
-<p>重點在於<strong>[執行塞選條件]</strong>這個動作</p>
-<pre><code>List&lt;Person&gt; pList = new List&lt;Person&gt;()
-{
-    new Person() { Age=100,Name=&quot;daniel&quot;},
-    new Person() { Age=20,Name=&quot;Tom&quot; },
-    new Person() { Age = 10,Name = &quot;Amy&quot;},
-    new Person() { Age=5,Name = &quot;rjo&quot;}
-};
-pList.Where(per =&gt; per.Age &gt; 10);
-</code></pre><p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
-<p>重點在<code>if(where(item))</code> 判斷物件是否符合條件，如符合就回傳此物件</p>
-<pre><code>public static class LinqExtension
-{
-    /// &lt;summary&gt;
-    /// 自訂一個Where 
-    /// &lt;/summary&gt;
-    /// &lt;typeparam name=&quot;TSource&quot;&gt;&lt;/typeparam&gt;
-    /// &lt;param name=&quot;source&quot;&gt;&lt;/param&gt;
-    /// &lt;param name=&quot;where&quot;&gt;&lt;/param&gt;
-    /// &lt;returns&gt;&lt;/returns&gt;
-    public static IEnumerable&lt;TSource&gt; MyWhere&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source
-        ,Func&lt;TSource, bool&gt; where)
-    {
-        foreach (var item in source)
-        {
-            if (where(item))
-            {
-                yield return item;
-            }
-        }
-    }
-}
-</code></pre><hr>
-<h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p>委託把不確定的動作，轉移給呼叫端來撰寫。  </p>
-<p>而不是寫死在程式中</p>
-<p>上面的<code>MyWhere</code>挖了一個洞，關於判斷是否符合條件，給呼叫端實現</p>
-<p>雖然在裡面一樣是一個一個判斷是否符合條件，符合再返回，但利用委託和泛型就可以對於任何條件和任何型別來做比較　大大提升了程式效率</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-2/">https://isdaniel.github.io/c-func-2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>C#</category>
@@ -1634,52 +1634,6 @@ pList.Where(per =&gt; per.Age &gt; 10);
       </tags>
   </entry>
   <entry>
-    <title>(SQL Server) CTE RECURSIVE (遞迴)製作月曆</title>
-    <url>/cte-recursive/</url>
-    <content><![CDATA[<p>如果要製作月報…但只有給起訖日</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377514_65506.PNG" alt="pic"></p>
-<p>要產生出如下的列表 要怎麼辦…</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="pic"></p>
-<p>第一個想到的解法 會使用 <code>WHILE  +  [暫存表]</code>迴圈遍歷 把每個月新增入暫存表中</p>
-<p>程式碼如下:</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line"><span class="comment">--宣告一個起始時間變數</span></span><br><span class="line"><span class="keyword">DECLARE</span> @TempStartDate DATETIME</span><br><span class="line"><span class="keyword">DECLARE</span> @TempEndDate DATETIME</span><br><span class="line"></span><br><span class="line"><span class="comment">--設置變數 最小時間(起始時間)  和 最大時間</span></span><br><span class="line"><span class="keyword">SELECT</span> @TempStartDate = StartDate,@TempEndDate=EndDate </span><br><span class="line"><span class="keyword">FROM</span> @t</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP(Dates DATETIME)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WHILE</span>(@TempStartDate &lt; @TempEndDate)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">     <span class="comment">--將資料新增入暫存表</span></span><br><span class="line">     <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="comment">#TEMP (Dates) VALUES (@TempStartDate)</span></span><br><span class="line">     <span class="comment">--每跑一次迴圈就加一個月</span></span><br><span class="line">	 <span class="keyword">SELECT</span> @TempStartDate = <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,@TempStartDate)</span><br><span class="line"><span class="keyword">END</span> </span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="comment">#TEMP</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP</span></span><br></pre></td></tr></table></figure></div>
-<p>但這個解法雖然簡單..但程式碼又臭又長..</p>
-<p><strong>Q: 有沒有更好看的解法又可達成目的呢?</strong></p>
-<p><strong>ANS: 有!! 就是本次主角 CTE 遞迴</strong></p>
-<p>話不多說先貼上程式碼</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span>  <span class="keyword">INTO</span>  @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE (Dates,EndDate) <span class="keyword">AS</span></span><br><span class="line">(</span><br><span class="line">	<span class="keyword">SELECT</span> StartDate <span class="keyword">AS</span> Dates,EndDate <span class="keyword">AS</span> EndDate</span><br><span class="line">	<span class="keyword">FROM</span> @t</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="comment">--注意這邊使用 UNION ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates),EndDate</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates) &lt; EndDate <span class="comment">--判斷是否目前遞迴月份小於結束日期</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> CTE.Dates</span><br><span class="line"><span class="keyword">FROM</span> CTE</span><br></pre></td></tr></table></figure></div>
-<p>接下來解說 CTE遞迴原理 :</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521379674_85716.PNG" alt="PIC"></p>
-<p>可看到CTE中最主要執行四個步驟</p>
-<ol>
-<li>取得初始結果集並(錨點結果集) T(0)</li>
-<li>將T(0)結果集進行判斷是否滿足 DATEADD(MONTH,1,Dates) &lt; EndDate 不滿足繼續走,並產生T(1)結果集,依照此結果集繼續往下執行</li>
-<li>在執行上面的2步驟 直到滿足條件 T(0),T(1)…..T(n)</li>
-<li>傳回結果集。將之前所有產生結果集 UNION ALL。</li>
-</ol>
-<p><strong><code>使用CTE遞迴必須使用UNION ALL</code></strong></p>
-<p>最後CTE結果集就會呈現如下^^<br><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG"></p>
-<p><strong>補充 oracle解法</strong></p>
-<p>同場加映!! </p>
-<p>如果使用 <em>oracle</em> 可使用 <strong><code>connect by</code></strong> 很簡便取得日曆</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T</span><br><span class="line">(</span><br><span class="line">    StartDate <span class="built_in">DATE</span>,</span><br><span class="line">	EndDate <span class="built_in">DATE</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T( StartDate, EndDate ) <span class="keyword">VALUES</span>  (<span class="built_in">date</span> <span class="string">'2017-01-01'</span>,<span class="built_in">date</span> <span class="string">'2018-01-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span> - <span class="number">1</span> ) <span class="string">"Date"</span></span><br><span class="line">   <span class="keyword">from</span> T </span><br><span class="line"><span class="keyword">connect</span> <span class="keyword">by</span> trunc(EndDate,<span class="string">'mm'</span>) &gt;= add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span>)</span><br><span class="line">  <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p><span class="exturl" data-url="aHR0cDovL3NxbGZpZGRsZS5jb20vIyE0Lzc1Y2Q5LzE0" title="http://sqlfiddle.com/#!4/75cd9/14">http://sqlfiddle.com/#!4/75cd9/14<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/cte-recursive/">https://isdaniel.github.io/cte-recursive/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>SQL</category>
-      </categories>
-      <tags>
-        <tag>SQL</tag>
-        <tag>Tsql</tag>
-        <tag>MSSql</tag>
-        <tag>CTE</tag>
-        <tag>UNION ALL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Asp.net使用快取 (二)</title>
     <url>/cache-asp-net-2/</url>
     <content><![CDATA[<a href="/cache-asp-net-1/" title="Asp.net使用快取 (一)">Asp.net使用快取 (一)</a>
@@ -1747,6 +1701,52 @@ pList.Where(per =&gt; per.Age &gt; 10);
         <tag>C#</tag>
         <tag>Asp.net</tag>
         <tag>cache</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(SQL Server) CTE RECURSIVE (遞迴)製作月曆</title>
+    <url>/cte-recursive/</url>
+    <content><![CDATA[<p>如果要製作月報…但只有給起訖日</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377514_65506.PNG" alt="pic"></p>
+<p>要產生出如下的列表 要怎麼辦…</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="pic"></p>
+<p>第一個想到的解法 會使用 <code>WHILE  +  [暫存表]</code>迴圈遍歷 把每個月新增入暫存表中</p>
+<p>程式碼如下:</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line"><span class="comment">--宣告一個起始時間變數</span></span><br><span class="line"><span class="keyword">DECLARE</span> @TempStartDate DATETIME</span><br><span class="line"><span class="keyword">DECLARE</span> @TempEndDate DATETIME</span><br><span class="line"></span><br><span class="line"><span class="comment">--設置變數 最小時間(起始時間)  和 最大時間</span></span><br><span class="line"><span class="keyword">SELECT</span> @TempStartDate = StartDate,@TempEndDate=EndDate </span><br><span class="line"><span class="keyword">FROM</span> @t</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP(Dates DATETIME)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WHILE</span>(@TempStartDate &lt; @TempEndDate)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">     <span class="comment">--將資料新增入暫存表</span></span><br><span class="line">     <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="comment">#TEMP (Dates) VALUES (@TempStartDate)</span></span><br><span class="line">     <span class="comment">--每跑一次迴圈就加一個月</span></span><br><span class="line">	 <span class="keyword">SELECT</span> @TempStartDate = <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,@TempStartDate)</span><br><span class="line"><span class="keyword">END</span> </span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="comment">#TEMP</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP</span></span><br></pre></td></tr></table></figure></div>
+<p>但這個解法雖然簡單..但程式碼又臭又長..</p>
+<p><strong>Q: 有沒有更好看的解法又可達成目的呢?</strong></p>
+<p><strong>ANS: 有!! 就是本次主角 CTE 遞迴</strong></p>
+<p>話不多說先貼上程式碼</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span>  <span class="keyword">INTO</span>  @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE (Dates,EndDate) <span class="keyword">AS</span></span><br><span class="line">(</span><br><span class="line">	<span class="keyword">SELECT</span> StartDate <span class="keyword">AS</span> Dates,EndDate <span class="keyword">AS</span> EndDate</span><br><span class="line">	<span class="keyword">FROM</span> @t</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="comment">--注意這邊使用 UNION ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates),EndDate</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates) &lt; EndDate <span class="comment">--判斷是否目前遞迴月份小於結束日期</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> CTE.Dates</span><br><span class="line"><span class="keyword">FROM</span> CTE</span><br></pre></td></tr></table></figure></div>
+<p>接下來解說 CTE遞迴原理 :</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521379674_85716.PNG" alt="PIC"></p>
+<p>可看到CTE中最主要執行四個步驟</p>
+<ol>
+<li>取得初始結果集並(錨點結果集) T(0)</li>
+<li>將T(0)結果集進行判斷是否滿足 DATEADD(MONTH,1,Dates) &lt; EndDate 不滿足繼續走,並產生T(1)結果集,依照此結果集繼續往下執行</li>
+<li>在執行上面的2步驟 直到滿足條件 T(0),T(1)…..T(n)</li>
+<li>傳回結果集。將之前所有產生結果集 UNION ALL。</li>
+</ol>
+<p><strong><code>使用CTE遞迴必須使用UNION ALL</code></strong></p>
+<p>最後CTE結果集就會呈現如下^^<br><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG"></p>
+<p><strong>補充 oracle解法</strong></p>
+<p>同場加映!! </p>
+<p>如果使用 <em>oracle</em> 可使用 <strong><code>connect by</code></strong> 很簡便取得日曆</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T</span><br><span class="line">(</span><br><span class="line">    StartDate <span class="built_in">DATE</span>,</span><br><span class="line">	EndDate <span class="built_in">DATE</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T( StartDate, EndDate ) <span class="keyword">VALUES</span>  (<span class="built_in">date</span> <span class="string">'2017-01-01'</span>,<span class="built_in">date</span> <span class="string">'2018-01-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span> - <span class="number">1</span> ) <span class="string">"Date"</span></span><br><span class="line">   <span class="keyword">from</span> T </span><br><span class="line"><span class="keyword">connect</span> <span class="keyword">by</span> trunc(EndDate,<span class="string">'mm'</span>) &gt;= add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span>)</span><br><span class="line">  <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><span class="exturl" data-url="aHR0cDovL3NxbGZpZGRsZS5jb20vIyE0Lzc1Y2Q5LzE0" title="http://sqlfiddle.com/#!4/75cd9/14">http://sqlfiddle.com/#!4/75cd9/14<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/cte-recursive/">https://isdaniel.github.io/cte-recursive/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>SQL</category>
+      </categories>
+      <tags>
+        <tag>SQL</tag>
+        <tag>Tsql</tag>
+        <tag>MSSql</tag>
+        <tag>CTE</tag>
+        <tag>UNION ALL</tag>
       </tags>
   </entry>
   <entry>
@@ -3852,6 +3852,98 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>IOC(控制反轉)，DI(依賴注入) 深入淺出~~</title>
+    <url>/ioc-di/</url>
+    <content><![CDATA[<p><code>IOC</code>是一個oop重要的程式設計思想。</p>
+<p>學一個技術或思想前我們先了解，這個技術或思想為我們解決怎樣問題。</p>
+<p><code>Ioc—Inversion of Control</code> 控制反轉<br>控制反轉是一個設計思想 ，把對於某個物件的控制權移轉給第三方容器</p>
+<h2 id="簡單解釋"><a href="#簡單解釋" class="headerlink" title="簡單解釋"></a>簡單解釋</h2><p>A物件程式內部需要使用B物件 A,B物件中有依賴的成份</p>
+<p>控制反轉是把原本A對B控制權移交給第三方容器</p>
+<p>降低A對B物件的耦合性，讓雙方都倚賴第三方容器。</p>
+<ul>
+<li>反轉概念如下圖</li>
+</ul>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png" alt="pic"></p>
+<blockquote>
+<p>我們可發現有兩點差異</p>
+</blockquote>
+<ol>
+<li><p>使用者原本直接耦合於A，但使用IoC容器使用者就直接對容器而不是A 至於A關連於誰由容器決定<br>原本A直接控制於B,C，但透過一個IoC容器我們控制權反轉給了容器</p>
+</li>
+<li><p>IoC經典實現對象設計法則　好萊塢法則：“別找我們，我們找你”<br>系統中模組建議依賴抽象，因為各個模組間不需要知道對方太多細節（實作），知道越多耦合越強。<br>DI—Dependency Injection 依賴注入</p>
+</li>
+</ol>
+<blockquote>
+<p>把被依賴物件注入被動接收物件中</p>
+</blockquote>
+<h2 id="案例解釋："><a href="#案例解釋：" class="headerlink" title="案例解釋："></a>案例解釋：</h2><p>小明是個愛乾淨的人，但他工作時常加班導致</p>
+<p>學一個技術或思想前我們必須先了解，這個技術或思想可為我們解決什麼問題。</p>
+<p><code>Ioc(Inversion of Control)</code>控制反轉</p>
+<p><strong>控制反轉是一個設計思想</strong></p>
+<p>簡單解釋</p>
+<p>A物件程式內部需要使用B物件 A,B物件中有依賴的成份</p>
+<p>控制反轉把原本A對B直接控制權移交給由第三方容器</p>
+<p>降低A對B物件的耦合程度，並讓雙方都倚賴抽象。</p>
+<blockquote>
+<p>IoC經典實現對象設計法則　好萊塢法則：“別找我們，我們找你”</p>
+</blockquote>
+<blockquote>
+<p>系統中模組建議依賴抽象，因為各個模組間不需要知道對方太多細節（實作），知道越多耦合越強。</p>
+</blockquote>
+<hr>
+<p>DI—Dependency Injection 依賴注入</p>
+<p>把<strong>被依賴物件</strong>注入<strong>被動接收物件</strong>中</p>
+<p>案例解釋：</p>
+<p>小明是個愛乾淨的人，但他工作時常加班導致房間雜亂，他不能忍受此狀況，所以小明去找一個清潔阿姨每天幫忙他打掃家裡</p>
+<p>哪天阿姨哪天有事不能打掃，小明就必須要再去找人來幫忙打掃，由此可知小明耦合阿姨</p>
+<hr>
+<p>如果今天是….</p>
+<p>小明把他要的條件給「打掃仲介公司」，仲介公司幫他尋找有沒有符合小明需求的打掃阿姨，假如今天A阿姨請假了，仲介公司會自動找另一個符合需求B阿姨幫忙打掃…</p>
+<p>原本小明需耦合於打掃阿姨，現在被「仲介公司」做了控制反轉讓「仲介公司」來提供打掃阿姨。</p>
+<p>小明不用管是否今天有人會來打掃，「仲介公司」會幫小明找到一個掃地阿姨。</p>
+<ul>
+<li>「仲介公司」可看作 依賴注入容器</li>
+<li>「小明」可看作 被動接收物件</li>
+</ul>
+<p>「打掃阿姨」可看作 被依賴物件</p>
+<p>在使用IOC容器前需先了解雙方的依賴關係(誰依賴誰?)</p>
+<p>上述還有一個很重要的觀念是，依賴和被接收對象要倚賴抽象。</p>
+<hr>
+<p>範例使用：VS2015</p>
+<p>IOC容器：AutoFac</p>
+<p>下面範例來說明上面的例子</p>
+<p>小明自己依賴於掃地阿姨<br>依賴程式碼寫在小明類別內部日後要更改只能動內部程式碼。</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 小明直接依賴 Aunt 不是依賴抽象</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 日後要改必須動內部</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Mine</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> Aunt aunt = <span class="keyword">new</span> Aunt();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Room</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        aunt.Swapping();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>呼叫使用時</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">Mine mine = <span class="keyword">new</span> Mine();</span><br><span class="line">mine.Room();</span><br></pre></td></tr></table></figure>
+<p>小明找仲介公司</p>
+<p><strong>仲介公司(Ioc容器)</strong></p>
+<p>在仲介公司內註冊需求，讓仲介公司日後幫你找人（註冊的類別）</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 仲介公司</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> IContainer <span class="title">MiddleCompany</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line"></span><br><span class="line">    <span class="comment">//在仲介公司裡寫需求人申請單</span></span><br><span class="line">    builder.RegisterType&lt;MineWithMiddle&gt;();</span><br><span class="line">    <span class="comment">//小明所需打掃阿姨需求</span></span><br><span class="line">    builder.RegisterType&lt;Aunt&gt;().As&lt;ISwapable&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> builder.Build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用起來</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">IContainer middleCompany = MiddleCompany();</span><br><span class="line"><span class="comment">//仲介公司(IOC AutoFac)自動幫小明注入一個打掃阿姨</span></span><br><span class="line">MineWithMiddle mineWithMiddle = middleCompany.Resolve&lt;MineWithMiddle&gt;();</span><br><span class="line"></span><br><span class="line">mineWithMiddle.Room();</span><br></pre></td></tr></table></figure>
+<p>總結：</p>
+<p>雖然上面程式碼執行結果一樣，但內部結構和日後擴展性卻截然不同</p>
+<blockquote>
+<p>重點：系統中模組建議依賴抽象，因為各個模組間不需要知道對方太多細節（實作），知道越多耦合越強。</p>
+</blockquote>
+<p>像網頁瀏覽器和伺服器是依賴<strong>Http</strong>協議，用戶端不管是手機.電腦,平板，伺服器端php,asp.net,java都可互相交信，依賴<strong>Http</strong>協議共用的合約</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0lPQ19TYW1wbGU=" title="https://github.com/isdaniel/IOC_Sample">範例原始碼<i class="fa fa-external-link"></i></span></p>
+<p><span class="exturl" data-url="aHR0cDovL3d3dy5jbmJsb2dzLmNvbS94ZHAtZ2FjbC9wLzQyNDk5MzkuaHRtbA==" title="http://www.cnblogs.com/xdp-gacl/p/4249939.html">參考連結<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ioc-di/">https://isdaniel.github.io/ioc-di/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>IOC</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>IOC</tag>
+        <tag>Autofac</tag>
+        <tag>Design-Pattern</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)</title>
     <url>/ithelp-day1/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -3954,98 +4046,6 @@ email_url: dog830228@gmail.com
         <tag>Asp.net-MVC</tag>
         <tag>SourceCode</tag>
         <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>IOC(控制反轉)，DI(依賴注入) 深入淺出~~</title>
-    <url>/ioc-di/</url>
-    <content><![CDATA[<p><code>IOC</code>是一個oop重要的程式設計思想。</p>
-<p>學一個技術或思想前我們先了解，這個技術或思想為我們解決怎樣問題。</p>
-<p><code>Ioc—Inversion of Control</code> 控制反轉<br>控制反轉是一個設計思想 ，把對於某個物件的控制權移轉給第三方容器</p>
-<h2 id="簡單解釋"><a href="#簡單解釋" class="headerlink" title="簡單解釋"></a>簡單解釋</h2><p>A物件程式內部需要使用B物件 A,B物件中有依賴的成份</p>
-<p>控制反轉是把原本A對B控制權移交給第三方容器</p>
-<p>降低A對B物件的耦合性，讓雙方都倚賴第三方容器。</p>
-<ul>
-<li>反轉概念如下圖</li>
-</ul>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png" alt="pic"></p>
-<blockquote>
-<p>我們可發現有兩點差異</p>
-</blockquote>
-<ol>
-<li><p>使用者原本直接耦合於A，但使用IoC容器使用者就直接對容器而不是A 至於A關連於誰由容器決定<br>原本A直接控制於B,C，但透過一個IoC容器我們控制權反轉給了容器</p>
-</li>
-<li><p>IoC經典實現對象設計法則　好萊塢法則：“別找我們，我們找你”<br>系統中模組建議依賴抽象，因為各個模組間不需要知道對方太多細節（實作），知道越多耦合越強。<br>DI—Dependency Injection 依賴注入</p>
-</li>
-</ol>
-<blockquote>
-<p>把被依賴物件注入被動接收物件中</p>
-</blockquote>
-<h2 id="案例解釋："><a href="#案例解釋：" class="headerlink" title="案例解釋："></a>案例解釋：</h2><p>小明是個愛乾淨的人，但他工作時常加班導致</p>
-<p>學一個技術或思想前我們必須先了解，這個技術或思想可為我們解決什麼問題。</p>
-<p><code>Ioc(Inversion of Control)</code>控制反轉</p>
-<p><strong>控制反轉是一個設計思想</strong></p>
-<p>簡單解釋</p>
-<p>A物件程式內部需要使用B物件 A,B物件中有依賴的成份</p>
-<p>控制反轉把原本A對B直接控制權移交給由第三方容器</p>
-<p>降低A對B物件的耦合程度，並讓雙方都倚賴抽象。</p>
-<blockquote>
-<p>IoC經典實現對象設計法則　好萊塢法則：“別找我們，我們找你”</p>
-</blockquote>
-<blockquote>
-<p>系統中模組建議依賴抽象，因為各個模組間不需要知道對方太多細節（實作），知道越多耦合越強。</p>
-</blockquote>
-<hr>
-<p>DI—Dependency Injection 依賴注入</p>
-<p>把<strong>被依賴物件</strong>注入<strong>被動接收物件</strong>中</p>
-<p>案例解釋：</p>
-<p>小明是個愛乾淨的人，但他工作時常加班導致房間雜亂，他不能忍受此狀況，所以小明去找一個清潔阿姨每天幫忙他打掃家裡</p>
-<p>哪天阿姨哪天有事不能打掃，小明就必須要再去找人來幫忙打掃，由此可知小明耦合阿姨</p>
-<hr>
-<p>如果今天是….</p>
-<p>小明把他要的條件給「打掃仲介公司」，仲介公司幫他尋找有沒有符合小明需求的打掃阿姨，假如今天A阿姨請假了，仲介公司會自動找另一個符合需求B阿姨幫忙打掃…</p>
-<p>原本小明需耦合於打掃阿姨，現在被「仲介公司」做了控制反轉讓「仲介公司」來提供打掃阿姨。</p>
-<p>小明不用管是否今天有人會來打掃，「仲介公司」會幫小明找到一個掃地阿姨。</p>
-<ul>
-<li>「仲介公司」可看作 依賴注入容器</li>
-<li>「小明」可看作 被動接收物件</li>
-</ul>
-<p>「打掃阿姨」可看作 被依賴物件</p>
-<p>在使用IOC容器前需先了解雙方的依賴關係(誰依賴誰?)</p>
-<p>上述還有一個很重要的觀念是，依賴和被接收對象要倚賴抽象。</p>
-<hr>
-<p>範例使用：VS2015</p>
-<p>IOC容器：AutoFac</p>
-<p>下面範例來說明上面的例子</p>
-<p>小明自己依賴於掃地阿姨<br>依賴程式碼寫在小明類別內部日後要更改只能動內部程式碼。</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 小明直接依賴 Aunt 不是依賴抽象</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 日後要改必須動內部</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Mine</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> Aunt aunt = <span class="keyword">new</span> Aunt();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Room</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        aunt.Swapping();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>呼叫使用時</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">Mine mine = <span class="keyword">new</span> Mine();</span><br><span class="line">mine.Room();</span><br></pre></td></tr></table></figure>
-<p>小明找仲介公司</p>
-<p><strong>仲介公司(Ioc容器)</strong></p>
-<p>在仲介公司內註冊需求，讓仲介公司日後幫你找人（註冊的類別）</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 仲介公司</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> IContainer <span class="title">MiddleCompany</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line"></span><br><span class="line">    <span class="comment">//在仲介公司裡寫需求人申請單</span></span><br><span class="line">    builder.RegisterType&lt;MineWithMiddle&gt;();</span><br><span class="line">    <span class="comment">//小明所需打掃阿姨需求</span></span><br><span class="line">    builder.RegisterType&lt;Aunt&gt;().As&lt;ISwapable&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> builder.Build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>使用起來</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">IContainer middleCompany = MiddleCompany();</span><br><span class="line"><span class="comment">//仲介公司(IOC AutoFac)自動幫小明注入一個打掃阿姨</span></span><br><span class="line">MineWithMiddle mineWithMiddle = middleCompany.Resolve&lt;MineWithMiddle&gt;();</span><br><span class="line"></span><br><span class="line">mineWithMiddle.Room();</span><br></pre></td></tr></table></figure>
-<p>總結：</p>
-<p>雖然上面程式碼執行結果一樣，但內部結構和日後擴展性卻截然不同</p>
-<blockquote>
-<p>重點：系統中模組建議依賴抽象，因為各個模組間不需要知道對方太多細節（實作），知道越多耦合越強。</p>
-</blockquote>
-<p>像網頁瀏覽器和伺服器是依賴<strong>Http</strong>協議，用戶端不管是手機.電腦,平板，伺服器端php,asp.net,java都可互相交信，依賴<strong>Http</strong>協議共用的合約</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0lPQ19TYW1wbGU=" title="https://github.com/isdaniel/IOC_Sample">範例原始碼<i class="fa fa-external-link"></i></span></p>
-<p><span class="exturl" data-url="aHR0cDovL3d3dy5jbmJsb2dzLmNvbS94ZHAtZ2FjbC9wLzQyNDk5MzkuaHRtbA==" title="http://www.cnblogs.com/xdp-gacl/p/4249939.html">參考連結<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ioc-di/">https://isdaniel.github.io/ioc-di/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>IOC</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>IOC</tag>
-        <tag>Autofac</tag>
-        <tag>Design-Pattern</tag>
       </tags>
   </entry>
   <entry>
@@ -4185,102 +4185,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>談談Controller幾個重要成員 (第12天)</title>
-    <url>/ithelp-day12/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#controllerbasecontroller%e5%9f%ba%e7%a4%8e%e9%a1%9e%e5%88%a5">ControllerBase(Controller基礎類別)</a><ul>
-<li><a href="#sessionstatetempdataprovider-%e6%8e%a7%e5%88%b6%e5%84%b2%e5%ad%98tempdata">SessionStateTempDataProvider 控制儲存TempData</a></li>
-</ul>
-</li>
-<li><a href="#controllerbase-excute%e6%96%b9%e6%b3%95">ControllerBase Excute方法</a></li>
-<li><a href="#controller">Controller</a><ul>
-<li><a href="#executecore">ExecuteCore</a></li>
-</ul>
-</li>
-<li><a href="#controllercontext">ControllerContext</a><ul>
-<li><a href="#controllercontext-1">ControllerContext</a></li>
-<li><a href="#authorizationcontext">AuthorizationContext</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上篇得知MVC預設透過<code>DefaultControllerFactory</code>反射方式動態建立<code>Controller</code>物件</p>
-<p>本篇會分享我們常用到<code>Controller</code>基礎類別和相關物件.</p>
-<blockquote>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="ControllerBase-Controller基礎類別"><a href="#ControllerBase-Controller基礎類別" class="headerlink" title="ControllerBase(Controller基礎類別)"></a>ControllerBase(Controller基礎類別)</h2><p><code>ControllerBase</code>具有如下幾個重要的屬性</p>
-<ol>
-<li><code>TempData</code>：將設置資料存於<code>Session</code>中,生命週期除了當下請求, 導頁後仍可續存.</li>
-<li><code>ViewBag</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>dynamic</code>)</li>
-<li><code>ViewData</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>ViewDataDictionary</code>)</li>
-</ol>
-<p>雖說<code>ViewBag</code>和<code>ViewData</code>看起來使用不同的物件,但從程式碼了解到其實<code>ViewBag</code>也是使用<code>ViewData</code>引用.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ControllerBase</span> : <span class="title">IController</span></span><br><span class="line">&#123;   </span><br><span class="line">    <span class="keyword">public</span> ControllerContext ControllerContext &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> TempDataDictionary TempData</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (ControllerContext != <span class="literal">null</span> &amp;&amp; ControllerContext.IsChildAction)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> ControllerContext.ParentActionViewContext.TempData;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (_tempDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _tempDataDictionary = <span class="keyword">new</span> TempDataDictionary();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _tempDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">set</span> &#123; _tempDataDictionary = <span class="keyword">value</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">dynamic</span> ViewBag</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (_dynamicViewDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _dynamicViewDataDictionary = <span class="keyword">new</span> DynamicViewDataDictionary(() =&gt; ViewData);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _dynamicViewDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ViewDataDictionary ViewData &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="SessionStateTempDataProvider-控制儲存TempData"><a href="#SessionStateTempDataProvider-控制儲存TempData" class="headerlink" title="SessionStateTempDataProvider 控制儲存TempData"></a>SessionStateTempDataProvider 控制儲存TempData</h3><p>上面說到<code>TempData</code>字典集合生命週期除了當下請求, 導頁後仍可續存.原因是在<code>SessionStateTempDataProvider</code>將資料存在<code>Session</code>中</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">controllerContext.HttpContext.Session[<span class="string">"__ControllerTempData"</span>]</span><br></pre></td></tr></table></figure></div>
-<p>可以透過上面程式碼取得當前的<code>TempData</code>字典集合物件.</p>
-<h2 id="ControllerBase-Excute方法"><a href="#ControllerBase-Excute方法" class="headerlink" title="ControllerBase Excute方法"></a>ControllerBase Excute方法</h2><p><code>ControllerBase</code>這個類別繼承<code>IController</code>,前篇說到在<strong>HttpHandler</strong> <code>ProcessRequest</code>方法會透過反射找到一個符合Http請求<code>IController</code>介面物件.<br>並呼叫其<code>Execute</code>方法</p>
-<p>在<code>Execute</code>做了幾件事情.</p>
-<ul>
-<li>初始化<code>ControllerContext</code>物件,對於<code>RequestContext</code>簡易封裝.</li>
-<li><code>ExecuteCore</code>呼叫<code>Hock</code>方法(<code>ExecuteCore</code>是一個抽象方法提供繼承他的物件實做,預設是<code>Controller</code>類別)</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (requestContext.HttpContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.ControllerBase_CannotExecuteWithNullHttpContext, <span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    VerifyExecuteCalledOnce();</span><br><span class="line">    Initialize(requestContext);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">using</span> (ScopeStorage.CreateTransientScope())</span><br><span class="line">    &#123;</span><br><span class="line">        ExecuteCore();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> IController.Execute(RequestContext requestContext)</span><br><span class="line">&#123;</span><br><span class="line">    Execute(requestContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="Controller"><a href="#Controller" class="headerlink" title="Controller"></a>Controller</h2><p>在專案中<code>Controller</code>是我們預設使用繼承控制器類別，此類別中定義了很多的輔助方法和屬性讓撰寫控制器變得簡單。<br><code>Controller</code>類別除了直接繼承<code>ControllerBase</code>之外,<code>Controller</code>還顯式實現<code>IController</code>和<code>IAsyncController</code>介面，跟<code>ASP.NET MVC</code> 四大篩選器（<code>IAuthorizationFilter,IActionFilter、IResultFilter,IExceptionFilter</code>）的4個介面。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">Controller</span> : </span><br><span class="line">	<span class="title">ControllerBase</span>, </span><br><span class="line">	<span class="title">IActionFilter</span>, </span><br><span class="line">	<span class="title">IAuthenticationFilter</span>, </span><br><span class="line">	<span class="title">IAuthorizationFilter</span>,</span><br><span class="line">	<span class="title">IDisposable</span>, </span><br><span class="line">	<span class="title">IExceptionFilter</span>,</span><br><span class="line">	<span class="title">IResultFilter</span>,</span><br><span class="line">	<span class="title">IAsyncController</span>, </span><br><span class="line">	<span class="title">IAsyncManagerContainer</span></span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="ExecuteCore"><a href="#ExecuteCore" class="headerlink" title="ExecuteCore"></a>ExecuteCore</h3><p>在<code>Controller</code>重載實做<code>ExecuteCore</code>方法.</p>
-<p>主要透過<code>GetActionName(RouteData)</code>取得執行的<code>Action</code>名稱,並透過<code>ActionInvoker</code>取得要Invoker的<code>ActionInvoker</code>.</p>
-<ul>
-<li><code>PossiblyLoadTempData</code>：建立載入<code>TempData</code></li>
-<li><code>PossiblySaveTempData</code>：儲存<code>TempData</code>的資料</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteCore</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// If code in this method needs to be updated, please also check the BeginExecuteCore() and</span></span><br><span class="line">    <span class="comment">// EndExecuteCore() methods of AsyncController to see if that code also must be updated.</span></span><br><span class="line">    PossiblyLoadTempData();</span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> actionName = GetActionName(RouteData);</span><br><span class="line">        <span class="keyword">if</span> (!ActionInvoker.InvokeAction(ControllerContext, actionName))</span><br><span class="line">        &#123;</span><br><span class="line">            HandleUnknownAction(actionName);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        PossiblySaveTempData();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="ControllerContext"><a href="#ControllerContext" class="headerlink" title="ControllerContext"></a>ControllerContext</h2><p>第一次初始話<code>ControllerContext</code>利用建構子</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br></pre></td></tr></table></figure></div>
-<p>在<code>ControllerBase.Initialize</code>方法對於<code>ControllerContext</code>初始化,這個上下文資料封裝了許多此次請求的資料.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Initialize</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ControllerContext = <span class="keyword">new</span> ControllerContext(requestContext, <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>後面對於繼承<code>ControllerContext</code>的<code>Context</code>傳入第一次初始化<code>ControllerContext</code>物件,<br>在建構子函數把傳入<code>ControllerContext</code>的<code>RequestContext</code>資料填入繼承<code>ControllerContext</code>物件中</p>
-<p>下面是<strong>MVC</strong>有繼承<code>ControllerContext</code>類別</p>
-<ul>
-<li>AuthorizationContext</li>
-<li>ExceptionContext</li>
-<li>AuthenticationChallengeContext</li>
-<li>ResultExecutedContext</li>
-<li>ViewContext</li>
-<li>ResultExecutingContext</li>
-</ul>
-<h3 id="ControllerContext-1"><a href="#ControllerContext-1" class="headerlink" title="ControllerContext"></a>ControllerContext</h3><p>在原始碼中可以看到<code>ControllerContext(ControllerContext controllerContext)</code>很巧妙把自身類別當作建構子方法參數傳入.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Controller = controllerContext.Controller;</span><br><span class="line">RequestContext = controllerContext.RequestContext;</span><br></pre></td></tr></table></figure></div>
-<p>主要是要把<code>RequestContext</code>值給填充,之後就可以利用<code>RequestContext</code>取得理面一些資料.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">internal</span> <span class="keyword">const</span> <span class="keyword">string</span> ParentActionViewContextToken = <span class="string">"ParentActionViewContext"</span>;</span><br><span class="line">	<span class="keyword">private</span> HttpContextBase _httpContext;</span><br><span class="line">	<span class="keyword">private</span> RequestContext _requestContext;</span><br><span class="line">	<span class="keyword">private</span> RouteData _routeData;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="title">ControllerContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (controllerContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controllerContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Controller = controllerContext.Controller;</span><br><span class="line">		RequestContext = controllerContext.RequestContext;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">HttpContextBase httpContext, RouteData routeData, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">new RequestContext(httpContext, routeData</span>), controller)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (controller == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controller"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		RequestContext = requestContext;</span><br><span class="line">		Controller = controller;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="AuthorizationContext"><a href="#AuthorizationContext" class="headerlink" title="AuthorizationContext"></a>AuthorizationContext</h3><p>我們看一下<code>Authorization</code>filter用到的參數<code>AuthorizationContext</code>.</p>
-<p>在<code>InvokeAuthorizationFilters</code>方法將<code>AuthorizationContext</code>初始化</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">AuthorizationContext context = <span class="keyword">new</span> AuthorizationContext(controllerContext, actionDescriptor);</span><br></pre></td></tr></table></figure></div>
-<p>其中傳入參數<code>controllerContext</code>是第一次透過<code>ControllerBase.Initialize</code>初始化<code>Context</code>.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AuthorizationContext</span> : <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext, ActionDescriptor actionDescriptor</span>) : <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (actionDescriptor == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"actionDescriptor"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		ActionDescriptor = actionDescriptor;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> ActionDescriptor ActionDescriptor &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> ActionResult Result &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>之後再呼叫<code>base(controllerContext)</code>利用<code>ControllerContext</code>建構子把資料填充.</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>Asp.net MVC</code>對於為了方便我們使用控制器所以對於<code>Controller</code>進行許多資料封裝,讓我們只要繼承<code>Controller</code>就可以方便使用許多屬性.</p>
-<p>下圖是<code>Controller</code>核心類別關係圖.<code>Controller</code>類別左右兩側有本次沒介紹到類別(之後會介紹到)</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/12/controller_uml.png" alt="relationship_pic.PNG"></p>
-<p>當我看到<code>ControllerContext</code>的設計時讓我驚艷的,因為他把<strong>MVC</strong>用到<code>Context</code>都關聯綁定到一個類別中.</p>
-<p>因為在商業邏輯中會有許多<code>Model</code>類別,且這些類別資料存在一定的相關性,我覺得這個設計可以使用可以大大改善資料傳遞上的麻煩,讓程式寫起來更安全,簡單</p>
-<p>之後我會把上面的<strong>UML</strong>圖慢慢畫出來,一步一步揭開<code>Asp.net MVC</code>面紗.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day12/">https://isdaniel.github.io/ithelp-day12/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Asp.net MVC如何實現IOC解析器 (第13天)</title>
     <url>/ithelp-day13/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -4376,6 +4280,102 @@ email_url: dog830228@gmail.com
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/13/IOC_Asp.netMVC.png" alt="IOC_Asp.netMVC.png"></p>
 <p>下篇會介紹<code>DependencyResolver</code>在<code>Asp.net MVC</code>中有哪些實際的應用.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day13/">https://isdaniel.github.io/ithelp-day13/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>談談Controller幾個重要成員 (第12天)</title>
+    <url>/ithelp-day12/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#controllerbasecontroller%e5%9f%ba%e7%a4%8e%e9%a1%9e%e5%88%a5">ControllerBase(Controller基礎類別)</a><ul>
+<li><a href="#sessionstatetempdataprovider-%e6%8e%a7%e5%88%b6%e5%84%b2%e5%ad%98tempdata">SessionStateTempDataProvider 控制儲存TempData</a></li>
+</ul>
+</li>
+<li><a href="#controllerbase-excute%e6%96%b9%e6%b3%95">ControllerBase Excute方法</a></li>
+<li><a href="#controller">Controller</a><ul>
+<li><a href="#executecore">ExecuteCore</a></li>
+</ul>
+</li>
+<li><a href="#controllercontext">ControllerContext</a><ul>
+<li><a href="#controllercontext-1">ControllerContext</a></li>
+<li><a href="#authorizationcontext">AuthorizationContext</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上篇得知MVC預設透過<code>DefaultControllerFactory</code>反射方式動態建立<code>Controller</code>物件</p>
+<p>本篇會分享我們常用到<code>Controller</code>基礎類別和相關物件.</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="ControllerBase-Controller基礎類別"><a href="#ControllerBase-Controller基礎類別" class="headerlink" title="ControllerBase(Controller基礎類別)"></a>ControllerBase(Controller基礎類別)</h2><p><code>ControllerBase</code>具有如下幾個重要的屬性</p>
+<ol>
+<li><code>TempData</code>：將設置資料存於<code>Session</code>中,生命週期除了當下請求, 導頁後仍可續存.</li>
+<li><code>ViewBag</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>dynamic</code>)</li>
+<li><code>ViewData</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>ViewDataDictionary</code>)</li>
+</ol>
+<p>雖說<code>ViewBag</code>和<code>ViewData</code>看起來使用不同的物件,但從程式碼了解到其實<code>ViewBag</code>也是使用<code>ViewData</code>引用.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ControllerBase</span> : <span class="title">IController</span></span><br><span class="line">&#123;   </span><br><span class="line">    <span class="keyword">public</span> ControllerContext ControllerContext &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> TempDataDictionary TempData</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (ControllerContext != <span class="literal">null</span> &amp;&amp; ControllerContext.IsChildAction)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> ControllerContext.ParentActionViewContext.TempData;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (_tempDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _tempDataDictionary = <span class="keyword">new</span> TempDataDictionary();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _tempDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">set</span> &#123; _tempDataDictionary = <span class="keyword">value</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">dynamic</span> ViewBag</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (_dynamicViewDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _dynamicViewDataDictionary = <span class="keyword">new</span> DynamicViewDataDictionary(() =&gt; ViewData);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _dynamicViewDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ViewDataDictionary ViewData &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="SessionStateTempDataProvider-控制儲存TempData"><a href="#SessionStateTempDataProvider-控制儲存TempData" class="headerlink" title="SessionStateTempDataProvider 控制儲存TempData"></a>SessionStateTempDataProvider 控制儲存TempData</h3><p>上面說到<code>TempData</code>字典集合生命週期除了當下請求, 導頁後仍可續存.原因是在<code>SessionStateTempDataProvider</code>將資料存在<code>Session</code>中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">controllerContext.HttpContext.Session[<span class="string">"__ControllerTempData"</span>]</span><br></pre></td></tr></table></figure></div>
+<p>可以透過上面程式碼取得當前的<code>TempData</code>字典集合物件.</p>
+<h2 id="ControllerBase-Excute方法"><a href="#ControllerBase-Excute方法" class="headerlink" title="ControllerBase Excute方法"></a>ControllerBase Excute方法</h2><p><code>ControllerBase</code>這個類別繼承<code>IController</code>,前篇說到在<strong>HttpHandler</strong> <code>ProcessRequest</code>方法會透過反射找到一個符合Http請求<code>IController</code>介面物件.<br>並呼叫其<code>Execute</code>方法</p>
+<p>在<code>Execute</code>做了幾件事情.</p>
+<ul>
+<li>初始化<code>ControllerContext</code>物件,對於<code>RequestContext</code>簡易封裝.</li>
+<li><code>ExecuteCore</code>呼叫<code>Hock</code>方法(<code>ExecuteCore</code>是一個抽象方法提供繼承他的物件實做,預設是<code>Controller</code>類別)</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (requestContext.HttpContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.ControllerBase_CannotExecuteWithNullHttpContext, <span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    VerifyExecuteCalledOnce();</span><br><span class="line">    Initialize(requestContext);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">using</span> (ScopeStorage.CreateTransientScope())</span><br><span class="line">    &#123;</span><br><span class="line">        ExecuteCore();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> IController.Execute(RequestContext requestContext)</span><br><span class="line">&#123;</span><br><span class="line">    Execute(requestContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="Controller"><a href="#Controller" class="headerlink" title="Controller"></a>Controller</h2><p>在專案中<code>Controller</code>是我們預設使用繼承控制器類別，此類別中定義了很多的輔助方法和屬性讓撰寫控制器變得簡單。<br><code>Controller</code>類別除了直接繼承<code>ControllerBase</code>之外,<code>Controller</code>還顯式實現<code>IController</code>和<code>IAsyncController</code>介面，跟<code>ASP.NET MVC</code> 四大篩選器（<code>IAuthorizationFilter,IActionFilter、IResultFilter,IExceptionFilter</code>）的4個介面。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">Controller</span> : </span><br><span class="line">	<span class="title">ControllerBase</span>, </span><br><span class="line">	<span class="title">IActionFilter</span>, </span><br><span class="line">	<span class="title">IAuthenticationFilter</span>, </span><br><span class="line">	<span class="title">IAuthorizationFilter</span>,</span><br><span class="line">	<span class="title">IDisposable</span>, </span><br><span class="line">	<span class="title">IExceptionFilter</span>,</span><br><span class="line">	<span class="title">IResultFilter</span>,</span><br><span class="line">	<span class="title">IAsyncController</span>, </span><br><span class="line">	<span class="title">IAsyncManagerContainer</span></span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="ExecuteCore"><a href="#ExecuteCore" class="headerlink" title="ExecuteCore"></a>ExecuteCore</h3><p>在<code>Controller</code>重載實做<code>ExecuteCore</code>方法.</p>
+<p>主要透過<code>GetActionName(RouteData)</code>取得執行的<code>Action</code>名稱,並透過<code>ActionInvoker</code>取得要Invoker的<code>ActionInvoker</code>.</p>
+<ul>
+<li><code>PossiblyLoadTempData</code>：建立載入<code>TempData</code></li>
+<li><code>PossiblySaveTempData</code>：儲存<code>TempData</code>的資料</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteCore</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// If code in this method needs to be updated, please also check the BeginExecuteCore() and</span></span><br><span class="line">    <span class="comment">// EndExecuteCore() methods of AsyncController to see if that code also must be updated.</span></span><br><span class="line">    PossiblyLoadTempData();</span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> actionName = GetActionName(RouteData);</span><br><span class="line">        <span class="keyword">if</span> (!ActionInvoker.InvokeAction(ControllerContext, actionName))</span><br><span class="line">        &#123;</span><br><span class="line">            HandleUnknownAction(actionName);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        PossiblySaveTempData();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="ControllerContext"><a href="#ControllerContext" class="headerlink" title="ControllerContext"></a>ControllerContext</h2><p>第一次初始話<code>ControllerContext</code>利用建構子</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br></pre></td></tr></table></figure></div>
+<p>在<code>ControllerBase.Initialize</code>方法對於<code>ControllerContext</code>初始化,這個上下文資料封裝了許多此次請求的資料.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Initialize</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ControllerContext = <span class="keyword">new</span> ControllerContext(requestContext, <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>後面對於繼承<code>ControllerContext</code>的<code>Context</code>傳入第一次初始化<code>ControllerContext</code>物件,<br>在建構子函數把傳入<code>ControllerContext</code>的<code>RequestContext</code>資料填入繼承<code>ControllerContext</code>物件中</p>
+<p>下面是<strong>MVC</strong>有繼承<code>ControllerContext</code>類別</p>
+<ul>
+<li>AuthorizationContext</li>
+<li>ExceptionContext</li>
+<li>AuthenticationChallengeContext</li>
+<li>ResultExecutedContext</li>
+<li>ViewContext</li>
+<li>ResultExecutingContext</li>
+</ul>
+<h3 id="ControllerContext-1"><a href="#ControllerContext-1" class="headerlink" title="ControllerContext"></a>ControllerContext</h3><p>在原始碼中可以看到<code>ControllerContext(ControllerContext controllerContext)</code>很巧妙把自身類別當作建構子方法參數傳入.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Controller = controllerContext.Controller;</span><br><span class="line">RequestContext = controllerContext.RequestContext;</span><br></pre></td></tr></table></figure></div>
+<p>主要是要把<code>RequestContext</code>值給填充,之後就可以利用<code>RequestContext</code>取得理面一些資料.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">internal</span> <span class="keyword">const</span> <span class="keyword">string</span> ParentActionViewContextToken = <span class="string">"ParentActionViewContext"</span>;</span><br><span class="line">	<span class="keyword">private</span> HttpContextBase _httpContext;</span><br><span class="line">	<span class="keyword">private</span> RequestContext _requestContext;</span><br><span class="line">	<span class="keyword">private</span> RouteData _routeData;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="title">ControllerContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (controllerContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controllerContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Controller = controllerContext.Controller;</span><br><span class="line">		RequestContext = controllerContext.RequestContext;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">HttpContextBase httpContext, RouteData routeData, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">new RequestContext(httpContext, routeData</span>), controller)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (controller == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controller"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		RequestContext = requestContext;</span><br><span class="line">		Controller = controller;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="AuthorizationContext"><a href="#AuthorizationContext" class="headerlink" title="AuthorizationContext"></a>AuthorizationContext</h3><p>我們看一下<code>Authorization</code>filter用到的參數<code>AuthorizationContext</code>.</p>
+<p>在<code>InvokeAuthorizationFilters</code>方法將<code>AuthorizationContext</code>初始化</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">AuthorizationContext context = <span class="keyword">new</span> AuthorizationContext(controllerContext, actionDescriptor);</span><br></pre></td></tr></table></figure></div>
+<p>其中傳入參數<code>controllerContext</code>是第一次透過<code>ControllerBase.Initialize</code>初始化<code>Context</code>.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AuthorizationContext</span> : <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext, ActionDescriptor actionDescriptor</span>) : <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (actionDescriptor == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"actionDescriptor"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		ActionDescriptor = actionDescriptor;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> ActionDescriptor ActionDescriptor &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> ActionResult Result &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>之後再呼叫<code>base(controllerContext)</code>利用<code>ControllerContext</code>建構子把資料填充.</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>Asp.net MVC</code>對於為了方便我們使用控制器所以對於<code>Controller</code>進行許多資料封裝,讓我們只要繼承<code>Controller</code>就可以方便使用許多屬性.</p>
+<p>下圖是<code>Controller</code>核心類別關係圖.<code>Controller</code>類別左右兩側有本次沒介紹到類別(之後會介紹到)</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/12/controller_uml.png" alt="relationship_pic.PNG"></p>
+<p>當我看到<code>ControllerContext</code>的設計時讓我驚艷的,因為他把<strong>MVC</strong>用到<code>Context</code>都關聯綁定到一個類別中.</p>
+<p>因為在商業邏輯中會有許多<code>Model</code>類別,且這些類別資料存在一定的相關性,我覺得這個設計可以使用可以大大改善資料傳遞上的麻煩,讓程式寫起來更安全,簡單</p>
+<p>之後我會把上面的<strong>UML</strong>圖慢慢畫出來,一步一步揭開<code>Asp.net MVC</code>面紗.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day12/">https://isdaniel.github.io/ithelp-day12/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -7758,6 +7758,69 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Ndepend 靜態分析 .Net 專案好物</title>
+    <url>/ndepend-code-quality/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>當一個專案越來越大，在開發新產品時同時要兼顧程式碼品質會越來越困難，今天要介紹的　<span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20v" title="https://www.ndepend.com/">Ndepend<i class="fa fa-external-link"></i></span> 是一個很優秀靜態分析 .Net 專案好物</p>
+<p>會幫我們產生一個 DashBoard 來了解目前專案大致上分析後的問題，並提供建議解法和處理方向，讓我們提前更快速抓出未來或目前存在 bug，減少發生需要晚上起來 support 機率，讓客戶，老闆，工程師都開心的三大歡喜</p>
+<p>另外我們也可以透過 <span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20v" title="https://www.ndepend.com/">Ndepend<i class="fa fa-external-link"></i></span> 來撰寫我們自己 Code Rule 並在 CI/CD 流程中進行靜態掃描，讓我們出產軟體更有品質</p>
+<p>本文我使用我自己的開源專案 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW<i class="fa fa-external-link"></i></span> 來當作分析案例</p>
+<h2 id="建立-Ndepend-開始分析"><a href="#建立-Ndepend-開始分析" class="headerlink" title="建立 Ndepend 開始分析"></a>建立 Ndepend 開始分析</h2><p>安裝完 <code>Ndepend</code> 後我們可以在 virtual studio 上面的[延伸模組] 出現建立 <code>Ndepend</code> 項目，一開始我們利用 Attach New Ndepend Project to Current VS Solution ，來建立分析項目</p>
+<p><img src="https://i.imgur.com/flzNRXR.png" alt></p>
+<p><code>NDepend</code> 分析完程式後我們會在 sln 檔同級目錄下看到一個 <code>NDependOut</code> 資料夾跟 <code>.ndproj</code> 檔案</p>
+<ul>
+<li><code>.ndproj</code> 是 XML 格式儲存的專案檔，內容包含 <code>NDepend</code> 專案資訊及分析設定資訊</li>
+<li><code>NDependOut</code> 資料夾中會有一個 <code>.ndar</code> 檔案這次一個二進制格式儲存的分析後結果</li>
+<li><code>NDependOut</code> 中有一個 <code>NDependReport.html</code> 是一個分析後 Html 報表</li>
+</ul>
+<p>假如不想在版控加入 Ndepend 分析紀錄，我們可以自行加上 gitignore 規則</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="code"><pre><span class="line">**/NDependOut/</span><br><span class="line">*.ndproj</span><br></pre></td></tr></table></figure></div>
+<h2 id="Ndepend-DashBoard"><a href="#Ndepend-DashBoard" class="headerlink" title="Ndepend DashBoard"></a>Ndepend DashBoard</h2><p>在許多國外大公司都有使用 <code>Ndepend</code> 來幫助開發流程，我個人覺得有其中一個原因是因為　<code>Ndepend</code> DashBoard 讓我們開發人員可以一目了然目前有的問題</p>
+<p>Ndepend 提供許多有用的 Code Metrics，</p>
+<ul>
+<li>Lines of Code ：專案規模:</li>
+<li>Comment：註解撰寫註解覆蓋率</li>
+<li>Quality Gate：品質把控，設定本次 Release 程式檔至少要通過某些標準，在 CI/CD 環節扮演很重要一環</li>
+<li>Debt：程式債比率 <code>Rating</code> 代表評分，百分比越低越好</li>
+<li>Rules：品質規則，建議 <code>Critical</code> 等級需要了解一下</li>
+<li>Issues：目前問題，建議 <code>Critical</code> 等級需要了解一下</li>
+</ul>
+<p>Ndepend 能針對一個基準點來比較調整前後，修改哪些問題</p>
+<p>例如下圖</p>
+<p><img src="https://i.imgur.com/Ig723uv.png" alt></p>
+<p>黃框：目前有的問題資訊<br>藍框：基於上一個 baseline 我們修改了哪些問題(我修正了一個，所以會看到-1)</p>
+<p>有了這項功能讓我們可以很好追蹤每次上到基於上次上版修改了哪些問題</p>
+<p><code>Ndepend</code> 利用上面介紹的 Metrics 來畫出炫砲圖表</p>
+<p><img src="https://i.imgur.com/aRvR5AE.png" alt></p>
+<h2 id="Rule-介紹"><a href="#Rule-介紹" class="headerlink" title="Rule 介紹"></a>Rule 介紹</h2><p><code>NDependOut</code> 提供許多 Rule 來建議我們程式碼優化，且裡面有許多詳細的說明</p>
+<p><img src="https://i.imgur.com/yif7FfJ.png" alt></p>
+<h3 id="建立自己-Code-Rule"><a href="#建立自己-Code-Rule" class="headerlink" title="建立自己 Code Rule"></a>建立自己 Code Rule</h3><p>我覺得使用 <code>NDepend</code> 有一個很大的優勢是可以很簡單制訂自己的 <code>Rules</code> 寫法基本上會 c# LINQ 就可以撰寫了</p>
+<p>我們可以利用 linq 來找尋符合，我們設定 Rule Metrics，並進行統計</p>
+<p>最後呈現在 DashBoard 報表上</p>
+<p>例如下面是 <code>NDepend</code> 其中一個 Rule  <code>Methods prefixed with &#39;Try&#39; should return a boolean</code></p>
+<p>這個 Rule 代表是建議如果有取名叫 <code>Try</code> 開頭 method 建議返回值是 <code>bool</code> 比照 <code>Int32.TryParse</code></p>
+<p><code>warnif count &gt; 0</code> ： 代表如果有至少一個情況符合下面的條件就會顯示</p>
+<p>其餘下面程式碼寫得很直白，開發過 Linq 的您應該很容易了解</p>
+<p>最後我們可以把我們關注資訊 <code>select</code> 用一個匿名類別來返回我們要的資料</p>
+<p>依照下面這個 Rule 我們判定是 <code>Severity.Medium</code>，另外對於每筆符合此 Rule 資料我們都會計算 <code>Debt</code> (程式債) 處理 + 10 分鐘</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">// &lt;Name&gt;Methods prefixed with 'Try' should return a boolean&lt;/Name&gt;</span></span><br><span class="line"><span class="comment">// &lt;Id&gt;ND2016:MethodsPrefixedWithTryShouldReturnABoolean&lt;/Id&gt;</span></span><br><span class="line"></span><br><span class="line">warnif count &gt; <span class="number">0</span></span><br><span class="line"><span class="keyword">from</span> m <span class="keyword">in</span> Application.Methods <span class="keyword">where</span></span><br><span class="line">  m.SimpleNameLike(<span class="string">"^Try"</span>) &amp;&amp;</span><br><span class="line">  m.ReturnType != <span class="literal">null</span> &amp;&amp;</span><br><span class="line">  m.ReturnType.FullName != <span class="string">"System.Boolean"</span></span><br><span class="line"><span class="keyword">select</span> <span class="keyword">new</span> &#123; </span><br><span class="line">   m, </span><br><span class="line">   m.ReturnType,</span><br><span class="line">   Debt = <span class="number">10.</span>ToMinutes().ToDebt(),</span><br><span class="line">   Severity = Severity.Medium</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//&lt;Description&gt;</span></span><br><span class="line"><span class="comment">// When a method has a name prefixed with **Try**, it is expected that</span></span><br><span class="line"><span class="comment">// it returns a *boolean*, that reflects the method execution status,</span></span><br><span class="line"><span class="comment">// *success* or *failure*.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Such method usually returns a result through an *out parameter*.</span></span><br><span class="line"><span class="comment">// For example:  *System.Int32.TryParse(int,out string):bool*</span></span><br><span class="line"><span class="comment">//&lt;/Description&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//&lt;HowToFix&gt;</span></span><br><span class="line"><span class="comment">// To fix a violation of this rule,</span></span><br><span class="line"><span class="comment">// Rename the method, or transform it into an operation that can fail.</span></span><br><span class="line"><span class="comment">//&lt;/HowToFix&gt;</span></span><br></pre></td></tr></table></figure>
+<p>如果想要了解更多撰寫 Rule 方式可以參考<span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20vZG9jcy93cml0ZS15b3VyLW93bi1jb2RlLXJ1bGVz" title="https://www.ndepend.com/docs/write-your-own-code-rules">write-your-own-code-rules<i class="fa fa-external-link"></i></span></p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>我覺得 <code>NDepend</code> 是一個很優秀的靜態分析工具，裡面的建議修改提示就像是旁邊有一個大師在跟你指導，可以學習到不少東西</p>
+<p><code>NDepend</code> 對於 CI/CD 整合有提供豐富的影片跟資訊可以參考<br><span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20vZG9jcy9henVyZS1kZXZvcHMtdGZzLXZzdHMtaW50ZWdyYXRpb24tbmRlcGVuZA==" title="https://www.ndepend.com/docs/azure-devops-tfs-vsts-integration-ndepend">devops-tfs-vsts-integration-ndepend<i class="fa fa-external-link"></i></span></p>
+<p>可以讓我們每次 Release 開發結果更透明，讓整個團隊人能一目了然看到該專案的狀態</p>
+<p>最後跟大家分享經由 <code>NDepend</code> 建議提示我調整了，我的專案分數跟程式複雜度有明顯下降</p>
+<p><img src="https://i.imgur.com/t2Yuf4U.png" alt></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ndepend-code-quality/">https://isdaniel.github.io/ndepend-code-quality/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Ndepend</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Ndepend</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>沒有Source Code 如何修改程式??</title>
     <url>/nosourcecode-modifycode/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>某些專案因為歷史久遠沒有Source Code,但有個需求需要異動裡面的程式該怎麼辦??</p>
@@ -8627,53 +8690,6 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
-    <title>RabbitMQ (一) 安裝介紹</title>
-    <url>/rabbitmq-introduce-02/</url>
-    <content><![CDATA[<h2 id="RabbitMQ是什麼"><a href="#RabbitMQ是什麼" class="headerlink" title="RabbitMQ是什麼?"></a>RabbitMQ是什麼?</h2><p>RabbitMQ是一個訊息中介軟體 (broker), 他實作​<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFOSVBQiU5OCVFNyVCQSVBNyVFNiVCNiU4OCVFNiU4MSVBRiVFOSU5OCU5RiVFNSU4OCU5NyVFNSU4RCU4RiVFOCVBRSVBRQ==" title="https://zh.wikipedia.org/zh-tw/%E9%AB%98%E7%BA%A7%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%8D%8F%E8%AE%AE">AMQP標準<i class="fa fa-external-link"></i></span>, 特點是消息轉發是非同步並且可靠.</p>
-<p>主要用來處理應用程序之間消息的儲存與轉發可讓消費者和生產者解耦合, 消息是基於二進制</p>
-<p>因為RabbitMQ Server是用<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span>語言編寫，所以在安裝RabbitMQ Server前須先安裝<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span><span class="exturl" data-url="aHR0cHM6Ly93d3cuZXJsYW5nLm9yZy9kb3dubG9hZHM=" title="https://www.erlang.org/downloads">環境<i class="fa fa-external-link"></i></span></p>
-<p>安裝完後可到<span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2Rvd25sb2FkLmh0bWw=" title="https://www.rabbitmq.com/download.html">RabbitMq<i class="fa fa-external-link"></i></span>官網下載安裝Server .</p>
-<p>以下是常用在CMD使用的使令</p>
-<ul>
-<li><p>開啟RabbitMq Server. </p>
-<p>  rabbitmq-server -detached</p>
-</li>
-<li><p>查看RabbitMq狀態 </p>
-<p>  rabbitmqctl status</p>
-</li>
-<li><p>查看Queue列表狀態</p>
-<p>  rabbitmqctl list_queues</p>
-</li>
-<li><p>查看交換器(Exchange)</p>
-<p>  rabbitmqctl list_exchanges</p>
-</li>
-<li><p>查看綁定狀態</p>
-<p>  rabbitmqctl list_bindings</p>
-</li>
-</ul>
-<h2 id="RabbitMQ-Server-UI"><a href="#RabbitMQ-Server-UI" class="headerlink" title="RabbitMQ Server UI"></a>RabbitMQ Server UI</h2><p>RabbitMq Server 很貼心也有UI版的控制面板,只需在CMD中輸入這個指令 啟用Server UI套件</p>
-<h3 id="rabbitmq-plugins-enable-rabbitmq-management"><a href="#rabbitmq-plugins-enable-rabbitmq-management" class="headerlink" title="rabbitmq-plugins enable rabbitmq_management"></a>rabbitmq-plugins enable rabbitmq_management</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823390_90475.png" alt></p>
-<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/ <i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823535_62339.png" alt></p>
-<p>預設帳號密碼都是guest.</p>
-<h4 id="Rabbitmq-run-in-Docker"><a href="#Rabbitmq-run-in-Docker" class="headerlink" title="Rabbitmq run in Docker"></a>Rabbitmq run in Docker</h4><p>使用Docker可以方便建立我們的<span class="exturl" data-url="aHR0cHM6Ly9odWIuZG9ja2VyLmNvbS9fL3JhYmJpdG1x" title="https://hub.docker.com/_/rabbitmq">Rabbitmq<i class="fa fa-external-link"></i></span></p>
-<p>在你電腦安裝完Docker後,只需使用下面指令</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">docker run -d --hostname myrabbit --name RabbitMQ -p <span class="number">8080</span>:<span class="number">15672</span> rabbitmq:<span class="number">3</span>-management</span><br></pre></td></tr></table></figure></div>
-<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/<i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
-<p><strong>Web UI</strong>和Server都會幫我們運行起來</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>安裝RabbitMQ步驟就這幾步而已 ^^,之後會跟大家分享如何在.Net使用RabbitMQ.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-introduce-02/">https://isdaniel.github.io/rabbitmq-introduce-02/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>RabbitMQ</tag>
-        <tag>MQ</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>RabbitMQ (二) 概念</title>
     <url>/rabbitmq-install-01/</url>
     <content><![CDATA[<h2 id="介紹RabbitMQ"><a href="#介紹RabbitMQ" class="headerlink" title="介紹RabbitMQ"></a>介紹RabbitMQ</h2><p>RabbitMQ是個訊息仲介（broker），主要是利用消息把生產者跟消費者解耦合</p>
@@ -8736,6 +8752,53 @@ using (var channel = connection.CreateModel())
 <p>參考來源：</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly93d3cuamlhbnNodS5jb20vcC83OWNhMDgxMTZkNTc=" title="https://www.jianshu.com/p/79ca08116d57">https://www.jianshu.com/p/79ca08116d57<i class="fa fa-external-link"></i></span></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-install-01/">https://isdaniel.github.io/rabbitmq-install-01/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>RabbitMQ</tag>
+        <tag>MQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RabbitMQ (一) 安裝介紹</title>
+    <url>/rabbitmq-introduce-02/</url>
+    <content><![CDATA[<h2 id="RabbitMQ是什麼"><a href="#RabbitMQ是什麼" class="headerlink" title="RabbitMQ是什麼?"></a>RabbitMQ是什麼?</h2><p>RabbitMQ是一個訊息中介軟體 (broker), 他實作​<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFOSVBQiU5OCVFNyVCQSVBNyVFNiVCNiU4OCVFNiU4MSVBRiVFOSU5OCU5RiVFNSU4OCU5NyVFNSU4RCU4RiVFOCVBRSVBRQ==" title="https://zh.wikipedia.org/zh-tw/%E9%AB%98%E7%BA%A7%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%8D%8F%E8%AE%AE">AMQP標準<i class="fa fa-external-link"></i></span>, 特點是消息轉發是非同步並且可靠.</p>
+<p>主要用來處理應用程序之間消息的儲存與轉發可讓消費者和生產者解耦合, 消息是基於二進制</p>
+<p>因為RabbitMQ Server是用<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span>語言編寫，所以在安裝RabbitMQ Server前須先安裝<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvRXJsYW5n" title="Erlang">Erlang<i class="fa fa-external-link"></i></span><span class="exturl" data-url="aHR0cHM6Ly93d3cuZXJsYW5nLm9yZy9kb3dubG9hZHM=" title="https://www.erlang.org/downloads">環境<i class="fa fa-external-link"></i></span></p>
+<p>安裝完後可到<span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2Rvd25sb2FkLmh0bWw=" title="https://www.rabbitmq.com/download.html">RabbitMq<i class="fa fa-external-link"></i></span>官網下載安裝Server .</p>
+<p>以下是常用在CMD使用的使令</p>
+<ul>
+<li><p>開啟RabbitMq Server. </p>
+<p>  rabbitmq-server -detached</p>
+</li>
+<li><p>查看RabbitMq狀態 </p>
+<p>  rabbitmqctl status</p>
+</li>
+<li><p>查看Queue列表狀態</p>
+<p>  rabbitmqctl list_queues</p>
+</li>
+<li><p>查看交換器(Exchange)</p>
+<p>  rabbitmqctl list_exchanges</p>
+</li>
+<li><p>查看綁定狀態</p>
+<p>  rabbitmqctl list_bindings</p>
+</li>
+</ul>
+<h2 id="RabbitMQ-Server-UI"><a href="#RabbitMQ-Server-UI" class="headerlink" title="RabbitMQ Server UI"></a>RabbitMQ Server UI</h2><p>RabbitMq Server 很貼心也有UI版的控制面板,只需在CMD中輸入這個指令 啟用Server UI套件</p>
+<h3 id="rabbitmq-plugins-enable-rabbitmq-management"><a href="#rabbitmq-plugins-enable-rabbitmq-management" class="headerlink" title="rabbitmq-plugins enable rabbitmq_management"></a>rabbitmq-plugins enable rabbitmq_management</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823390_90475.png" alt></p>
+<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/ <i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/9f6dc914-dd2d-44b0-b8e4-7a3f93d200d2/1547823535_62339.png" alt></p>
+<p>預設帳號密碼都是guest.</p>
+<h4 id="Rabbitmq-run-in-Docker"><a href="#Rabbitmq-run-in-Docker" class="headerlink" title="Rabbitmq run in Docker"></a>Rabbitmq run in Docker</h4><p>使用Docker可以方便建立我們的<span class="exturl" data-url="aHR0cHM6Ly9odWIuZG9ja2VyLmNvbS9fL3JhYmJpdG1x" title="https://hub.docker.com/_/rabbitmq">Rabbitmq<i class="fa fa-external-link"></i></span></p>
+<p>在你電腦安裝完Docker後,只需使用下面指令</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">docker run -d --hostname myrabbit --name RabbitMQ -p <span class="number">8080</span>:<span class="number">15672</span> rabbitmq:<span class="number">3</span>-management</span><br></pre></td></tr></table></figure></div>
+<p>再訪問 <span class="exturl" data-url="aHR0cDovL2xvY2FsaG9zdDoxNTY3Mi8=" title="http://localhost:15672/">http://localhost:15672/<i class="fa fa-external-link"></i></span>URL,就可進入這個頁面</p>
+<p><strong>Web UI</strong>和Server都會幫我們運行起來</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>安裝RabbitMQ步驟就這幾步而已 ^^,之後會跟大家分享如何在.Net使用RabbitMQ.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-introduce-02/">https://isdaniel.github.io/rabbitmq-introduce-02/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>C#</category>
