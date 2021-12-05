@@ -355,43 +355,6 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
       </tags>
   </entry>
   <entry>
-    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
-    <url>/automapperinit/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
-<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
-<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
-<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
-<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
-<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
-<blockquote>
-<p>我們可以使用反射來完成</p>
-</blockquote>
-<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
-<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Automapper</tag>
-        <tag>Model</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</title>
     <url>/awesomeproxy-net/</url>
     <content><![CDATA[<p>今天和大家分享<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F3ZXNvbWVQcm94eS5OZXQ=" title="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net<i class="fa fa-external-link"></i></span>小弟開源AOP輕型框架</p>
@@ -442,6 +405,43 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>Asp.net</tag>
         <tag>Design-Pattern</tag>
         <tag>Open-Source</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
+    <url>/automapperinit/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
+<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
+<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
+<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
+<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
+<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
+<blockquote>
+<p>我們可以使用反射來完成</p>
+</blockquote>
+<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
+<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Automapper</tag>
+        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -4185,6 +4185,102 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>談談Controller幾個重要成員 (第12天)</title>
+    <url>/ithelp-day12/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#controllerbasecontroller%e5%9f%ba%e7%a4%8e%e9%a1%9e%e5%88%a5">ControllerBase(Controller基礎類別)</a><ul>
+<li><a href="#sessionstatetempdataprovider-%e6%8e%a7%e5%88%b6%e5%84%b2%e5%ad%98tempdata">SessionStateTempDataProvider 控制儲存TempData</a></li>
+</ul>
+</li>
+<li><a href="#controllerbase-excute%e6%96%b9%e6%b3%95">ControllerBase Excute方法</a></li>
+<li><a href="#controller">Controller</a><ul>
+<li><a href="#executecore">ExecuteCore</a></li>
+</ul>
+</li>
+<li><a href="#controllercontext">ControllerContext</a><ul>
+<li><a href="#controllercontext-1">ControllerContext</a></li>
+<li><a href="#authorizationcontext">AuthorizationContext</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上篇得知MVC預設透過<code>DefaultControllerFactory</code>反射方式動態建立<code>Controller</code>物件</p>
+<p>本篇會分享我們常用到<code>Controller</code>基礎類別和相關物件.</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="ControllerBase-Controller基礎類別"><a href="#ControllerBase-Controller基礎類別" class="headerlink" title="ControllerBase(Controller基礎類別)"></a>ControllerBase(Controller基礎類別)</h2><p><code>ControllerBase</code>具有如下幾個重要的屬性</p>
+<ol>
+<li><code>TempData</code>：將設置資料存於<code>Session</code>中,生命週期除了當下請求, 導頁後仍可續存.</li>
+<li><code>ViewBag</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>dynamic</code>)</li>
+<li><code>ViewData</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>ViewDataDictionary</code>)</li>
+</ol>
+<p>雖說<code>ViewBag</code>和<code>ViewData</code>看起來使用不同的物件,但從程式碼了解到其實<code>ViewBag</code>也是使用<code>ViewData</code>引用.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ControllerBase</span> : <span class="title">IController</span></span><br><span class="line">&#123;   </span><br><span class="line">    <span class="keyword">public</span> ControllerContext ControllerContext &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> TempDataDictionary TempData</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (ControllerContext != <span class="literal">null</span> &amp;&amp; ControllerContext.IsChildAction)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> ControllerContext.ParentActionViewContext.TempData;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (_tempDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _tempDataDictionary = <span class="keyword">new</span> TempDataDictionary();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _tempDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">set</span> &#123; _tempDataDictionary = <span class="keyword">value</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">dynamic</span> ViewBag</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (_dynamicViewDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _dynamicViewDataDictionary = <span class="keyword">new</span> DynamicViewDataDictionary(() =&gt; ViewData);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _dynamicViewDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ViewDataDictionary ViewData &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="SessionStateTempDataProvider-控制儲存TempData"><a href="#SessionStateTempDataProvider-控制儲存TempData" class="headerlink" title="SessionStateTempDataProvider 控制儲存TempData"></a>SessionStateTempDataProvider 控制儲存TempData</h3><p>上面說到<code>TempData</code>字典集合生命週期除了當下請求, 導頁後仍可續存.原因是在<code>SessionStateTempDataProvider</code>將資料存在<code>Session</code>中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">controllerContext.HttpContext.Session[<span class="string">"__ControllerTempData"</span>]</span><br></pre></td></tr></table></figure></div>
+<p>可以透過上面程式碼取得當前的<code>TempData</code>字典集合物件.</p>
+<h2 id="ControllerBase-Excute方法"><a href="#ControllerBase-Excute方法" class="headerlink" title="ControllerBase Excute方法"></a>ControllerBase Excute方法</h2><p><code>ControllerBase</code>這個類別繼承<code>IController</code>,前篇說到在<strong>HttpHandler</strong> <code>ProcessRequest</code>方法會透過反射找到一個符合Http請求<code>IController</code>介面物件.<br>並呼叫其<code>Execute</code>方法</p>
+<p>在<code>Execute</code>做了幾件事情.</p>
+<ul>
+<li>初始化<code>ControllerContext</code>物件,對於<code>RequestContext</code>簡易封裝.</li>
+<li><code>ExecuteCore</code>呼叫<code>Hock</code>方法(<code>ExecuteCore</code>是一個抽象方法提供繼承他的物件實做,預設是<code>Controller</code>類別)</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (requestContext.HttpContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.ControllerBase_CannotExecuteWithNullHttpContext, <span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    VerifyExecuteCalledOnce();</span><br><span class="line">    Initialize(requestContext);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">using</span> (ScopeStorage.CreateTransientScope())</span><br><span class="line">    &#123;</span><br><span class="line">        ExecuteCore();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> IController.Execute(RequestContext requestContext)</span><br><span class="line">&#123;</span><br><span class="line">    Execute(requestContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="Controller"><a href="#Controller" class="headerlink" title="Controller"></a>Controller</h2><p>在專案中<code>Controller</code>是我們預設使用繼承控制器類別，此類別中定義了很多的輔助方法和屬性讓撰寫控制器變得簡單。<br><code>Controller</code>類別除了直接繼承<code>ControllerBase</code>之外,<code>Controller</code>還顯式實現<code>IController</code>和<code>IAsyncController</code>介面，跟<code>ASP.NET MVC</code> 四大篩選器（<code>IAuthorizationFilter,IActionFilter、IResultFilter,IExceptionFilter</code>）的4個介面。</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">Controller</span> : </span><br><span class="line">	<span class="title">ControllerBase</span>, </span><br><span class="line">	<span class="title">IActionFilter</span>, </span><br><span class="line">	<span class="title">IAuthenticationFilter</span>, </span><br><span class="line">	<span class="title">IAuthorizationFilter</span>,</span><br><span class="line">	<span class="title">IDisposable</span>, </span><br><span class="line">	<span class="title">IExceptionFilter</span>,</span><br><span class="line">	<span class="title">IResultFilter</span>,</span><br><span class="line">	<span class="title">IAsyncController</span>, </span><br><span class="line">	<span class="title">IAsyncManagerContainer</span></span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="ExecuteCore"><a href="#ExecuteCore" class="headerlink" title="ExecuteCore"></a>ExecuteCore</h3><p>在<code>Controller</code>重載實做<code>ExecuteCore</code>方法.</p>
+<p>主要透過<code>GetActionName(RouteData)</code>取得執行的<code>Action</code>名稱,並透過<code>ActionInvoker</code>取得要Invoker的<code>ActionInvoker</code>.</p>
+<ul>
+<li><code>PossiblyLoadTempData</code>：建立載入<code>TempData</code></li>
+<li><code>PossiblySaveTempData</code>：儲存<code>TempData</code>的資料</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteCore</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// If code in this method needs to be updated, please also check the BeginExecuteCore() and</span></span><br><span class="line">    <span class="comment">// EndExecuteCore() methods of AsyncController to see if that code also must be updated.</span></span><br><span class="line">    PossiblyLoadTempData();</span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> actionName = GetActionName(RouteData);</span><br><span class="line">        <span class="keyword">if</span> (!ActionInvoker.InvokeAction(ControllerContext, actionName))</span><br><span class="line">        &#123;</span><br><span class="line">            HandleUnknownAction(actionName);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        PossiblySaveTempData();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="ControllerContext"><a href="#ControllerContext" class="headerlink" title="ControllerContext"></a>ControllerContext</h2><p>第一次初始話<code>ControllerContext</code>利用建構子</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br></pre></td></tr></table></figure></div>
+<p>在<code>ControllerBase.Initialize</code>方法對於<code>ControllerContext</code>初始化,這個上下文資料封裝了許多此次請求的資料.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Initialize</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ControllerContext = <span class="keyword">new</span> ControllerContext(requestContext, <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>後面對於繼承<code>ControllerContext</code>的<code>Context</code>傳入第一次初始化<code>ControllerContext</code>物件,<br>在建構子函數把傳入<code>ControllerContext</code>的<code>RequestContext</code>資料填入繼承<code>ControllerContext</code>物件中</p>
+<p>下面是<strong>MVC</strong>有繼承<code>ControllerContext</code>類別</p>
+<ul>
+<li>AuthorizationContext</li>
+<li>ExceptionContext</li>
+<li>AuthenticationChallengeContext</li>
+<li>ResultExecutedContext</li>
+<li>ViewContext</li>
+<li>ResultExecutingContext</li>
+</ul>
+<h3 id="ControllerContext-1"><a href="#ControllerContext-1" class="headerlink" title="ControllerContext"></a>ControllerContext</h3><p>在原始碼中可以看到<code>ControllerContext(ControllerContext controllerContext)</code>很巧妙把自身類別當作建構子方法參數傳入.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Controller = controllerContext.Controller;</span><br><span class="line">RequestContext = controllerContext.RequestContext;</span><br></pre></td></tr></table></figure></div>
+<p>主要是要把<code>RequestContext</code>值給填充,之後就可以利用<code>RequestContext</code>取得理面一些資料.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">internal</span> <span class="keyword">const</span> <span class="keyword">string</span> ParentActionViewContextToken = <span class="string">"ParentActionViewContext"</span>;</span><br><span class="line">	<span class="keyword">private</span> HttpContextBase _httpContext;</span><br><span class="line">	<span class="keyword">private</span> RequestContext _requestContext;</span><br><span class="line">	<span class="keyword">private</span> RouteData _routeData;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="title">ControllerContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (controllerContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controllerContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Controller = controllerContext.Controller;</span><br><span class="line">		RequestContext = controllerContext.RequestContext;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">HttpContextBase httpContext, RouteData routeData, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">new RequestContext(httpContext, routeData</span>), controller)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (controller == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controller"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		RequestContext = requestContext;</span><br><span class="line">		Controller = controller;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h3 id="AuthorizationContext"><a href="#AuthorizationContext" class="headerlink" title="AuthorizationContext"></a>AuthorizationContext</h3><p>我們看一下<code>Authorization</code>filter用到的參數<code>AuthorizationContext</code>.</p>
+<p>在<code>InvokeAuthorizationFilters</code>方法將<code>AuthorizationContext</code>初始化</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">AuthorizationContext context = <span class="keyword">new</span> AuthorizationContext(controllerContext, actionDescriptor);</span><br></pre></td></tr></table></figure></div>
+<p>其中傳入參數<code>controllerContext</code>是第一次透過<code>ControllerBase.Initialize</code>初始化<code>Context</code>.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AuthorizationContext</span> : <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext, ActionDescriptor actionDescriptor</span>) : <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (actionDescriptor == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"actionDescriptor"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		ActionDescriptor = actionDescriptor;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> ActionDescriptor ActionDescriptor &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> ActionResult Result &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>之後再呼叫<code>base(controllerContext)</code>利用<code>ControllerContext</code>建構子把資料填充.</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>Asp.net MVC</code>對於為了方便我們使用控制器所以對於<code>Controller</code>進行許多資料封裝,讓我們只要繼承<code>Controller</code>就可以方便使用許多屬性.</p>
+<p>下圖是<code>Controller</code>核心類別關係圖.<code>Controller</code>類別左右兩側有本次沒介紹到類別(之後會介紹到)</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/12/controller_uml.png" alt="relationship_pic.PNG"></p>
+<p>當我看到<code>ControllerContext</code>的設計時讓我驚艷的,因為他把<strong>MVC</strong>用到<code>Context</code>都關聯綁定到一個類別中.</p>
+<p>因為在商業邏輯中會有許多<code>Model</code>類別,且這些類別資料存在一定的相關性,我覺得這個設計可以使用可以大大改善資料傳遞上的麻煩,讓程式寫起來更安全,簡單</p>
+<p>之後我會把上面的<strong>UML</strong>圖慢慢畫出來,一步一步揭開<code>Asp.net MVC</code>面紗.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day12/">https://isdaniel.github.io/ithelp-day12/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Asp.net MVC如何實現IOC解析器 (第13天)</title>
     <url>/ithelp-day13/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -4280,102 +4376,6 @@ email_url: dog830228@gmail.com
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/13/IOC_Asp.netMVC.png" alt="IOC_Asp.netMVC.png"></p>
 <p>下篇會介紹<code>DependencyResolver</code>在<code>Asp.net MVC</code>中有哪些實際的應用.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day13/">https://isdaniel.github.io/ithelp-day13/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>談談Controller幾個重要成員 (第12天)</title>
-    <url>/ithelp-day12/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#controllerbasecontroller%e5%9f%ba%e7%a4%8e%e9%a1%9e%e5%88%a5">ControllerBase(Controller基礎類別)</a><ul>
-<li><a href="#sessionstatetempdataprovider-%e6%8e%a7%e5%88%b6%e5%84%b2%e5%ad%98tempdata">SessionStateTempDataProvider 控制儲存TempData</a></li>
-</ul>
-</li>
-<li><a href="#controllerbase-excute%e6%96%b9%e6%b3%95">ControllerBase Excute方法</a></li>
-<li><a href="#controller">Controller</a><ul>
-<li><a href="#executecore">ExecuteCore</a></li>
-</ul>
-</li>
-<li><a href="#controllercontext">ControllerContext</a><ul>
-<li><a href="#controllercontext-1">ControllerContext</a></li>
-<li><a href="#authorizationcontext">AuthorizationContext</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上篇得知MVC預設透過<code>DefaultControllerFactory</code>反射方式動態建立<code>Controller</code>物件</p>
-<p>本篇會分享我們常用到<code>Controller</code>基礎類別和相關物件.</p>
-<blockquote>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="ControllerBase-Controller基礎類別"><a href="#ControllerBase-Controller基礎類別" class="headerlink" title="ControllerBase(Controller基礎類別)"></a>ControllerBase(Controller基礎類別)</h2><p><code>ControllerBase</code>具有如下幾個重要的屬性</p>
-<ol>
-<li><code>TempData</code>：將設置資料存於<code>Session</code>中,生命週期除了當下請求, 導頁後仍可續存.</li>
-<li><code>ViewBag</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>dynamic</code>)</li>
-<li><code>ViewData</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>ViewDataDictionary</code>)</li>
-</ol>
-<p>雖說<code>ViewBag</code>和<code>ViewData</code>看起來使用不同的物件,但從程式碼了解到其實<code>ViewBag</code>也是使用<code>ViewData</code>引用.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">ControllerBase</span> : <span class="title">IController</span></span><br><span class="line">&#123;   </span><br><span class="line">    <span class="keyword">public</span> ControllerContext ControllerContext &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> TempDataDictionary TempData</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (ControllerContext != <span class="literal">null</span> &amp;&amp; ControllerContext.IsChildAction)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">return</span> ControllerContext.ParentActionViewContext.TempData;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (_tempDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _tempDataDictionary = <span class="keyword">new</span> TempDataDictionary();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _tempDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">set</span> &#123; _tempDataDictionary = <span class="keyword">value</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">dynamic</span> ViewBag</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (_dynamicViewDataDictionary == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                _dynamicViewDataDictionary = <span class="keyword">new</span> DynamicViewDataDictionary(() =&gt; ViewData);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> _dynamicViewDataDictionary;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ViewDataDictionary ViewData &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="SessionStateTempDataProvider-控制儲存TempData"><a href="#SessionStateTempDataProvider-控制儲存TempData" class="headerlink" title="SessionStateTempDataProvider 控制儲存TempData"></a>SessionStateTempDataProvider 控制儲存TempData</h3><p>上面說到<code>TempData</code>字典集合生命週期除了當下請求, 導頁後仍可續存.原因是在<code>SessionStateTempDataProvider</code>將資料存在<code>Session</code>中</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">controllerContext.HttpContext.Session[<span class="string">"__ControllerTempData"</span>]</span><br></pre></td></tr></table></figure></div>
-<p>可以透過上面程式碼取得當前的<code>TempData</code>字典集合物件.</p>
-<h2 id="ControllerBase-Excute方法"><a href="#ControllerBase-Excute方法" class="headerlink" title="ControllerBase Excute方法"></a>ControllerBase Excute方法</h2><p><code>ControllerBase</code>這個類別繼承<code>IController</code>,前篇說到在<strong>HttpHandler</strong> <code>ProcessRequest</code>方法會透過反射找到一個符合Http請求<code>IController</code>介面物件.<br>並呼叫其<code>Execute</code>方法</p>
-<p>在<code>Execute</code>做了幾件事情.</p>
-<ul>
-<li>初始化<code>ControllerContext</code>物件,對於<code>RequestContext</code>簡易封裝.</li>
-<li><code>ExecuteCore</code>呼叫<code>Hock</code>方法(<code>ExecuteCore</code>是一個抽象方法提供繼承他的物件實做,預設是<code>Controller</code>類別)</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Execute</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (requestContext.HttpContext == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.ControllerBase_CannotExecuteWithNullHttpContext, <span class="string">"requestContext"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    VerifyExecuteCalledOnce();</span><br><span class="line">    Initialize(requestContext);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">using</span> (ScopeStorage.CreateTransientScope())</span><br><span class="line">    &#123;</span><br><span class="line">        ExecuteCore();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">void</span> IController.Execute(RequestContext requestContext)</span><br><span class="line">&#123;</span><br><span class="line">    Execute(requestContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="Controller"><a href="#Controller" class="headerlink" title="Controller"></a>Controller</h2><p>在專案中<code>Controller</code>是我們預設使用繼承控制器類別，此類別中定義了很多的輔助方法和屬性讓撰寫控制器變得簡單。<br><code>Controller</code>類別除了直接繼承<code>ControllerBase</code>之外,<code>Controller</code>還顯式實現<code>IController</code>和<code>IAsyncController</code>介面，跟<code>ASP.NET MVC</code> 四大篩選器（<code>IAuthorizationFilter,IActionFilter、IResultFilter,IExceptionFilter</code>）的4個介面。</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">Controller</span> : </span><br><span class="line">	<span class="title">ControllerBase</span>, </span><br><span class="line">	<span class="title">IActionFilter</span>, </span><br><span class="line">	<span class="title">IAuthenticationFilter</span>, </span><br><span class="line">	<span class="title">IAuthorizationFilter</span>,</span><br><span class="line">	<span class="title">IDisposable</span>, </span><br><span class="line">	<span class="title">IExceptionFilter</span>,</span><br><span class="line">	<span class="title">IResultFilter</span>,</span><br><span class="line">	<span class="title">IAsyncController</span>, </span><br><span class="line">	<span class="title">IAsyncManagerContainer</span></span><br><span class="line">&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="ExecuteCore"><a href="#ExecuteCore" class="headerlink" title="ExecuteCore"></a>ExecuteCore</h3><p>在<code>Controller</code>重載實做<code>ExecuteCore</code>方法.</p>
-<p>主要透過<code>GetActionName(RouteData)</code>取得執行的<code>Action</code>名稱,並透過<code>ActionInvoker</code>取得要Invoker的<code>ActionInvoker</code>.</p>
-<ul>
-<li><code>PossiblyLoadTempData</code>：建立載入<code>TempData</code></li>
-<li><code>PossiblySaveTempData</code>：儲存<code>TempData</code>的資料</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteCore</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// If code in this method needs to be updated, please also check the BeginExecuteCore() and</span></span><br><span class="line">    <span class="comment">// EndExecuteCore() methods of AsyncController to see if that code also must be updated.</span></span><br><span class="line">    PossiblyLoadTempData();</span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> actionName = GetActionName(RouteData);</span><br><span class="line">        <span class="keyword">if</span> (!ActionInvoker.InvokeAction(ControllerContext, actionName))</span><br><span class="line">        &#123;</span><br><span class="line">            HandleUnknownAction(actionName);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        PossiblySaveTempData();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="ControllerContext"><a href="#ControllerContext" class="headerlink" title="ControllerContext"></a>ControllerContext</h2><p>第一次初始話<code>ControllerContext</code>利用建構子</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br></pre></td></tr></table></figure></div>
-<p>在<code>ControllerBase.Initialize</code>方法對於<code>ControllerContext</code>初始化,這個上下文資料封裝了許多此次請求的資料.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Initialize</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    ControllerContext = <span class="keyword">new</span> ControllerContext(requestContext, <span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>後面對於繼承<code>ControllerContext</code>的<code>Context</code>傳入第一次初始化<code>ControllerContext</code>物件,<br>在建構子函數把傳入<code>ControllerContext</code>的<code>RequestContext</code>資料填入繼承<code>ControllerContext</code>物件中</p>
-<p>下面是<strong>MVC</strong>有繼承<code>ControllerContext</code>類別</p>
-<ul>
-<li>AuthorizationContext</li>
-<li>ExceptionContext</li>
-<li>AuthenticationChallengeContext</li>
-<li>ResultExecutedContext</li>
-<li>ViewContext</li>
-<li>ResultExecutingContext</li>
-</ul>
-<h3 id="ControllerContext-1"><a href="#ControllerContext-1" class="headerlink" title="ControllerContext"></a>ControllerContext</h3><p>在原始碼中可以看到<code>ControllerContext(ControllerContext controllerContext)</code>很巧妙把自身類別當作建構子方法參數傳入.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Controller = controllerContext.Controller;</span><br><span class="line">RequestContext = controllerContext.RequestContext;</span><br></pre></td></tr></table></figure></div>
-<p>主要是要把<code>RequestContext</code>值給填充,之後就可以利用<code>RequestContext</code>取得理面一些資料.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">internal</span> <span class="keyword">const</span> <span class="keyword">string</span> ParentActionViewContextToken = <span class="string">"ParentActionViewContext"</span>;</span><br><span class="line">	<span class="keyword">private</span> HttpContextBase _httpContext;</span><br><span class="line">	<span class="keyword">private</span> RequestContext _requestContext;</span><br><span class="line">	<span class="keyword">private</span> RouteData _routeData;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="title">ControllerContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (controllerContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controllerContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Controller = controllerContext.Controller;</span><br><span class="line">		RequestContext = controllerContext.RequestContext;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">HttpContextBase httpContext, RouteData routeData, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">new RequestContext(httpContext, routeData</span>), controller)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ControllerContext</span>(<span class="params">RequestContext requestContext, ControllerBase controller</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (requestContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"requestContext"</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (controller == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"controller"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		RequestContext = requestContext;</span><br><span class="line">		Controller = controller;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h3 id="AuthorizationContext"><a href="#AuthorizationContext" class="headerlink" title="AuthorizationContext"></a>AuthorizationContext</h3><p>我們看一下<code>Authorization</code>filter用到的參數<code>AuthorizationContext</code>.</p>
-<p>在<code>InvokeAuthorizationFilters</code>方法將<code>AuthorizationContext</code>初始化</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">AuthorizationContext context = <span class="keyword">new</span> AuthorizationContext(controllerContext, actionDescriptor);</span><br></pre></td></tr></table></figure></div>
-<p>其中傳入參數<code>controllerContext</code>是第一次透過<code>ControllerBase.Initialize</code>初始化<code>Context</code>.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AuthorizationContext</span> : <span class="title">ControllerContext</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// parameterless constructor used for mocking</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">AuthorizationContext</span>(<span class="params">ControllerContext controllerContext, ActionDescriptor actionDescriptor</span>) : <span class="title">base</span>(<span class="params">controllerContext</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">if</span> (actionDescriptor == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"actionDescriptor"</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		ActionDescriptor = actionDescriptor;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> ActionDescriptor ActionDescriptor &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> ActionResult Result &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>之後再呼叫<code>base(controllerContext)</code>利用<code>ControllerContext</code>建構子把資料填充.</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>Asp.net MVC</code>對於為了方便我們使用控制器所以對於<code>Controller</code>進行許多資料封裝,讓我們只要繼承<code>Controller</code>就可以方便使用許多屬性.</p>
-<p>下圖是<code>Controller</code>核心類別關係圖.<code>Controller</code>類別左右兩側有本次沒介紹到類別(之後會介紹到)</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/12/controller_uml.png" alt="relationship_pic.PNG"></p>
-<p>當我看到<code>ControllerContext</code>的設計時讓我驚艷的,因為他把<strong>MVC</strong>用到<code>Context</code>都關聯綁定到一個類別中.</p>
-<p>因為在商業邏輯中會有許多<code>Model</code>類別,且這些類別資料存在一定的相關性,我覺得這個設計可以使用可以大大改善資料傳遞上的麻煩,讓程式寫起來更安全,簡單</p>
-<p>之後我會把上面的<strong>UML</strong>圖慢慢畫出來,一步一步揭開<code>Asp.net MVC</code>面紗.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day12/">https://isdaniel.github.io/ithelp-day12/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -7001,47 +7001,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>JsonConvert.SerializeObject 呼叫 object.Equals 問題探討</title>
-    <url>/jsonconvert-serializeobject/</url>
-    <content><![CDATA[<p>最近在 StackOverFlow 解答一個很有趣的問題<span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS9xdWVzdGlvbnMvNTE2NjkwNzIvanNvbi1uZXQtbmV3dG9uc29mdC11c2luZy1qc29uY29udmVydC1zZXJpYWxpemVvYmplY3QtcmVzdWx0cy1pbi13ZWlyZC1lcXVhbC81MTY3MDY0MSM1MTY3MDY0MQ==" title="https://stackoverflow.com/questions/51669072/json-net-newtonsoft-using-jsonconvert-serializeobject-results-in-weird-equal/51670641#51670641">Json.Net / Newtonsoft: Using JsonConvert.SerializeObject results in weird .Equals calls - why?<i class="fa fa-external-link"></i></span></p>
-<h2 id="問題簡述是："><a href="#問題簡述是：" class="headerlink" title="問題簡述是："></a>問題簡述是：</h2><p>使用<code>Newtonsoft.Json.JsonConvert.SerializeObject</code>方法 來把物件轉成<code>JSON</code>資料時,為什麼會呼叫物件的<code>Equals</code> 方法 且傳入的<code>object obj</code>類型不是此類別類型,而是屬性的類型</p>
-<p>以下是發問者提供的程式碼:</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">JsonTestClass</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="keyword">int</span>&gt; MyIntList &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">bool</span> <span class="title">Equals</span>(<span class="params"><span class="keyword">object</span> obj</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (obj == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        JsonTestClass jtc = (JsonTestClass)obj;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">JsonTestClass c = <span class="keyword">new</span> JsonTestClass();</span><br><span class="line">c.Name = <span class="string">"test"</span>;</span><br><span class="line">c.MyIntList = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;();</span><br><span class="line">c.MyIntList.Add(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> json = JsonConvert.SerializeObject(c, <span class="keyword">new</span> JsonSerializerSettings() &#123; TypeNameHandling = TypeNameHandling.All &#125;);</span><br></pre></td></tr></table></figure>
-<hr>
-<h2 id="問題解析："><a href="#問題解析：" class="headerlink" title="問題解析："></a>問題解析：</h2><p>看到問題後我就直接去看<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzTksvTmV3dG9uc29mdC5Kc29u" title="https://github.com/JamesNK/Newtonsoft.Json">Json.net原始碼<i class="fa fa-external-link"></i></span> 一探到底原因出在哪邊.</p>
-<p>後面發現當我們在呼叫<code>JsonConvert.SerializeObject</code>方法,會執行一個 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzTksvTmV3dG9uc29mdC5Kc29uL2Jsb2IvYzkwZTZlODcxYWUzOWNkNDY4NmRhYzZmYTY0YTc4MGU1MjcxMjNhOC9TcmMvTmV3dG9uc29mdC5Kc29uL1NlcmlhbGl6YXRpb24vSnNvblNlcmlhbGl6ZXJJbnRlcm5hbFdyaXRlci5jcw==" title="https://github.com/JamesNK/Newtonsoft.Json/blob/c90e6e871ae39cd4686dac6fa64a780e527123a8/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs">private bool CheckForCircularReference<i class="fa fa-external-link"></i></span>私有方法.</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">bool</span> exists = (Serializer._equalityComparer != <span class="literal">null</span>)</span><br><span class="line">                ? _serializeStack.Contains(<span class="keyword">value</span>, Serializer._equalityComparer)</span><br><span class="line">                : _serializeStack.Contains(<span class="keyword">value</span>);</span><br></pre></td></tr></table></figure>
-<p>###　重點：</p>
-<p>這個方法主要用意是<strong>判斷目前序列化JSON物件是否有重複引用本身</strong>,方法中有段程式碼使用到 <code>List&lt;T&gt;.Contains</code>.</p>
-<p>當我們在呼叫<code>List&lt;T&gt;.Contains</code>時 預設<code>EqualityComparer&lt;T&gt;.Default</code> 進行比較來進行判斷是否存在集合中.</p>
-<p>要寫客製化比較方式有兩種</p>
-<ol>
-<li>在.net中每個類別都繼承於<code>Object</code>, <code>Object</code> 中有<code>object.Equals</code> 所以可以重寫<code>object.Equals</code>方法.</li>
-<li>將此類別實現 <code>IEquatable&lt;T&gt;</code> 並重寫你要的比較方式.</li>
-</ol>
-<p>所以會呼叫<code>object.Equals</code>是因為上段程式碼</p>
-<hr>
-<h2 id="補充說明："><a href="#補充說明：" class="headerlink" title="補充說明："></a>補充說明：</h2><p>什麼是<strong>判斷目前序列化JSON物件是否有重複引用本身</strong>?</p>
-<p>以下的範例是<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzTksvTmV3dG9uc29mdC5Kc29uL2Jsb2IvYzkwZTZlODcxYWUzOWNkNDY4NmRhYzZmYTY0YTc4MGU1MjcxMjNhOC9TcmMvTmV3dG9uc29mdC5Kc29uL1NlcmlhbGl6YXRpb24vSnNvblNlcmlhbGl6ZXJJbnRlcm5hbFdyaXRlci5jcw==" title="https://github.com/JamesNK/Newtonsoft.Json/blob/c90e6e871ae39cd4686dac6fa64a780e527123a8/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs">private bool CheckForCircularReference<i class="fa fa-external-link"></i></span>想要防止的問題</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">JsonTestClass</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="keyword">int</span>&gt; MyIntList &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> JsonTestClass Test&#123;<span class="keyword">get</span>;<span class="keyword">set</span>;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">JsonTestClass c = <span class="keyword">new</span> JsonTestClass();</span><br><span class="line">c.Name = <span class="string">"test"</span>;</span><br><span class="line">c.Test = c;</span><br><span class="line"><span class="keyword">string</span> json = JsonConvert.SerializeObject</span><br><span class="line">               (c, <span class="keyword">new</span> JsonSerializerSettings() &#123; TypeNameHandling = TypeNameHandling.All &#125;);</span><br></pre></td></tr></table></figure>
-<p>我們可以看到<code>c.Test = c;</code> 將自己本身付值給 <code>public JsonTestClass Test{get;set;}</code> 這個屬性.</p>
-<p>我們執行上面程式碼會得到此錯誤</p>
-<blockquote>
-<p>Self referencing loop detected for property ‘Test’ with type ‘Program+JsonTestClass’. Path ‘’.</p>
-</blockquote>
-<p>是因為他要防止重複引用本身導致無限迴圈解析<code>JSON</code>.</p>
-<h2 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h2><p><strong>預設</strong>值類型的比較是比較值.<br><strong>預設</strong>參考類別比較的是地址.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/jsonconvert-serializeobject/">https://isdaniel.github.io/jsonconvert-serializeobject/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Json.net</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>初探-介紹Kubernetes</title>
     <url>/kubernetes-first/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>k8s前身是Google開發borg系統，用於管理Google系統，後面由許多borg核心開發人用利用Go語言改寫就造就Kubernetes</p>
@@ -7424,6 +7383,47 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>JsonConvert.SerializeObject 呼叫 object.Equals 問題探討</title>
+    <url>/jsonconvert-serializeobject/</url>
+    <content><![CDATA[<p>最近在 StackOverFlow 解答一個很有趣的問題<span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS9xdWVzdGlvbnMvNTE2NjkwNzIvanNvbi1uZXQtbmV3dG9uc29mdC11c2luZy1qc29uY29udmVydC1zZXJpYWxpemVvYmplY3QtcmVzdWx0cy1pbi13ZWlyZC1lcXVhbC81MTY3MDY0MSM1MTY3MDY0MQ==" title="https://stackoverflow.com/questions/51669072/json-net-newtonsoft-using-jsonconvert-serializeobject-results-in-weird-equal/51670641#51670641">Json.Net / Newtonsoft: Using JsonConvert.SerializeObject results in weird .Equals calls - why?<i class="fa fa-external-link"></i></span></p>
+<h2 id="問題簡述是："><a href="#問題簡述是：" class="headerlink" title="問題簡述是："></a>問題簡述是：</h2><p>使用<code>Newtonsoft.Json.JsonConvert.SerializeObject</code>方法 來把物件轉成<code>JSON</code>資料時,為什麼會呼叫物件的<code>Equals</code> 方法 且傳入的<code>object obj</code>類型不是此類別類型,而是屬性的類型</p>
+<p>以下是發問者提供的程式碼:</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">JsonTestClass</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="keyword">int</span>&gt; MyIntList &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">bool</span> <span class="title">Equals</span>(<span class="params"><span class="keyword">object</span> obj</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">if</span> (obj == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        JsonTestClass jtc = (JsonTestClass)obj;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">JsonTestClass c = <span class="keyword">new</span> JsonTestClass();</span><br><span class="line">c.Name = <span class="string">"test"</span>;</span><br><span class="line">c.MyIntList = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;();</span><br><span class="line">c.MyIntList.Add(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> json = JsonConvert.SerializeObject(c, <span class="keyword">new</span> JsonSerializerSettings() &#123; TypeNameHandling = TypeNameHandling.All &#125;);</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="問題解析："><a href="#問題解析：" class="headerlink" title="問題解析："></a>問題解析：</h2><p>看到問題後我就直接去看<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzTksvTmV3dG9uc29mdC5Kc29u" title="https://github.com/JamesNK/Newtonsoft.Json">Json.net原始碼<i class="fa fa-external-link"></i></span> 一探到底原因出在哪邊.</p>
+<p>後面發現當我們在呼叫<code>JsonConvert.SerializeObject</code>方法,會執行一個 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzTksvTmV3dG9uc29mdC5Kc29uL2Jsb2IvYzkwZTZlODcxYWUzOWNkNDY4NmRhYzZmYTY0YTc4MGU1MjcxMjNhOC9TcmMvTmV3dG9uc29mdC5Kc29uL1NlcmlhbGl6YXRpb24vSnNvblNlcmlhbGl6ZXJJbnRlcm5hbFdyaXRlci5jcw==" title="https://github.com/JamesNK/Newtonsoft.Json/blob/c90e6e871ae39cd4686dac6fa64a780e527123a8/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs">private bool CheckForCircularReference<i class="fa fa-external-link"></i></span>私有方法.</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">bool</span> exists = (Serializer._equalityComparer != <span class="literal">null</span>)</span><br><span class="line">                ? _serializeStack.Contains(<span class="keyword">value</span>, Serializer._equalityComparer)</span><br><span class="line">                : _serializeStack.Contains(<span class="keyword">value</span>);</span><br></pre></td></tr></table></figure>
+<p>###　重點：</p>
+<p>這個方法主要用意是<strong>判斷目前序列化JSON物件是否有重複引用本身</strong>,方法中有段程式碼使用到 <code>List&lt;T&gt;.Contains</code>.</p>
+<p>當我們在呼叫<code>List&lt;T&gt;.Contains</code>時 預設<code>EqualityComparer&lt;T&gt;.Default</code> 進行比較來進行判斷是否存在集合中.</p>
+<p>要寫客製化比較方式有兩種</p>
+<ol>
+<li>在.net中每個類別都繼承於<code>Object</code>, <code>Object</code> 中有<code>object.Equals</code> 所以可以重寫<code>object.Equals</code>方法.</li>
+<li>將此類別實現 <code>IEquatable&lt;T&gt;</code> 並重寫你要的比較方式.</li>
+</ol>
+<p>所以會呼叫<code>object.Equals</code>是因為上段程式碼</p>
+<hr>
+<h2 id="補充說明："><a href="#補充說明：" class="headerlink" title="補充說明："></a>補充說明：</h2><p>什麼是<strong>判斷目前序列化JSON物件是否有重複引用本身</strong>?</p>
+<p>以下的範例是<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL0phbWVzTksvTmV3dG9uc29mdC5Kc29uL2Jsb2IvYzkwZTZlODcxYWUzOWNkNDY4NmRhYzZmYTY0YTc4MGU1MjcxMjNhOC9TcmMvTmV3dG9uc29mdC5Kc29uL1NlcmlhbGl6YXRpb24vSnNvblNlcmlhbGl6ZXJJbnRlcm5hbFdyaXRlci5jcw==" title="https://github.com/JamesNK/Newtonsoft.Json/blob/c90e6e871ae39cd4686dac6fa64a780e527123a8/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs">private bool CheckForCircularReference<i class="fa fa-external-link"></i></span>想要防止的問題</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">JsonTestClass</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="keyword">int</span>&gt; MyIntList &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> JsonTestClass Test&#123;<span class="keyword">get</span>;<span class="keyword">set</span>;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">JsonTestClass c = <span class="keyword">new</span> JsonTestClass();</span><br><span class="line">c.Name = <span class="string">"test"</span>;</span><br><span class="line">c.Test = c;</span><br><span class="line"><span class="keyword">string</span> json = JsonConvert.SerializeObject</span><br><span class="line">               (c, <span class="keyword">new</span> JsonSerializerSettings() &#123; TypeNameHandling = TypeNameHandling.All &#125;);</span><br></pre></td></tr></table></figure>
+<p>我們可以看到<code>c.Test = c;</code> 將自己本身付值給 <code>public JsonTestClass Test{get;set;}</code> 這個屬性.</p>
+<p>我們執行上面程式碼會得到此錯誤</p>
+<blockquote>
+<p>Self referencing loop detected for property ‘Test’ with type ‘Program+JsonTestClass’. Path ‘’.</p>
+</blockquote>
+<p>是因為他要防止重複引用本身導致無限迴圈解析<code>JSON</code>.</p>
+<h2 id="Note"><a href="#Note" class="headerlink" title="Note"></a>Note</h2><p><strong>預設</strong>值類型的比較是比較值.<br><strong>預設</strong>參考類別比較的是地址.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/jsonconvert-serializeobject/">https://isdaniel.github.io/jsonconvert-serializeobject/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Json.net</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MediatorPattern(中介者模式)</title>
     <url>/mediator-pattern/</url>
     <content><![CDATA[<h2 id="說明"><a href="#說明" class="headerlink" title="說明"></a>說明</h2><p>系統模塊存在很多複雜的耦合問題，很適合使用中介者模式來解耦合</p>
@@ -7527,6 +7527,92 @@ email_url: dog830228@gmail.com
         <tag>C#</tag>
         <tag>Reflection</tag>
         <tag>Assembly</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>高併發系統系列-多執行緒中順序 by EventWaitHandle</title>
+    <url>/multithread-eventwaithandle/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在多執行緒系統中，Thread的執行和長短是交由OS來幫我處理了</p>
+<p>假如有一個面試題目是</p>
+<ul>
+<li>目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C”</li>
+<li><p>要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號</p>
+<p>  ex:<br>  A<br>  B<br>  C<br>  A<br>  B<br>  C</p>
+</li>
+</ul>
+<p>程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Alternate c = <span class="keyword">new</span> Alternate();</span><br><span class="line">        <span class="keyword">var</span> t1 = <span class="keyword">new</span> Thread(c.CallA);</span><br><span class="line">        <span class="keyword">var</span> t2 = <span class="keyword">new</span> Thread(c.CallB);</span><br><span class="line">        <span class="keyword">var</span> t3 = <span class="keyword">new</span> Thread(c.CallC);</span><br><span class="line"></span><br><span class="line">        t1.Start();</span><br><span class="line">        t2.Start();</span><br><span class="line">        t3.Start();</span><br><span class="line"></span><br><span class="line">        t1.Join();</span><br><span class="line">        t2.Join();</span><br><span class="line">        t3.Join();</span><br><span class="line"></span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Alternate</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallA</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.WriteLine(<span class="string">"A"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallB</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.WriteLine(<span class="string">"B"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallC</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.WriteLine(<span class="string">"C"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因為Thread被呼叫順序是由OS跟CPU來決定，目前執行如下圖所以目前打印出來的順序是無序的</p>
+<p><img src="https://i.imgur.com/j6mNk2W.png" alt></p>
+<p>期望可以打印出如下圖</p>
+<p><img src="https://i.imgur.com/9FAhwA3.png" alt></p>
+<blockquote>
+<p>讓Thread可以有順的執行打印.</p>
+</blockquote>
+<p>假如是你會怎麼做?</p>
+<h2 id="問題分析"><a href="#問題分析" class="headerlink" title="問題分析"></a>問題分析</h2><p>如果要完成上面需求，我們會希望程式如下執行</p>
+<ul>
+<li>在執行ThreadA時，ThreadB,ThreadC在等待，執行完ThreadA時呼叫ThreadB起來動作</li>
+<li>在執行ThreadB時，ThreadC,ThreadA在等待，執行完ThreadB時呼叫ThreadC起來動作</li>
+<li>在執行ThreadC時，ThreadB,ThreadA在等待，執行完ThreadC時呼叫ThreadA起來動作</li>
+</ul>
+<p><img src="https://i.imgur.com/v5OlGWV.png" alt></p>
+<p>核心動作:每個瞬間只有一個Thread可以動作，執行完呼叫下一個Thread做事情，自己在進行等待喚醒</p>
+<p>如果你有建構多執行緒系統的話，看到上面動作應該就知道本題的核心類別是哪個了吧?</p>
+<p>沒錯就是<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmV2ZW50d2FpdGhhbmRsZT92aWV3PW5ldC01LjA=" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.eventwaithandle?view=net-5.0">EventWaitHandle<i class="fa fa-external-link"></i></span></p>
+<h2 id="EventWaitHandle"><a href="#EventWaitHandle" class="headerlink" title="EventWaitHandle"></a>EventWaitHandle</h2><p>如果要談起<code>AutoResetEvent</code>就不得不提下面兩個類別</p>
+<ul>
+<li>AutoResetEvent:執行緒同步處理事件會在發出訊號時，釋出<strong>一個等候執行緒</strong>之後就<strong>自動重設</strong></li>
+<li>ManualResetEvent:執行緒同步處理事件可以釋出<strong>多個等候執行緒</strong>，收到訊號時<strong>必須手動重設</strong> ，不然其他執行緒會直接放行</li>
+</ul>
+<p>我用現實生活中例子來解釋<code>AutoResetEvent</code>跟<code>ManualResetEvent</code></p>
+<ul>
+<li>AutoResetEvent:捷運或火車的閘門一次只能放行一個並在放行完後會馬上關門</li>
+<li>ManualResetEvent:大門必須要是手動關閉房門，不然就會一直放行別人通過</li>
+</ul>
+<p>我先來說說為什麼可以透過<code>EventWaitHandle</code>來解決問題.</p>
+<p>一樣我們把要完成的思路先畫出來，假如我們可以在每一個Thread跟Thread之間設定一個閘門(圖中的小框框)，每次呼叫完就把下一關閘門打開叫醒另一個Thread去做事情（在把之前的閘門關起來等待<br>上一位呼叫）</p>
+<p><img src="https://i.imgur.com/DUFMMqs.png" alt></p>
+<p>例如：</p>
+<p>現在ThreadA剛剛執行完(打印出<code>A</code>)接著會去叫醒ThreadB做事情後，ThreadA繼續等待ThreadC做完事情叫他.</p>
+<p>上面情境就需要使用<code>AutoResetEvent</code>來當作我們閘門跟叫醒Thread動作.</p>
+<h2 id="問題解答"><a href="#問題解答" class="headerlink" title="問題解答"></a>問題解答</h2><p>本次我使用到<code>AutoResetEvent</code>兩個常用的method.</p>
+<ul>
+<li>WaitOne:Blocking目前Thread，直到目前WaitHandle收到訊號為止。</li>
+<li>Set:將事件的狀態設定為未收到信號，讓一個或多個等候執行緒繼續執行。</li>
+</ul>
+<p>簡單來說<code>AutoResetEvent</code>就是閘門</p>
+<p><code>WaitOne</code>幫助我們達成Thread Blocking動作(等待被喚醒),而喚醒交由<code>Set</code>別人呼叫你<code>WaitOne</code>的AutoResetEvent.</p>
+<p>按照上面的圖我們會需要使用到三個<code>AutoResetEvent</code>(三個閘門)</p>
+<p>另外我們需要知道目前在哪一個閘門，所以有一個Index變數（我們有看到他使用<code>volatile</code>關鍵字）有興趣在自行尋找用處因為不是本次重點我就不說明了.</p>
+<p>我們把</p>
+<ul>
+<li>ThreadA執行當作Index = 1</li>
+<li>ThreadB執行當作Index = 2</li>
+<li>ThreadC執行當作Index = 3</li>
+</ul>
+<p>所以在一開始判斷是否是自己要執行Index，如果不是就等待被呼叫.</p>
+<p>按照一開始例子我們設定index = 1，所以<code>CallA</code>動作不會被Blocking，就會接續打印出<code>A</code>並看到<code>notifyB.Set();</code>會叫醒<code>ThreadB</code>並且把Index設定成2</p>
+<p>因為Index = 2，所以再一次跑迴圈ThreadA就會進行blocking，後面動作以此類推就會出現我們要的答案</p>
+<p><img src="https://i.imgur.com/9FAhwA3.png" alt></p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Alternate</span> &#123;</span><br><span class="line"></span><br><span class="line">    AutoResetEvent notifyA = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyB = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyC = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> index = <span class="number">1</span>;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallA</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (index != <span class="number">1</span>)</span><br><span class="line">				notifyA.WaitOne();</span><br><span class="line"></span><br><span class="line">			Console.WriteLine(<span class="string">"A"</span>);</span><br><span class="line">			index = <span class="number">2</span>;</span><br><span class="line">			notifyB.Set();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallB</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (index != <span class="number">2</span>)</span><br><span class="line">				notifyB.WaitOne();</span><br><span class="line"></span><br><span class="line">			Console.WriteLine(<span class="string">"B"</span>);</span><br><span class="line">			index = <span class="number">3</span>;</span><br><span class="line">			notifyC.Set();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallC</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (index != <span class="number">3</span>)</span><br><span class="line">				notifyC.WaitOne();</span><br><span class="line"></span><br><span class="line">			Console.WriteLine(<span class="string">"C"</span>);</span><br><span class="line">			Console.WriteLine(<span class="string">"------------------------------"</span>);</span><br><span class="line">			index = <span class="number">1</span>;</span><br><span class="line">			notifyA.Set();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="重購版本"><a href="#重購版本" class="headerlink" title="重購版本"></a>重購版本</h2><p>上面那個本版雖然可以很好的完成需求，程式碼有很多重複的地方且可擴展性不佳.</p>
+<p>下面版本是重購後的我們可以在<code>Alternate</code>建構子中撰寫對應列表(每個Thread要被誰喚醒跟做完事情要叫誰)，並給上相對應編號來查找</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Alternate</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">class</span> <span class="title">NotifyMap</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> AutoResetEvent Wait &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; </span><br><span class="line">        <span class="keyword">public</span> AutoResetEvent Notify &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> Dictionary&lt;<span class="keyword">int</span>, NotifyMap&gt; _notifyMapping;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    AutoResetEvent notifyA = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyB = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyC = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Alternate</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _notifyMapping = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">int</span>, NotifyMap&gt;</span><br><span class="line">        &#123;</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="keyword">new</span> NotifyMap&#123; Wait = notifyA, Notify = notifyB&#125; &#125;,</span><br><span class="line">            &#123; <span class="number">2</span>, <span class="keyword">new</span> NotifyMap&#123; Wait = notifyB, Notify = notifyC&#125; &#125;,</span><br><span class="line">            &#123; <span class="number">3</span>, <span class="keyword">new</span> NotifyMap&#123; Wait = notifyC, Notify = notifyA&#125; &#125;</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Call</span>(<span class="params">CallerInfo caller</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">var</span> key = index % _notifyMapping.Count + <span class="number">1</span>;</span><br><span class="line">            <span class="keyword">var</span> notifyMap = _notifyMapping[caller.Index];</span><br><span class="line">            <span class="keyword">if</span> (key != caller.Index)</span><br><span class="line">                notifyMap.Wait.WaitOne();</span><br><span class="line">            Console.WriteLine(<span class="string">$"<span class="subst">&#123;caller.Name&#125;</span>"</span>);</span><br><span class="line">            index++;</span><br><span class="line">            notifyMap.Notify.Set();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>經過重購後程式碼就變得簡單許多了.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在multithread世界中我們要注意細節越來越多，本次介紹的<code>AutoResetEvent</code>可以用運的地方非常多（假如你有多個Thread需要順序執行）</p>
+<p>因為Thread的呼叫順序我們不能掌控就必須考這個機制來幫我們完成.</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvRXZlbnRXYWl0SGFuZGxlU2FtcGxl" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/EventWaitHandleSample">程式碼<i class="fa fa-external-link"></i></span>我放在有需要可以拿去使用看看</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/multithread-eventwaithandle/">https://isdaniel.github.io/multithread-eventwaithandle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>thread</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>thread</tag>
+        <tag>concurrent</tag>
       </tags>
   </entry>
   <entry>
@@ -7672,92 +7758,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>高併發系統系列-多執行緒中順序 by EventWaitHandle</title>
-    <url>/multithread-eventwaithandle/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在多執行緒系統中，Thread的執行和長短是交由OS來幫我處理了</p>
-<p>假如有一個面試題目是</p>
-<ul>
-<li>目前有三個Thread 每個Thread個別負責Print “A”,”B”,”C”</li>
-<li><p>要求:利用三個Thread並按照A,B,C順序打印出20次資訊,中間不能錯號</p>
-<p>  ex:<br>  A<br>  B<br>  C<br>  A<br>  B<br>  C</p>
-</li>
-</ul>
-<p>程式碼框架如下，在Main函式建立3個Threads分別負責A,B,C字母打印</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Alternate c = <span class="keyword">new</span> Alternate();</span><br><span class="line">        <span class="keyword">var</span> t1 = <span class="keyword">new</span> Thread(c.CallA);</span><br><span class="line">        <span class="keyword">var</span> t2 = <span class="keyword">new</span> Thread(c.CallB);</span><br><span class="line">        <span class="keyword">var</span> t3 = <span class="keyword">new</span> Thread(c.CallC);</span><br><span class="line"></span><br><span class="line">        t1.Start();</span><br><span class="line">        t2.Start();</span><br><span class="line">        t3.Start();</span><br><span class="line"></span><br><span class="line">        t1.Join();</span><br><span class="line">        t2.Join();</span><br><span class="line">        t3.Join();</span><br><span class="line"></span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Alternate</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallA</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.WriteLine(<span class="string">"A"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallB</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.WriteLine(<span class="string">"B"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallC</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            Console.WriteLine(<span class="string">"C"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>因為Thread被呼叫順序是由OS跟CPU來決定，目前執行如下圖所以目前打印出來的順序是無序的</p>
-<p><img src="https://i.imgur.com/j6mNk2W.png" alt></p>
-<p>期望可以打印出如下圖</p>
-<p><img src="https://i.imgur.com/9FAhwA3.png" alt></p>
-<blockquote>
-<p>讓Thread可以有順的執行打印.</p>
-</blockquote>
-<p>假如是你會怎麼做?</p>
-<h2 id="問題分析"><a href="#問題分析" class="headerlink" title="問題分析"></a>問題分析</h2><p>如果要完成上面需求，我們會希望程式如下執行</p>
-<ul>
-<li>在執行ThreadA時，ThreadB,ThreadC在等待，執行完ThreadA時呼叫ThreadB起來動作</li>
-<li>在執行ThreadB時，ThreadC,ThreadA在等待，執行完ThreadB時呼叫ThreadC起來動作</li>
-<li>在執行ThreadC時，ThreadB,ThreadA在等待，執行完ThreadC時呼叫ThreadA起來動作</li>
-</ul>
-<p><img src="https://i.imgur.com/v5OlGWV.png" alt></p>
-<p>核心動作:每個瞬間只有一個Thread可以動作，執行完呼叫下一個Thread做事情，自己在進行等待喚醒</p>
-<p>如果你有建構多執行緒系統的話，看到上面動作應該就知道本題的核心類別是哪個了吧?</p>
-<p>沒錯就是<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmV2ZW50d2FpdGhhbmRsZT92aWV3PW5ldC01LjA=" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.eventwaithandle?view=net-5.0">EventWaitHandle<i class="fa fa-external-link"></i></span></p>
-<h2 id="EventWaitHandle"><a href="#EventWaitHandle" class="headerlink" title="EventWaitHandle"></a>EventWaitHandle</h2><p>如果要談起<code>AutoResetEvent</code>就不得不提下面兩個類別</p>
-<ul>
-<li>AutoResetEvent:執行緒同步處理事件會在發出訊號時，釋出<strong>一個等候執行緒</strong>之後就<strong>自動重設</strong></li>
-<li>ManualResetEvent:執行緒同步處理事件可以釋出<strong>多個等候執行緒</strong>，收到訊號時<strong>必須手動重設</strong> ，不然其他執行緒會直接放行</li>
-</ul>
-<p>我用現實生活中例子來解釋<code>AutoResetEvent</code>跟<code>ManualResetEvent</code></p>
-<ul>
-<li>AutoResetEvent:捷運或火車的閘門一次只能放行一個並在放行完後會馬上關門</li>
-<li>ManualResetEvent:大門必須要是手動關閉房門，不然就會一直放行別人通過</li>
-</ul>
-<p>我先來說說為什麼可以透過<code>EventWaitHandle</code>來解決問題.</p>
-<p>一樣我們把要完成的思路先畫出來，假如我們可以在每一個Thread跟Thread之間設定一個閘門(圖中的小框框)，每次呼叫完就把下一關閘門打開叫醒另一個Thread去做事情（在把之前的閘門關起來等待<br>上一位呼叫）</p>
-<p><img src="https://i.imgur.com/DUFMMqs.png" alt></p>
-<p>例如：</p>
-<p>現在ThreadA剛剛執行完(打印出<code>A</code>)接著會去叫醒ThreadB做事情後，ThreadA繼續等待ThreadC做完事情叫他.</p>
-<p>上面情境就需要使用<code>AutoResetEvent</code>來當作我們閘門跟叫醒Thread動作.</p>
-<h2 id="問題解答"><a href="#問題解答" class="headerlink" title="問題解答"></a>問題解答</h2><p>本次我使用到<code>AutoResetEvent</code>兩個常用的method.</p>
-<ul>
-<li>WaitOne:Blocking目前Thread，直到目前WaitHandle收到訊號為止。</li>
-<li>Set:將事件的狀態設定為未收到信號，讓一個或多個等候執行緒繼續執行。</li>
-</ul>
-<p>簡單來說<code>AutoResetEvent</code>就是閘門</p>
-<p><code>WaitOne</code>幫助我們達成Thread Blocking動作(等待被喚醒),而喚醒交由<code>Set</code>別人呼叫你<code>WaitOne</code>的AutoResetEvent.</p>
-<p>按照上面的圖我們會需要使用到三個<code>AutoResetEvent</code>(三個閘門)</p>
-<p>另外我們需要知道目前在哪一個閘門，所以有一個Index變數（我們有看到他使用<code>volatile</code>關鍵字）有興趣在自行尋找用處因為不是本次重點我就不說明了.</p>
-<p>我們把</p>
-<ul>
-<li>ThreadA執行當作Index = 1</li>
-<li>ThreadB執行當作Index = 2</li>
-<li>ThreadC執行當作Index = 3</li>
-</ul>
-<p>所以在一開始判斷是否是自己要執行Index，如果不是就等待被呼叫.</p>
-<p>按照一開始例子我們設定index = 1，所以<code>CallA</code>動作不會被Blocking，就會接續打印出<code>A</code>並看到<code>notifyB.Set();</code>會叫醒<code>ThreadB</code>並且把Index設定成2</p>
-<p>因為Index = 2，所以再一次跑迴圈ThreadA就會進行blocking，後面動作以此類推就會出現我們要的答案</p>
-<p><img src="https://i.imgur.com/9FAhwA3.png" alt></p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Alternate</span> &#123;</span><br><span class="line"></span><br><span class="line">    AutoResetEvent notifyA = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyB = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyC = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> index = <span class="number">1</span>;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallA</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (index != <span class="number">1</span>)</span><br><span class="line">				notifyA.WaitOne();</span><br><span class="line"></span><br><span class="line">			Console.WriteLine(<span class="string">"A"</span>);</span><br><span class="line">			index = <span class="number">2</span>;</span><br><span class="line">			notifyB.Set();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallB</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (index != <span class="number">2</span>)</span><br><span class="line">				notifyB.WaitOne();</span><br><span class="line"></span><br><span class="line">			Console.WriteLine(<span class="string">"B"</span>);</span><br><span class="line">			index = <span class="number">3</span>;</span><br><span class="line">			notifyC.Set();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">CallC</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (index != <span class="number">3</span>)</span><br><span class="line">				notifyC.WaitOne();</span><br><span class="line"></span><br><span class="line">			Console.WriteLine(<span class="string">"C"</span>);</span><br><span class="line">			Console.WriteLine(<span class="string">"------------------------------"</span>);</span><br><span class="line">			index = <span class="number">1</span>;</span><br><span class="line">			notifyA.Set();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="重購版本"><a href="#重購版本" class="headerlink" title="重購版本"></a>重購版本</h2><p>上面那個本版雖然可以很好的完成需求，程式碼有很多重複的地方且可擴展性不佳.</p>
-<p>下面版本是重購後的我們可以在<code>Alternate</code>建構子中撰寫對應列表(每個Thread要被誰喚醒跟做完事情要叫誰)，並給上相對應編號來查找</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Alternate</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">class</span> <span class="title">NotifyMap</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> AutoResetEvent Wait &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; </span><br><span class="line">        <span class="keyword">public</span> AutoResetEvent Notify &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> Dictionary&lt;<span class="keyword">int</span>, NotifyMap&gt; _notifyMapping;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> index = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    AutoResetEvent notifyA = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyB = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    AutoResetEvent notifyC = <span class="keyword">new</span> AutoResetEvent(<span class="literal">false</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Alternate</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _notifyMapping = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">int</span>, NotifyMap&gt;</span><br><span class="line">        &#123;</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="keyword">new</span> NotifyMap&#123; Wait = notifyA, Notify = notifyB&#125; &#125;,</span><br><span class="line">            &#123; <span class="number">2</span>, <span class="keyword">new</span> NotifyMap&#123; Wait = notifyB, Notify = notifyC&#125; &#125;,</span><br><span class="line">            &#123; <span class="number">3</span>, <span class="keyword">new</span> NotifyMap&#123; Wait = notifyC, Notify = notifyA&#125; &#125;</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Call</span>(<span class="params">CallerInfo caller</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">var</span> key = index % _notifyMapping.Count + <span class="number">1</span>;</span><br><span class="line">            <span class="keyword">var</span> notifyMap = _notifyMapping[caller.Index];</span><br><span class="line">            <span class="keyword">if</span> (key != caller.Index)</span><br><span class="line">                notifyMap.Wait.WaitOne();</span><br><span class="line">            Console.WriteLine(<span class="string">$"<span class="subst">&#123;caller.Name&#125;</span>"</span>);</span><br><span class="line">            index++;</span><br><span class="line">            notifyMap.Notify.Set();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>經過重購後程式碼就變得簡單許多了.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在multithread世界中我們要注意細節越來越多，本次介紹的<code>AutoResetEvent</code>可以用運的地方非常多（假如你有多個Thread需要順序執行）</p>
-<p>因為Thread的呼叫順序我們不能掌控就必須考這個機制來幫我們完成.</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvRXZlbnRXYWl0SGFuZGxlU2FtcGxl" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/EventWaitHandleSample">程式碼<i class="fa fa-external-link"></i></span>我放在有需要可以拿去使用看看</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/multithread-eventwaithandle/">https://isdaniel.github.io/multithread-eventwaithandle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>thread</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>thread</tag>
-        <tag>concurrent</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Ndepend 靜態分析 .Net 專案好物</title>
     <url>/ndepend-code-quality/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>當一個專案越來越大，在開發新產品時同時要兼顧程式碼品質會越來越困難，今天要介紹的　<span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20v" title="https://www.ndepend.com/">Ndepend<i class="fa fa-external-link"></i></span> 是一個很優秀靜態分析 .Net 專案好物</p>
@@ -7793,17 +7793,19 @@ email_url: dog830228@gmail.com
 <p><img src="https://i.imgur.com/aRvR5AE.png" alt></p>
 <h2 id="Rule-介紹"><a href="#Rule-介紹" class="headerlink" title="Rule 介紹"></a>Rule 介紹</h2><p><code>NDependOut</code> 提供許多 Rule 來建議我們程式碼優化，且裡面有許多詳細的說明</p>
 <p><img src="https://i.imgur.com/yif7FfJ.png" alt></p>
-<h3 id="建立自己-Code-Rule"><a href="#建立自己-Code-Rule" class="headerlink" title="建立自己 Code Rule"></a>建立自己 Code Rule</h3><p>我覺得使用 <code>NDepend</code> 有一個很大的優勢是可以很簡單制訂自己的 <code>Rules</code> 寫法基本上會 c# LINQ 就可以撰寫了</p>
-<p>我們可以利用 linq 來找尋符合，我們設定 Rule Metrics，並進行統計</p>
+<h3 id="建立自己-Code-Rule"><a href="#建立自己-Code-Rule" class="headerlink" title="建立自己 Code Rule"></a>建立自己 Code Rule</h3><p>我覺得使用 <code>NDepend</code> 有一個很大的優勢是可以很簡單制訂自己的 <code>Rules</code> </p>
+<p><code>NDepend</code>  自創 <span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20vRmVhdHVyZXMvI0NRTA==" title="https://www.ndepend.com/Features/#CQL">CQL<i class="fa fa-external-link"></i></span> (Code Query Language) 來制訂檢驗規則，寫法跟 c# LINQ 非常類似</p>
+<p>我們可以利用 CQL 來找尋符合，我們設定 Rule Metrics，並進行統計</p>
 <p>最後呈現在 DashBoard 報表上</p>
 <p>例如下面是 <code>NDepend</code> 其中一個 Rule  <code>Methods prefixed with &#39;Try&#39; should return a boolean</code></p>
 <p>這個 Rule 代表是建議如果有取名叫 <code>Try</code> 開頭 method 建議返回值是 <code>bool</code> 比照 <code>Int32.TryParse</code></p>
-<p><code>warnif count &gt; 0</code> ： 代表如果有至少一個情況符合下面的條件就會顯示</p>
+<p><code>warnif count &gt; 0</code> ： 代表如果有至少一個情況符合下面的條件就會顯示警告</p>
 <p>其餘下面程式碼寫得很直白，開發過 Linq 的您應該很容易了解</p>
 <p>最後我們可以把我們關注資訊 <code>select</code> 用一個匿名類別來返回我們要的資料</p>
 <p>依照下面這個 Rule 我們判定是 <code>Severity.Medium</code>，另外對於每筆符合此 Rule 資料我們都會計算 <code>Debt</code> (程式債) 處理 + 10 分鐘</p>
 <figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">// &lt;Name&gt;Methods prefixed with 'Try' should return a boolean&lt;/Name&gt;</span></span><br><span class="line"><span class="comment">// &lt;Id&gt;ND2016:MethodsPrefixedWithTryShouldReturnABoolean&lt;/Id&gt;</span></span><br><span class="line"></span><br><span class="line">warnif count &gt; <span class="number">0</span></span><br><span class="line"><span class="keyword">from</span> m <span class="keyword">in</span> Application.Methods <span class="keyword">where</span></span><br><span class="line">  m.SimpleNameLike(<span class="string">"^Try"</span>) &amp;&amp;</span><br><span class="line">  m.ReturnType != <span class="literal">null</span> &amp;&amp;</span><br><span class="line">  m.ReturnType.FullName != <span class="string">"System.Boolean"</span></span><br><span class="line"><span class="keyword">select</span> <span class="keyword">new</span> &#123; </span><br><span class="line">   m, </span><br><span class="line">   m.ReturnType,</span><br><span class="line">   Debt = <span class="number">10.</span>ToMinutes().ToDebt(),</span><br><span class="line">   Severity = Severity.Medium</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//&lt;Description&gt;</span></span><br><span class="line"><span class="comment">// When a method has a name prefixed with **Try**, it is expected that</span></span><br><span class="line"><span class="comment">// it returns a *boolean*, that reflects the method execution status,</span></span><br><span class="line"><span class="comment">// *success* or *failure*.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Such method usually returns a result through an *out parameter*.</span></span><br><span class="line"><span class="comment">// For example:  *System.Int32.TryParse(int,out string):bool*</span></span><br><span class="line"><span class="comment">//&lt;/Description&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//&lt;HowToFix&gt;</span></span><br><span class="line"><span class="comment">// To fix a violation of this rule,</span></span><br><span class="line"><span class="comment">// Rename the method, or transform it into an operation that can fail.</span></span><br><span class="line"><span class="comment">//&lt;/HowToFix&gt;</span></span><br></pre></td></tr></table></figure>
 <p>如果想要了解更多撰寫 Rule 方式可以參考<span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20vZG9jcy93cml0ZS15b3VyLW93bi1jb2RlLXJ1bGVz" title="https://www.ndepend.com/docs/write-your-own-code-rules">write-your-own-code-rules<i class="fa fa-external-link"></i></span></p>
+<p>我們可以依照團隊習慣和風格慢慢打造屬於自己的 <strong>CQL Query</strong> 來協助我們整個開發流程更穩健且  <code>NDepend</code> 對於 CI/CD Azure + TFS 支援性蠻好，對於想要建立 high quality devops 具有很大的幫助</p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>我覺得 <code>NDepend</code> 是一個很優秀的靜態分析工具，裡面的建議修改提示就像是旁邊有一個大師在跟你指導，可以學習到不少東西</p>
 <p><code>NDepend</code> 對於 CI/CD 整合有提供豐富的影片跟資訊可以參考<br><span class="exturl" data-url="aHR0cHM6Ly93d3cubmRlcGVuZC5jb20vZG9jcy9henVyZS1kZXZvcHMtdGZzLXZzdHMtaW50ZWdyYXRpb24tbmRlcGVuZA==" title="https://www.ndepend.com/docs/azure-devops-tfs-vsts-integration-ndepend">devops-tfs-vsts-integration-ndepend<i class="fa fa-external-link"></i></span></p>
 <p>可以讓我們每次 Release 開發結果更透明，讓整個團隊人能一目了然看到該專案的狀態</p>
@@ -8690,79 +8692,6 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
-    <title>RabbitMQ (二) 概念</title>
-    <url>/rabbitmq-install-01/</url>
-    <content><![CDATA[<h2 id="介紹RabbitMQ"><a href="#介紹RabbitMQ" class="headerlink" title="介紹RabbitMQ"></a>介紹RabbitMQ</h2><p>RabbitMQ是個訊息仲介（broker），主要是利用消息把生產者跟消費者解耦合</p>
-<p>在RabbitMQ主要有以下角色</p>
-<ol>
-<li>產生者（producer）</li>
-<li>接收者（consumer）</li>
-<li>佇列（Queue）</li>
-<li>交換器(Exchange)</li>
-<li>訊息(Message)</li>
-</ol>
-<p>上面太抽象?  讓我來舉一個簡單點的例子</p>
-<p>我們要寄信會把信投進郵筒，信件統一送到郵局，由分配至各個區域郵差去寄送信件</p>
-<p>在此可把上面的角色對應在RabbitMQ上</p>
-<ol>
-<li>產生者（producer）= 寄信人</li>
-<li>接收者（consumer） = 收件人</li>
-<li>佇列（Queue）= 郵差</li>
-<li>交換器(Exchange) = 郵筒</li>
-<li>訊息(Message)  = 信件</li>
-</ol>
-<p>下面是我畫RabbitMq運作流程圖</p>
-<p><img src="https://i.imgur.com/uvXHTmW.png" alt></p>
-<hr>
-<h3 id="RabbitMQ-腳色簡圖"><a href="#RabbitMQ-腳色簡圖" class="headerlink" title="RabbitMQ 腳色簡圖"></a>RabbitMQ 腳色簡圖</h3><ul>
-<li>產生者(P)</li>
-<li>接收者(C)</li>
-<li>佇列（Queue）</li>
-<li>交換器(E)</li>
-</ul>
-<h3 id><a href="#" class="headerlink" title></a><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/09cafcb7-aeab-46e6-a73d-7d2cc8e089ac/1548173424_68039.png" alt></h3><p>[中間黑框]是RabbitMQ (Broker) 幫助 (P)和(C) 解耦合</p>
-<h3 id="Exchange-概念"><a href="#Exchange-概念" class="headerlink" title="Exchange 概念"></a>Exchange 概念</h3><p>生產者發送訊息時會經由Exchange來決定要給哪個Queue.</p>
-<p>Exchange分發訊息根據類型的不同分發策略有區別</p>
-<p>目前共四種類型：</p>
-<ol>
-<li>Direct</li>
-<li>Fanout</li>
-<li>Topic</li>
-<li>Headers </li>
-</ol>
-<h3 id="Direct"><a href="#Direct" class="headerlink" title="Direct"></a>Direct</h3><p>生產者傳送訊息中 RouteKey 必須跟 Queue binding key <strong>一致</strong> Exchange才會把資料送到Queue中.</p>
-<p>如果一個Queue binding 到 Exchange 要求路由鍵為 “Daniel”，只接收 Routing key 是 “Daniel”的訊息，不會轉發“Daniel1”，RouteKey需完全匹配．</p>
-<p>使用 Direct 交換器 可當作寄信需要  RouteKey (標註) 要由哪個 Queue (郵差)接收轉送此訊息,Queue (郵差)會藉由此 RouteKey (標註) 找到相對應消費者</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/04e4a734-32c7-4c11-97e6-9d7a194dcbc0/1554261004_68269.png" alt></p>
-<h2 id="Fanout"><a href="#Fanout" class="headerlink" title="Fanout"></a>Fanout</h2><p>fanout 交換器不處理Route Key,簡單來說就是輪流把消息放進每個Queue中.</p>
-<p>使用 fanout 交換器 把 信件(Message) 給 所有 郵差(Queue) 每個消費者都會收到此 信件(Message) </p>
-<p>在現實生活中有點類似經由  fanout交換器 (郵筒) 將傳單夾入所有信件中讓郵差發給所有人</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/04e4a734-32c7-4c11-97e6-9d7a194dcbc0/1554261165_39274.jpg" alt></p>
-<h2 id="Topic"><a href="#Topic" class="headerlink" title="Topic"></a>Topic</h2><p>Topic交換器和 Direct 交換器都需要查看 來分配訊息(RouteKey)和Binding中的binding key是否一致,但Topic交換器使用部分匹配比Direct 交換器多了更多彈性。</p>
-<p>Topic交換器提供兩種方式</p>
-<ol>
-<li><strong> #</strong> 匹配0個或多個單字</li>
-<li><strong> *</strong> 匹配不多不少一個單字</li>
-</ol>
-<p>例如 有兩個Queue (binding key)分別是 App.# 和 App.*</p>
-<p>經由Topic交換器分配一個訊息RouteKey是 App.Daniel 則都會將資料塞入兩個 Queue (binding key) 為 App.# 和 App.* </p>
-<p>但如果另一個訊息RouteKey是 App .Daniel.Test 只會塞入 Queue (binding key) 為 App.# ,另一個  Queue (binding key) 是 App.*  不被匹配</p>
-<p>在現實生活中有點類似 發送 信件(Message) 經由  Topic交換器 (郵筒) 會依照上面的區域 (例如台北縣,宜蘭縣)​​ 來分配相對應的區域信件轉交給 Queue (郵差) 給消費者</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/04e4a734-32c7-4c11-97e6-9d7a194dcbc0/1554261121_78429.png" alt></p>
-<p>參考來源：</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly93d3cuamlhbnNodS5jb20vcC83OWNhMDgxMTZkNTc=" title="https://www.jianshu.com/p/79ca08116d57">https://www.jianshu.com/p/79ca08116d57<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-install-01/">https://isdaniel.github.io/rabbitmq-install-01/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>RabbitMQ</tag>
-        <tag>MQ</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>RabbitMQ (一) 安裝介紹</title>
     <url>/rabbitmq-introduce-02/</url>
     <content><![CDATA[<h2 id="RabbitMQ是什麼"><a href="#RabbitMQ是什麼" class="headerlink" title="RabbitMQ是什麼?"></a>RabbitMQ是什麼?</h2><p>RabbitMQ是一個訊息中介軟體 (broker), 他實作​<span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFOSVBQiU5OCVFNyVCQSVBNyVFNiVCNiU4OCVFNiU4MSVBRiVFOSU5OCU5RiVFNSU4OCU5NyVFNSU4RCU4RiVFOCVBRSVBRQ==" title="https://zh.wikipedia.org/zh-tw/%E9%AB%98%E7%BA%A7%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%8D%8F%E8%AE%AE">AMQP標準<i class="fa fa-external-link"></i></span>, 特點是消息轉發是非同步並且可靠.</p>
@@ -9000,6 +8929,79 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
+    <title>RabbitMQ (二) 概念</title>
+    <url>/rabbitmq-install-01/</url>
+    <content><![CDATA[<h2 id="介紹RabbitMQ"><a href="#介紹RabbitMQ" class="headerlink" title="介紹RabbitMQ"></a>介紹RabbitMQ</h2><p>RabbitMQ是個訊息仲介（broker），主要是利用消息把生產者跟消費者解耦合</p>
+<p>在RabbitMQ主要有以下角色</p>
+<ol>
+<li>產生者（producer）</li>
+<li>接收者（consumer）</li>
+<li>佇列（Queue）</li>
+<li>交換器(Exchange)</li>
+<li>訊息(Message)</li>
+</ol>
+<p>上面太抽象?  讓我來舉一個簡單點的例子</p>
+<p>我們要寄信會把信投進郵筒，信件統一送到郵局，由分配至各個區域郵差去寄送信件</p>
+<p>在此可把上面的角色對應在RabbitMQ上</p>
+<ol>
+<li>產生者（producer）= 寄信人</li>
+<li>接收者（consumer） = 收件人</li>
+<li>佇列（Queue）= 郵差</li>
+<li>交換器(Exchange) = 郵筒</li>
+<li>訊息(Message)  = 信件</li>
+</ol>
+<p>下面是我畫RabbitMq運作流程圖</p>
+<p><img src="https://i.imgur.com/uvXHTmW.png" alt></p>
+<hr>
+<h3 id="RabbitMQ-腳色簡圖"><a href="#RabbitMQ-腳色簡圖" class="headerlink" title="RabbitMQ 腳色簡圖"></a>RabbitMQ 腳色簡圖</h3><ul>
+<li>產生者(P)</li>
+<li>接收者(C)</li>
+<li>佇列（Queue）</li>
+<li>交換器(E)</li>
+</ul>
+<h3 id><a href="#" class="headerlink" title></a><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/09cafcb7-aeab-46e6-a73d-7d2cc8e089ac/1548173424_68039.png" alt></h3><p>[中間黑框]是RabbitMQ (Broker) 幫助 (P)和(C) 解耦合</p>
+<h3 id="Exchange-概念"><a href="#Exchange-概念" class="headerlink" title="Exchange 概念"></a>Exchange 概念</h3><p>生產者發送訊息時會經由Exchange來決定要給哪個Queue.</p>
+<p>Exchange分發訊息根據類型的不同分發策略有區別</p>
+<p>目前共四種類型：</p>
+<ol>
+<li>Direct</li>
+<li>Fanout</li>
+<li>Topic</li>
+<li>Headers </li>
+</ol>
+<h3 id="Direct"><a href="#Direct" class="headerlink" title="Direct"></a>Direct</h3><p>生產者傳送訊息中 RouteKey 必須跟 Queue binding key <strong>一致</strong> Exchange才會把資料送到Queue中.</p>
+<p>如果一個Queue binding 到 Exchange 要求路由鍵為 “Daniel”，只接收 Routing key 是 “Daniel”的訊息，不會轉發“Daniel1”，RouteKey需完全匹配．</p>
+<p>使用 Direct 交換器 可當作寄信需要  RouteKey (標註) 要由哪個 Queue (郵差)接收轉送此訊息,Queue (郵差)會藉由此 RouteKey (標註) 找到相對應消費者</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/04e4a734-32c7-4c11-97e6-9d7a194dcbc0/1554261004_68269.png" alt></p>
+<h2 id="Fanout"><a href="#Fanout" class="headerlink" title="Fanout"></a>Fanout</h2><p>fanout 交換器不處理Route Key,簡單來說就是輪流把消息放進每個Queue中.</p>
+<p>使用 fanout 交換器 把 信件(Message) 給 所有 郵差(Queue) 每個消費者都會收到此 信件(Message) </p>
+<p>在現實生活中有點類似經由  fanout交換器 (郵筒) 將傳單夾入所有信件中讓郵差發給所有人</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/04e4a734-32c7-4c11-97e6-9d7a194dcbc0/1554261165_39274.jpg" alt></p>
+<h2 id="Topic"><a href="#Topic" class="headerlink" title="Topic"></a>Topic</h2><p>Topic交換器和 Direct 交換器都需要查看 來分配訊息(RouteKey)和Binding中的binding key是否一致,但Topic交換器使用部分匹配比Direct 交換器多了更多彈性。</p>
+<p>Topic交換器提供兩種方式</p>
+<ol>
+<li><strong> #</strong> 匹配0個或多個單字</li>
+<li><strong> *</strong> 匹配不多不少一個單字</li>
+</ol>
+<p>例如 有兩個Queue (binding key)分別是 App.# 和 App.*</p>
+<p>經由Topic交換器分配一個訊息RouteKey是 App.Daniel 則都會將資料塞入兩個 Queue (binding key) 為 App.# 和 App.* </p>
+<p>但如果另一個訊息RouteKey是 App .Daniel.Test 只會塞入 Queue (binding key) 為 App.# ,另一個  Queue (binding key) 是 App.*  不被匹配</p>
+<p>在現實生活中有點類似 發送 信件(Message) 經由  Topic交換器 (郵筒) 會依照上面的區域 (例如台北縣,宜蘭縣)​​ 來分配相對應的區域信件轉交給 Queue (郵差) 給消費者</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/04e4a734-32c7-4c11-97e6-9d7a194dcbc0/1554261121_78429.png" alt></p>
+<p>參考來源：</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly93d3cuamlhbnNodS5jb20vcC83OWNhMDgxMTZkNTc=" title="https://www.jianshu.com/p/79ca08116d57">https://www.jianshu.com/p/79ca08116d57<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-install-01/">https://isdaniel.github.io/rabbitmq-install-01/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>RabbitMQ</tag>
+        <tag>MQ</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>資料庫壓測好工具-SQLQueryStress</title>
     <url>/sqlquerystress-intro/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>隨著業務量增長,資料庫的複雜程度也會成正比增長</p>
@@ -9080,90 +9082,6 @@ using (var channel = connection.CreateModel())
         <tag>sql-server</tag>
         <tag>column</tag>
         <tag>performance</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>SQL Server Merge condition on declare value problem</title>
-    <url>/sqlserver-merge-condition-problem/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如要判斷資料是否存在於資料表中,存在就更新,不存在就新增.</p>
-<p>這時我們可以使用<code>Merge</code>來幫助我們完成.</p>
-<blockquote>
-<p>當兩個資料表有複雜的比對的特性時，<code>MERGE</code>陳述式的條件式行為表現最佳。</p>
-</blockquote>
-<p>有了<code>Merge</code>我們就不用使用<code>IF EXISTS</code>.</p>
-<p>一切都是這麼完美…</p>
-<p>直到到有一天<code>Merge</code>在Prod撞到一個問題..</p>
-<h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>使用語法user defined table type &amp; Table如下</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[PriceLimitation](</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line"> <span class="keyword">CONSTRAINT</span> [PK_PriceLimitation] PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">    [UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, IGNORE_DUP_KEY = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line">) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
-<p>呼叫執行SP<code>[dbo].[CalculateLimitation]</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
-<p>主要傳入參數判斷更新或新增<code>[dbo].[PriceLimitation]</code>表</p>
-<p>我們在<code>ELK</code>發現在執行SP時<strong>很少概率</strong>會發生PRIMARY KEY重複問題.</p>
-<blockquote>
-<p>Violation of PRIMARY KEY constraint ‘PK_PriceLimitation’. Cannot insert duplicate key in object ‘dbo.PriceLimitation’.</p>
-</blockquote>
-<p>但這張表PK使用欄位都有正確在<code>Merge</code>條件上,所以當下我們嘗是在DEV重現此問題,但一直無法成功</p>
-<p>後來發現此問題在<strong>高併發</strong>時才會發生,所以我們使用<span class="exturl" data-url="aHR0cHM6Ly93d3cubXNzcWx0aXBzLmNvbS9zcWxzZXJ2ZXJ0aXAvMjczMC9zcWwtcXVlcnktc3RyZXNzLXRvb2wv" title="https://www.mssqltips.com/sqlservertip/2730/sql-query-stress-tool/">Query Stress<i class="fa fa-external-link"></i></span>來幫助我們模擬高併發請求時的狀態.</p>
-<h3 id="Query-Stress重現問題"><a href="#Query-Stress重現問題" class="headerlink" title="Query Stress重現問題"></a>Query Stress重現問題</h3><p>撰寫了模擬SQL並利用Query Stress重現問題.</p>
-<p>模擬SQL腳本</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @CategoryID,@ProductID,@ProdcutGroupID,@PriceLimit</span><br></pre></td></tr></table></figure></div>
-<p>我使用模擬參數是</p>
-<ul>
-<li>Iterator:30</li>
-<li>Thread:100</li>
-</ul>
-<p>來模擬高併發時資料庫請求狀況,就能發現這時已經會出現Prod的<code>Exception</code>.</p>
-<p><img src="https://i.imgur.com/1RpWBYP.png" alt></p>
-<h3 id="找到問題尋求解法"><a href="#找到問題尋求解法" class="headerlink" title="找到問題尋求解法"></a>找到問題尋求解法</h3><p>對於目前Prod問題已經邁出一大步了,因為現在問題可以重現,在網路上找了許多文章還是沒找到解法….</p>
-<p>後面在MSDN時看到關鍵一段話,關於<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvc3FsL3Qtc3FsL3N0YXRlbWVudHMvbWVyZ2UtdHJhbnNhY3Qtc3FsP3ZpZXc9c3FsLXNlcnZlci12ZXIxNQ==" title="https://docs.microsoft.com/zh-tw/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver15">merge-transact-sql<i class="fa fa-external-link"></i></span>.</p>
-<blockquote>
-<p>請務必只從目標資料表指定用於比對用途的資料行。 也就是說，從目標資料表中指定要與來源資料表的對應資料行進行比較的資料行。 請勿嘗試在 ON 子句中篩選出目標資料表的資料列 (例如指定 <code>AND NOT target_table.column_x = value)</code> 來改善查詢效能。 這樣做可能會傳回非預期且不正確的結果。</p>
-</blockquote>
-<p>後面有看到有篇文章在介紹<span class="exturl" data-url="aHR0cHM6Ly9kYmEuc3RhY2tleGNoYW5nZS5jb20vcXVlc3Rpb25zLzE1NDUwOS91c2Utd2hlcmUtY2xhdXNlLXdpdGgtbWVyZ2U=" title="https://dba.stackexchange.com/questions/154509/use-where-clause-with-merge">use-where-clause-with-merge<i class="fa fa-external-link"></i></span></p>
-<p>我就嘗試把sp寫法改成只利用兩個Table可以<code>JOIN</code>欄位當作條件,發現Duplicate PK問題就可以解決了….但發現另一個更麻煩問題.</p>
-<p>SP改寫後</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span>   </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID </span><br><span class="line">            <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
-<p>新寫法的執行計畫在對於大資料表時會很沒效率….</p>
-<h4 id="改寫後遇到的問題-不好的執行計畫"><a href="#改寫後遇到的問題-不好的執行計畫" class="headerlink" title="改寫後遇到的問題(不好的執行計畫)"></a>改寫後遇到的問題(不好的執行計畫)</h4><p>一般SP在執行過後都會把使用的執行計畫快取起來,所以我們可以透過DMV來查看執行執行計畫.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> Cacheobjtype, Objtype, <span class="built_in">TEXT</span>, query_plan</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_exec_cached_plans t1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_sql_text(plan_handle) t2</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_query_plan(plan_handle) t3</span><br><span class="line"><span class="keyword">where</span> t2.objectid = object_id(<span class="string">'dbo.CalculateStake'</span>, <span class="string">'p'</span>)</span><br></pre></td></tr></table></figure></div>
-<p>新和舊SP寫法執行計畫如下圖.</p>
-<p>舊寫法</p>
-<p><img src="https://i.imgur.com/ueY6efl.png" alt></p>
-<p>新寫法</p>
-<p><img src="https://i.imgur.com/gbPva4K.png" alt></p>
-<p>造成上面差異原因，因為新寫法透過統計資訊使用效能較差的執行計畫(能看到上面使用<code>Merge Join</code>明明傳入結果集資料並不多)且在<code>WHEN MATCHED</code>進行第二次判斷…</p>
-<p>所以效能就變很差,現在已經找到此問題點了，我就在思考那有沒有辦法兼具效能又可解決此問題呢?</p>
-<h3 id="最終版SP寫法"><a href="#最終版SP寫法" class="headerlink" title="最終版SP寫法"></a>最終版SP寫法</h3><p>最後我就思考何不如把傳入參數全部加入<code>user defined table type</code></p>
-<ol>
-<li>這樣就可以利用傳入參數當作<code>ON</code>條件也可以得到精準執行計畫.</li>
-<li><code>user defined table type</code>所有欄位可以跟Table的Clustered Index Match.</li>
-</ol>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> proc[dbo].[CalculateStake]</span><br><span class="line"><span class="keyword">drop</span> <span class="keyword">type</span> [dbo].[uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= t2.ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=t2.CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID =t2.ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(t2.CategoryID, t2.ProdcutGroupID, t2.UserID ,t2.StakeAmount, t2.ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
-<p>測試腳本改成把參數透過<code>uftt_PriceLimit</code>傳入</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @PriceLimit</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>請在跑修改後的SP前記得把Table先Truncate掉，這樣可以更精準模擬</p>
-</blockquote>
-<p>使用QueryStress模擬參數</p>
-<ul>
-<li>Iterator:30</li>
-<li>Thread:100</li>
-</ul>
-<p>執行結果如下</p>
-<p><img src="https://i.imgur.com/fQMm2up.png" alt></p>
-<p>利用<code>Query Stress</code>工具壓測發現問題解決且效能不會變差:)</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>沒想到<code>Merge</code>在<code>On</code>條件有些隱藏限制(對於On寫value condition官方只有說會有想不到的問題發生,並沒解釋原因為何…),但經過這次經驗我日後在使用<code>Merge</code>時不會直接在On使用value condition會在中間多墊一層<code>Table</code>這樣就可以使用<code>ON</code>來<code>JOIN</code>.</p>
-<p>另外<code>QueryStress</code>真是一個對於DB壓測找問題的好工具,推薦大家去了解使用</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/sqlserver-merge-condition-problem/">https://isdaniel.github.io/sqlserver-merge-condition-problem/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>Turning</category>
-        <category>sql-server</category>
-      </categories>
-      <tags>
-        <tag>SQL</tag>
-        <tag>sql-server</tag>
-        <tag>Merge</tag>
       </tags>
   </entry>
   <entry>
@@ -9359,6 +9277,90 @@ using (var channel = connection.CreateModel())
       </categories>
       <tags>
         <tag>C#</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SQL Server Merge condition on declare value problem</title>
+    <url>/sqlserver-merge-condition-problem/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如要判斷資料是否存在於資料表中,存在就更新,不存在就新增.</p>
+<p>這時我們可以使用<code>Merge</code>來幫助我們完成.</p>
+<blockquote>
+<p>當兩個資料表有複雜的比對的特性時，<code>MERGE</code>陳述式的條件式行為表現最佳。</p>
+</blockquote>
+<p>有了<code>Merge</code>我們就不用使用<code>IF EXISTS</code>.</p>
+<p>一切都是這麼完美…</p>
+<p>直到到有一天<code>Merge</code>在Prod撞到一個問題..</p>
+<h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>使用語法user defined table type &amp; Table如下</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[PriceLimitation](</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line"> <span class="keyword">CONSTRAINT</span> [PK_PriceLimitation] PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">    [UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, IGNORE_DUP_KEY = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line">) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<p>呼叫執行SP<code>[dbo].[CalculateLimitation]</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
+<p>主要傳入參數判斷更新或新增<code>[dbo].[PriceLimitation]</code>表</p>
+<p>我們在<code>ELK</code>發現在執行SP時<strong>很少概率</strong>會發生PRIMARY KEY重複問題.</p>
+<blockquote>
+<p>Violation of PRIMARY KEY constraint ‘PK_PriceLimitation’. Cannot insert duplicate key in object ‘dbo.PriceLimitation’.</p>
+</blockquote>
+<p>但這張表PK使用欄位都有正確在<code>Merge</code>條件上,所以當下我們嘗是在DEV重現此問題,但一直無法成功</p>
+<p>後來發現此問題在<strong>高併發</strong>時才會發生,所以我們使用<span class="exturl" data-url="aHR0cHM6Ly93d3cubXNzcWx0aXBzLmNvbS9zcWxzZXJ2ZXJ0aXAvMjczMC9zcWwtcXVlcnktc3RyZXNzLXRvb2wv" title="https://www.mssqltips.com/sqlservertip/2730/sql-query-stress-tool/">Query Stress<i class="fa fa-external-link"></i></span>來幫助我們模擬高併發請求時的狀態.</p>
+<h3 id="Query-Stress重現問題"><a href="#Query-Stress重現問題" class="headerlink" title="Query Stress重現問題"></a>Query Stress重現問題</h3><p>撰寫了模擬SQL並利用Query Stress重現問題.</p>
+<p>模擬SQL腳本</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @CategoryID,@ProductID,@ProdcutGroupID,@PriceLimit</span><br></pre></td></tr></table></figure></div>
+<p>我使用模擬參數是</p>
+<ul>
+<li>Iterator:30</li>
+<li>Thread:100</li>
+</ul>
+<p>來模擬高併發時資料庫請求狀況,就能發現這時已經會出現Prod的<code>Exception</code>.</p>
+<p><img src="https://i.imgur.com/1RpWBYP.png" alt></p>
+<h3 id="找到問題尋求解法"><a href="#找到問題尋求解法" class="headerlink" title="找到問題尋求解法"></a>找到問題尋求解法</h3><p>對於目前Prod問題已經邁出一大步了,因為現在問題可以重現,在網路上找了許多文章還是沒找到解法….</p>
+<p>後面在MSDN時看到關鍵一段話,關於<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvc3FsL3Qtc3FsL3N0YXRlbWVudHMvbWVyZ2UtdHJhbnNhY3Qtc3FsP3ZpZXc9c3FsLXNlcnZlci12ZXIxNQ==" title="https://docs.microsoft.com/zh-tw/sql/t-sql/statements/merge-transact-sql?view=sql-server-ver15">merge-transact-sql<i class="fa fa-external-link"></i></span>.</p>
+<blockquote>
+<p>請務必只從目標資料表指定用於比對用途的資料行。 也就是說，從目標資料表中指定要與來源資料表的對應資料行進行比較的資料行。 請勿嘗試在 ON 子句中篩選出目標資料表的資料列 (例如指定 <code>AND NOT target_table.column_x = value)</code> 來改善查詢效能。 這樣做可能會傳回非預期且不正確的結果。</p>
+</blockquote>
+<p>後面有看到有篇文章在介紹<span class="exturl" data-url="aHR0cHM6Ly9kYmEuc3RhY2tleGNoYW5nZS5jb20vcXVlc3Rpb25zLzE1NDUwOS91c2Utd2hlcmUtY2xhdXNlLXdpdGgtbWVyZ2U=" title="https://dba.stackexchange.com/questions/154509/use-where-clause-with-merge">use-where-clause-with-merge<i class="fa fa-external-link"></i></span></p>
+<p>我就嘗試把sp寫法改成只利用兩個Table可以<code>JOIN</code>欄位當作條件,發現Duplicate PK問題就可以解決了….但發現另一個更麻煩問題.</p>
+<p>SP改寫後</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span>   </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= @ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=@CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID = @ProductID </span><br><span class="line">            <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(@CategoryID, @ProdcutGroupID, t2.UserID ,t2.StakeAmount, @ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
+<p>新寫法的執行計畫在對於大資料表時會很沒效率….</p>
+<h4 id="改寫後遇到的問題-不好的執行計畫"><a href="#改寫後遇到的問題-不好的執行計畫" class="headerlink" title="改寫後遇到的問題(不好的執行計畫)"></a>改寫後遇到的問題(不好的執行計畫)</h4><p>一般SP在執行過後都會把使用的執行計畫快取起來,所以我們可以透過DMV來查看執行執行計畫.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> Cacheobjtype, Objtype, <span class="built_in">TEXT</span>, query_plan</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_exec_cached_plans t1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_sql_text(plan_handle) t2</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">APPLY</span> sys.dm_exec_query_plan(plan_handle) t3</span><br><span class="line"><span class="keyword">where</span> t2.objectid = object_id(<span class="string">'dbo.CalculateStake'</span>, <span class="string">'p'</span>)</span><br></pre></td></tr></table></figure></div>
+<p>新和舊SP寫法執行計畫如下圖.</p>
+<p>舊寫法</p>
+<p><img src="https://i.imgur.com/ueY6efl.png" alt></p>
+<p>新寫法</p>
+<p><img src="https://i.imgur.com/gbPva4K.png" alt></p>
+<p>造成上面差異原因，因為新寫法透過統計資訊使用效能較差的執行計畫(能看到上面使用<code>Merge Join</code>明明傳入結果集資料並不多)且在<code>WHEN MATCHED</code>進行第二次判斷…</p>
+<p>所以效能就變很差,現在已經找到此問題點了，我就在思考那有沒有辦法兼具效能又可解決此問題呢?</p>
+<h3 id="最終版SP寫法"><a href="#最終版SP寫法" class="headerlink" title="最終版SP寫法"></a>最終版SP寫法</h3><p>最後我就思考何不如把傳入參數全部加入<code>user defined table type</code></p>
+<ol>
+<li>這樣就可以利用傳入參數當作<code>ON</code>條件也可以得到精準執行計畫.</li>
+<li><code>user defined table type</code>所有欄位可以跟Table的Clustered Index Match.</li>
+</ol>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">drop</span> proc[dbo].[CalculateStake]</span><br><span class="line"><span class="keyword">drop</span> <span class="keyword">type</span> [dbo].[uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TYPE</span> [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[UserID] [<span class="built_in">int</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="built_in">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductID] [<span class="built_in">smallint</span>] <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	PRIMARY <span class="keyword">KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY = <span class="keyword">OFF</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">OR</span> <span class="keyword">ALTER</span> PROC [dbo].[CalculateStake]</span><br><span class="line">	@PriceLimit [uftt_PriceLimit] readonly</span><br><span class="line"><span class="keyword">AS</span></span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">	<span class="keyword">SET</span> NOCOUNT <span class="keyword">ON</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">MERGE</span> <span class="keyword">INTO</span> [dbo].[PriceLimitation] t1</span><br><span class="line">		<span class="keyword">USING</span> @PriceLimit t2</span><br><span class="line">		<span class="keyword">ON</span> t1.UserID = t2.UserID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProdcutGroupID= t2.ProdcutGroupID</span><br><span class="line">            <span class="keyword">AND</span> t1.CategoryID=t2.CategoryID </span><br><span class="line">            <span class="keyword">AND</span> t1.ProductID =t2.ProductID</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">UPDATE</span> <span class="keyword">SET</span> t1.StakeAmount = t1.StakeAmount + t2.StakeAmount</span><br><span class="line">	<span class="keyword">WHEN</span> <span class="keyword">NOT</span> <span class="keyword">MATCHED</span> <span class="keyword">THEN</span></span><br><span class="line">		<span class="keyword">INSERT</span> <span class="keyword">VALUES</span>(t2.CategoryID, t2.ProdcutGroupID, t2.UserID ,t2.StakeAmount, t2.ProductID);</span><br><span class="line"><span class="keyword">END</span></span><br></pre></td></tr></table></figure></div>
+<p>測試腳本改成把參數透過<code>uftt_PriceLimit</code>傳入</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span> @CategoryID <span class="built_in">int</span>,</span><br><span class="line">	@ProductID <span class="built_in">smallint</span> ,</span><br><span class="line">	@ProdcutGroupID <span class="built_in">smallint</span>,  </span><br><span class="line">    @PriceLimit [uftt_PriceLimit] </span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @<span class="keyword">from</span> <span class="built_in">int</span></span><br><span class="line"><span class="keyword">SELECT</span> @<span class="keyword">from</span> = <span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">500</span>,<span class="number">0</span>)</span><br><span class="line"><span class="keyword">SELECT</span> @CategoryID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">4</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProductID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">123</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">5</span> +<span class="number">1</span></span><br><span class="line"><span class="keyword">SELECT</span> @ProdcutGroupID =  <span class="keyword">CAST</span>(<span class="keyword">ROUND</span>(<span class="keyword">RAND</span>(<span class="keyword">CAST</span>(NEWID() <span class="keyword">as</span> varbinary)) * <span class="number">731</span>,<span class="number">0</span>) <span class="keyword">as</span> <span class="built_in">int</span>) % <span class="number">20</span> +<span class="number">1</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">with</span> cte <span class="keyword">as</span>(</span><br><span class="line">	<span class="keyword">select</span> @<span class="keyword">from</span> <span class="keyword">as</span> <span class="keyword">num</span></span><br><span class="line">	<span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line">	<span class="keyword">select</span> <span class="keyword">num</span> + <span class="number">1</span> <span class="keyword">as</span> <span class="keyword">num</span> <span class="keyword">from</span> cte </span><br><span class="line">	<span class="keyword">where</span> <span class="keyword">num</span> &lt; @<span class="keyword">from</span>+<span class="number">500</span></span><br><span class="line">) </span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> @PriceLimit ([UserID],[StakeAmount],CategoryID,[ProductID],[ProdcutGroupID])</span><br><span class="line"><span class="keyword">select</span> <span class="keyword">num</span>,<span class="number">100</span>,@CategoryID,@ProductID,@ProdcutGroupID</span><br><span class="line"><span class="keyword">from</span> cte</span><br><span class="line"><span class="keyword">option</span>(MAXRECURSION <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">exec  [dbo].[CalculateStake] @PriceLimit</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>請在跑修改後的SP前記得把Table先Truncate掉，這樣可以更精準模擬</p>
+</blockquote>
+<p>使用QueryStress模擬參數</p>
+<ul>
+<li>Iterator:30</li>
+<li>Thread:100</li>
+</ul>
+<p>執行結果如下</p>
+<p><img src="https://i.imgur.com/fQMm2up.png" alt></p>
+<p>利用<code>Query Stress</code>工具壓測發現問題解決且效能不會變差:)</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>沒想到<code>Merge</code>在<code>On</code>條件有些隱藏限制(對於On寫value condition官方只有說會有想不到的問題發生,並沒解釋原因為何…),但經過這次經驗我日後在使用<code>Merge</code>時不會直接在On使用value condition會在中間多墊一層<code>Table</code>這樣就可以使用<code>ON</code>來<code>JOIN</code>.</p>
+<p>另外<code>QueryStress</code>真是一個對於DB壓測找問題的好工具,推薦大家去了解使用</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/sqlserver-merge-condition-problem/">https://isdaniel.github.io/sqlserver-merge-condition-problem/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Turning</category>
+        <category>sql-server</category>
+      </categories>
+      <tags>
+        <tag>SQL</tag>
+        <tag>sql-server</tag>
+        <tag>Merge</tag>
       </tags>
   </entry>
   <entry>
