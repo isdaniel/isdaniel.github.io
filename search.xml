@@ -1,79 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>ACID</title>
-    <url>/acid/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備</p>
-<ul>
-<li>原子性（atomicity，稱不可分割性）</li>
-<li>一致性（consistency）</li>
-<li>隔離性（isolation，稱獨立性）</li>
-<li>持久性（durability）</li>
-</ul>
-<p>這就是我們說的ACID.</p>
-<p>下面我會跟大家簡述ACID.</p>
-<h2 id="Atomicity-原子性"><a href="#Atomicity-原子性" class="headerlink" title="Atomicity(原子性)"></a>Atomicity(原子性)</h2><p>所有Logical Unit都必須符合原子性</p>
-<blockquote>
-<p>整個流程要不是全部成功，不然就整段失敗，不會有部分完成</p>
-</blockquote>
-<p>sample data.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">IF (<span class="keyword">SELECT</span> OBJECT_ID(<span class="string">'dbo.ProductTest'</span>)) <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>   </span><br><span class="line"> <span class="keyword">DROP</span> <span class="keyword">TABLE</span> dbo.ProductTest;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.ProductTest ( ProductID <span class="built_in">INT</span> <span class="keyword">CONSTRAINT</span> ValueEqualsOne <span class="keyword">CHECK</span> (ProductID = <span class="number">1</span>)); </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> Product (ProductID <span class="built_in">INT</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.Product </span><br><span class="line"><span class="keyword">SELECT</span> <span class="number">2</span></span><br></pre></td></tr></table></figure></div>
-<p>下面我們在sql-server有包Transation,因為<code>ProductTest</code>資料表有一個CONSTRAINT <code>ProductID</code>必須等於1,但目前<code>Product</code>表有1筆不符合此資料表有一個<code>CONSTRAINT</code>資料(ProductId=2)</p>
-<p>如果按照(原子性)說法下面語法有包Tran應該會被RollBack,但事實上….</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第一句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest        </span><br><span class="line">	<span class="keyword">SELECT</span>  p.ProductID        </span><br><span class="line">	<span class="keyword">FROM</span>    dbo.Product <span class="keyword">AS</span> p</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第二句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span></span><br></pre></td></tr></table></figure></div>
-<p>我們在執行上面語法時會有一個<code>Error</code>，但第二句語法卻會成功新增資料.</p>
-<p>此時各位會覺得很奇怪,這個語法並不符合原子性.</p>
-<blockquote>
-<p>雖然Transation範圍是有包含<code>Logical Unit</code>,但Sql-Server <code>XACT_ABORT</code>預設是關閉.sta</p>
-</blockquote>
-<ol>
-<li>開啟<code>XACT_ABORT</code>（預設<code>XACT_ABORT</code>是<code>Off</code>）<br> <code>XACT_ABORT</code>的開關代表,交易過程中有錯誤時是否要完整取消整段交易</li>
-<li>使用<code>Try...Catch</code>判斷<code>RollBack</code>時間點</li>
-</ol>
-<blockquote>
-<p><code>Atomicity</code>(原子性)可以確保我們在交易過程中失敗,不會有部分成功,部分失敗,造成系統不穩定.</p>
-</blockquote>
-<h2 id="Consistency-一致性"><a href="#Consistency-一致性" class="headerlink" title="Consistency(一致性)　"></a>Consistency(一致性)　</h2><p>在Logical unit完成時不會破壞資料表制訂constraint,關聯性規則.</p>
-<p>交易過程中並不會有任何一筆資料違反,我們制定的Check constraint的資料，PK及FK的關係也同樣不會被破壞，確保不會違反Business規則。</p>
-<blockquote>
-<p>sql-server因為要檢查constraint,所以會導致些許Blocking.</p>
-</blockquote>
-<h2 id="Isolation"><a href="#Isolation" class="headerlink" title="Isolation"></a>Isolation</h2><p>在現實生活中,會同步進行多個Translation,所以Isolation是為了確保各個交易是互相隔離不會同時互相影響(不然就有可能破壞掉他們的一致性了).</p>
-<ul>
-<li>Lock:在某段語法被執行時,會放鎖在影響範圍,不同鎖的類型會有互斥或者可共存的情況,資料庫透過鎖確保流程.</li>
-<li>Block:假如有兩段語法,語法A跟語法B影響資料範圍是一樣的,假如語法A先在此區域上<strong>鎖</strong>且語法B嘗試要在同一個區域上<strong>鎖</strong>,發現兩個鎖互斥,這時語法B就會等待語法A執行完後再執行(此狀態稱之為Block).</li>
-<li>DeadLock:交易結束前會對於影響資料範圍上鎖,如果另一個語法對於某區段資料異動就會產生Block,但如果兩個交易剛好影響範圍是互相顛倒順序,這個Block會無法被釋放….此時就會產生DeadLock(每一段時間會有一個DeadLock Monitor決定誰是被犧牲者，把她資源釋放).</li>
-</ul>
-<p>交易隔離有分四種</p>
-<h2 id="Isolation-Level"><a href="#Isolation-Level" class="headerlink" title="Isolation Level"></a>Isolation Level</h2><ul>
-<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
-<li>ex: (NOLOCK)hint</li>
-</ul>
-</li>
-<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
-<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
-<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
-<li>ex: (Hold Lock) hint</li>
-</ul>
-</li>
-</ul>
-<h2 id="Durability"><a href="#Durability" class="headerlink" title="Durability"></a>Durability</h2><p>當你完成<code>Transaction</code>後,不管發生什麼事情資料都會完整保留在DB中，一般來說<code>Transaction</code>完成前後都會寫<code>Transaction log</code></p>
-<p>假如DB遇到非預期錯誤(ex:停電),在DB Server重啟後，DB會依照之前紀錄嘗試Recovery.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/acid/">https://isdaniel.github.io/acid/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>IOC</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>IOC</tag>
-        <tag>Autofac</tag>
-        <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>AOP Lock Architecture</title>
     <url>/aop-lock-mechanism/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
@@ -251,6 +178,79 @@ return builder.Build();
       </tags>
   </entry>
   <entry>
+    <title>ACID</title>
+    <url>/acid/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備</p>
+<ul>
+<li>原子性（atomicity，稱不可分割性）</li>
+<li>一致性（consistency）</li>
+<li>隔離性（isolation，稱獨立性）</li>
+<li>持久性（durability）</li>
+</ul>
+<p>這就是我們說的ACID.</p>
+<p>下面我會跟大家簡述ACID.</p>
+<h2 id="Atomicity-原子性"><a href="#Atomicity-原子性" class="headerlink" title="Atomicity(原子性)"></a>Atomicity(原子性)</h2><p>所有Logical Unit都必須符合原子性</p>
+<blockquote>
+<p>整個流程要不是全部成功，不然就整段失敗，不會有部分完成</p>
+</blockquote>
+<p>sample data.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">IF (<span class="keyword">SELECT</span> OBJECT_ID(<span class="string">'dbo.ProductTest'</span>)) <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>   </span><br><span class="line"> <span class="keyword">DROP</span> <span class="keyword">TABLE</span> dbo.ProductTest;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> dbo.ProductTest ( ProductID <span class="built_in">INT</span> <span class="keyword">CONSTRAINT</span> ValueEqualsOne <span class="keyword">CHECK</span> (ProductID = <span class="number">1</span>)); </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> Product (ProductID <span class="built_in">INT</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> dbo.Product </span><br><span class="line"><span class="keyword">SELECT</span> <span class="number">2</span></span><br></pre></td></tr></table></figure></div>
+<p>下面我們在sql-server有包Transation,因為<code>ProductTest</code>資料表有一個CONSTRAINT <code>ProductID</code>必須等於1,但目前<code>Product</code>表有1筆不符合此資料表有一個<code>CONSTRAINT</code>資料(ProductId=2)</p>
+<p>如果按照(原子性)說法下面語法有包Tran應該會被RollBack,但事實上….</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第一句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest        </span><br><span class="line">	<span class="keyword">SELECT</span>  p.ProductID        </span><br><span class="line">	<span class="keyword">FROM</span>    dbo.Product <span class="keyword">AS</span> p</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第二句語法</span></span><br><span class="line">	<span class="keyword">INSERT</span>  <span class="keyword">INTO</span> dbo.ProductTest <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span></span><br></pre></td></tr></table></figure></div>
+<p>我們在執行上面語法時會有一個<code>Error</code>，但第二句語法卻會成功新增資料.</p>
+<p>此時各位會覺得很奇怪,這個語法並不符合原子性.</p>
+<blockquote>
+<p>雖然Transation範圍是有包含<code>Logical Unit</code>,但Sql-Server <code>XACT_ABORT</code>預設是關閉.sta</p>
+</blockquote>
+<ol>
+<li>開啟<code>XACT_ABORT</code>（預設<code>XACT_ABORT</code>是<code>Off</code>）<br> <code>XACT_ABORT</code>的開關代表,交易過程中有錯誤時是否要完整取消整段交易</li>
+<li>使用<code>Try...Catch</code>判斷<code>RollBack</code>時間點</li>
+</ol>
+<blockquote>
+<p><code>Atomicity</code>(原子性)可以確保我們在交易過程中失敗,不會有部分成功,部分失敗,造成系統不穩定.</p>
+</blockquote>
+<h2 id="Consistency-一致性"><a href="#Consistency-一致性" class="headerlink" title="Consistency(一致性)　"></a>Consistency(一致性)　</h2><p>在Logical unit完成時不會破壞資料表制訂constraint,關聯性規則.</p>
+<p>交易過程中並不會有任何一筆資料違反,我們制定的Check constraint的資料，PK及FK的關係也同樣不會被破壞，確保不會違反Business規則。</p>
+<blockquote>
+<p>sql-server因為要檢查constraint,所以會導致些許Blocking.</p>
+</blockquote>
+<h2 id="Isolation"><a href="#Isolation" class="headerlink" title="Isolation"></a>Isolation</h2><p>在現實生活中,會同步進行多個Translation,所以Isolation是為了確保各個交易是互相隔離不會同時互相影響(不然就有可能破壞掉他們的一致性了).</p>
+<ul>
+<li>Lock:在某段語法被執行時,會放鎖在影響範圍,不同鎖的類型會有互斥或者可共存的情況,資料庫透過鎖確保流程.</li>
+<li>Block:假如有兩段語法,語法A跟語法B影響資料範圍是一樣的,假如語法A先在此區域上<strong>鎖</strong>且語法B嘗試要在同一個區域上<strong>鎖</strong>,發現兩個鎖互斥,這時語法B就會等待語法A執行完後再執行(此狀態稱之為Block).</li>
+<li>DeadLock:交易結束前會對於影響資料範圍上鎖,如果另一個語法對於某區段資料異動就會產生Block,但如果兩個交易剛好影響範圍是互相顛倒順序,這個Block會無法被釋放….此時就會產生DeadLock(每一段時間會有一個DeadLock Monitor決定誰是被犧牲者，把她資源釋放).</li>
+</ul>
+<p>交易隔離有分四種</p>
+<h2 id="Isolation-Level"><a href="#Isolation-Level" class="headerlink" title="Isolation Level"></a>Isolation Level</h2><ul>
+<li>Read UnCommited: 大家常見的<strong>NOLOCK</strong> hint(髒讀取)，但並不是真的沒有Lock(會放Sch-S Lock),主要是避免在髒讀取時有人對Schema異動或修改<ul>
+<li>ex: (NOLOCK)hint</li>
+</ul>
+</li>
+<li>Read Commited: SELECT查詢已經Commit資料，在Transaction中SELECT完畢當下就會釋放掉查詢Shared Lock，Shared Lock不會保留到交易結束.</li>
+<li>Repeatable Read: Repeatable Read跟Read Commited最大差異是，Repeatable Read會把<strong>Shared Lock</strong>保留到交易結束</li>
+<li>Serializable Read: <strong>Shared Lock</strong>查詢條件<strong>範圍</strong>都鎖住並保留到最後(Transaction結束)<ul>
+<li>ex: (Hold Lock) hint</li>
+</ul>
+</li>
+</ul>
+<h2 id="Durability"><a href="#Durability" class="headerlink" title="Durability"></a>Durability</h2><p>當你完成<code>Transaction</code>後,不管發生什麼事情資料都會完整保留在DB中，一般來說<code>Transaction</code>完成前後都會寫<code>Transaction log</code></p>
+<p>假如DB遇到非預期錯誤(ex:停電),在DB Server重啟後，DB會依照之前紀錄嘗試Recovery.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/acid/">https://isdaniel.github.io/acid/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>IOC</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>IOC</tag>
+        <tag>Autofac</tag>
+        <tag>AOP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Autofac (IOC)容器介紹</title>
     <url>/autofac-introduce/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>市面上有許多IoC容器 <span class="exturl" data-url="aHR0cDovL25pbmplY3Qub3JnLw==" title="http://ninject.org/">Ninject<i class="fa fa-external-link"></i></span>,<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3VuaXR5Y29udGFpbmVyL3VuaXR5" title="https://github.com/unitycontainer/unity">Unity<i class="fa fa-external-link"></i></span>….</p>
@@ -352,43 +352,6 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>IOC</tag>
         <tag>Autofac</tag>
         <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
-    <url>/automapperinit/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
-<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
-<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
-<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
-<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
-<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
-<blockquote>
-<p>我們可以使用反射來完成</p>
-</blockquote>
-<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
-<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Automapper</tag>
-        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -502,6 +465,43 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
         <tag>AWS</tag>
         <tag>Lambda</tag>
         <tag>.netcore</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(AutoMapper)反射自動註冊AutoMapper Profile</title>
+    <url>/automapperinit/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>AutoMapper 幫我我們方便管理物件跟物件之間屬性值格式轉換</p>
+<h2 id="模型轉換"><a href="#模型轉換" class="headerlink" title="模型轉換"></a>模型轉換</h2><p><strong>這裡有兩個類別</strong></p>
+<p>UserInfoModel 當作我們從DB撈取出來 模型資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> RowId &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>UserInfoViewModel 是呈現在UI或其他地方的模型  </p>
+<p>其中 <code>Detail</code>欄位由 <code>UserInfoModel</code>的 <code>Name</code>和 <code>Age</code>屬性組成的</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoViewModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Detail &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>這時我們就會引用 AutoMapper 幫我們統一管理轉換模型上的問題</p>
+<h2 id="建立一個Profile"><a href="#建立一個Profile" class="headerlink" title="建立一個Profile"></a>建立一個Profile</h2><p>設置<code>UserInfoModel</code>對於 <code>UserInfoViewModel</code>之前的欄位轉換</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">UserInfoProfile</span> : <span class="title">Profile</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">UserInfoProfile</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>        &#123;</span><br><span class="line">            CreateMap&lt;UserInfoModel, UserInfoViewModel&gt;()</span><br><span class="line">                    .ForMember(t =&gt; t.Detail, </span><br><span class="line">                                    s =&gt; s.MapFrom(_ =&gt; <span class="string">$"DetailInfo:<span class="subst">&#123;_.Name&#125;</span> <span class="subst">&#123;_.Age&#125;</span>"</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>而我們在註冊時會呼叫 <code>AddProfile</code>方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">Mapper.Initialize(x =&gt; x.AddProfile&lt;UserInfoProfile&gt;());</span><br></pre></td></tr></table></figure></div>
+<p>但每次新加Profile這邊都需要設置新的Profile，我們就會想有沒有方法可以讓他自動註冊？</p>
+<blockquote>
+<p>我們可以使用反射來完成</p>
+</blockquote>
+<h2 id="反射自動註冊AutoMapper-Profile"><a href="#反射自動註冊AutoMapper-Profile" class="headerlink" title="反射自動註冊AutoMapper Profile"></a>反射自動註冊AutoMapper Profile</h2><p>此程式我使用我的 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbA==" title="https://github.com/isdaniel/ExtenionTool">ExtenionTool<i class="fa fa-external-link"></i></span></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> profiles =  Assembly.GetExecutingAssembly()</span><br><span class="line">                        .GetInstancesByAssembly&lt;Profile&gt;();</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (<span class="keyword">var</span> profile <span class="keyword">in</span> profiles)</span><br><span class="line">&#123;</span><br><span class="line">    Mapper.Initialize(x =&gt; x.AddProfile(profile));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面程式碼很簡單清晰，呼叫 <code></code> 取得目前組件所有的 <code>Profile</code>物件實體並且加到<code>Profile</code>中，我們將上面程式碼在初始化執行一次</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> IEnumerable&lt;TResult&gt; GetInstancesByAssembly&lt;TResult&gt;(<span class="keyword">this</span> Assembly ass)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> ass.GetTypes()</span><br><span class="line">            .Where(x =&gt; <span class="keyword">typeof</span>(TResult).IsAssignableFrom(x) &amp;&amp; x.IsNormalClass())</span><br><span class="line">            .Select(x =&gt; Activator.CreateInstance(x))</span><br><span class="line">            .Cast&lt;TResult&gt;();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>核心程式使用Linq 動態取得你所需的類型並使用反射創建</p>
+<p>之後我們就可以不用在手動把<code>Profile</code>加至<code>AutoMapper</code>容器中了</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F1dG9SZWdpc3RlckF1dG9NYXBwZXI=" title="https://github.com/isdaniel/AutoRegisterAutoMapper">Source Code<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/automapperinit/">https://isdaniel.github.io/automapperinit/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Automapper</tag>
+        <tag>Model</tag>
       </tags>
   </entry>
   <entry>
@@ -1704,52 +1704,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>(SQL Server) CTE RECURSIVE (遞迴)製作月曆</title>
-    <url>/cte-recursive/</url>
-    <content><![CDATA[<p>如果要製作月報…但只有給起訖日</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377514_65506.PNG" alt="pic"></p>
-<p>要產生出如下的列表 要怎麼辦…</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="pic"></p>
-<p>第一個想到的解法 會使用 <code>WHILE  +  [暫存表]</code>迴圈遍歷 把每個月新增入暫存表中</p>
-<p>程式碼如下:</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line"><span class="comment">--宣告一個起始時間變數</span></span><br><span class="line"><span class="keyword">DECLARE</span> @TempStartDate DATETIME</span><br><span class="line"><span class="keyword">DECLARE</span> @TempEndDate DATETIME</span><br><span class="line"></span><br><span class="line"><span class="comment">--設置變數 最小時間(起始時間)  和 最大時間</span></span><br><span class="line"><span class="keyword">SELECT</span> @TempStartDate = StartDate,@TempEndDate=EndDate </span><br><span class="line"><span class="keyword">FROM</span> @t</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP(Dates DATETIME)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WHILE</span>(@TempStartDate &lt; @TempEndDate)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">     <span class="comment">--將資料新增入暫存表</span></span><br><span class="line">     <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="comment">#TEMP (Dates) VALUES (@TempStartDate)</span></span><br><span class="line">     <span class="comment">--每跑一次迴圈就加一個月</span></span><br><span class="line">	 <span class="keyword">SELECT</span> @TempStartDate = <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,@TempStartDate)</span><br><span class="line"><span class="keyword">END</span> </span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="comment">#TEMP</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP</span></span><br></pre></td></tr></table></figure></div>
-<p>但這個解法雖然簡單..但程式碼又臭又長..</p>
-<p><strong>Q: 有沒有更好看的解法又可達成目的呢?</strong></p>
-<p><strong>ANS: 有!! 就是本次主角 CTE 遞迴</strong></p>
-<p>話不多說先貼上程式碼</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span>  <span class="keyword">INTO</span>  @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE (Dates,EndDate) <span class="keyword">AS</span></span><br><span class="line">(</span><br><span class="line">	<span class="keyword">SELECT</span> StartDate <span class="keyword">AS</span> Dates,EndDate <span class="keyword">AS</span> EndDate</span><br><span class="line">	<span class="keyword">FROM</span> @t</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="comment">--注意這邊使用 UNION ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates),EndDate</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates) &lt; EndDate <span class="comment">--判斷是否目前遞迴月份小於結束日期</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> CTE.Dates</span><br><span class="line"><span class="keyword">FROM</span> CTE</span><br></pre></td></tr></table></figure></div>
-<p>接下來解說 CTE遞迴原理 :</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521379674_85716.PNG" alt="PIC"></p>
-<p>可看到CTE中最主要執行四個步驟</p>
-<ol>
-<li>取得初始結果集並(錨點結果集) T(0)</li>
-<li>將T(0)結果集進行判斷是否滿足 DATEADD(MONTH,1,Dates) &lt; EndDate 不滿足繼續走,並產生T(1)結果集,依照此結果集繼續往下執行</li>
-<li>在執行上面的2步驟 直到滿足條件 T(0),T(1)…..T(n)</li>
-<li>傳回結果集。將之前所有產生結果集 UNION ALL。</li>
-</ol>
-<p><strong><code>使用CTE遞迴必須使用UNION ALL</code></strong></p>
-<p>最後CTE結果集就會呈現如下^^<br><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG"></p>
-<p><strong>補充 oracle解法</strong></p>
-<p>同場加映!! </p>
-<p>如果使用 <em>oracle</em> 可使用 <strong><code>connect by</code></strong> 很簡便取得日曆</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T</span><br><span class="line">(</span><br><span class="line">    StartDate <span class="built_in">DATE</span>,</span><br><span class="line">	EndDate <span class="built_in">DATE</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T( StartDate, EndDate ) <span class="keyword">VALUES</span>  (<span class="built_in">date</span> <span class="string">'2017-01-01'</span>,<span class="built_in">date</span> <span class="string">'2018-01-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span> - <span class="number">1</span> ) <span class="string">"Date"</span></span><br><span class="line">   <span class="keyword">from</span> T </span><br><span class="line"><span class="keyword">connect</span> <span class="keyword">by</span> trunc(EndDate,<span class="string">'mm'</span>) &gt;= add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span>)</span><br><span class="line">  <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p><span class="exturl" data-url="aHR0cDovL3NxbGZpZGRsZS5jb20vIyE0Lzc1Y2Q5LzE0" title="http://sqlfiddle.com/#!4/75cd9/14">http://sqlfiddle.com/#!4/75cd9/14<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/cte-recursive/">https://isdaniel.github.io/cte-recursive/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>SQL</category>
-      </categories>
-      <tags>
-        <tag>SQL</tag>
-        <tag>Tsql</tag>
-        <tag>MSSql</tag>
-        <tag>CTE</tag>
-        <tag>UNION ALL</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Sqlserver不可不知道Heap Table.</title>
     <url>/db-heaptable/</url>
     <content><![CDATA[<h2 id="Heap-資料表"><a href="#Heap-資料表" class="headerlink" title="Heap 資料表"></a>Heap 資料表</h2><p>如果資料表沒有<code>Clustered Index</code>那此表就會是Heap資料表</p>
@@ -1903,6 +1857,52 @@ class Program
         <tag>DB</tag>
         <tag>Isolation</tag>
         <tag>Racing Condition</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>(SQL Server) CTE RECURSIVE (遞迴)製作月曆</title>
+    <url>/cte-recursive/</url>
+    <content><![CDATA[<p>如果要製作月報…但只有給起訖日</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377514_65506.PNG" alt="pic"></p>
+<p>要產生出如下的列表 要怎麼辦…</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="pic"></p>
+<p>第一個想到的解法 會使用 <code>WHILE  +  [暫存表]</code>迴圈遍歷 把每個月新增入暫存表中</p>
+<p>程式碼如下:</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line"><span class="comment">--宣告一個起始時間變數</span></span><br><span class="line"><span class="keyword">DECLARE</span> @TempStartDate DATETIME</span><br><span class="line"><span class="keyword">DECLARE</span> @TempEndDate DATETIME</span><br><span class="line"></span><br><span class="line"><span class="comment">--設置變數 最小時間(起始時間)  和 最大時間</span></span><br><span class="line"><span class="keyword">SELECT</span> @TempStartDate = StartDate,@TempEndDate=EndDate </span><br><span class="line"><span class="keyword">FROM</span> @t</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP(Dates DATETIME)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WHILE</span>(@TempStartDate &lt; @TempEndDate)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">     <span class="comment">--將資料新增入暫存表</span></span><br><span class="line">     <span class="keyword">INSERT</span> <span class="keyword">INTO</span> <span class="comment">#TEMP (Dates) VALUES (@TempStartDate)</span></span><br><span class="line">     <span class="comment">--每跑一次迴圈就加一個月</span></span><br><span class="line">	 <span class="keyword">SELECT</span> @TempStartDate = <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,@TempStartDate)</span><br><span class="line"><span class="keyword">END</span> </span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="comment">#TEMP</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> <span class="comment">#TEMP</span></span><br></pre></td></tr></table></figure></div>
+<p>但這個解法雖然簡單..但程式碼又臭又長..</p>
+<p><strong>Q: 有沒有更好看的解法又可達成目的呢?</strong></p>
+<p><strong>ANS: 有!! 就是本次主角 CTE 遞迴</strong></p>
+<p>話不多說先貼上程式碼</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">DECLARE</span>  @t <span class="keyword">TABLE</span></span><br><span class="line">(</span><br><span class="line">    StartDate DATETIME,</span><br><span class="line">	EndDate DATETIME</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span>  <span class="keyword">INTO</span>  @t</span><br><span class="line">        ( StartDate, EndDate )</span><br><span class="line"><span class="keyword">VALUES</span>  ( <span class="string">'2017/01/01'</span>, <span class="comment">-- StartDate - datetime</span></span><br><span class="line">          <span class="string">'2018/01/01'</span>  <span class="comment">-- EndDate - datetime</span></span><br><span class="line">          );</span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE (Dates,EndDate) <span class="keyword">AS</span></span><br><span class="line">(</span><br><span class="line">	<span class="keyword">SELECT</span> StartDate <span class="keyword">AS</span> Dates,EndDate <span class="keyword">AS</span> EndDate</span><br><span class="line">	<span class="keyword">FROM</span> @t</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="comment">--注意這邊使用 UNION ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates),EndDate</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MONTH</span>,<span class="number">1</span>,Dates) &lt; EndDate <span class="comment">--判斷是否目前遞迴月份小於結束日期</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> CTE.Dates</span><br><span class="line"><span class="keyword">FROM</span> CTE</span><br></pre></td></tr></table></figure></div>
+<p>接下來解說 CTE遞迴原理 :</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521379674_85716.PNG" alt="PIC"></p>
+<p>可看到CTE中最主要執行四個步驟</p>
+<ol>
+<li>取得初始結果集並(錨點結果集) T(0)</li>
+<li>將T(0)結果集進行判斷是否滿足 DATEADD(MONTH,1,Dates) &lt; EndDate 不滿足繼續走,並產生T(1)結果集,依照此結果集繼續往下執行</li>
+<li>在執行上面的2步驟 直到滿足條件 T(0),T(1)…..T(n)</li>
+<li>傳回結果集。將之前所有產生結果集 UNION ALL。</li>
+</ol>
+<p><strong><code>使用CTE遞迴必須使用UNION ALL</code></strong></p>
+<p>最後CTE結果集就會呈現如下^^<br><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG" alt="https://dotblogsfile.blob.core.windows.net/user/九桃/5cb059bd-5868-490a-a5fc-3b8f69aec405/1521377621_11696.PNG"></p>
+<p><strong>補充 oracle解法</strong></p>
+<p>同場加映!! </p>
+<p>如果使用 <em>oracle</em> 可使用 <strong><code>connect by</code></strong> 很簡便取得日曆</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T</span><br><span class="line">(</span><br><span class="line">    StartDate <span class="built_in">DATE</span>,</span><br><span class="line">	EndDate <span class="built_in">DATE</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T( StartDate, EndDate ) <span class="keyword">VALUES</span>  (<span class="built_in">date</span> <span class="string">'2017-01-01'</span>,<span class="built_in">date</span> <span class="string">'2018-01-01'</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span> - <span class="number">1</span> ) <span class="string">"Date"</span></span><br><span class="line">   <span class="keyword">from</span> T </span><br><span class="line"><span class="keyword">connect</span> <span class="keyword">by</span> trunc(EndDate,<span class="string">'mm'</span>) &gt;= add_months(trunc(StartDate,<span class="string">'mm'</span>),<span class="keyword">level</span>)</span><br><span class="line">  <span class="keyword">order</span> <span class="keyword">by</span> <span class="number">1</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p><span class="exturl" data-url="aHR0cDovL3NxbGZpZGRsZS5jb20vIyE0Lzc1Y2Q5LzE0" title="http://sqlfiddle.com/#!4/75cd9/14">http://sqlfiddle.com/#!4/75cd9/14<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/cte-recursive/">https://isdaniel.github.io/cte-recursive/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>SQL</category>
+      </categories>
+      <tags>
+        <tag>SQL</tag>
+        <tag>Tsql</tag>
+        <tag>MSSql</tag>
+        <tag>CTE</tag>
+        <tag>UNION ALL</tag>
       </tags>
   </entry>
   <entry>
@@ -3232,6 +3232,55 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
+    <title>.Net 三種區塊記憶體位置 Heap , Stack , Globle??</title>
+    <url>/heap-stack-globle/</url>
+    <content><![CDATA[<p><strong>前文:</strong></p>
+<p>寫.Net 寫一陣子了 突然覺得一些基本功好重要</p>
+<p>之前都沒發現原來.Net 有三種區塊的記憶體空間</p>
+<p>這三個區域都有他們各自的含義….</p>
+<pre><code>&lt;/div&gt;
+</code></pre><p>.Net 有三種區塊的記憶體空間</p>
+<p>Globle：</p>
+<ol>
+<li>全域記憶體</li>
+<li>主要存放全域變數或宣告為static的靜態變數</li>
+</ol>
+<p>Heap ：</p>
+<ol>
+<li>存放參考類型(可動態產生的空間)</li>
+<li><strong>運行期間</strong>分配記憶體位置(這就是為什麼參考類型的類別要new)</li>
+<li>基本是Class關鍵字</li>
+</ol>
+<p>自定義型別都為參考類型，new 動態分配記憶體空間</p>
+<h2 id="Stack-："><a href="#Stack-：" class="headerlink" title="Stack ："></a>Stack ：</h2><ol>
+<li>存放值類型的值(int,double,float,byte …..)</li>
+<li>存放<strong>參考類型記憶體</strong>位置(Pointer指針)</li>
+<li><strong>編譯期間</strong>就知道運行時的記憶體位置</li>
+</ol>
+<h2 id="何謂動態配置記憶體"><a href="#何謂動態配置記憶體" class="headerlink" title="何謂動態配置記憶體?"></a>何謂動態配置記憶體?</h2><p><strong>Heap</strong>跟<strong>Stack</strong>記憶體使用狀況可想像成</p>
+<p>我們可以看到如果是<strong>參考類型</strong>物件，在 new 時動態配置一塊記憶體位置並讓 Stack 使用物件指向他.</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/dc60b613-5aab-4031-b07e-ba95b3eb8c59/1519278342_30764.png" alt></p>
+<p>值得一提 動態配置的記憶體空間基本上都是要自行回收的</p>
+<p>例如 C++ 和 C 自己new 的空間要自己回收</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight /c"><table><tr><td class="code"><pre><span class="line">c++ = <span class="built_in">free</span>()</span><br><span class="line">c = <span class="built_in">malloc</span>()</span><br></pre></td></tr></table></figure></div>
+<p>但C#和Java因為有GC (拉機回收器)</p>
+<p>幫我們去檢查沒有用到的Heap記憶體位置並幫我們回收</p>
+<p>真的是太幸福啦~~</p>
+<p>想要深入了解 Heap和Stack使用差異的小伙伴可以點入 <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvZGFuaWVsLzIwMTgvMDIvMjIvMTM1MDEx" title="https://dotblogs.com.tw/daniel/2018/02/22/135011">Struct V.S Class 兩者之間差異<i class="fa fa-external-link"></i></span></p>
+<h2 id="參考文章"><a href="#參考文章" class="headerlink" title="參考文章"></a>參考文章</h2><p><span class="exturl" data-url="aHR0cDovL2FudHJhc2gucGl4bmV0Lm5ldC9ibG9nL3Bvc3QvNzA0NTY1MDUtc3RhY2stdnMtaGVhcCVFRiVCQyU5QSVFNSU5RiVCNyVFOCVBMSU4QyVFNiU5OSU4MiVFNiU5QyU5RiVFNSU4NCVCMiVFNSVBRCU5OCVFNSU4NSVBOSVFNSVBNCVBNyVFOCVBNiU4MSVFOCVBNyU5Mg==" title="http://antrash.pixnet.net/blog/post/70456505-stack-vs-heap%EF%BC%9A%E5%9F%B7%E8%A1%8C%E6%99%82%E6%9C%9F%E5%84%B2%E5%AD%98%E5%85%A9%E5%A4%A7%E8%A6%81%E8%A7%92">執行時期儲存兩大要角<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/heap-stack-globle/">https://isdaniel.github.io/heap-stack-globle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Memory</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Memory</tag>
+        <tag>Heap</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>淺談-編碼(encoding) vs 加解密 vs 雜湊(Hash)</title>
     <url>/hash-encoding/</url>
     <content><![CDATA[<p>這一邊有三筆資料</p>
@@ -3308,55 +3357,6 @@ GROUP BY userName
         <tag>AES</tag>
         <tag>SHA256</tag>
         <tag>Hash</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>.Net 三種區塊記憶體位置 Heap , Stack , Globle??</title>
-    <url>/heap-stack-globle/</url>
-    <content><![CDATA[<p><strong>前文:</strong></p>
-<p>寫.Net 寫一陣子了 突然覺得一些基本功好重要</p>
-<p>之前都沒發現原來.Net 有三種區塊的記憶體空間</p>
-<p>這三個區域都有他們各自的含義….</p>
-<pre><code>&lt;/div&gt;
-</code></pre><p>.Net 有三種區塊的記憶體空間</p>
-<p>Globle：</p>
-<ol>
-<li>全域記憶體</li>
-<li>主要存放全域變數或宣告為static的靜態變數</li>
-</ol>
-<p>Heap ：</p>
-<ol>
-<li>存放參考類型(可動態產生的空間)</li>
-<li><strong>運行期間</strong>分配記憶體位置(這就是為什麼參考類型的類別要new)</li>
-<li>基本是Class關鍵字</li>
-</ol>
-<p>自定義型別都為參考類型，new 動態分配記憶體空間</p>
-<h2 id="Stack-："><a href="#Stack-：" class="headerlink" title="Stack ："></a>Stack ：</h2><ol>
-<li>存放值類型的值(int,double,float,byte …..)</li>
-<li>存放<strong>參考類型記憶體</strong>位置(Pointer指針)</li>
-<li><strong>編譯期間</strong>就知道運行時的記憶體位置</li>
-</ol>
-<h2 id="何謂動態配置記憶體"><a href="#何謂動態配置記憶體" class="headerlink" title="何謂動態配置記憶體?"></a>何謂動態配置記憶體?</h2><p><strong>Heap</strong>跟<strong>Stack</strong>記憶體使用狀況可想像成</p>
-<p>我們可以看到如果是<strong>參考類型</strong>物件，在 new 時動態配置一塊記憶體位置並讓 Stack 使用物件指向他.</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/dc60b613-5aab-4031-b07e-ba95b3eb8c59/1519278342_30764.png" alt></p>
-<p>值得一提 動態配置的記憶體空間基本上都是要自行回收的</p>
-<p>例如 C++ 和 C 自己new 的空間要自己回收</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight /c"><table><tr><td class="code"><pre><span class="line">c++ = <span class="built_in">free</span>()</span><br><span class="line">c = <span class="built_in">malloc</span>()</span><br></pre></td></tr></table></figure></div>
-<p>但C#和Java因為有GC (拉機回收器)</p>
-<p>幫我們去檢查沒有用到的Heap記憶體位置並幫我們回收</p>
-<p>真的是太幸福啦~~</p>
-<p>想要深入了解 Heap和Stack使用差異的小伙伴可以點入 <span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvZGFuaWVsLzIwMTgvMDIvMjIvMTM1MDEx" title="https://dotblogs.com.tw/daniel/2018/02/22/135011">Struct V.S Class 兩者之間差異<i class="fa fa-external-link"></i></span></p>
-<h2 id="參考文章"><a href="#參考文章" class="headerlink" title="參考文章"></a>參考文章</h2><p><span class="exturl" data-url="aHR0cDovL2FudHJhc2gucGl4bmV0Lm5ldC9ibG9nL3Bvc3QvNzA0NTY1MDUtc3RhY2stdnMtaGVhcCVFRiVCQyU5QSVFNSU5RiVCNyVFOCVBMSU4QyVFNiU5OSU4MiVFNiU5QyU5RiVFNSU4NCVCMiVFNSVBRCU5OCVFNSU4NSVBOSVFNSVBNCVBNyVFOCVBNiU4MSVFOCVBNyU5Mg==" title="http://antrash.pixnet.net/blog/post/70456505-stack-vs-heap%EF%BC%9A%E5%9F%B7%E8%A1%8C%E6%99%82%E6%9C%9F%E5%84%B2%E5%AD%98%E5%85%A9%E5%A4%A7%E8%A6%81%E8%A7%92">執行時期儲存兩大要角<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/heap-stack-globle/">https://isdaniel.github.io/heap-stack-globle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Memory</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Memory</tag>
-        <tag>Heap</tag>
       </tags>
   </entry>
   <entry>
@@ -3552,99 +3552,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)</title>
-    <url>/high-concurrency-atomic-cas-algorithm/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
-<p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
-<p>本文使用範例在我github上<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvQ0FTX0xvY2s=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/CAS_Lock">CAS_Lock<i class="fa fa-external-link"></i></span>有興趣的人可以參考.</p>
-<h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
-<p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
-<p>下面Sample Code是這樣.</p>
-<p>我用<code>Task</code>假裝高併發，下面有一個<code>Member</code>類別預設給100000元的Balance</p>
-<p>有一個<code>UpdateBalance</code>每呼叫一次就扣10元，我透過<code>For</code>跑10000次</p>
-<p>理論上我預期在跑完下面顯示Balance會員餘額是0 (因為 10000*10 = 100000).</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Balance -= <span class="number">10</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/44M2Jr7.png" alt></p>
-<p>但執行後蠻常會是不等於0!!</p>
-<p>這時我會問面試者兩個問題</p>
-<ul>
-<li>為什麼會不等於0</li>
-<li>如果要解決你會怎麼解決這個問題?</li>
-</ul>
-<p>如果知道的人可以跳到CAS部分，如果不知原因我下面會跟大家分享</p>
-<h3 id="為什麼會不等於0"><a href="#為什麼會不等於0" class="headerlink" title="為什麼會不等於0"></a>為什麼會不等於0</h3><p>這個問題牽扯到Thread是如何對於變數操作的，Thread在操作變數之前會把資料複製一份進Thread Context中在操作我們要步驟</p>
-<p>所以在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
-<ol>
-<li>將執行個體變數中的值載入至register。</li>
-<li>將載入值減10</li>
-<li>將異動後值放回原本值的Memory。</li>
-</ol>
-<p>因為以上步驟，假如同一時間有兩個不同的Thread取到的Balance都是1000，並個別對於Balance減10元，我們原本預期這是兩個操作（預期資料為980）</p>
-<p>但因為取的瞬間都是1000-10=990把數值放回變數中就導致少扣一個10元…</p>
-<p>概念如下圖.</p>
-<p><img src="https://i.imgur.com/zXprOIe.png" alt></p>
-<p>知道原因了要解決就簡單了.</p>
-<h3 id="使用Lock解決"><a href="#使用Lock解決" class="headerlink" title="使用Lock解決"></a>使用Lock解決</h3><p>因為這段程式碼遇到Data Raceing在同一個時間有兩個不同的Thread對於資料競爭</p>
-<p>如果要避免競爭lock是一個比較方便的方式，他可以保證一瞬間只有一個Thread(Session)來執行某段程式碼(通常會放在異動資料那部分)來保證Isolation.</p>
-<p>下面是使用lock版本的程式碼，能看到我在<code>Balance -= 10;</code>這一段使用lock來確保每一個瞬間只有一個Thread可以異動資料，其他的Thread需要blocking等他完成</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="comment">//here</span></span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>使用lock之後能發現不管執行幾次資料都會如我們預期顯示.</p>
-<p>使用lock執行概念圖如下.</p>
-<p>在同一時間我們會把要執行程式 利用一個類似保護網的方式，確保同一時間只有一個Thread來做操作.</p>
-<p>Thread2取得lock在操作Thread1就必須等待Thread2執行完,在取值=&gt;改值..等等動作</p>
-<p><img src="https://i.imgur.com/BUCajHn.png" alt></p>
-<blockquote>
-<p>只是使用lock會降低些許吞吐量(但資料正確性是最重要的)，所以要注意使用lock範圍大小</p>
-</blockquote>
-<h2 id="CAS-compare-and-swap-提高效率"><a href="#CAS-compare-and-swap-提高效率" class="headerlink" title="CAS(compare and swap)提高效率"></a>CAS(compare and swap)提高效率</h2><p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFNiVBRiU5NCVFOCVCRSU4MyVFNSVCOSVCNiVFNCVCQSVBNCVFNiU4RCVBMg==" title="https://zh.wikipedia.org/zh-tw/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2">CAS<i class="fa fa-external-link"></i></span>是利用compare and swap來確保資料Atomic.</p>
-<blockquote>
-<p>因為CAS可以取得數值記憶體空間來比較給值並且他也是一條CPU原語具有原子性 <span class="exturl" data-url="aHR0cHM6Ly93d3cuaXRzZnVuLmNvbS50dy9DQVMvd2lraS01MTQ1NTQxLTQyNzA3MzE=" title="https://www.itsfun.com.tw/CAS/wiki-5145541-4270731">cpu 硬體同步原語<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<p>前面有說過在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
-<ol>
-<li>將執行個體變數中的值載入至register。</li>
-<li>將載入值減10</li>
-<li>將異動後值放回原本值的Memory。</li>
-</ol>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">balance -= <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
-<p>會拆解成類似下面動作</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br></pre></td></tr></table></figure>
-<p>假如在取balance(附值給temp)跟把值重新寫入balance中間有其他Thread來操作，就會造成所謂Data Racing，因為對於我們來說上面後兩部有不可分割性(Atomic).</p>
-<p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
-<h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
-<p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
-<p>下面這段虛擬碼解釋<code>balance -= 10;</code>CAS中類似下面效果</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//original</span></span><br><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CAS </span></span><br><span class="line"><span class="keyword">int</span> oldValue = balance;</span><br><span class="line"><span class="keyword">int</span> newValue = oldValue - <span class="number">1</span>;</span><br><span class="line"><span class="comment">//compare value source and set</span></span><br><span class="line">Interlocked.CompareExchange(<span class="keyword">ref</span> balance,newValue,oldValue);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Interlocked.CompareExchange類似下面做法，但具有Atomic</span></span><br><span class="line"><span class="comment">//if(ref balance == oldValue)&#123;</span></span><br><span class="line"><span class="comment">//	balance = newValue;</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br></pre></td></tr></table></figure>
-<p>主要是把compare value source and set這段包成一個不可分割區段達到Atomic.</p>
-<p>＞ 我上面用<code>ref</code>來表示從記憶體位置取得<code>balance</code>原始資料</p>
-<ul>
-<li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
-<li><code>Decrement</code>:把數值– 具有Atomic</li>
-<li><code>Increment</code>:把數值++ 具有Atomic</li>
-</ul>
-<p>除了上面我們還可以針對Reference Type做Atomic有興趣的人在自行了解</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Stopwatch sw = <span class="keyword">new</span> Stopwatch();</span><br><span class="line">		<span class="keyword">int</span> balanceValue = <span class="number">10000000</span>;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = balanceValue &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		sw.Start();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"Lock Version"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		tasks.Clear();</span><br><span class="line">		member.Balance = balanceValue;</span><br><span class="line">		sw.Restart();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalanceByInterlock()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"InterLocked Version:"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalanceByInterlock</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">int</span> val = <span class="number">0</span>;</span><br><span class="line">		Balance = Interlocked.Exchange(<span class="keyword">ref</span> val, Balance -= <span class="number">10</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>下圖是比較兩者執行時間還有併發計算數值，能發現數值兩個都正確計算出0，但Interlocked執行時間少於lock版本.</p>
-<p><img src="https://i.imgur.com/eMjYN6P.png" alt></p>
-<p>Interlocked效率會比較高是因為block會造成Thread的blocking等待浪費,但Interlocked核心概念是在這段話Atomic<strong>取得資料跟原職比較(如果資料還沒改就把值修改進Memory中)</strong></p>
-<p>所以效率就會比lock好很多</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在有些情境適合使用Lock(例如許多操作需要有一致的Atomic)就比較適合.</p>
-<p>Interlocked適合用在對於數值的Atomic.</p>
-<p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
-<p>因為多執行緒有許多地方需要注意,不然執行效率會不如單執行緒.</p>
-<p>我慢慢可以理解為什麼Redis,Node.js一開始要使用 single Thread 來運作了…</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>atomic</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>atomic</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Asp.net HttpHandler vs HttpModule 詳細解說.</title>
     <url>/httphandler-httpmodule/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p><code>Asp.net</code> 是一個<code>pipeline</code>的模型</p>
@@ -3791,6 +3698,99 @@ email_url: dog830228@gmail.com
         <tag>Asp.net</tag>
         <tag>IHttpHanlder</tag>
         <tag>IHttpModule</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)</title>
+    <url>/high-concurrency-atomic-cas-algorithm/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
+<p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
+<p>本文使用範例在我github上<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXMvQ0FTX0xvY2s=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/CAS_Lock">CAS_Lock<i class="fa fa-external-link"></i></span>有興趣的人可以參考.</p>
+<h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
+<p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
+<p>下面Sample Code是這樣.</p>
+<p>我用<code>Task</code>假裝高併發，下面有一個<code>Member</code>類別預設給100000元的Balance</p>
+<p>有一個<code>UpdateBalance</code>每呼叫一次就扣10元，我透過<code>For</code>跑10000次</p>
+<p>理論上我預期在跑完下面顯示Balance會員餘額是0 (因為 10000*10 = 100000).</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Balance -= <span class="number">10</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://i.imgur.com/44M2Jr7.png" alt></p>
+<p>但執行後蠻常會是不等於0!!</p>
+<p>這時我會問面試者兩個問題</p>
+<ul>
+<li>為什麼會不等於0</li>
+<li>如果要解決你會怎麼解決這個問題?</li>
+</ul>
+<p>如果知道的人可以跳到CAS部分，如果不知原因我下面會跟大家分享</p>
+<h3 id="為什麼會不等於0"><a href="#為什麼會不等於0" class="headerlink" title="為什麼會不等於0"></a>為什麼會不等於0</h3><p>這個問題牽扯到Thread是如何對於變數操作的，Thread在操作變數之前會把資料複製一份進Thread Context中在操作我們要步驟</p>
+<p>所以在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
+<ol>
+<li>將執行個體變數中的值載入至register。</li>
+<li>將載入值減10</li>
+<li>將異動後值放回原本值的Memory。</li>
+</ol>
+<p>因為以上步驟，假如同一時間有兩個不同的Thread取到的Balance都是1000，並個別對於Balance減10元，我們原本預期這是兩個操作（預期資料為980）</p>
+<p>但因為取的瞬間都是1000-10=990把數值放回變數中就導致少扣一個10元…</p>
+<p>概念如下圖.</p>
+<p><img src="https://i.imgur.com/zXprOIe.png" alt></p>
+<p>知道原因了要解決就簡單了.</p>
+<h3 id="使用Lock解決"><a href="#使用Lock解決" class="headerlink" title="使用Lock解決"></a>使用Lock解決</h3><p>因為這段程式碼遇到Data Raceing在同一個時間有兩個不同的Thread對於資料競爭</p>
+<p>如果要避免競爭lock是一個比較方便的方式，他可以保證一瞬間只有一個Thread(Session)來執行某段程式碼(通常會放在異動資料那部分)來保證Isolation.</p>
+<p>下面是使用lock版本的程式碼，能看到我在<code>Balance -= 10;</code>這一段使用lock來確保每一個瞬間只有一個Thread可以異動資料，其他的Thread需要blocking等他完成</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="comment">//here</span></span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用lock之後能發現不管執行幾次資料都會如我們預期顯示.</p>
+<p>使用lock執行概念圖如下.</p>
+<p>在同一時間我們會把要執行程式 利用一個類似保護網的方式，確保同一時間只有一個Thread來做操作.</p>
+<p>Thread2取得lock在操作Thread1就必須等待Thread2執行完,在取值=&gt;改值..等等動作</p>
+<p><img src="https://i.imgur.com/BUCajHn.png" alt></p>
+<blockquote>
+<p>只是使用lock會降低些許吞吐量(但資料正確性是最重要的)，所以要注意使用lock範圍大小</p>
+</blockquote>
+<h2 id="CAS-compare-and-swap-提高效率"><a href="#CAS-compare-and-swap-提高效率" class="headerlink" title="CAS(compare and swap)提高效率"></a>CAS(compare and swap)提高效率</h2><p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3poLXR3LyVFNiVBRiU5NCVFOCVCRSU4MyVFNSVCOSVCNiVFNCVCQSVBNCVFNiU4RCVBMg==" title="https://zh.wikipedia.org/zh-tw/%E6%AF%94%E8%BE%83%E5%B9%B6%E4%BA%A4%E6%8D%A2">CAS<i class="fa fa-external-link"></i></span>是利用compare and swap來確保資料Atomic.</p>
+<blockquote>
+<p>因為CAS可以取得數值記憶體空間來比較給值並且他也是一條CPU原語具有原子性 <span class="exturl" data-url="aHR0cHM6Ly93d3cuaXRzZnVuLmNvbS50dy9DQVMvd2lraS01MTQ1NTQxLTQyNzA3MzE=" title="https://www.itsfun.com.tw/CAS/wiki-5145541-4270731">cpu 硬體同步原語<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<p>前面有說過在<code>Balance -= 10;</code>這段程式碼會拆成下面動作</p>
+<ol>
+<li>將執行個體變數中的值載入至register。</li>
+<li>將載入值減10</li>
+<li>將異動後值放回原本值的Memory。</li>
+</ol>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">balance -= <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+<p>會拆解成類似下面動作</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br></pre></td></tr></table></figure>
+<p>假如在取balance(附值給temp)跟把值重新寫入balance中間有其他Thread來操作，就會造成所謂Data Racing，因為對於我們來說上面後兩部有不可分割性(Atomic).</p>
+<p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
+<h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vemgtdHcvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLmludGVybG9ja2VkP3ZpZXc9bmV0LTUuMA==" title="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked<i class="fa fa-external-link"></i></span>這個類別</p>
+<p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
+<p>下面這段虛擬碼解釋<code>balance -= 10;</code>CAS中類似下面效果</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//original</span></span><br><span class="line"><span class="keyword">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CAS </span></span><br><span class="line"><span class="keyword">int</span> oldValue = balance;</span><br><span class="line"><span class="keyword">int</span> newValue = oldValue - <span class="number">1</span>;</span><br><span class="line"><span class="comment">//compare value source and set</span></span><br><span class="line">Interlocked.CompareExchange(<span class="keyword">ref</span> balance,newValue,oldValue);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Interlocked.CompareExchange類似下面做法，但具有Atomic</span></span><br><span class="line"><span class="comment">//if(ref balance == oldValue)&#123;</span></span><br><span class="line"><span class="comment">//	balance = newValue;</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br></pre></td></tr></table></figure>
+<p>主要是把compare value source and set這段包成一個不可分割區段達到Atomic.</p>
+<p>＞ 我上面用<code>ref</code>來表示從記憶體位置取得<code>balance</code>原始資料</p>
+<ul>
+<li><code>Exchange</code>:把值改成另一個數值 具有Atomic</li>
+<li><code>Decrement</code>:把數值– 具有Atomic</li>
+<li><code>Increment</code>:把數值++ 具有Atomic</li>
+</ul>
+<p>除了上面我們還可以針對Reference Type做Atomic有興趣的人在自行了解</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		Stopwatch sw = <span class="keyword">new</span> Stopwatch();</span><br><span class="line">		<span class="keyword">int</span> balanceValue = <span class="number">10000000</span>;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = balanceValue &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		sw.Start();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"Lock Version"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		tasks.Clear();</span><br><span class="line">		member.Balance = balanceValue;</span><br><span class="line">		sw.Restart();</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalanceByInterlock()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">"InterLocked Version:"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>"</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$"Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">int</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalanceByInterlock</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>	&#123;</span><br><span class="line">		<span class="keyword">int</span> val = <span class="number">0</span>;</span><br><span class="line">		Balance = Interlocked.Exchange(<span class="keyword">ref</span> val, Balance -= <span class="number">10</span>);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下圖是比較兩者執行時間還有併發計算數值，能發現數值兩個都正確計算出0，但Interlocked執行時間少於lock版本.</p>
+<p><img src="https://i.imgur.com/eMjYN6P.png" alt></p>
+<p>Interlocked效率會比較高是因為block會造成Thread的blocking等待浪費,但Interlocked核心概念是在這段話Atomic<strong>取得資料跟原職比較(如果資料還沒改就把值修改進Memory中)</strong></p>
+<p>所以效率就會比lock好很多</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在有些情境適合使用Lock(例如許多操作需要有一致的Atomic)就比較適合.</p>
+<p>Interlocked適合用在對於數值的Atomic.</p>
+<p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
+<p>因為多執行緒有許多地方需要注意,不然執行效率會不如單執行緒.</p>
+<p>我慢慢可以理解為什麼Redis,Node.js一開始要使用 single Thread 來運作了…</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>atomic</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>atomic</tag>
       </tags>
   </entry>
   <entry>
@@ -7261,92 +7261,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>LRU 演算法解說</title>
-    <url>/lru-algorithm/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料結構跟演算法是程式設計師的內功，在中小型系統懂這兩樣東西效用可能有限，但在大型系統中熟不熟用資料結構跟演算法做出來的效益會天差地遠</p>
-<p>對於常使用的物件和變數我們會放置在 Redis 上( cache server )，但記憶體有限，我們想放的東西無限，造就無法將所有物件都存放在 Redis 或 Server Memory 上.</p>
-<p>假如你有設定過 Redis config 你會看到一個 property <code>maxmemory_policy</code> 來管理如何淘汰，記憶體中的物件</p>
-<ul>
-<li>volatile-lru</li>
-<li>allkeys-lru</li>
-</ul>
-<p>上面有個名稱 LRU (Least Recently Used Cache)　代表甚麼意涵呢？稍後會跟大家做解釋</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL0FsZ29yaXRobV9EYXRhU3RydWN0dXJlL0xSVV9BbGdvcml0aG0=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Algorithm_DataStructure/LRU_Algorithm">Github Sample Project<i class="fa fa-external-link"></i></span></p>
-<h2 id="LRU-算法概念"><a href="#LRU-算法概念" class="headerlink" title="LRU 算法概念"></a>LRU 算法概念</h2><p>LRU (Least Recently Used Cache) 顧名思義，會記憶體不夠用時優先保留最近常使用的 Cache 資料，並剔除最舊的資料來緩解壓力</p>
-<p>這個算法策略可以確保 Hot Data 在記憶體不足時不會被刪除</p>
-<blockquote>
-<p>在 Redis 除了 LRU 策略外還有其他 cache policy，但本篇會著重介紹 LRU</p>
-</blockquote>
-<p>LRU 核心概念有幾點</p>
-<ul>
-<li>Get Data 如果有命中 Cache 會返回資料前，把資料拉到前面防止記憶體不夠時被清除</li>
-<li>Put Data 判斷是否已經存在資料<ul>
-<li>有:更新資料並放在前面</li>
-<li>無:假如資料已經新增資料並放在前面</li>
-</ul>
-</li>
-</ul>
-<h2 id="實現-LRU-核心資料結構"><a href="#實現-LRU-核心資料結構" class="headerlink" title="實現 LRU 核心資料結構"></a>實現 LRU 核心資料結構</h2><p>假如我說 LRU 在 CURD + 移動資料，時間複雜度都是 <code>O(1)</code>，讀者們能想到解法嗎?</p>
-<p>如果單純 CURD 時間複雜度是 <code>O(1)</code> 的資料結構，可以想到 HashTable，但移動資料卻沒辦法 <code>O(1)</code></p>
-<p>如果要任意動資料時間複雜度的資料結構可以想到 DoubleLinkedList</p>
-<p>說到這邊答案呼之欲出了，假如我們把　HashTable + DoubleLinkedList 這兩種資料結構都用運上不就可以了嗎?</p>
-<h3 id="HashTable-DoubleLinkedList-概念"><a href="#HashTable-DoubleLinkedList-概念" class="headerlink" title="HashTable + DoubleLinkedList 概念"></a>HashTable + DoubleLinkedList 概念</h3><p>HashTable + DoubleLinkedList 邏輯圖如下</p>
-<p><img src="https://i.imgur.com/bd3VgSx.png" alt></p>
-<p>假如使用者讀取 <code>key=XX3</code> 資料，結構會變成下圖</p>
-<p><code>XX3</code> 會被拉到 Header 那邊，當作最近被取得 Data 資料</p>
-<p><img src="https://i.imgur.com/mgafeEh.png" alt></p>
-<p>假如現在使用者新增一筆資料 <code>Key=XX99</code> 但因為配置記憶體容量最多只能存 3 個單位，所以 LRU 淘汰策略會把 Tail 前資料刪除，並新增資料在 Header 節點後</p>
-<p>結果如下圖</p>
-<p><img src="https://i.imgur.com/HRZnL5X.png" alt></p>
-<p>依照上面特性我們可以整理出下面重點</p>
-<ul>
-<li>Get Data 如果有命中 Cache 會返回資料前，把資料拉到前面防止記憶體不夠時被清除</li>
-<li>Put Data 判斷是否已經存在資料<ul>
-<li>有:更新資料並放在 Header 節點之後</li>
-<li>無:判斷目前存放資料數量是否達上限如果達到上限刪除最少使用的資料，並新增資料在 Header 節點之後</li>
-</ul>
-</li>
-</ul>
-<h3 id="程式碼實現"><a href="#程式碼實現" class="headerlink" title="程式碼實現"></a>程式碼實現</h3><p>既然談到 <code>DoubleLinkedList</code> 就不得先不提<code>Node</code></p>
-<p><code>Node</code> 有兩個重要引用當作連接上下節點</p>
-<ul>
-<li>Prev</li>
-<li>Next</li>
-</ul>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">public class Node&lt;Tkey,TValue&gt;&#123;</span><br><span class="line">    <span class="keyword">public</span> TValue Value &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> Tkey Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> Node&lt;Tkey,TValue&gt; Prev &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> Node&lt;Tkey,TValue&gt; Next &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class DoubleLinkedList&lt;Tkey,TValue&gt;&#123;</span><br><span class="line">    <span class="keyword">private</span> Node&lt;Tkey,TValue&gt; _header;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Node&lt;Tkey,TValue&gt; _tail;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DoubleLinkedList</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _header = <span class="keyword">new</span> Node&lt;Tkey, TValue&gt;();</span><br><span class="line">        _tail = <span class="keyword">new</span> Node&lt;Tkey, TValue&gt;();</span><br><span class="line"></span><br><span class="line">        _header.Next = _tail;</span><br><span class="line">        _tail.Prev = _header;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">AddHeader</span>(<span class="params">Node&lt;Tkey,TValue&gt; node</span>)</span>&#123;</span><br><span class="line">        node.Next = _header.Next;</span><br><span class="line">        node.Prev = _header;</span><br><span class="line">        _header.Next.Prev = node;</span><br><span class="line">        _header.Next = node;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">RemoveNode</span>(<span class="params">Node&lt;Tkey,TValue&gt; node</span>)</span>&#123;</span><br><span class="line">        node.Next.Prev = node.Prev;</span><br><span class="line">        node.Prev.Next = node.Next;</span><br><span class="line">        node.Prev = node.Next = <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Node&lt;Tkey,TValue&gt; <span class="title">GetLastNode</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> _tail.Prev;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">PrintAll</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">var</span> cur = _header.Next;</span><br><span class="line">        <span class="keyword">while</span>(cur != _tail)&#123;</span><br><span class="line">            System.Console.WriteLine(<span class="string">$"key: <span class="subst">&#123;cur.Key&#125;</span> value:<span class="subst">&#123;cur.Value&#125;</span>"</span>);</span><br><span class="line">            cur = cur.Next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在 <code>LRUCache</code> 類別中有兩個重要欄位 <code>Dictionary</code> 和 <code>DoubleLinkedList</code> 互相作用，我們透過 key 可以快速透過 <code>Dictionary</code> 找到資料並利用 <code>Dictionary</code> 值找到對用 <code>Node</code> 資料進行刪除或新增動作</p>
-<p><img src="https://i.imgur.com/bd3VgSx.png" alt></p>
-<p>因為上面已經整理出算法概念</p>
-<ul>
-<li>Get Data 如果有命中 Cache 會返回資料前，把資料拉到前面防止記憶體不夠時被清除</li>
-<li>Put Data 判斷是否已經存在資料<ul>
-<li>有:更新資料並放在 Header 節點之後</li>
-<li>無:判斷目前存放資料數量是否達上限如果達到上限刪除最少使用的資料，並新增資料在 Header 節點之後</li>
-</ul>
-</li>
-</ul>
-<p>後面我們針對上面資訊撰寫程式就容易許多了</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LRUCache</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Dictionary&lt;<span class="keyword">int</span>,Node&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; _map;</span><br><span class="line">    <span class="keyword">private</span> DoubleLinkedList&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; _linkedList;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">int</span> _capacity;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">LRUCache</span>(<span class="params"><span class="keyword">int</span> capacity</span>)</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>._capacity = capacity;</span><br><span class="line">        _map = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">int</span>, Node&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt;();</span><br><span class="line">        _linkedList = <span class="keyword">new</span> DoubleLinkedList&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">Get</span>(<span class="params"><span class="keyword">int</span> key</span>)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (_map.TryGetValue(key,<span class="keyword">out</span> <span class="keyword">var</span> node))</span><br><span class="line">        &#123;</span><br><span class="line">            _linkedList.RemoveNode(node);</span><br><span class="line">            _linkedList.AddHeader(node);</span><br><span class="line">            <span class="keyword">return</span> node.Value;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Put</span>(<span class="params"><span class="keyword">int</span> key, <span class="keyword">int</span> <span class="keyword">value</span></span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> newNode = <span class="keyword">new</span> Node&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;()&#123;</span><br><span class="line">            Value = <span class="keyword">value</span>,</span><br><span class="line">            Key = key</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (_map.TryGetValue(key,<span class="keyword">out</span> <span class="keyword">var</span> node))</span><br><span class="line">        &#123;</span><br><span class="line">            _linkedList.RemoveNode(node);</span><br><span class="line">            _linkedList.AddHeader(newNode);</span><br><span class="line">            _map[key] = newNode;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (_map.Count == _capacity)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">var</span> lastNode = _linkedList.GetLastNode();</span><br><span class="line">                _linkedList.RemoveNode(lastNode);</span><br><span class="line">                _map.Remove(lastNode.Key);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            _map[key] = newNode;</span><br><span class="line">            _linkedList.AddHeader(newNode);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">PrintAll</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        _linkedList.PrintAll();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>演算法跟資料結構實現不局限於程式語言，重點在他的概念核心</p>
-<p>在一些熱門的 open source 會很常看到某些資料結構跟演算法的蹤跡，因為他們利用適合的演算法＋資料結構幫助大家解決高併發或效能問題，所以成為熱門架構</p>
-<p>由我上面可以得知，優良程式設計師跟熟用演算法跟資料結構有密不可分的關係</p>
-<p>就像 Redis 有針對 LRU 算法實現兩種方式</p>
-<ul>
-<li>volatile-lru</li>
-<li>allkeys-lru</li>
-</ul>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/lru-algorithm/">https://isdaniel.github.io/lru-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>Algorithm</category>
-        <category>DataStructure</category>
-      </categories>
-      <tags>
-        <tag>Algorithm</tag>
-        <tag>DataStructure</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>資料庫查詢核心概念-地圖理論</title>
     <url>/map-theory/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>我認為 DB query optimizer (QO) 產生執行計畫並執行查詢和 使用地圖找尋最佳路徑很類似</p>
@@ -7470,6 +7384,92 @@ email_url: dog830228@gmail.com
         <tag>C#</tag>
         <tag>DesignPattern</tag>
         <tag>MediatorPattern</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>LRU 演算法解說</title>
+    <url>/lru-algorithm/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料結構跟演算法是程式設計師的內功，在中小型系統懂這兩樣東西效用可能有限，但在大型系統中熟不熟用資料結構跟演算法做出來的效益會天差地遠</p>
+<p>對於常使用的物件和變數我們會放置在 Redis 上( cache server )，但記憶體有限，我們想放的東西無限，造就無法將所有物件都存放在 Redis 或 Server Memory 上.</p>
+<p>假如你有設定過 Redis config 你會看到一個 property <code>maxmemory_policy</code> 來管理如何淘汰，記憶體中的物件</p>
+<ul>
+<li>volatile-lru</li>
+<li>allkeys-lru</li>
+</ul>
+<p>上面有個名稱 LRU (Least Recently Used Cache)　代表甚麼意涵呢？稍後會跟大家做解釋</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL0FsZ29yaXRobV9EYXRhU3RydWN0dXJlL0xSVV9BbGdvcml0aG0=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Algorithm_DataStructure/LRU_Algorithm">Github Sample Project<i class="fa fa-external-link"></i></span></p>
+<h2 id="LRU-算法概念"><a href="#LRU-算法概念" class="headerlink" title="LRU 算法概念"></a>LRU 算法概念</h2><p>LRU (Least Recently Used Cache) 顧名思義，會記憶體不夠用時優先保留最近常使用的 Cache 資料，並剔除最舊的資料來緩解壓力</p>
+<p>這個算法策略可以確保 Hot Data 在記憶體不足時不會被刪除</p>
+<blockquote>
+<p>在 Redis 除了 LRU 策略外還有其他 cache policy，但本篇會著重介紹 LRU</p>
+</blockquote>
+<p>LRU 核心概念有幾點</p>
+<ul>
+<li>Get Data 如果有命中 Cache 會返回資料前，把資料拉到前面防止記憶體不夠時被清除</li>
+<li>Put Data 判斷是否已經存在資料<ul>
+<li>有:更新資料並放在前面</li>
+<li>無:假如資料已經新增資料並放在前面</li>
+</ul>
+</li>
+</ul>
+<h2 id="實現-LRU-核心資料結構"><a href="#實現-LRU-核心資料結構" class="headerlink" title="實現 LRU 核心資料結構"></a>實現 LRU 核心資料結構</h2><p>假如我說 LRU 在 CURD + 移動資料，時間複雜度都是 <code>O(1)</code>，讀者們能想到解法嗎?</p>
+<p>如果單純 CURD 時間複雜度是 <code>O(1)</code> 的資料結構，可以想到 HashTable，但移動資料卻沒辦法 <code>O(1)</code></p>
+<p>如果要任意動資料時間複雜度的資料結構可以想到 DoubleLinkedList</p>
+<p>說到這邊答案呼之欲出了，假如我們把　HashTable + DoubleLinkedList 這兩種資料結構都用運上不就可以了嗎?</p>
+<h3 id="HashTable-DoubleLinkedList-概念"><a href="#HashTable-DoubleLinkedList-概念" class="headerlink" title="HashTable + DoubleLinkedList 概念"></a>HashTable + DoubleLinkedList 概念</h3><p>HashTable + DoubleLinkedList 邏輯圖如下</p>
+<p><img src="https://i.imgur.com/bd3VgSx.png" alt></p>
+<p>假如使用者讀取 <code>key=XX3</code> 資料，結構會變成下圖</p>
+<p><code>XX3</code> 會被拉到 Header 那邊，當作最近被取得 Data 資料</p>
+<p><img src="https://i.imgur.com/mgafeEh.png" alt></p>
+<p>假如現在使用者新增一筆資料 <code>Key=XX99</code> 但因為配置記憶體容量最多只能存 3 個單位，所以 LRU 淘汰策略會把 Tail 前資料刪除，並新增資料在 Header 節點後</p>
+<p>結果如下圖</p>
+<p><img src="https://i.imgur.com/HRZnL5X.png" alt></p>
+<p>依照上面特性我們可以整理出下面重點</p>
+<ul>
+<li>Get Data 如果有命中 Cache 會返回資料前，把資料拉到前面防止記憶體不夠時被清除</li>
+<li>Put Data 判斷是否已經存在資料<ul>
+<li>有:更新資料並放在 Header 節點之後</li>
+<li>無:判斷目前存放資料數量是否達上限如果達到上限刪除最少使用的資料，並新增資料在 Header 節點之後</li>
+</ul>
+</li>
+</ul>
+<h3 id="程式碼實現"><a href="#程式碼實現" class="headerlink" title="程式碼實現"></a>程式碼實現</h3><p>既然談到 <code>DoubleLinkedList</code> 就不得先不提<code>Node</code></p>
+<p><code>Node</code> 有兩個重要引用當作連接上下節點</p>
+<ul>
+<li>Prev</li>
+<li>Next</li>
+</ul>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">public class Node&lt;Tkey,TValue&gt;&#123;</span><br><span class="line">    <span class="keyword">public</span> TValue Value &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> Tkey Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> Node&lt;Tkey,TValue&gt; Prev &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> Node&lt;Tkey,TValue&gt; Next &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public class DoubleLinkedList&lt;Tkey,TValue&gt;&#123;</span><br><span class="line">    <span class="keyword">private</span> Node&lt;Tkey,TValue&gt; _header;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Node&lt;Tkey,TValue&gt; _tail;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DoubleLinkedList</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _header = <span class="keyword">new</span> Node&lt;Tkey, TValue&gt;();</span><br><span class="line">        _tail = <span class="keyword">new</span> Node&lt;Tkey, TValue&gt;();</span><br><span class="line"></span><br><span class="line">        _header.Next = _tail;</span><br><span class="line">        _tail.Prev = _header;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">AddHeader</span>(<span class="params">Node&lt;Tkey,TValue&gt; node</span>)</span>&#123;</span><br><span class="line">        node.Next = _header.Next;</span><br><span class="line">        node.Prev = _header;</span><br><span class="line">        _header.Next.Prev = node;</span><br><span class="line">        _header.Next = node;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">RemoveNode</span>(<span class="params">Node&lt;Tkey,TValue&gt; node</span>)</span>&#123;</span><br><span class="line">        node.Next.Prev = node.Prev;</span><br><span class="line">        node.Prev.Next = node.Next;</span><br><span class="line">        node.Prev = node.Next = <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Node&lt;Tkey,TValue&gt; <span class="title">GetLastNode</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> _tail.Prev;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">PrintAll</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        <span class="keyword">var</span> cur = _header.Next;</span><br><span class="line">        <span class="keyword">while</span>(cur != _tail)&#123;</span><br><span class="line">            System.Console.WriteLine(<span class="string">$"key: <span class="subst">&#123;cur.Key&#125;</span> value:<span class="subst">&#123;cur.Value&#125;</span>"</span>);</span><br><span class="line">            cur = cur.Next;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在 <code>LRUCache</code> 類別中有兩個重要欄位 <code>Dictionary</code> 和 <code>DoubleLinkedList</code> 互相作用，我們透過 key 可以快速透過 <code>Dictionary</code> 找到資料並利用 <code>Dictionary</code> 值找到對用 <code>Node</code> 資料進行刪除或新增動作</p>
+<p><img src="https://i.imgur.com/bd3VgSx.png" alt></p>
+<p>因為上面已經整理出算法概念</p>
+<ul>
+<li>Get Data 如果有命中 Cache 會返回資料前，把資料拉到前面防止記憶體不夠時被清除</li>
+<li>Put Data 判斷是否已經存在資料<ul>
+<li>有:更新資料並放在 Header 節點之後</li>
+<li>無:判斷目前存放資料數量是否達上限如果達到上限刪除最少使用的資料，並新增資料在 Header 節點之後</li>
+</ul>
+</li>
+</ul>
+<p>後面我們針對上面資訊撰寫程式就容易許多了</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"> <span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LRUCache</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Dictionary&lt;<span class="keyword">int</span>,Node&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;&gt; _map;</span><br><span class="line">    <span class="keyword">private</span> DoubleLinkedList&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; _linkedList;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">int</span> _capacity;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">LRUCache</span>(<span class="params"><span class="keyword">int</span> capacity</span>)</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>._capacity = capacity;</span><br><span class="line">        _map = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">int</span>, Node&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt;&gt;();</span><br><span class="line">        _linkedList = <span class="keyword">new</span> DoubleLinkedList&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">Get</span>(<span class="params"><span class="keyword">int</span> key</span>)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (_map.TryGetValue(key,<span class="keyword">out</span> <span class="keyword">var</span> node))</span><br><span class="line">        &#123;</span><br><span class="line">            _linkedList.RemoveNode(node);</span><br><span class="line">            _linkedList.AddHeader(node);</span><br><span class="line">            <span class="keyword">return</span> node.Value;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Put</span>(<span class="params"><span class="keyword">int</span> key, <span class="keyword">int</span> <span class="keyword">value</span></span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> newNode = <span class="keyword">new</span> Node&lt;<span class="keyword">int</span>,<span class="keyword">int</span>&gt;()&#123;</span><br><span class="line">            Value = <span class="keyword">value</span>,</span><br><span class="line">            Key = key</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (_map.TryGetValue(key,<span class="keyword">out</span> <span class="keyword">var</span> node))</span><br><span class="line">        &#123;</span><br><span class="line">            _linkedList.RemoveNode(node);</span><br><span class="line">            _linkedList.AddHeader(newNode);</span><br><span class="line">            _map[key] = newNode;</span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">            <span class="keyword">if</span> (_map.Count == _capacity)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">var</span> lastNode = _linkedList.GetLastNode();</span><br><span class="line">                _linkedList.RemoveNode(lastNode);</span><br><span class="line">                _map.Remove(lastNode.Key);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            _map[key] = newNode;</span><br><span class="line">            _linkedList.AddHeader(newNode);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">PrintAll</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">        _linkedList.PrintAll();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>演算法跟資料結構實現不局限於程式語言，重點在他的概念核心</p>
+<p>在一些熱門的 open source 會很常看到某些資料結構跟演算法的蹤跡，因為他們利用適合的演算法＋資料結構幫助大家解決高併發或效能問題，所以成為熱門架構</p>
+<p>由我上面可以得知，優良程式設計師跟熟用演算法跟資料結構有密不可分的關係</p>
+<p>就像 Redis 有針對 LRU 算法實現兩種方式</p>
+<ul>
+<li>volatile-lru</li>
+<li>allkeys-lru</li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/lru-algorithm/">https://isdaniel.github.io/lru-algorithm/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Algorithm</category>
+        <category>DataStructure</category>
+      </categories>
+      <tags>
+        <tag>Algorithm</tag>
+        <tag>DataStructure</tag>
       </tags>
   </entry>
   <entry>
@@ -8812,6 +8812,125 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
+    <title>Redis Cluster 介紹</title>
+    <url>/redis-cluster-introduce-01/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在巨量資料下，資料庫合理的分片(DB sharding)可以幫助我們承受更高量的資料量(前提Index還有設定都調教到很好在考慮 sharding)</p>
+<p>而在 Redis 世界裡也有 redis cluster 來做 sharding 事情，今天就來跟大家分享介紹</p>
+<p>我使用是 <span class="exturl" data-url="aHR0cHM6Ly9odWIuZG9ja2VyLmNvbS9yL2JpdG5hbWkvcmVkaXMtY2x1c3Rlci8=" title="https://hub.docker.com/r/bitnami/redis-cluster/">bitnami redis-cluster<i class="fa fa-external-link"></i></span> 這個 Image 來做這次 Poc</p>
+<p>此案例是 3 master - 3 slave Redis server 範例</p>
+<h2 id="建立-Redis-Cluster"><a href="#建立-Redis-Cluster" class="headerlink" title="建立 Redis Cluster"></a>建立 Redis Cluster</h2><h3 id="How-to-Use"><a href="#How-to-Use" class="headerlink" title="How to Use"></a>How to Use</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="EBNF"><figure class="iseeu highlight /ebnf"><table><tr><td class="code"><pre><span class="line"><span class="attribute">docker-compose up -d</span></span><br></pre></td></tr></table></figure></div>
+<p>跑完之後就會出現 6 台 Redis Container，如下表</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">$ docker ps</span><br><span class="line">CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS          PORTS                                       NAMES</span><br><span class="line"><span class="number">1</span>a0c740cbb96   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">31</span> seconds ago   Up <span class="number">27</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-5</span>_1</span><br><span class="line"><span class="number">1651</span>a81a286f   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">30</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-2</span>_1</span><br><span class="line"><span class="number">5</span>d93edfc55e6   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">31</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-4</span>_1</span><br><span class="line"><span class="number">8</span>ab5bbbb7364   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">29</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-3</span>_1</span><br><span class="line"><span class="number">8</span>edf90bed3fb   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">29</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-1</span>_1</span><br><span class="line">e11ac0ec56aa   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">30</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-0</span>_1</span><br></pre></td></tr></table></figure></div>
+<h3 id="查看-Redis-Cluster-架構"><a href="#查看-Redis-Cluster-架構" class="headerlink" title="查看 Redis Cluster 架構"></a>查看 Redis Cluster 架構</h3><p>我們進入 <code>rediscluster_redis-node-0_1</code> 這台Container 利用 redis-cli 輸入 <code>CLUSTER INFO</code> 可以查看目前 Cluster 基本狀態</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">$ docker exec -it rediscluster_redis-node<span class="number">-0</span>_1 bash</span><br><span class="line">/$ redis-cli -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">6379</span>&gt; CLUSTER INFO</span><br><span class="line">cluster_state:ok</span><br><span class="line">cluster_slots_assigned:<span class="number">16384</span></span><br><span class="line">cluster_slots_ok:<span class="number">16384</span></span><br><span class="line">cluster_slots_pfail:<span class="number">0</span></span><br><span class="line">cluster_slots_fail:<span class="number">0</span></span><br><span class="line">cluster_known_nodes:<span class="number">6</span></span><br><span class="line">cluster_size:<span class="number">3</span></span><br><span class="line">cluster_current_epoch:<span class="number">6</span></span><br><span class="line">cluster_my_epoch:<span class="number">1</span></span><br><span class="line">cluster_stats_messages_ping_sent:<span class="number">1723</span></span><br><span class="line">cluster_stats_messages_pong_sent:<span class="number">1833</span></span><br><span class="line">cluster_stats_messages_sent:<span class="number">3556</span></span><br><span class="line">cluster_stats_messages_ping_received:<span class="number">1828</span></span><br><span class="line">cluster_stats_messages_pong_received:<span class="number">1723</span></span><br><span class="line">cluster_stats_messages_meet_received:<span class="number">5</span></span><br><span class="line">cluster_stats_messages_received:<span class="number">3556</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>本篇我 redis password 統一使用 <code>redisCluster</code> 所以進入 redis 操作之前記得輸入 <code>-a</code> 跟密碼</p>
+</blockquote>
+<p>進入可以看到幾個重要資訊</p>
+<ul>
+<li>cluster_state</li>
+<li>cluster_size:3</li>
+<li>cluster_current_epoch:6</li>
+<li>cluster_slots_assigned</li>
+</ul>
+<p>代表目前 Cluster 啟動狀態OK，再來我們利用 <code>--cluster check</code> 了解該 Redis Server Cluster 中 master-slave 跟各節點對應關係</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">redis-cli --cluster check 127.0.0.1:6379 -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<p>結果如下</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">/$ redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 0 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 0 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 0 keys | 5461 slots | 1 slaves.</span><br><span class="line">[OK] 0 keys <span class="keyword">in</span> 3 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure></div>
+<p>依照上面資訊我們可以畫出架構如圖</p>
+<p><img src="https://i.imgur.com/0GiiHuE.png" alt></p>
+<ul>
+<li><code>Master 1 =&gt; slave 1 = 172.22.0.2 =&gt; 172.22.0.3</code></li>
+<li><code>Master 2 =&gt; slave 2 = 172.22.0.5 =&gt; 172.22.0.7</code></li>
+<li><code>Master 3 =&gt; slave 3 = 172.22.0.4 =&gt; 172.22.0.6</code></li>
+</ul>
+<blockquote>
+<p>redis 幫我們分配 master 對應 slave 並沒有特別順序，所以你建立的跟我建立很可能不一樣</p>
+</blockquote>
+<p>我們可以在透過下面命令顯示 container 對應使用 ip</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">$ docker inspect -f <span class="string">'&#123;&#123;.Name&#125;&#125; - &#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;'</span> $(docker ps -q)</span><br><span class="line"></span><br><span class="line">/rediscluster_redis-node-5_1 - 172.22.0.7</span><br><span class="line">/rediscluster_redis-node-2_1 - 172.22.0.4</span><br><span class="line">/rediscluster_redis-node-4_1 - 172.22.0.3</span><br><span class="line">/rediscluster_redis-node-3_1 - 172.22.0.6</span><br><span class="line">/rediscluster_redis-node-1_1 - 172.22.0.5</span><br><span class="line">/rediscluster_redis-node-0_1 - 172.22.0.2</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>使用上面命令可以更好理解，Container Name之間對應關係</p>
+</blockquote>
+<h3 id="在-Redis-Clsuter-新增-key-注意事項"><a href="#在-Redis-Clsuter-新增-key-注意事項" class="headerlink" title="在 Redis Clsuter 新增 key 注意事項"></a>在 Redis Clsuter 新增 key 注意事項</h3><p>我進入其中一台 master container <code>rediscluster_redis-node-0_1</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">/$ redis-cli -h 172.22.0.2 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k1 1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k2 1</span><br><span class="line">OK</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k3 1</span><br><span class="line">OK</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k4 1</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k5 1</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure></div>
+<p>使用 <code>get</code> 拿資料時發現我們只拿的到 <code>k2,k3</code> 的資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">172.22.0.2:6379&gt; get k1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; get k2</span><br><span class="line"><span class="string">"1"</span></span><br><span class="line">172.22.0.2:6379&gt; get k3</span><br><span class="line"><span class="string">"1"</span></span><br><span class="line">172.22.0.2:6379&gt; get k4</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; get k5</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure></div>
+<p>我們可以透過 <code>CLUSTER KEYSLOT {key}</code> 來算出我們 key 算出來的 slot 數值</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k1</span><br><span class="line">(<span class="built_in">integer</span>) 12706</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k2</span><br><span class="line">(<span class="built_in">integer</span>) 449</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k3</span><br><span class="line">(<span class="built_in">integer</span>) 4576</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k4</span><br><span class="line">(<span class="built_in">integer</span>) 8455</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k5</span><br><span class="line">(<span class="built_in">integer</span>) 12582</span><br></pre></td></tr></table></figure></div>
+<p>因為我們是進入 <code>172.22.0.2</code> 這台 Redis server 操作 我們只能操作屬於我們 slot 也就是介於 <code>[0-5460]</code> slot 資料，所以只有 <code>k2,k3</code> 符合</p>
+<p><img src="https://i.imgur.com/uRvqz9a.png" alt></p>
+<p>那你會想這樣不就跟單機操作一樣，別急讓我來說怎麼正確使用 Redis Cluster</p>
+<p>我們先退出當前 redis-cli 操作 <code>redis-cli -h 172.22.0.2 -a redisCluster -c</code> 在此輸入並在最後多一個參數 <code>-c</code></p>
+<blockquote>
+<p><code>-c</code> 代表是要使用 cluster 操作</p>
+</blockquote>
+<p>在執行 <code>set {key} {value}</code> 命令，會發現已經沒有 error 但取而代之是 <code>Redirected to slot</code></p>
+<p>那是因為 <code>-c</code> 模式下會幫我們在資料寫入前轉到該 slot redis server node 中在執行命令.</p>
+<p>所以能發現出現 <code>Redirected to slot</code> Redis server ip 就會改變</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">/$ redis-cli -h <span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span> -a redisCluster -c</span><br><span class="line"></span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k1 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">12706</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k2 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">449</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k3 <span class="number">1</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k4 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">8455</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.5</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.5</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k5 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">12582</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>所以在操作 Redis cluster 記得要使用 cluster 操作模式</p>
+</blockquote>
+<h2 id="擴充-Redis-Cluster"><a href="#擴充-Redis-Cluster" class="headerlink" title="擴充 Redis Cluster"></a>擴充 Redis Cluster</h2><p>假如因為業務需求流量突然進來我們想在目前 Cluster 多開幾組 master-slave redis 怎辦?</p>
+<p>這邊跟大家來分享如何多加 redis 進入 Cluster 中</p>
+<h3 id="擴充步驟"><a href="#擴充步驟" class="headerlink" title="擴充步驟"></a>擴充步驟</h3><ol>
+<li>在 redis-cluster 中新增多組(或一組) master-slave redis</li>
+<li>將新建立 master container 加入 Cluster 中</li>
+<li>把目前 Cluster slot 分配給 剛建立 master container (如果可以最好 slot 數量平均)</li>
+<li>將新建立 slave container 掛入新建立 master container 上</li>
+</ol>
+<p>在 redis-cluster 中新增多組(或一組) master-slave redis，使用下面命令</p>
+<blockquote>
+<p>因為在使用 docker-compose 啟動時已經幫我們建立一個 network 所以我們需要指定新加的兩個 Container 在 <code>rediscluster_default</code> 中這樣他們才可以訪問的到</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="DSCONFIG"><figure class="iseeu highlight /dsconfig"><table><tr><td class="code"><pre><span class="line"><span class="string">docker </span><span class="string">run </span>-d <span class="built_in">--name</span> <span class="string">redis-new-</span><span class="string">master01 </span><span class="built_in">--network</span> <span class="string">rediscluster_default </span><span class="built_in">--privileged=true</span>  -p <span class="string">8106:6379 </span><span class="string">redis:6.</span>2 <span class="built_in">--cluster-enabled</span> <span class="string">yes </span><span class="built_in">--appendonly</span> <span class="string">yes </span> <span class="built_in">--requirepass</span> <span class="string">"redisCluster"</span></span><br><span class="line"></span><br><span class="line"><span class="string">docker </span><span class="string">run </span>-d <span class="built_in">--name</span> <span class="string">redis-new-</span><span class="string">slave01 </span><span class="built_in">--network</span> <span class="string">rediscluster_default </span><span class="built_in">--privileged=true</span>  -p <span class="string">8107:6379 </span><span class="string">redis:6.</span>2 <span class="built_in">--cluster-enabled</span> <span class="string">yes </span><span class="built_in">--appendonly</span> <span class="string">yes </span> <span class="built_in">--requirepass</span> <span class="string">"redisCluster"</span></span><br></pre></td></tr></table></figure></div>
+<p>在利用 <code>docker ps</code> 我們發現剛建立的兩個 Container 已經建立完畢</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS         PORTS                                       NAMES</span><br><span class="line">e2c017e625db   redis:<span class="number">6.2</span>                   <span class="string">"docker-entrypoint.s…"</span>   <span class="number">4</span> seconds ago    Up <span class="number">3</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8107</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8107</span>-&gt;<span class="number">6379</span>/tcp   redis-new-slave01</span><br><span class="line"><span class="number">0</span>bc645dc5ba8   redis:<span class="number">6.2</span>                   <span class="string">"docker-entrypoint.s…"</span>   <span class="number">11</span> seconds ago   Up <span class="number">9</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8106</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8106</span>-&gt;<span class="number">6379</span>/tcp   redis-new-master01</span><br><span class="line"><span class="number">1</span>a0c740cbb96   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-5</span>_1</span><br><span class="line"><span class="number">1651</span>a81a286f   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-2</span>_1</span><br><span class="line"><span class="number">5</span>d93edfc55e6   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-4</span>_1</span><br><span class="line"><span class="number">8</span>ab5bbbb7364   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-3</span>_1</span><br><span class="line"><span class="number">8</span>edf90bed3fb   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-1</span>_1</span><br><span class="line">e11ac0ec56aa   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-0</span>_1</span><br><span class="line"></span><br><span class="line">$ docker inspect -f <span class="string">'&#123;&#123;.Name&#125;&#125; - &#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;'</span> $(docker ps -q)</span><br><span class="line">/redis-new-slave01 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.9</span></span><br><span class="line">/redis-new-master01 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.8</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-5</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.7</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-2</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-4</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.3</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-3</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.6</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-1</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.5</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-0</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span></span><br></pre></td></tr></table></figure></div>
+<p>查詢到 <code>redis-new-master01</code> 使用 IP 我們可以利用 <code>--cluster add-node</code> 將新的 master node 加入 cluster 中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">redis-cli --cluster add-node  172.22.0.8:6379 172.22.0.2:6379 -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<p>加入成功後我們在利用 <code>--cluster check</code> 命令查詢 Cluster 資訊，會看到目前多了一筆資料 <code>172.22.0.8:6379 (0885f85b...) -&gt; 0 keys | 0 slots | 0 slaves.</code> 下一步就需要分配 slot 給這個 master</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">/$  redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 0 keys | 0 slots | 0 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots: (0 slots) master</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure></div>
+<p>目前要做的是把當前 Cluster 上 master 上的 slot 分配給，剛建立 master container，達到資料分擔</p>
+<p>我們可以透過 <code>redis-cli --cluster reshard {被分配 Redis Cluster 節點 IP}</code>，由上面資訊得知新建立 master id 是 <code>172.22.0.8:6379</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">redis-cli --cluster reshard <span class="number">172.22</span><span class="number">.0</span><span class="number">.8</span>:<span class="number">6379</span> -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<p>執行後我們會被詢問要轉移多少 slot 數量給新的 master，我們知道 Redis Cluster 有 16384 個 slot 所以為了平均分配 <code>16384/4 = 4096</code> </p>
+<ul>
+<li><code>How many slots do you want to move (from 1 to 16384)</code> 我們可以輸入 <code>4096</code></li>
+<li><code>What is the receiving node ID?</code> 我們由上面資訊知道 新建立 master id 是 <code>0885f85b94f8ddc186f1eac8f532be532fb7f5b1</code></li>
+</ul>
+<p>最後可以輸入 <code>all</code> 就會開始分配 slot</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ROUTEROS"><figure class="iseeu highlight /routeros"><table><tr><td class="code"><pre><span class="line">Please enter all the source node IDs.</span><br><span class="line"> <span class="built_in"> Type </span><span class="string">'all'</span> <span class="keyword">to</span> use all the nodes as source nodes <span class="keyword">for</span> the hash slots.</span><br><span class="line"> <span class="built_in"> Type </span><span class="string">'done'</span> once you entered all the source nodes IDs.</span><br><span class="line">Source node #1: all</span><br></pre></td></tr></table></figure></div>
+<p>跑完後我們利用  <code>redis-cli --cluster check 172.22.0.8:6379 -a redisCluster</code> 查詢可以看到 slot 已經平均分配到四個 master 上面了</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="code"><pre><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 1 keys | 4096 slots | 0 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 4096 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 1 keys | 4096 slots | 1 slaves.</span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 4096 slots | 1 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.8:6379)</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots:[0-1364],[5461-6826],[10923-12287] (4096 slots) master</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[12288-16383] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[1365-5460] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[6827-10922] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure></div>
+<p>最後一步就是把 新的 slave redis 掛載到剛剛的 master redis 上</p>
+<p>我們可以利用下面命令 template 來處理</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SMALI"><figure class="iseeu highlight /smali"><table><tr><td class="code"><pre><span class="line">redis-cli --cluster<span class="built_in"> add-node </span>&#123;new-slave-redis IP&#125; &#123;cluster-redis IP&#125;  --cluster-slave --cluster-master-id 新節點master-id -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<p>轉換成可執行命令如下</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SMALI"><figure class="iseeu highlight /smali"><table><tr><td class="code"><pre><span class="line">redis-cli --cluster<span class="built_in"> add-node </span>172.22.0.9:6379 172.22.0.8:6379  --cluster-slave --cluster-master-id 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<p>看到下面執行結果代表掛載成功</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CRMSH"><figure class="iseeu highlight /crmsh"><table><tr><td class="code"><pre><span class="line">//...</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check for open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All <span class="number">16384</span> slots covered.</span><br><span class="line">&gt;&gt;&gt; Send CLUSTER MEET to <span class="keyword">node</span> <span class="title">172</span>.<span class="number">22.0</span>.<span class="number">9</span>:<span class="number">6379</span> to make it join the cluster.</span><br><span class="line">Waiting for the cluster to join</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt; Configure <span class="keyword">node</span> <span class="title">as</span> replica of <span class="number">172.22</span>.<span class="number">0.8</span>:<span class="number">6379</span>.</span><br><span class="line">[OK] New <span class="keyword">node</span> <span class="title">added</span> correctly.</span><br></pre></td></tr></table></figure></div>
+<p>全部執行完後結果，我們就有四個節點可以存放 Redis 資料</p>
+<p><img src="https://i.imgur.com/up3oWrr.png" alt></p>
+<h4 id="cluster-rebalance-命令"><a href="#cluster-rebalance-命令" class="headerlink" title="cluster rebalance 命令"></a>cluster rebalance 命令</h4><p>如果 每個 master node 分配 slot 數量不小心設定錯誤可以使用  <code>--cluster rebalance</code> 來重新分配 slot 數量，讓每個 master 得到平衡的 slot 數量</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="code"><pre><span class="line">redis-cli --cluster rebalance <span class="number">172.21</span><span class="number">.0</span><span class="number">.8</span>:<span class="number">6379</span> -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<p>// TODO 限縮 Redis Cluster</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Redis 官方對於 Cluster 支援還有說明文件寫得很棒，推薦大家去看</p>
+<p>如果會有 Redis 為何使用 16384 當作 slot 數量可以參考作者回答的資料 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JlZGlzL3JlZGlzL2lzc3Vlcy8yNTc2" title="https://github.com/redis/redis/issues/2576">why redis-cluster use 16384 slots<i class="fa fa-external-link"></i></span></p>
+<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><p><span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby90b3BpY3MvY2x1c3Rlci1zcGVj" title="https://redis.io/topics/cluster-spec">cluster-spec<i class="fa fa-external-link"></i></span></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby90b3BpY3MvY2x1c3Rlci10dXRvcmlhbA==" title="https://redis.io/topics/cluster-tutorial">Redis cluster tutorial<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/redis-cluster-introduce-01/">https://isdaniel.github.io/redis-cluster-introduce-01/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Redis</category>
+        <category>Cluster</category>
+      </categories>
+      <tags>
+        <tag>Redis</tag>
+        <tag>Cluster</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>利用Redlock演算法實現自己的分佈式鎖</title>
     <url>/redlock-deepknow/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我之前有寫透過 <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">lock or CAS</a> 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>
@@ -9163,8 +9282,8 @@ using (var channel = connection.CreateModel())
         <category>sql-server</category>
       </categories>
       <tags>
-        <tag>SQL</tag>
         <tag>sql-server</tag>
+        <tag>SQL</tag>
         <tag>Merge</tag>
       </tags>
   </entry>
