@@ -74,6 +74,112 @@
       </tags>
   </entry>
   <entry>
+    <title>Autofac + Interceptors(AOP) 動態代理</title>
+    <url>/autofac-aop/</url>
+    <content><![CDATA[<p>Autofac 是個IOC容器  不懂IOC 參考 我之前寫<br>的<a href="/ioc-di/" title="IOC(控制反轉)，DI(依賴注入) 深入淺出~~">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
+<p>小弟之前有一個開源框架 裡面簡單介紹 AOP核心概念和如何實作!</p>
+<p>Autofac 有寫一個 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2F1dG9mYWMvQXV0b2ZhYy5FeHRyYXMuRHluYW1pY1Byb3h5" title="https://github.com/autofac/Autofac.Extras.DynamicProxy">Autofac.Extras.DynamicProxy<i class="fa fa-external-link"></i></span> 把AOP和IOC容器融合的框架</p>
+<p>在Autofac使用AOP 需要實現下面幾個步驟</p>
+<p>本次範例我們從資料庫中撈取時間資料出來，並使用<code>Thread.Sleep(5000)</code>作出延遲，判斷時間是否前後一致。</p>
+<h2 id="第一步（定義攔截器）："><a href="#第一步（定義攔截器）：" class="headerlink" title="第一步（定義攔截器）："></a>第一步（定義攔截器）：</h2><p>我們撰寫一個快取的攔截器繼承<code>IInterceptor</code> 介面，並實現<code>Intercep</code>方法</p>
+<p>其中 <code>IInvocation</code>參數有許多有用的資料</p>
+<ul>
+<li>Arguments：傳入方法中的參數</li>
+<li>InvocationTarget ：被代理物件</li>
+<li>MethodInvocationTarget：被代理物件的呼叫方法資訊</li>
+<li>Proxy：代理物件</li>
+<li>Method：代理的呼叫方法資訊</li>
+<li>ReturnValue：呼叫方法的回傳值</li>
+</ul>
+<p>這幾個欄位是我們比較常用的資訊</p>
+<pre><code>public class TimeInterceptor : IInterceptor
+{
+    private ITimeService _timeService;
+    public TimeInterceptor(ITimeService s)
+    {
+
+        _timeService = s;
+    }
+
+    public void Intercept(IInvocation invocation)
+    {
+        var time = CallContext.GetData(&quot;time&quot;)?.ToString();
+        if (time == null)
+        {
+            //如果沒有快取 執行呼叫Service
+            invocation.Proceed();
+            CallContext.SetData(&quot;time&quot;, invocation.ReturnValue);
+        }
+        else
+        {
+            //如果有快取直接取值
+            invocation.ReturnValue = time;
+        }
+    }
+}
+</code></pre><p>他使用到 <code>TimeService</code> 模擬從資料庫中撈取資料出來</p>
+<pre><code>public interface ITimeService
+{
+    string GetTime();
+}
+
+public class TimeService : ITimeService
+{
+    public string GetTime()
+    {
+        return DateTime.Now.ToString(&quot;MM/dd/yyyy hh:mm:ss&quot;);
+    }
+}
+</code></pre><h2 id="第二步（標記攔截器）："><a href="#第二步（標記攔截器）：" class="headerlink" title="第二步（標記攔截器）："></a>第二步（標記攔截器）：</h2><p>使用<code>Intercept</code>標籤並帶入要攔截類別型態．</p>
+<pre><code>[Intercept(typeof(TimeInterceptor))]
+public class Person : IPerson
+{
+    public string SaySomething()
+    {
+        return DateTime.Now.ToLongTimeString();
+    }
+}
+
+public interface IPerson
+{
+    string SaySomething();
+}
+</code></pre><h2 id="第三步（註冊攔截器到容器中）："><a href="#第三步（註冊攔截器到容器中）：" class="headerlink" title="第三步（註冊攔截器到容器中）："></a>第三步（註冊攔截器到容器中）：</h2><p>這邊有兩個小細節</p>
+<ol>
+<li>如果是註冊介面使用<code>EnableInterfaceInterceptors</code>，註冊一般類別使用<code>EnableClassInterceptors</code></li>
+<li>註冊攔截器入容器</li>
+</ol>
+<p>因為這個範例使用<code></code>所以我們要呼叫<code>EnableInterfaceInterceptors</code></p>
+<pre><code>var builder = new ContainerBuilder();
+
+builder.RegisterType&lt;TimeInterceptor&gt;(); //註冊攔截器
+
+builder.RegisterType&lt;Person&gt;()
+        .As&lt;IPerson&gt;()
+        .EnableInterfaceInterceptors();
+
+//註冊時間Service
+builder.RegisterType&lt;TimeService&gt;().As&lt;ITimeService&gt;();
+
+return builder.Build();
+</code></pre><p> <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0lPQ19TYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL0F1dG9mYWNXaWh0QU9Q" title="https://github.com/isdaniel/IOC_Sample/tree/master/src/AutofacWihtAOP">原始碼連結<i class="fa fa-external-link"></i></span></p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p><span style="color:#FFD700;">Autofac + DynamicProxy </span>有一個很大優勢，是可以把要注入的抽象動作一起注入攔截器中</p>
+<p>例如本次範例我們將<code>ITimeService</code>使用建構子注入法，注入至<code>TimeInterceptor</code>攔截器中</p>
+<p>讓系統和寫法擁有更多更多的彈性</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/autofac-aop/">https://isdaniel.github.io/autofac-aop/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>IOC</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>IOC</tag>
+        <tag>Autofac</tag>
+        <tag>AOP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>AOP Lock Architecture</title>
     <url>/aop-lock-mechanism/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
@@ -286,112 +392,6 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
       </tags>
   </entry>
   <entry>
-    <title>Autofac + Interceptors(AOP) 動態代理</title>
-    <url>/autofac-aop/</url>
-    <content><![CDATA[<p>Autofac 是個IOC容器  不懂IOC 參考 我之前寫<br>的<a href="/ioc-di/" title="IOC(控制反轉)，DI(依賴注入) 深入淺出~~">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
-<p>小弟之前有一個開源框架 裡面簡單介紹 AOP核心概念和如何實作!</p>
-<p>Autofac 有寫一個 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2F1dG9mYWMvQXV0b2ZhYy5FeHRyYXMuRHluYW1pY1Byb3h5" title="https://github.com/autofac/Autofac.Extras.DynamicProxy">Autofac.Extras.DynamicProxy<i class="fa fa-external-link"></i></span> 把AOP和IOC容器融合的框架</p>
-<p>在Autofac使用AOP 需要實現下面幾個步驟</p>
-<p>本次範例我們從資料庫中撈取時間資料出來，並使用<code>Thread.Sleep(5000)</code>作出延遲，判斷時間是否前後一致。</p>
-<h2 id="第一步（定義攔截器）："><a href="#第一步（定義攔截器）：" class="headerlink" title="第一步（定義攔截器）："></a>第一步（定義攔截器）：</h2><p>我們撰寫一個快取的攔截器繼承<code>IInterceptor</code> 介面，並實現<code>Intercep</code>方法</p>
-<p>其中 <code>IInvocation</code>參數有許多有用的資料</p>
-<ul>
-<li>Arguments：傳入方法中的參數</li>
-<li>InvocationTarget ：被代理物件</li>
-<li>MethodInvocationTarget：被代理物件的呼叫方法資訊</li>
-<li>Proxy：代理物件</li>
-<li>Method：代理的呼叫方法資訊</li>
-<li>ReturnValue：呼叫方法的回傳值</li>
-</ul>
-<p>這幾個欄位是我們比較常用的資訊</p>
-<pre><code>public class TimeInterceptor : IInterceptor
-{
-    private ITimeService _timeService;
-    public TimeInterceptor(ITimeService s)
-    {
-
-        _timeService = s;
-    }
-
-    public void Intercept(IInvocation invocation)
-    {
-        var time = CallContext.GetData(&quot;time&quot;)?.ToString();
-        if (time == null)
-        {
-            //如果沒有快取 執行呼叫Service
-            invocation.Proceed();
-            CallContext.SetData(&quot;time&quot;, invocation.ReturnValue);
-        }
-        else
-        {
-            //如果有快取直接取值
-            invocation.ReturnValue = time;
-        }
-    }
-}
-</code></pre><p>他使用到 <code>TimeService</code> 模擬從資料庫中撈取資料出來</p>
-<pre><code>public interface ITimeService
-{
-    string GetTime();
-}
-
-public class TimeService : ITimeService
-{
-    public string GetTime()
-    {
-        return DateTime.Now.ToString(&quot;MM/dd/yyyy hh:mm:ss&quot;);
-    }
-}
-</code></pre><h2 id="第二步（標記攔截器）："><a href="#第二步（標記攔截器）：" class="headerlink" title="第二步（標記攔截器）："></a>第二步（標記攔截器）：</h2><p>使用<code>Intercept</code>標籤並帶入要攔截類別型態．</p>
-<pre><code>[Intercept(typeof(TimeInterceptor))]
-public class Person : IPerson
-{
-    public string SaySomething()
-    {
-        return DateTime.Now.ToLongTimeString();
-    }
-}
-
-public interface IPerson
-{
-    string SaySomething();
-}
-</code></pre><h2 id="第三步（註冊攔截器到容器中）："><a href="#第三步（註冊攔截器到容器中）：" class="headerlink" title="第三步（註冊攔截器到容器中）："></a>第三步（註冊攔截器到容器中）：</h2><p>這邊有兩個小細節</p>
-<ol>
-<li>如果是註冊介面使用<code>EnableInterfaceInterceptors</code>，註冊一般類別使用<code>EnableClassInterceptors</code></li>
-<li>註冊攔截器入容器</li>
-</ol>
-<p>因為這個範例使用<code></code>所以我們要呼叫<code>EnableInterfaceInterceptors</code></p>
-<pre><code>var builder = new ContainerBuilder();
-
-builder.RegisterType&lt;TimeInterceptor&gt;(); //註冊攔截器
-
-builder.RegisterType&lt;Person&gt;()
-        .As&lt;IPerson&gt;()
-        .EnableInterfaceInterceptors();
-
-//註冊時間Service
-builder.RegisterType&lt;TimeService&gt;().As&lt;ITimeService&gt;();
-
-return builder.Build();
-</code></pre><p> <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0lPQ19TYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL0F1dG9mYWNXaWh0QU9Q" title="https://github.com/isdaniel/IOC_Sample/tree/master/src/AutofacWihtAOP">原始碼連結<i class="fa fa-external-link"></i></span></p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p><span style="color:#FFD700;">Autofac + DynamicProxy </span>有一個很大優勢，是可以把要注入的抽象動作一起注入攔截器中</p>
-<p>例如本次範例我們將<code>ITimeService</code>使用建構子注入法，注入至<code>TimeInterceptor</code>攔截器中</p>
-<p>讓系統和寫法擁有更多更多的彈性</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/autofac-aop/">https://isdaniel.github.io/autofac-aop/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>IOC</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>IOC</tag>
-        <tag>Autofac</tag>
-        <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</title>
     <url>/awesomeproxy-net/</url>
     <content><![CDATA[<p>今天和大家分享<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0F3ZXNvbWVQcm94eS5OZXQ=" title="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net<i class="fa fa-external-link"></i></span>小弟開源AOP輕型框架</p>
@@ -558,6 +558,86 @@ return builder.Build();
       </tags>
   </entry>
   <entry>
+    <title>【深入淺出】Base編碼 (Base64為例子)</title>
+    <url>/base64-principle/</url>
+    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
+<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
+<p>此篇和大家分享Base家族的秘密</p>
+<hr>
+<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
+<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
+<blockquote>
+<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
+</blockquote>
+<p>它使用下面表中所使用的字符與編碼。</p>
+<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
+<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
+<p><code>Base64</code> 中的64其實是有含意的</p>
+<p>他會把資料轉成</p>
+<pre><code>a~z (26)
+A~Z (26)
+0~9 (10)
++ (1)
+/ (1)
+</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
+<blockquote>
+<p>64 = 26+26+10+1+1</p>
+</blockquote>
+<hr>
+<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
+<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
+<blockquote>
+<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
+</blockquote>
+<p>這邊有幾個重點</p>
+<ol>
+<li>會把資料分割成每 3 byte (24bit) 為單位</li>
+<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
+<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
+<li>直到全部輸入資料轉換完成</li>
+</ol>
+<p>下面有個例子方便大家了解！</p>
+<hr>
+<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
+<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
+<ol>
+<li>將字元轉換成二進制</li>
+</ol>
+<ul>
+<li>B (66) = 0    1    0    0    0    0    1    0</li>
+<li>C (67) = 0    1    0    0    0    0    1    1</li>
+</ul>
+<ol start="2">
+<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
+</li>
+<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
+</li>
+<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
+</li>
+</ol>
+<p><img src="/images/Base64_1.PNG" alt="img"></p>
+<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
+<blockquote>
+<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
+</blockquote>
+<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
+<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
+<p><code>Base32 : a~z , 2~7</code></p>
+<p>原理其實都是一樣的</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>WebDesign</tag>
+        <tag>Base64</tag>
+        <tag>Encoding</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>C# Boxing vs UnBoxing</title>
     <url>/boxing-unboxing/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p><code>Boxing</code>跟<code>UnBoxing</code>在.net中,我們可能在無意識使用到但這個事情確會造成一些效能影響…</p>
@@ -652,86 +732,6 @@ return builder.Build();
       </categories>
       <tags>
         <tag>C#</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>【深入淺出】Base編碼 (Base64為例子)</title>
-    <url>/base64-principle/</url>
-    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
-<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
-<p>此篇和大家分享Base家族的秘密</p>
-<hr>
-<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
-<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
-<blockquote>
-<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
-</blockquote>
-<p>它使用下面表中所使用的字符與編碼。</p>
-<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
-<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
-<p><code>Base64</code> 中的64其實是有含意的</p>
-<p>他會把資料轉成</p>
-<pre><code>a~z (26)
-A~Z (26)
-0~9 (10)
-+ (1)
-/ (1)
-</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
-<blockquote>
-<p>64 = 26+26+10+1+1</p>
-</blockquote>
-<hr>
-<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
-<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
-<blockquote>
-<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
-</blockquote>
-<p>這邊有幾個重點</p>
-<ol>
-<li>會把資料分割成每 3 byte (24bit) 為單位</li>
-<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
-<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
-<li>直到全部輸入資料轉換完成</li>
-</ol>
-<p>下面有個例子方便大家了解！</p>
-<hr>
-<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
-<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
-<ol>
-<li>將字元轉換成二進制</li>
-</ol>
-<ul>
-<li>B (66) = 0    1    0    0    0    0    1    0</li>
-<li>C (67) = 0    1    0    0    0    0    1    1</li>
-</ul>
-<ol start="2">
-<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
-</li>
-<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
-</li>
-<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
-</li>
-</ol>
-<p><img src="/images/Base64_1.PNG" alt="img"></p>
-<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
-<blockquote>
-<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
-</blockquote>
-<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
-<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
-<p><code>Base32 : a~z , 2~7</code></p>
-<p>原理其實都是一樣的</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>WebDesign</tag>
-        <tag>Base64</tag>
-        <tag>Encoding</tag>
       </tags>
   </entry>
   <entry>
@@ -1087,6 +1087,49 @@ public abstract class MoveBase
       </tags>
   </entry>
   <entry>
+    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
+    <url>/c-func-1/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
+<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
+<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
+<hr>
+<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$"delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>執行結果:Yes 委託是一個特別的類別</p>
+</blockquote>
+<p>但委託物件方式很特別 他在宣告時必須傳入<strong>[建構子參數]</strong>  而建構子參數是<strong>[方法]</strong></p>
+<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
+<pre><code>public delegate int calcInt(int arg1,int arg2);
+</code></pre><p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">add</span>(<span class="params"><span class="keyword">int</span> a, <span class="keyword">int</span> b</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>或是</p>
+<p>使用.net提供的 語法糖 如下</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br></pre></td></tr></table></figure></div>
+<p>編譯器會動態幫我們產生一個方法。</p>
+<p>委託就這樣嗎?!</p>
+<hr>
+<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<t></t></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class Calculator&lt;T&gt;</span><br><span class="line">    <span class="keyword">where</span> T : <span class="keyword">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
+<p>重點:我們可以在Client端決定如何使用此方法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="keyword">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="keyword">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="keyword">int</span>&gt;(i_List);</span><br><span class="line"><span class="keyword">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="keyword">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$"add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>"</span>);</span><br></pre></td></tr></table></figure></div>
+<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
+<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Delegate</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Func</tag>
+        <tag>Delegate</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(二)</title>
     <url>/c-func-2/</url>
     <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
@@ -1222,49 +1265,6 @@ pList.Where(per =&gt; per.Age &gt; 10);
 <p>雖然在裡面一樣是一個一個判斷是否符合條件，符合再返回，但利用委託和泛型就可以對於任何條件和任何型別來做比較　大大提升了程式效率</p>
 <p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-2/">https://isdaniel.github.io/c-func-2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Delegate</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Func</tag>
-        <tag>Delegate</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
-    <url>/c-func-1/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
-<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
-<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
-<hr>
-<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>(<span class="params"></span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="keyword">string</span>[] args</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$"delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>"</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>執行結果:Yes 委託是一個特別的類別</p>
-</blockquote>
-<p>但委託物件方式很特別 他在宣告時必須傳入<strong>[建構子參數]</strong>  而建構子參數是<strong>[方法]</strong></p>
-<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
-<pre><code>public delegate int calcInt(int arg1,int arg2);
-</code></pre><p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">int</span> <span class="title">add</span>(<span class="params"><span class="keyword">int</span> a, <span class="keyword">int</span> b</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>或是</p>
-<p>使用.net提供的 語法糖 如下</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br></pre></td></tr></table></figure></div>
-<p>編譯器會動態幫我們產生一個方法。</p>
-<p>委託就這樣嗎?!</p>
-<hr>
-<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<t></t></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">public class Calculator&lt;T&gt;</span><br><span class="line">    <span class="keyword">where</span> T : <span class="keyword">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
-<p>重點:我們可以在Client端決定如何使用此方法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="keyword">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="keyword">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="keyword">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="keyword">int</span>&gt;(i_List);</span><br><span class="line"><span class="keyword">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="keyword">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$"add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>"</span>);</span><br></pre></td></tr></table></figure></div>
-<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
-<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0RlbGVnYXRlU2ltcGxl" title="https://github.com/isdaniel/DelegateSimple">原始碼範例<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>C#</category>
@@ -4934,6 +4934,121 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)</title>
+    <url>/ithelp-day19/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#modelmetadata-%e5%85%83%e6%95%b8%e6%93%9a%e5%84%b2%e5%ad%98%e5%8f%83%e6%95%b8%e8%b3%87%e6%96%99">ModelMetadata 元數據儲存參數資料</a></li>
+<li><a href="#bindsimplemodel-%e7%b0%a1%e5%96%ae%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a">BindSimpleModel 簡單模型綁定</a></li>
+<li><a href="#bindcomplexmodel-%e8%a4%87%e9%9b%9c%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a">BindComplexModel 複雜模型綁定</a></li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a><ul>
+<li><a href="#%e7%b0%a1%e5%96%ae%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a-vs-%e8%a4%87%e9%9b%9c%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a">簡單模型綁定 vs 複雜模型綁定</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>IValueProvider</code>物件透過一個<code>ValueProviderFactory</code>工廠來產生</p>
+<p><code>Action</code>方法綁定<code>Model</code>参数由實現<code>IModelBinder</code>的介面<code>ModelBinder（DefaultModelBinder）</code>物件來實現</p>
+<p>在<code>IModelBinder</code>介面中有一個重要的方法<code>object BindModel</code>取得<code>Model</code>參數資料.</p>
+<p>但在<code>Http</code>請求傳送參數極為複雜是如何將參數動態綁定在<code>Action</code>參數上呢?</p>
+<p>最常見的<strong>Json</strong>參數透過<code>POST Body</code>傳到AP端,經由<strong>MVC</strong> <code>BindModel</code>來取得參數物件資料.</p>
+<p>如下方資料.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JSON"><figure class="iseeu highlight /json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">   <span class="attr">"Key"</span>:<span class="string">"123"</span>,</span><br><span class="line">   <span class="attr">"value"</span>:<span class="string">""</span>,</span><br><span class="line">   <span class="attr">"Adress"</span>:[<span class="string">"test133"</span>,<span class="string">"e2424"</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RootObject</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> <span class="keyword">value</span> &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="keyword">string</span>&gt; Adress &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>網路上有個工具可方便使用Json字串取得<code>c#</code> 對應<code>Model</code><span class="exturl" data-url="aHR0cDovL2pzb24yY3NoYXJwLmNvbS8=" title="http://json2csharp.com/">Json to c# model<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<p>本篇就和大家分享這個機制是如何達成的</p>
+<blockquote>
+<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="ModelMetadata-元數據儲存參數資料"><a href="#ModelMetadata-元數據儲存參數資料" class="headerlink" title="ModelMetadata 元數據儲存參數資料"></a>ModelMetadata 元數據儲存參數資料</h2><p><code>Model</code>參數類型可能是一個簡單字串或者是一個值類型，也可能是一個複雜類型物件。</p>
+<p>對於一個複雜類型物件，基於類型本身和物件成員元數據通過一個<code>ModelMetadata</code>類別來達成</p>
+<p>某個成員又可能是一個複雜類型物件，通過<code>ModelMetadata</code>物件表示<code>Model</code>狀態,所以<code>ModelMetadata</code>(元數據)實際上具有一個樹形層次化的資料結構.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ModelMetadata</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> Type ModelType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">bool</span> IsComplexType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> IsNullableValueType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> Type ContainerType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">object</span> Model &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> PropertyName &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">object</span>&gt; AdditionalValues &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">protected</span> ModelMetadataProvider Provider &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> IEnumerable&lt;ModelMetadata&gt; Properties</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_properties == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				IEnumerable&lt;ModelMetadata&gt; originalProperties = Provider.GetMetadataForProperties(Model, RealModelType);</span><br><span class="line">				_propertiesInternal = SortProperties(originalProperties.AsArray());</span><br><span class="line">				_properties = <span class="keyword">new</span> ReadOnlyCollection&lt;ModelMetadata&gt;(_propertiesInternal);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _properties;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在<code>ModelMetadata</code>類別中有幾個重要的屬性.</p>
+<ol>
+<li><code>Provider(ModelMetadataProvider)</code>:存放當前物件下面一個<code>ModelMetadataProvider</code>資訊,<code>ModelMetadataProvider</code>主要是提供<code>ModelMetadata</code>是如何被產生(一般使用<code>CachedDataAnnotationsModelMetadataProvider</code>這個類別使用<code>MemoryCache</code>存放資訊)</li>
+<li><code>IEnumerable&lt;ModelMetadata&gt;</code>:用來表示當前物件所使用屬性資訊<code>ModelMetadata</code>集合</li>
+<li><code>IsComplexType</code>:判斷是否是複雜模型.</li>
+<li><code>ContainerType</code>:父節點類別型態(可以看做樹狀結構,可當作存放根結點類型)</li>
+<li><code>ModelType</code>:目前屬性或參數的類型.</li>
+<li><code>Model</code>:綁定完使用的參數</li>
+</ol>
+<p>假如這邊有兩個類別<code>Person</code>,<code>AddressInfo</code>且一個<code>Person</code>可以擁有多個地址</p>
+<p>這裡就會呈現一對多關係如下圖</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/UML_Relation.png" alt="UML_Model"></p>
+<blockquote>
+<p>就像大樹支點和葉子,這個屬性可能是葉子也可能是別人的支點.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Person</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age&#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> IEnumerable&lt;AddressInfo&gt; Address &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AddressInfo</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>上面類別關係圖就是簡單表示複雜模型</p>
+<p>通過上面的介紹我們知道表示<code>Model</code>元數據<code>ModelMetadata</code>具有一個樹形層次結構</p>
+<p>在每個<code>ModelMetadata</code>內部都有一個型別為<code>IEnumerable&lt;ModelMetadata&gt;</code>的<code>Properties</code>屬性來引用它的下級<code>ModelMetadata</code>，這就形成了一個無限巢狀的後設資料表示結構.</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/metadata_uml.png" alt="UML_Model"></p>
+<p>此圖可以表示<code>ModelMetadata</code>跟<code>Person</code>類別屬性的關係.</p>
+<h2 id="BindSimpleModel-簡單模型綁定"><a href="#BindSimpleModel-簡單模型綁定" class="headerlink" title="BindSimpleModel 簡單模型綁定"></a>BindSimpleModel 簡單模型綁定</h2><p>在上面介紹了<code>ModelMetadata</code>這個類別儲存了參數的各個資訊.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">object</span> <span class="title">BindSimpleModel</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">		ControllerContext controllerContext, </span></span></span><br><span class="line"><span class="function"><span class="params">		ModelBindingContext bindingContext, </span></span></span><br><span class="line"><span class="function"><span class="params">		ValueProviderResult valueProviderResult</span></span></span><br><span class="line"><span class="function"><span class="params">	</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	bindingContext.ModelState.SetModelValue(bindingContext.ModelName, valueProviderResult);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (bindingContext.ModelType.IsInstanceOfType(valueProviderResult.RawValue))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> valueProviderResult.RawValue;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (bindingContext.ModelType != <span class="keyword">typeof</span>(<span class="keyword">string</span>))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (bindingContext.ModelType.IsArray)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">object</span> modelArray = ConvertProviderResult(bindingContext.ModelState, bindingContext.ModelName, valueProviderResult, bindingContext.ModelType);</span><br><span class="line">			<span class="keyword">return</span> modelArray;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Type enumerableType = TypeHelpers.ExtractGenericInterface(bindingContext.ModelType, <span class="keyword">typeof</span>(IEnumerable&lt;&gt;));</span><br><span class="line">		<span class="keyword">if</span> (enumerableType != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">object</span> modelCollection = CreateModel(controllerContext, bindingContext, bindingContext.ModelType);</span><br><span class="line">			Type elementType = enumerableType.GetGenericArguments()[<span class="number">0</span>];</span><br><span class="line">			Type arrayType = elementType.MakeArrayType();</span><br><span class="line">			<span class="keyword">object</span> modelArray = ConvertProviderResult(bindingContext.ModelState, bindingContext.ModelName, valueProviderResult, arrayType);</span><br><span class="line"></span><br><span class="line">			Type collectionType = <span class="keyword">typeof</span>(ICollection&lt;&gt;).MakeGenericType(elementType);</span><br><span class="line">			<span class="keyword">if</span> (collectionType.IsInstanceOfType(modelCollection))</span><br><span class="line">			&#123;</span><br><span class="line">				CollectionHelpers.ReplaceCollection(elementType, modelCollection, modelArray);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> modelCollection;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">object</span> model = ConvertProviderResult(bindingContext.ModelState, bindingContext.ModelName, valueProviderResult, bindingContext.ModelType);</span><br><span class="line">	<span class="keyword">return</span> model;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">object</span> <span class="title">ConvertProviderResult</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">	ModelStateDictionary modelState, </span></span></span><br><span class="line"><span class="function"><span class="params">	<span class="keyword">string</span> modelStateKey, </span></span></span><br><span class="line"><span class="function"><span class="params">	ValueProviderResult valueProviderResult, </span></span></span><br><span class="line"><span class="function"><span class="params">	Type destinationType</span></span></span><br><span class="line"><span class="function"><span class="params">	</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">try</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">object</span> convertedValue = valueProviderResult.ConvertTo(destinationType);</span><br><span class="line">		<span class="keyword">return</span> convertedValue;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">catch</span> (Exception ex)</span><br><span class="line">	&#123;</span><br><span class="line">		modelState.AddModelError(modelStateKey, ex);</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>透過<code>ConvertProviderResult</code>來將類型轉換成簡單模型綁定使用的參數實例.</p>
+<p>在<code>BindSimpleModel</code>中依照下面幾個規則來做參數物件建立.</p>
+<ol>
+<li><code>Array</code>:如果此參數是陣列,判斷此陣列型別並利用<code>ValueProviderResult.ConvertTo()</code>建立陣列</li>
+<li><code>IEnumerable&lt;&gt;</code>:如果此參數是<code>IEnumerable&lt;&gt;</code>集合,判斷此<code>IEnumerable&lt;&gt;</code>型別<code>ValueProviderResult.ConvertTo()</code>建立集合</li>
+<li><code>object</code>:不是上面的型別就直接使用<code>ValueProviderResult.ConvertTo()</code>建立物件.</li>
+</ol>
+<blockquote>
+<p><code>ConvertTo()</code>方法在簡單模型物件建立起到一個很大的作用</p>
+</blockquote>
+<h2 id="BindComplexModel-複雜模型綁定"><a href="#BindComplexModel-複雜模型綁定" class="headerlink" title="BindComplexModel 複雜模型綁定"></a>BindComplexModel 複雜模型綁定</h2><p>在<code>BindModel</code>方法中有一個<code>BindComplexModel</code>方法是針對複雜模型產生的方法.</p>
+<p>一開始先判斷<code>ModelBindingContext.Model</code>是否為<code>Null</code>如果是就會建立一個物件實例返回.</p>
+<p>會依照下面機制判斷產生物件</p>
+<ol>
+<li>判斷參數類型是否<code>Array</code>產生一個相對應陣列集合</li>
+<li>判斷參數類型是否<code>IDictionary&lt;,&gt;</code> and <code>ICollection&lt;&gt;</code>集合產生一個相對應陣列集合</li>
+<li>判斷參數類型是否<code>IEnumerable&lt;&gt;</code>集合產生一個相對應陣列集合</li>
+</ol>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">object</span> <span class="title">BindComplexModel</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">    ControllerContext controllerContext, </span></span></span><br><span class="line"><span class="function"><span class="params">    ModelBindingContext bindingContext</span></span></span><br><span class="line"><span class="function"><span class="params">    </span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">object</span> model = bindingContext.Model;</span><br><span class="line">	Type modelType = bindingContext.ModelType;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (model == <span class="literal">null</span> &amp;&amp; modelType.IsArray)</span><br><span class="line">	&#123;</span><br><span class="line">		Type elementType = modelType.GetElementType();</span><br><span class="line">		Type listType = <span class="keyword">typeof</span>(List&lt;&gt;).MakeGenericType(elementType);</span><br><span class="line">		<span class="keyword">object</span> collection = CreateModel(controllerContext, bindingContext, listType);</span><br><span class="line"></span><br><span class="line">		ModelBindingContext arrayBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">		&#123;</span><br><span class="line">			ModelMetadata = ModelMetadataProviders.Current.GetMetadataForType(() =&gt; collection, listType),</span><br><span class="line">			ModelName = bindingContext.ModelName,</span><br><span class="line">			ModelState = bindingContext.ModelState,</span><br><span class="line">			PropertyFilter = bindingContext.PropertyFilter,</span><br><span class="line">			ValueProvider = bindingContext.ValueProvider</span><br><span class="line">		&#125;;</span><br><span class="line">		IList list = (IList)UpdateCollection(controllerContext, arrayBindingContext, elementType);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (list == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Array array = Array.CreateInstance(elementType, list.Count);</span><br><span class="line">		list.CopyTo(array, <span class="number">0</span>);</span><br><span class="line">		<span class="keyword">return</span> array;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		model = CreateModel(controllerContext, bindingContext, modelType);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	Type dictionaryType = TypeHelpers.ExtractGenericInterface(modelType, <span class="keyword">typeof</span>(IDictionary&lt;,&gt;));</span><br><span class="line">	<span class="keyword">if</span> (dictionaryType != <span class="literal">null</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		Type[] genericArguments = dictionaryType.GetGenericArguments();</span><br><span class="line">		Type keyType = genericArguments[<span class="number">0</span>];</span><br><span class="line">		Type valueType = genericArguments[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">		ModelBindingContext dictionaryBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">		&#123;</span><br><span class="line">			ModelMetadata = ModelMetadataProviders.Current.GetMetadataForType(() =&gt; model, modelType),</span><br><span class="line">			ModelName = bindingContext.ModelName,</span><br><span class="line">			ModelState = bindingContext.ModelState,</span><br><span class="line">			PropertyFilter = bindingContext.PropertyFilter,</span><br><span class="line">			ValueProvider = bindingContext.ValueProvider</span><br><span class="line">		&#125;;</span><br><span class="line">		<span class="keyword">object</span> dictionary = UpdateDictionary(controllerContext, dictionaryBindingContext, keyType, valueType);</span><br><span class="line">		<span class="keyword">return</span> dictionary;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	Type enumerableType = TypeHelpers.ExtractGenericInterface(modelType, <span class="keyword">typeof</span>(IEnumerable&lt;&gt;));</span><br><span class="line">	<span class="keyword">if</span> (enumerableType != <span class="literal">null</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		Type elementType = enumerableType.GetGenericArguments()[<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">		Type collectionType = <span class="keyword">typeof</span>(ICollection&lt;&gt;).MakeGenericType(elementType);</span><br><span class="line">		<span class="keyword">if</span> (collectionType.IsInstanceOfType(model))</span><br><span class="line">		&#123;</span><br><span class="line">			ModelBindingContext collectionBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">			&#123;</span><br><span class="line">				ModelMetadata = ModelMetadataProviders.Current.GetMetadataForType(() =&gt; model, modelType),</span><br><span class="line">				ModelName = bindingContext.ModelName,</span><br><span class="line">				ModelState = bindingContext.ModelState,</span><br><span class="line">				PropertyFilter = bindingContext.PropertyFilter,</span><br><span class="line">				ValueProvider = bindingContext.ValueProvider</span><br><span class="line">			&#125;;</span><br><span class="line">			<span class="keyword">object</span> collection = UpdateCollection(controllerContext, collectionBindingContext, elementType);</span><br><span class="line">			<span class="keyword">return</span> collection;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	BindComplexElementalModel(controllerContext, bindingContext, model);</span><br><span class="line">	<span class="keyword">return</span> model;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>最後呼叫<code>BindComplexElementalModel</code>方法將剛剛建立值(<code>model</code>物件)透過<code>ValueProvider</code>把參數給值.</p>
+<blockquote>
+<p>有分簡單綁定和複雜綁定,最後都還是會呼叫使用簡單綁定來值綁定給物件.</p>
+</blockquote>
+<p>在<code>BindProperty</code>方法時填充子節點<code>ModelMetadata</code>的<code>Model</code>屬性.</p>
+<p><code>GetPropertyValue</code>透過<code>(DefaultModelBinder)</code>再次綁定物件動作如下</p>
+<ul>
+<li><code>ModelMetadata</code>是簡單模型就會把值填充給此次<code>ModelMetadata.Model</code></li>
+<li><code>ModelMetadata</code>是複雜模型就建立一個物件後呼叫<code>BindProperty</code>直到找到最後的簡單模型.</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">BindProperty</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext, PropertyDescriptor propertyDescriptor</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	IModelBinder propertyBinder = Binders.GetBinder(propertyDescriptor.PropertyType);</span><br><span class="line">	<span class="keyword">object</span> originalPropertyValue = propertyDescriptor.GetValue(bindingContext.Model);</span><br><span class="line">	ModelMetadata propertyMetadata = bindingContext.PropertyMetadata[propertyDescriptor.Name];</span><br><span class="line">	propertyMetadata.Model = originalPropertyValue;</span><br><span class="line">	ModelBindingContext innerBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">	&#123;</span><br><span class="line">		ModelMetadata = propertyMetadata,</span><br><span class="line">		ModelName = fullPropertyKey,</span><br><span class="line">		ModelState = bindingContext.ModelState,</span><br><span class="line">		ValueProvider = bindingContext.ValueProvider</span><br><span class="line">	&#125;;</span><br><span class="line">	<span class="keyword">object</span> newPropertyValue = GetPropertyValue(controllerContext, innerBindingContext, propertyDescriptor, propertyBinder);</span><br><span class="line">	propertyMetadata.Model = newPropertyValue;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">object</span> <span class="title">GetPropertyValue</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext, PropertyDescriptor propertyDescriptor, IModelBinder propertyBinder</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">object</span> <span class="keyword">value</span> = propertyBinder.BindModel(controllerContext, bindingContext);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (bindingContext.ModelMetadata.ConvertEmptyStringToNull &amp;&amp; Equals(<span class="keyword">value</span>, String.Empty))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">value</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><strong>MVC</strong> <code>ModelBinding</code> 使用到一個設計模式(組合模式),當我發現時覺得十分興奮.</p>
+<p>因為在現實專案中我較少看到(組合模式),發輝良好的作用而在這個案例上發揮的淋漓盡致.</p>
+<p>組合模式關係圖如下</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/Composite_Design_Pattern_UML.jpg" alt="UML_Model"></p>
+<p><span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvQ29tcG9zaXRlX3BhdHRlcm4=" title="https://en.wikipedia.org/wiki/Composite_pattern">參考圖片連結<i class="fa fa-external-link"></i></span></p>
+<p>組合模式基本上分為兩個部分<strong>葉</strong>(<code>Left</code>)和<strong>組件</strong>(<code>component</code>)他們都依賴於一個抽象,組件實現取得動作的抽象只為了獲得下面的葉,真正有動作只會在葉有動作</p>
+<p><code>組合模式</code>很適合用在樹狀的資料結構且需求對於<strong>葉</strong>和<strong>組件</strong>要做大量不一樣判斷.</p>
+<p>在模型綁定中他依靠兩個東西完成上面說的依賴關聯</p>
+<ul>
+<li><code>ModelBindingContext</code>物件</li>
+<li><code>object CreateModel</code>方法</li>
+</ul>
+<h3 id="簡單模型綁定-vs-複雜模型綁定"><a href="#簡單模型綁定-vs-複雜模型綁定" class="headerlink" title="簡單模型綁定 vs 複雜模型綁定"></a>簡單模型綁定 vs 複雜模型綁定</h3><ol>
+<li>簡單模型綁定:透過<code>ModelBindingContext</code>找到參數使用型別並利用<code>ValueProvider</code>給值,最後返回物件</li>
+<li>複雜模型綁定:透過<code>ModelBindingContext</code>建立參數利用<code>ValueProvider</code>給值,往下繼續重複動作直到呼叫簡單模型綁定方法,就不會繼續往下呼叫<code>object</code>方法.</li>
+</ol>
+<p>這裡很巧妙的利用<code>ModelBinderDictionary</code>取得當前參數型別並取得相對應<code>IModelBinder</code>實現物件.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day19/">https://isdaniel.github.io/ithelp-day19/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Asp.Net支柱 IHttpMoudle &amp; IHttphandler (第2天)</title>
     <url>/ithelp-day2/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -5136,121 +5251,6 @@ email_url: dog830228@gmail.com
 <li><span class="exturl" data-url="aHR0cHM6Ly93d3cuY29kZXByb2plY3QuY29tL0FydGljbGVzLzMzNTk2OC9JbXBsZW1lbnRpbmctSFRUUEhhbmRsZXItYW5kLUhUVFBNb2R1bGUtaW4tQVNQLU5FVA==" title="https://www.codeproject.com/Articles/335968/Implementing-HTTPHandler-and-HTTPModule-in-ASP-NET">Implementing HTTPHandler and HTTPModule in ASP.NET<i class="fa fa-external-link"></i></span></li>
 </ul>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day2/">https://isdaniel.github.io/ithelp-day2/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)</title>
-    <url>/ithelp-day19/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#modelmetadata-%e5%85%83%e6%95%b8%e6%93%9a%e5%84%b2%e5%ad%98%e5%8f%83%e6%95%b8%e8%b3%87%e6%96%99">ModelMetadata 元數據儲存參數資料</a></li>
-<li><a href="#bindsimplemodel-%e7%b0%a1%e5%96%ae%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a">BindSimpleModel 簡單模型綁定</a></li>
-<li><a href="#bindcomplexmodel-%e8%a4%87%e9%9b%9c%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a">BindComplexModel 複雜模型綁定</a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a><ul>
-<li><a href="#%e7%b0%a1%e5%96%ae%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a-vs-%e8%a4%87%e9%9b%9c%e6%a8%a1%e5%9e%8b%e7%b6%81%e5%ae%9a">簡單模型綁定 vs 複雜模型綁定</a></li>
-</ul>
-</li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>IValueProvider</code>物件透過一個<code>ValueProviderFactory</code>工廠來產生</p>
-<p><code>Action</code>方法綁定<code>Model</code>参数由實現<code>IModelBinder</code>的介面<code>ModelBinder（DefaultModelBinder）</code>物件來實現</p>
-<p>在<code>IModelBinder</code>介面中有一個重要的方法<code>object BindModel</code>取得<code>Model</code>參數資料.</p>
-<p>但在<code>Http</code>請求傳送參數極為複雜是如何將參數動態綁定在<code>Action</code>參數上呢?</p>
-<p>最常見的<strong>Json</strong>參數透過<code>POST Body</code>傳到AP端,經由<strong>MVC</strong> <code>BindModel</code>來取得參數物件資料.</p>
-<p>如下方資料.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="JSON"><figure class="iseeu highlight /json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">   <span class="attr">"Key"</span>:<span class="string">"123"</span>,</span><br><span class="line">   <span class="attr">"value"</span>:<span class="string">""</span>,</span><br><span class="line">   <span class="attr">"Adress"</span>:[<span class="string">"test133"</span>,<span class="string">"e2424"</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RootObject</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> <span class="keyword">value</span> &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="keyword">string</span>&gt; Adress &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>網路上有個工具可方便使用Json字串取得<code>c#</code> 對應<code>Model</code><span class="exturl" data-url="aHR0cDovL2pzb24yY3NoYXJwLmNvbS8=" title="http://json2csharp.com/">Json to c# model<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<p>本篇就和大家分享這個機制是如何達成的</p>
-<blockquote>
-<p>我有做一個可以針對於<span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0FzcC5uZXQtTVZDLURlYnVnZXI=" title="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger<i class="fa fa-external-link"></i></span>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="ModelMetadata-元數據儲存參數資料"><a href="#ModelMetadata-元數據儲存參數資料" class="headerlink" title="ModelMetadata 元數據儲存參數資料"></a>ModelMetadata 元數據儲存參數資料</h2><p><code>Model</code>參數類型可能是一個簡單字串或者是一個值類型，也可能是一個複雜類型物件。</p>
-<p>對於一個複雜類型物件，基於類型本身和物件成員元數據通過一個<code>ModelMetadata</code>類別來達成</p>
-<p>某個成員又可能是一個複雜類型物件，通過<code>ModelMetadata</code>物件表示<code>Model</code>狀態,所以<code>ModelMetadata</code>(元數據)實際上具有一個樹形層次化的資料結構.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ModelMetadata</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> Type ModelType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">bool</span> IsComplexType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">bool</span> IsNullableValueType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> Type ContainerType &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">object</span> Model &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">string</span> PropertyName &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">object</span>&gt; AdditionalValues &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">	<span class="keyword">protected</span> ModelMetadataProvider Provider &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">virtual</span> IEnumerable&lt;ModelMetadata&gt; Properties</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_properties == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				IEnumerable&lt;ModelMetadata&gt; originalProperties = Provider.GetMetadataForProperties(Model, RealModelType);</span><br><span class="line">				_propertiesInternal = SortProperties(originalProperties.AsArray());</span><br><span class="line">				_properties = <span class="keyword">new</span> ReadOnlyCollection&lt;ModelMetadata&gt;(_propertiesInternal);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _properties;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>在<code>ModelMetadata</code>類別中有幾個重要的屬性.</p>
-<ol>
-<li><code>Provider(ModelMetadataProvider)</code>:存放當前物件下面一個<code>ModelMetadataProvider</code>資訊,<code>ModelMetadataProvider</code>主要是提供<code>ModelMetadata</code>是如何被產生(一般使用<code>CachedDataAnnotationsModelMetadataProvider</code>這個類別使用<code>MemoryCache</code>存放資訊)</li>
-<li><code>IEnumerable&lt;ModelMetadata&gt;</code>:用來表示當前物件所使用屬性資訊<code>ModelMetadata</code>集合</li>
-<li><code>IsComplexType</code>:判斷是否是複雜模型.</li>
-<li><code>ContainerType</code>:父節點類別型態(可以看做樹狀結構,可當作存放根結點類型)</li>
-<li><code>ModelType</code>:目前屬性或參數的類型.</li>
-<li><code>Model</code>:綁定完使用的參數</li>
-</ol>
-<p>假如這邊有兩個類別<code>Person</code>,<code>AddressInfo</code>且一個<code>Person</code>可以擁有多個地址</p>
-<p>這裡就會呈現一對多關係如下圖</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/UML_Relation.png" alt="UML_Model"></p>
-<blockquote>
-<p>就像大樹支點和葉子,這個屬性可能是葉子也可能是別人的支點.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Person</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Age&#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> IEnumerable&lt;AddressInfo&gt; Address &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AddressInfo</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>上面類別關係圖就是簡單表示複雜模型</p>
-<p>通過上面的介紹我們知道表示<code>Model</code>元數據<code>ModelMetadata</code>具有一個樹形層次結構</p>
-<p>在每個<code>ModelMetadata</code>內部都有一個型別為<code>IEnumerable&lt;ModelMetadata&gt;</code>的<code>Properties</code>屬性來引用它的下級<code>ModelMetadata</code>，這就形成了一個無限巢狀的後設資料表示結構.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/metadata_uml.png" alt="UML_Model"></p>
-<p>此圖可以表示<code>ModelMetadata</code>跟<code>Person</code>類別屬性的關係.</p>
-<h2 id="BindSimpleModel-簡單模型綁定"><a href="#BindSimpleModel-簡單模型綁定" class="headerlink" title="BindSimpleModel 簡單模型綁定"></a>BindSimpleModel 簡單模型綁定</h2><p>在上面介紹了<code>ModelMetadata</code>這個類別儲存了參數的各個資訊.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">object</span> <span class="title">BindSimpleModel</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">		ControllerContext controllerContext, </span></span></span><br><span class="line"><span class="function"><span class="params">		ModelBindingContext bindingContext, </span></span></span><br><span class="line"><span class="function"><span class="params">		ValueProviderResult valueProviderResult</span></span></span><br><span class="line"><span class="function"><span class="params">	</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	bindingContext.ModelState.SetModelValue(bindingContext.ModelName, valueProviderResult);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (bindingContext.ModelType.IsInstanceOfType(valueProviderResult.RawValue))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> valueProviderResult.RawValue;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (bindingContext.ModelType != <span class="keyword">typeof</span>(<span class="keyword">string</span>))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (bindingContext.ModelType.IsArray)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">object</span> modelArray = ConvertProviderResult(bindingContext.ModelState, bindingContext.ModelName, valueProviderResult, bindingContext.ModelType);</span><br><span class="line">			<span class="keyword">return</span> modelArray;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Type enumerableType = TypeHelpers.ExtractGenericInterface(bindingContext.ModelType, <span class="keyword">typeof</span>(IEnumerable&lt;&gt;));</span><br><span class="line">		<span class="keyword">if</span> (enumerableType != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">object</span> modelCollection = CreateModel(controllerContext, bindingContext, bindingContext.ModelType);</span><br><span class="line">			Type elementType = enumerableType.GetGenericArguments()[<span class="number">0</span>];</span><br><span class="line">			Type arrayType = elementType.MakeArrayType();</span><br><span class="line">			<span class="keyword">object</span> modelArray = ConvertProviderResult(bindingContext.ModelState, bindingContext.ModelName, valueProviderResult, arrayType);</span><br><span class="line"></span><br><span class="line">			Type collectionType = <span class="keyword">typeof</span>(ICollection&lt;&gt;).MakeGenericType(elementType);</span><br><span class="line">			<span class="keyword">if</span> (collectionType.IsInstanceOfType(modelCollection))</span><br><span class="line">			&#123;</span><br><span class="line">				CollectionHelpers.ReplaceCollection(elementType, modelCollection, modelArray);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> modelCollection;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">object</span> model = ConvertProviderResult(bindingContext.ModelState, bindingContext.ModelName, valueProviderResult, bindingContext.ModelType);</span><br><span class="line">	<span class="keyword">return</span> model;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">object</span> <span class="title">ConvertProviderResult</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">	ModelStateDictionary modelState, </span></span></span><br><span class="line"><span class="function"><span class="params">	<span class="keyword">string</span> modelStateKey, </span></span></span><br><span class="line"><span class="function"><span class="params">	ValueProviderResult valueProviderResult, </span></span></span><br><span class="line"><span class="function"><span class="params">	Type destinationType</span></span></span><br><span class="line"><span class="function"><span class="params">	</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">try</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">object</span> convertedValue = valueProviderResult.ConvertTo(destinationType);</span><br><span class="line">		<span class="keyword">return</span> convertedValue;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">catch</span> (Exception ex)</span><br><span class="line">	&#123;</span><br><span class="line">		modelState.AddModelError(modelStateKey, ex);</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>透過<code>ConvertProviderResult</code>來將類型轉換成簡單模型綁定使用的參數實例.</p>
-<p>在<code>BindSimpleModel</code>中依照下面幾個規則來做參數物件建立.</p>
-<ol>
-<li><code>Array</code>:如果此參數是陣列,判斷此陣列型別並利用<code>ValueProviderResult.ConvertTo()</code>建立陣列</li>
-<li><code>IEnumerable&lt;&gt;</code>:如果此參數是<code>IEnumerable&lt;&gt;</code>集合,判斷此<code>IEnumerable&lt;&gt;</code>型別<code>ValueProviderResult.ConvertTo()</code>建立集合</li>
-<li><code>object</code>:不是上面的型別就直接使用<code>ValueProviderResult.ConvertTo()</code>建立物件.</li>
-</ol>
-<blockquote>
-<p><code>ConvertTo()</code>方法在簡單模型物件建立起到一個很大的作用</p>
-</blockquote>
-<h2 id="BindComplexModel-複雜模型綁定"><a href="#BindComplexModel-複雜模型綁定" class="headerlink" title="BindComplexModel 複雜模型綁定"></a>BindComplexModel 複雜模型綁定</h2><p>在<code>BindModel</code>方法中有一個<code>BindComplexModel</code>方法是針對複雜模型產生的方法.</p>
-<p>一開始先判斷<code>ModelBindingContext.Model</code>是否為<code>Null</code>如果是就會建立一個物件實例返回.</p>
-<p>會依照下面機制判斷產生物件</p>
-<ol>
-<li>判斷參數類型是否<code>Array</code>產生一個相對應陣列集合</li>
-<li>判斷參數類型是否<code>IDictionary&lt;,&gt;</code> and <code>ICollection&lt;&gt;</code>集合產生一個相對應陣列集合</li>
-<li>判斷參數類型是否<code>IEnumerable&lt;&gt;</code>集合產生一個相對應陣列集合</li>
-</ol>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">object</span> <span class="title">BindComplexModel</span>(<span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">    ControllerContext controllerContext, </span></span></span><br><span class="line"><span class="function"><span class="params">    ModelBindingContext bindingContext</span></span></span><br><span class="line"><span class="function"><span class="params">    </span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">object</span> model = bindingContext.Model;</span><br><span class="line">	Type modelType = bindingContext.ModelType;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (model == <span class="literal">null</span> &amp;&amp; modelType.IsArray)</span><br><span class="line">	&#123;</span><br><span class="line">		Type elementType = modelType.GetElementType();</span><br><span class="line">		Type listType = <span class="keyword">typeof</span>(List&lt;&gt;).MakeGenericType(elementType);</span><br><span class="line">		<span class="keyword">object</span> collection = CreateModel(controllerContext, bindingContext, listType);</span><br><span class="line"></span><br><span class="line">		ModelBindingContext arrayBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">		&#123;</span><br><span class="line">			ModelMetadata = ModelMetadataProviders.Current.GetMetadataForType(() =&gt; collection, listType),</span><br><span class="line">			ModelName = bindingContext.ModelName,</span><br><span class="line">			ModelState = bindingContext.ModelState,</span><br><span class="line">			PropertyFilter = bindingContext.PropertyFilter,</span><br><span class="line">			ValueProvider = bindingContext.ValueProvider</span><br><span class="line">		&#125;;</span><br><span class="line">		IList list = (IList)UpdateCollection(controllerContext, arrayBindingContext, elementType);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (list == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Array array = Array.CreateInstance(elementType, list.Count);</span><br><span class="line">		list.CopyTo(array, <span class="number">0</span>);</span><br><span class="line">		<span class="keyword">return</span> array;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		model = CreateModel(controllerContext, bindingContext, modelType);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	Type dictionaryType = TypeHelpers.ExtractGenericInterface(modelType, <span class="keyword">typeof</span>(IDictionary&lt;,&gt;));</span><br><span class="line">	<span class="keyword">if</span> (dictionaryType != <span class="literal">null</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		Type[] genericArguments = dictionaryType.GetGenericArguments();</span><br><span class="line">		Type keyType = genericArguments[<span class="number">0</span>];</span><br><span class="line">		Type valueType = genericArguments[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">		ModelBindingContext dictionaryBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">		&#123;</span><br><span class="line">			ModelMetadata = ModelMetadataProviders.Current.GetMetadataForType(() =&gt; model, modelType),</span><br><span class="line">			ModelName = bindingContext.ModelName,</span><br><span class="line">			ModelState = bindingContext.ModelState,</span><br><span class="line">			PropertyFilter = bindingContext.PropertyFilter,</span><br><span class="line">			ValueProvider = bindingContext.ValueProvider</span><br><span class="line">		&#125;;</span><br><span class="line">		<span class="keyword">object</span> dictionary = UpdateDictionary(controllerContext, dictionaryBindingContext, keyType, valueType);</span><br><span class="line">		<span class="keyword">return</span> dictionary;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	Type enumerableType = TypeHelpers.ExtractGenericInterface(modelType, <span class="keyword">typeof</span>(IEnumerable&lt;&gt;));</span><br><span class="line">	<span class="keyword">if</span> (enumerableType != <span class="literal">null</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		Type elementType = enumerableType.GetGenericArguments()[<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">		Type collectionType = <span class="keyword">typeof</span>(ICollection&lt;&gt;).MakeGenericType(elementType);</span><br><span class="line">		<span class="keyword">if</span> (collectionType.IsInstanceOfType(model))</span><br><span class="line">		&#123;</span><br><span class="line">			ModelBindingContext collectionBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">			&#123;</span><br><span class="line">				ModelMetadata = ModelMetadataProviders.Current.GetMetadataForType(() =&gt; model, modelType),</span><br><span class="line">				ModelName = bindingContext.ModelName,</span><br><span class="line">				ModelState = bindingContext.ModelState,</span><br><span class="line">				PropertyFilter = bindingContext.PropertyFilter,</span><br><span class="line">				ValueProvider = bindingContext.ValueProvider</span><br><span class="line">			&#125;;</span><br><span class="line">			<span class="keyword">object</span> collection = UpdateCollection(controllerContext, collectionBindingContext, elementType);</span><br><span class="line">			<span class="keyword">return</span> collection;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	BindComplexElementalModel(controllerContext, bindingContext, model);</span><br><span class="line">	<span class="keyword">return</span> model;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>最後呼叫<code>BindComplexElementalModel</code>方法將剛剛建立值(<code>model</code>物件)透過<code>ValueProvider</code>把參數給值.</p>
-<blockquote>
-<p>有分簡單綁定和複雜綁定,最後都還是會呼叫使用簡單綁定來值綁定給物件.</p>
-</blockquote>
-<p>在<code>BindProperty</code>方法時填充子節點<code>ModelMetadata</code>的<code>Model</code>屬性.</p>
-<p><code>GetPropertyValue</code>透過<code>(DefaultModelBinder)</code>再次綁定物件動作如下</p>
-<ul>
-<li><code>ModelMetadata</code>是簡單模型就會把值填充給此次<code>ModelMetadata.Model</code></li>
-<li><code>ModelMetadata</code>是複雜模型就建立一個物件後呼叫<code>BindProperty</code>直到找到最後的簡單模型.</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">BindProperty</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext, PropertyDescriptor propertyDescriptor</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">	IModelBinder propertyBinder = Binders.GetBinder(propertyDescriptor.PropertyType);</span><br><span class="line">	<span class="keyword">object</span> originalPropertyValue = propertyDescriptor.GetValue(bindingContext.Model);</span><br><span class="line">	ModelMetadata propertyMetadata = bindingContext.PropertyMetadata[propertyDescriptor.Name];</span><br><span class="line">	propertyMetadata.Model = originalPropertyValue;</span><br><span class="line">	ModelBindingContext innerBindingContext = <span class="keyword">new</span> ModelBindingContext()</span><br><span class="line">	&#123;</span><br><span class="line">		ModelMetadata = propertyMetadata,</span><br><span class="line">		ModelName = fullPropertyKey,</span><br><span class="line">		ModelState = bindingContext.ModelState,</span><br><span class="line">		ValueProvider = bindingContext.ValueProvider</span><br><span class="line">	&#125;;</span><br><span class="line">	<span class="keyword">object</span> newPropertyValue = GetPropertyValue(controllerContext, innerBindingContext, propertyDescriptor, propertyBinder);</span><br><span class="line">	propertyMetadata.Model = newPropertyValue;</span><br><span class="line">	<span class="comment">//...</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">object</span> <span class="title">GetPropertyValue</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext, PropertyDescriptor propertyDescriptor, IModelBinder propertyBinder</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">object</span> <span class="keyword">value</span> = propertyBinder.BindModel(controllerContext, bindingContext);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (bindingContext.ModelMetadata.ConvertEmptyStringToNull &amp;&amp; Equals(<span class="keyword">value</span>, String.Empty))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">value</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><strong>MVC</strong> <code>ModelBinding</code> 使用到一個設計模式(組合模式),當我發現時覺得十分興奮.</p>
-<p>因為在現實專案中我較少看到(組合模式),發輝良好的作用而在這個案例上發揮的淋漓盡致.</p>
-<p>組合模式關係圖如下</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/Composite_Design_Pattern_UML.jpg" alt="UML_Model"></p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvQ29tcG9zaXRlX3BhdHRlcm4=" title="https://en.wikipedia.org/wiki/Composite_pattern">參考圖片連結<i class="fa fa-external-link"></i></span></p>
-<p>組合模式基本上分為兩個部分<strong>葉</strong>(<code>Left</code>)和<strong>組件</strong>(<code>component</code>)他們都依賴於一個抽象,組件實現取得動作的抽象只為了獲得下面的葉,真正有動作只會在葉有動作</p>
-<p><code>組合模式</code>很適合用在樹狀的資料結構且需求對於<strong>葉</strong>和<strong>組件</strong>要做大量不一樣判斷.</p>
-<p>在模型綁定中他依靠兩個東西完成上面說的依賴關聯</p>
-<ul>
-<li><code>ModelBindingContext</code>物件</li>
-<li><code>object CreateModel</code>方法</li>
-</ul>
-<h3 id="簡單模型綁定-vs-複雜模型綁定"><a href="#簡單模型綁定-vs-複雜模型綁定" class="headerlink" title="簡單模型綁定 vs 複雜模型綁定"></a>簡單模型綁定 vs 複雜模型綁定</h3><ol>
-<li>簡單模型綁定:透過<code>ModelBindingContext</code>找到參數使用型別並利用<code>ValueProvider</code>給值,最後返回物件</li>
-<li>複雜模型綁定:透過<code>ModelBindingContext</code>建立參數利用<code>ValueProvider</code>給值,往下繼續重複動作直到呼叫簡單模型綁定方法,就不會繼續往下呼叫<code>object</code>方法.</li>
-</ol>
-<p>這裡很巧妙的利用<code>ModelBinderDictionary</code>取得當前參數型別並取得相對應<code>IModelBinder</code>實現物件.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day19/">https://isdaniel.github.io/ithelp-day19/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -8048,6 +8048,116 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       </tags>
   </entry>
   <entry>
+    <title>Postgresql AutoVacuum 介紹</title>
+    <url>/postgresql-autovacuum/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探</p>
+<h2 id="資料-amp-測試資料資訊"><a href="#資料-amp-測試資料資訊" class="headerlink" title="資料 &amp; 測試資料資訊"></a>資料 &amp; 測試資料資訊</h2><p>本次執行 Sample Data</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T1 (</span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line">	val <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col1 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col2 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col3 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col4 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col5 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col6 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T1</span><br><span class="line"><span class="keyword">SELECT</span> i,</span><br><span class="line">       RANDOM() * <span class="number">1000000</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span></span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">20000000</span>) i;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> T2 (</span><br><span class="line">    <span class="keyword">ID</span> <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> PRIMARY <span class="keyword">KEY</span>,</span><br><span class="line">	val <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col1 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col2 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col3 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col4 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col5 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	col6 <span class="keyword">UUID</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T2</span><br><span class="line"><span class="keyword">SELECT</span> i,</span><br><span class="line">       RANDOM() * <span class="number">1000000</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span>,</span><br><span class="line">	   <span class="keyword">md5</span>(random()::<span class="built_in">text</span> || clock_timestamp()::<span class="built_in">text</span>)::<span class="keyword">uuid</span></span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">1000000</span>) i;</span><br><span class="line"></span><br><span class="line">vacuum <span class="keyword">ANALYZE</span> T1;</span><br><span class="line">vacuum <span class="keyword">ANALYZE</span> T2;</span><br></pre></td></tr></table></figure></div>
+<p>查詢 sample code</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">EXPLAIN</span> (<span class="keyword">ANALYZE</span>,TIMING <span class="keyword">ON</span>,BUFFERS <span class="keyword">ON</span>)</span><br><span class="line"><span class="keyword">SELECT</span> t1.*</span><br><span class="line"><span class="keyword">FROM</span> T1 </span><br><span class="line"><span class="keyword">INNER</span> <span class="keyword">JOIN</span> T2 <span class="keyword">ON</span> t1.id = t2.id </span><br><span class="line"><span class="keyword">WHERE</span> t1.id &lt; <span class="number">1000000</span></span><br></pre></td></tr></table></figure></div>
+<p>此次查詢如期走 <code>Merge Join</code></p>
+<figure class="highlight 1c"><table><tr><td class="code"><pre><span class="line"><span class="string">"Gather  (cost=1016.37..30569.85 rows=53968 width=104) (actual time=0.278..837.297 rows=999999 loops=1)"</span></span><br><span class="line"><span class="string">"  Workers Planned: 2"</span></span><br><span class="line"><span class="string">"  Workers Launched: 2"</span></span><br><span class="line"><span class="string">"  Buffers: shared hit=38273 read=21841"</span></span><br><span class="line"><span class="string">"  -&gt;  Merge Join  (cost=16.37..24173.05 rows=22487 width=104) (actual time=11.993..662.770 rows=333333 loops=3)"</span></span><br><span class="line"><span class="string">"        Merge Cond: (t2.id = t1.id)"</span></span><br><span class="line"><span class="string">"        Buffers: shared hit=38273 read=21841"</span></span><br><span class="line"><span class="string">"        -&gt;  Parallel Index Only Scan using t2_pkey on t2  (cost=0.42..20147.09 rows=416667 width=4) (actual time=0.041..69.947 rows=333333 loops=3)"</span></span><br><span class="line"><span class="string">"              Heap Fetches: 0"</span></span><br><span class="line"><span class="string">"              Buffers: shared hit=6 read=2732"</span></span><br><span class="line"><span class="string">"        -&gt;  Index Scan using t1_pkey on t1  (cost=0.44..48427.24 rows=1079360 width=104) (actual time=0.041..329.874 rows=999819 loops=3)"</span></span><br><span class="line"><span class="string">"              Index Cond: (id &lt; 1000000)"</span></span><br><span class="line"><span class="string">"              Buffers: shared hit=38267 read=19109"</span></span><br><span class="line"><span class="string">"Planning:"</span></span><br><span class="line"><span class="string">"  Buffers: shared hit=4 read=8"</span></span><br><span class="line"><span class="string">"Planning Time: 0.228 ms"</span></span><br><span class="line"><span class="string">"Execution Time: 906.760 ms"</span></span><br></pre></td></tr></table></figure>
+<p>假如更新如多資料，但未觸發臨界值</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">update</span> T1</span><br><span class="line"><span class="keyword">set</span> <span class="keyword">id</span> = <span class="keyword">id</span> + <span class="number">100000000</span></span><br><span class="line"><span class="keyword">where</span> <span class="keyword">id</span> &lt; <span class="number">1000000</span></span><br></pre></td></tr></table></figure></div>
+<p>在查詢可以發現使用執行計畫，還是 <code>Merge Join</code> (但依照現在資料量，理當不走 <code>Merge Join</code>) 那是甚麼原因造成的呢?</p>
+<p>那是因為目前統計資訊並未與最新資料量對齊</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="code"><pre><span class="line">&quot;Gather  (cost=1016.37..30707.83 rows=53968 width=104) (actual time=51.403..55.517 rows=0 loops=1)&quot;</span><br><span class="line">&quot;  Workers Planned: 2&quot;</span><br><span class="line">&quot;  Workers Launched: 2&quot;</span><br><span class="line">&quot;  Buffers: shared hit=8215&quot;</span><br><span class="line">&quot;  -&gt;  Merge Join  (cost=16.37..24311.03 rows=22487 width=104) (actual time=6.736..6.738 rows=0 loops=3)&quot;</span><br><span class="line">&quot;        Merge Cond: (t2.id = t1.id)&quot;</span><br><span class="line">&quot;        Buffers: shared hit=8215&quot;</span><br><span class="line">&quot;        -&gt;  Parallel Index Only Scan using t2_pkey on t2  (cost=0.42..20147.09 rows=416667 width=4) (actual time=0.024..0.024 rows=1 loops=3)&quot;</span><br><span class="line">&quot;              Heap Fetches: 0&quot;</span><br><span class="line">&quot;              Buffers: shared hit=8&quot;</span><br><span class="line">&quot;        -&gt;  Index Scan using t1_pkey on t1  (cost=0.44..50848.71 rows=1133330 width=104) (actual time=6.710..6.710 rows=0 loops=3)&quot;</span><br><span class="line">&quot;              Index Cond: (id &lt; 1000000)&quot;</span><br><span class="line">&quot;              Buffers: shared hit=8207&quot;</span><br><span class="line">&quot;Planning:&quot;</span><br><span class="line">&quot;  Buffers: shared hit=2745&quot;</span><br><span class="line">&quot;Planning Time: 3.938 ms&quot;</span><br><span class="line">&quot;Execution Time: 55.550 ms&quot;</span><br></pre></td></tr></table></figure></div>
+<h3 id="ANALYZE-amp-VACUUM"><a href="#ANALYZE-amp-VACUUM" class="headerlink" title="ANALYZE &amp; VACUUM"></a>ANALYZE &amp; VACUUM</h3><ul>
+<li>ANALYZE：<ol>
+<li>主要是更統計資訊，可以提供ＱＯ更好執行計畫</li>
+<li>建立 visibility map 檔案</li>
+</ol>
+</li>
+<li>VACUUM：<ol>
+<li>將 dead tuple 空出來，但硬碟空間不會釋放出來（如果要釋放硬碟空間需要使用 FULL Vacuum)</li>
+<li>更新 transaction ID 序號</li>
+</ol>
+</li>
+</ul>
+<h3 id="使用-ANALYZE-amp-VACUUM-後續"><a href="#使用-ANALYZE-amp-VACUUM-後續" class="headerlink" title="使用 ANALYZE &amp; VACUUM 後續"></a>使用 ANALYZE &amp; VACUUM 後續</h3><p>執行 <code>vacuum ANALYZE T1;</code>，再次執行就可發現目前執行計畫就很正確了，跑 <code>Nested Loop</code> 演算法，並且只有 read 3 個 block &amp; 執行時間也大幅降低</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="code"><pre><span class="line">&quot;QUERY PLAN&quot;</span><br><span class="line">&quot;Nested Loop  (cost=0.86..8.90 rows=1 width=104) (actual time=0.004..0.004 rows=0 loops=1)&quot;</span><br><span class="line">&quot;  Buffers: shared hit=3&quot;</span><br><span class="line">&quot;  -&gt;  Index Scan using t1_pkey on t1  (cost=0.44..4.46 rows=1 width=104) (actual time=0.003..0.003 rows=0 loops=1)&quot;</span><br><span class="line">&quot;        Index Cond: (id &lt; 1000000)&quot;</span><br><span class="line">&quot;        Buffers: shared hit=3&quot;</span><br><span class="line">&quot;  -&gt;  Index Only Scan using t2_pkey on t2  (cost=0.42..4.44 rows=1 width=4) (never executed)&quot;</span><br><span class="line">&quot;        Index Cond: (id = t1.id)&quot;</span><br><span class="line">&quot;        Heap Fetches: 0&quot;</span><br><span class="line">&quot;Planning:&quot;</span><br><span class="line">&quot;  Buffers: shared hit=20&quot;</span><br><span class="line">&quot;Planning Time: 0.232 ms&quot;</span><br><span class="line">&quot;Execution Time: 0.027 ms&quot;</span><br></pre></td></tr></table></figure></div>
+<p>所以擁有正常的統計資訊，可以讓QO選擇正確決策</p>
+<h2 id="Auto-vacuum-時機"><a href="#Auto-vacuum-時機" class="headerlink" title="Auto vacuum 時機"></a>Auto vacuum 時機</h2><p>如果不了解 Auto vacuum 觸發時機的人會詢問， Postgresql 不是會自動幫我們做 <code>vacuum</code> 為什麼上面例子還需要自己執行?</p>
+<blockquote>
+<p>因為上面案例還沒觸發閥值，所以不會做 Vacuum</p>
+</blockquote>
+<p>我們可以用 <code>pg_settings</code> 查看當前 postgres 關於 AutoVacuum 關鍵資訊設定</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="keyword">name</span>,setting</span><br><span class="line"><span class="keyword">from</span> pg_settings </span><br><span class="line"><span class="keyword">where</span> <span class="keyword">name</span> <span class="keyword">in</span> (<span class="string">'autovacuum_vacuum_scale_factor'</span>,<span class="string">'autovacuum_analyze_scale_factor'</span>,<span class="string">'autovacuum_analyze_threshold'</span>,<span class="string">'autovacuum_vacuum_threshold'</span>);</span><br></pre></td></tr></table></figure></div>
+<p>AutoVacuum 主要是由下面兩個公式判斷是否需要執行 vacuum 或 analyze，會有一個類似累積池概念，累績目前資料表 dead tuple 數量</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="code"><pre><span class="line">觸發 auto_analyze = autovacuum_analyze_scale_factor * dead tuple count + autovacuum_analyze_threshold</span><br><span class="line">觸發 auto_vacuum = autovacuum_vacuum_scale_factor * dead tuple count + autovacuum_vacuum_threshold</span><br></pre></td></tr></table></figure></div>
+<hr>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>setting</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>autovacuum_analyze_scale_factor</td>
+<td>0.05</td>
+</tr>
+<tr>
+<td>autovacuum_analyze_threshold</td>
+<td>50</td>
+</tr>
+<tr>
+<td>autovacuum_vacuum_scale_factor</td>
+<td>0.1</td>
+</tr>
+<tr>
+<td>autovacuum_vacuum_threshold</td>
+<td>50</td>
+</tr>
+</tbody>
+</table>
+<p>舉個例子上面 <code>T1</code> 資料表目前有 <code>20000000</code> 筆資料</p>
+<p><code>0.05 * 20000000 + 50 = 1000050</code> 所以觸發 <code>auto_analyze</code> 資料表需要有 <code>1000050</code> 筆 dead tuple 資料</p>
+<p><code>0.1 * 20000000 + 50 = 2000050</code> 所以觸發 <code>auto_vacuum</code> 資料表需要有 <code>2000050</code> 筆 dead tuple 資料</p>
+<p>我們能發現一個問題是如果資料量越大，觸發的條件越困難….</p>
+<p>所以假如線上執行計畫跑掉可以利用下面語法查詢，上次更新執行 vacuum 時間</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">  schemaname, relname,</span><br><span class="line">  last_vacuum, last_autovacuum,</span><br><span class="line">  <span class="comment">--vacuum_count, autovacuum_count,</span></span><br><span class="line">  last_analyze,last_autoanalyze</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_user_tables</span><br><span class="line"><span class="keyword">where</span> relname = <span class="string">'t2'</span>;</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://i.imgur.com/OadcNdT.png" alt></p>
+<h3 id="By-Table-設定-autovacuum"><a href="#By-Table-設定-autovacuum" class="headerlink" title="By Table 設定 autovacuum"></a>By Table 設定 autovacuum</h3><p>因為每張資料表都有不一樣情境邏輯．postgres 可以針對每個 Table 設定閥值</p>
+<p>我把們 t2 的 <code>auto_analyze</code> &amp; <code>auto_vacuum</code> 閥值改成修改 1000，讓 autovacuum 更容易觸發</p>
+<blockquote>
+<p>為了更好理解我把 <code>autovacuum_vacuum_threshold</code> 和 <code>autovacuum_analyze_threshold</code> 設定成 0</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_vacuum_scale_factor = <span class="number">0.001</span>);</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_vacuum_threshold = <span class="number">0</span>);</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_analyze_scale_factor = <span class="number">0.001</span>);</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_analyze_threshold = <span class="number">0</span>);</span><br></pre></td></tr></table></figure></div>
+<ul>
+<li>autovacuum_analyze = <code>0.001 * 1000000 + 0 = 1000</code></li>
+<li>autovacuum_vacuum = <code>0.001 * 1000000 + 0 = 1000</code></li>
+</ul>
+<p>我利用下面語法查詢，了解某張資料表 dead tuple 數量</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> relname,schemaname,n_dead_tup <span class="keyword">as</span> <span class="string">"死元組數"</span>,</span><br><span class="line">(<span class="keyword">case</span>  <span class="keyword">when</span> n_live_tup &gt; <span class="number">0</span> <span class="keyword">then</span> </span><br><span class="line">	 n_dead_tup::float8/n_live_tup::float8</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	 <span class="number">0</span></span><br><span class="line"><span class="keyword">end</span>) <span class="keyword">as</span> <span class="string">"死/活元組的比例"</span></span><br><span class="line"><span class="keyword">from</span> pg_stat_all_tables</span><br><span class="line"><span class="keyword">where</span> relname = <span class="string">'t2'</span></span><br></pre></td></tr></table></figure></div>
+<p>換句話說 t2 資料表只需要有超過 1000 個 dead tuple 就會出發更新 (就類似所謂的校正回歸XDD)</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> t2</span><br><span class="line"><span class="keyword">SET</span> val = <span class="number">20000</span></span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">id</span> &lt; <span class="number">1002</span></span><br></pre></td></tr></table></figure></div>
+<p>在過一陣子後 postgrsql console log 會在背景執行 autovacuum 並把那些資料 mark</p>
+<p><img src="https://i.imgur.com/4hec84Q.png" alt></p>
+<p>假如我們更新的資料還沒到臨界值就會造成，造成統計資訊和 dead tuple 過多</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> t2</span><br><span class="line"><span class="keyword">SET</span> val = <span class="number">100</span></span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">id</span> &lt;= <span class="number">999</span></span><br></pre></td></tr></table></figure></div>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>經過查找一系列資料跟比較之前使用 sql-server 經驗，postgres 可以針對每個 Table 特性設定他適合的 <code>autovacuum</code> 閥值，來定期更新統計資訊</p>
+<p>執行 <code>vacuum</code> 會針對資料表上 <code>SHARE UPDATE EXCLUSIVE</code> lock 且會有少許 IO 操作</p>
+<blockquote>
+<p>雖然資料表可以照常 CRUD 但還是對於資料表會有些許負擔</p>
+</blockquote>
+<p>所以我會建議做 vacuum 時，最好在系統離峰，但如果統計值偏差很大要更新還是更新不然會造成問題更大</p>
+<p>至於是否要 by table 去做 autovacuum 閥值設定，就可以看情況</p>
+<p>另外假如有些 Table 大部分都在新增資料，很少異動(Delete or Update)，這可能會造成 Dead Tuple 量較難觸發 Auto Vacuum，這時候就可以考慮使用 Daily Vacuum 來確保統計資訊有更新</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-autovacuum/">https://isdaniel.github.io/postgresql-autovacuum/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Postgresql</category>
+        <category>Vacuum</category>
+      </categories>
+      <tags>
+        <tag>Postgresql</tag>
+        <tag>Vacuum</tag>
+        <tag>AutoVacuum</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>postgresql 執行計畫重要因子 (成本因子調教)</title>
     <url>/postgresql-cost-factor-tuning/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>執行計畫代表此次查詢要怎麼樣的演算法查詢我們的資料，而<strong>成本</strong>是決定使用哪個執行計畫的重要因素</p>
@@ -9139,9 +9249,9 @@ using (var channel = connection.CreateModel())
       </categories>
       <tags>
         <tag>SQL</tag>
+        <tag>Postgresql</tag>
         <tag>MSSQL</tag>
         <tag>MySQL</tag>
-        <tag>Postgresql</tag>
         <tag>SQL-Gaps-and-Islands-problem</tag>
       </tags>
   </entry>
