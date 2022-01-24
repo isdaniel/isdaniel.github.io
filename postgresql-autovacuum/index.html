@@ -152,7 +152,7 @@
 <meta property="og:description" content="前言AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探 資料 &amp;amp; 測試資料資訊本次執行 Sample Data 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748CREATE TABL">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/U1iC4ez.png">
-<meta property="og:updated_time" content="2022-01-24T03:19:44.182Z">
+<meta property="og:updated_time" content="2022-01-24T03:38:50.127Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Postgresql AutoVacuum 介紹">
 <meta name="twitter:description" content="前言AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探 資料 &amp;amp; 測試資料資訊本次執行 Sample Data 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748CREATE TABL">
@@ -516,7 +516,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2022-01-24 03:19:44" itemprop="dateModified" datetime="2022-01-24T03:19:44+00:00">2022-01-24</time>
+                <time title="Modified: 2022-01-24 03:38:50" itemprop="dateModified" datetime="2022-01-24T03:38:50+00:00">2022-01-24</time>
               
             
           </span>
@@ -589,7 +589,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">6.4k</span>
+                <span title="Symbols count in article">6.7k</span>
               
 
               
@@ -649,8 +649,8 @@
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&quot;Gather  (cost=1016.37..30707.83 rows=53968 width=104) (actual time=51.403..55.517 rows=0 loops=1)&quot;</span><br><span class="line">&quot;  Workers Planned: 2&quot;</span><br><span class="line">&quot;  Workers Launched: 2&quot;</span><br><span class="line">&quot;  Buffers: shared hit=8215&quot;</span><br><span class="line">&quot;  -&gt;  Merge Join  (cost=16.37..24311.03 rows=22487 width=104) (actual time=6.736..6.738 rows=0 loops=3)&quot;</span><br><span class="line">&quot;        Merge Cond: (t2.id = t1.id)&quot;</span><br><span class="line">&quot;        Buffers: shared hit=8215&quot;</span><br><span class="line">&quot;        -&gt;  Parallel Index Only Scan using t2_pkey on t2  (cost=0.42..20147.09 rows=416667 width=4) (actual time=0.024..0.024 rows=1 loops=3)&quot;</span><br><span class="line">&quot;              Heap Fetches: 0&quot;</span><br><span class="line">&quot;              Buffers: shared hit=8&quot;</span><br><span class="line">&quot;        -&gt;  Index Scan using t1_pkey on t1  (cost=0.44..50848.71 rows=1133330 width=104) (actual time=6.710..6.710 rows=0 loops=3)&quot;</span><br><span class="line">&quot;              Index Cond: (id &lt; 1000000)&quot;</span><br><span class="line">&quot;              Buffers: shared hit=8207&quot;</span><br><span class="line">&quot;Planning:&quot;</span><br><span class="line">&quot;  Buffers: shared hit=2745&quot;</span><br><span class="line">&quot;Planning Time: 3.938 ms&quot;</span><br><span class="line">&quot;Execution Time: 55.550 ms&quot;</span><br></pre></td></tr></table></figure></div>
 <h3 id="ANALYZE-amp-VACUUM"><a href="#ANALYZE-amp-VACUUM" class="headerlink" title="ANALYZE &amp; VACUUM"></a>ANALYZE &amp; VACUUM</h3><ul>
 <li>ANALYZE：<ol>
-<li>主要是更統計資訊，可以提供ＱＯ更好執行計畫</li>
-<li>建立 visibility map 檔案</li>
+<li>主要是更統計資訊，可以提供 QO 更好執行計畫</li>
+<li>建立 &amp; 更新 visibility map 檔案</li>
 </ol>
 </li>
 <li>VACUUM：<ol>
@@ -729,6 +729,11 @@
 </blockquote>
 <p>所以我會建議做 vacuum 時，最好在系統離峰，但如果統計值偏差很大要更新還是更新不然會造成問題更大</p>
 <p>至於是否要 by table 去做 autovacuum 閥值設定，就可以看情況</p>
+<p>假如我們資料量大到一定程度，需要讀寫分離．在 Read DB 建議在每天離峰時做一次 <code>VACUUM</code> and <code>ANALYZE</code>.</p>
+<blockquote>
+<p>A common strategy for read-mostly databases is to run VACUUM and ANALYZE once a day during a low-usage time of day. (This will not be sufficient if there is heavy update activity.)</p>
+</blockquote>
+<p>參考 : <span class="exturl" data-url="aHR0cHM6Ly93d3cucG9zdGdyZXNxbC5vcmcvZG9jcy8xNC9zcWwtYW5hbHl6ZS5odG1s" title="https://www.postgresql.org/docs/14/sql-analyze.html">https://www.postgresql.org/docs/14/sql-analyze.html<i class="fa fa-external-link"></i></span></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-autovacuum/">https://isdaniel.github.io/postgresql-autovacuum/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 
       
@@ -1346,7 +1351,7 @@
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">516k</span>
+    <span title="Symbols count total">517k</span>
   
 
   
