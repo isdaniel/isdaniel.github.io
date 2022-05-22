@@ -633,6 +633,86 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
       </tags>
   </entry>
   <entry>
+    <title>【深入淺出】Base編碼 (Base64為例子)</title>
+    <url>/base64-principle/</url>
+    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
+<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
+<p>此篇和大家分享Base家族的秘密</p>
+<hr>
+<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
+<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
+<blockquote>
+<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
+</blockquote>
+<p>它使用下面表中所使用的字符與編碼。</p>
+<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
+<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
+<p><code>Base64</code> 中的64其實是有含意的</p>
+<p>他會把資料轉成</p>
+<pre><code>a~z (26)
+A~Z (26)
+0~9 (10)
++ (1)
+/ (1)
+</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
+<blockquote>
+<p>64 = 26+26+10+1+1</p>
+</blockquote>
+<hr>
+<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
+<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
+<blockquote>
+<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
+</blockquote>
+<p>這邊有幾個重點</p>
+<ol>
+<li>會把資料分割成每 3 byte (24bit) 為單位</li>
+<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
+<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
+<li>直到全部輸入資料轉換完成</li>
+</ol>
+<p>下面有個例子方便大家了解！</p>
+<hr>
+<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
+<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
+<ol>
+<li>將字元轉換成二進制</li>
+</ol>
+<ul>
+<li>B (66) = 0    1    0    0    0    0    1    0</li>
+<li>C (67) = 0    1    0    0    0    0    1    1</li>
+</ul>
+<ol start="2">
+<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
+</li>
+<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
+</li>
+<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
+</li>
+</ol>
+<p><img src="/images/Base64_1.PNG" alt="img"></p>
+<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
+<blockquote>
+<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
+</blockquote>
+<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
+<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
+<p><code>Base32 : a~z , 2~7</code></p>
+<p>原理其實都是一樣的</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>WebDesign</tag>
+        <tag>Base64</tag>
+        <tag>Encoding</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>C# Boxing vs UnBoxing</title>
     <url>/boxing-unboxing/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p><code>Boxing</code>跟<code>UnBoxing</code>在.net中,我們可能在無意識使用到但這個事情確會造成一些效能影響…</p>
@@ -727,86 +807,6 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
       </categories>
       <tags>
         <tag>C#</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>【深入淺出】Base編碼 (Base64為例子)</title>
-    <url>/base64-principle/</url>
-    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
-<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
-<p>此篇和大家分享Base家族的秘密</p>
-<hr>
-<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
-<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
-<blockquote>
-<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
-</blockquote>
-<p>它使用下面表中所使用的字符與編碼。</p>
-<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
-<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
-<p><code>Base64</code> 中的64其實是有含意的</p>
-<p>他會把資料轉成</p>
-<pre><code>a~z (26)
-A~Z (26)
-0~9 (10)
-+ (1)
-/ (1)
-</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
-<blockquote>
-<p>64 = 26+26+10+1+1</p>
-</blockquote>
-<hr>
-<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
-<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
-<blockquote>
-<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
-</blockquote>
-<p>這邊有幾個重點</p>
-<ol>
-<li>會把資料分割成每 3 byte (24bit) 為單位</li>
-<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
-<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
-<li>直到全部輸入資料轉換完成</li>
-</ol>
-<p>下面有個例子方便大家了解！</p>
-<hr>
-<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
-<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
-<ol>
-<li>將字元轉換成二進制</li>
-</ol>
-<ul>
-<li>B (66) = 0    1    0    0    0    0    1    0</li>
-<li>C (67) = 0    1    0    0    0    0    1    1</li>
-</ul>
-<ol start="2">
-<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
-</li>
-<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
-</li>
-<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
-</li>
-</ol>
-<p><img src="/images/Base64_1.PNG" alt="img"></p>
-<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
-<blockquote>
-<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
-</blockquote>
-<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
-<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
-<p><code>Base32 : a~z , 2~7</code></p>
-<p>原理其實都是一樣的</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>WebDesign</tag>
-        <tag>Base64</tag>
-        <tag>Encoding</tag>
       </tags>
   </entry>
   <entry>
@@ -2817,72 +2817,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>.Net使用RabbitMq EasyNetQ介紹</title>
-    <url>/easy-net-mq-introduce/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現今越來越多系統使用MQ來達成非同步並來提升系統吞吐量，我今天想要介紹的是<span class="exturl" data-url="aHR0cHM6Ly9lYXN5bmV0cS5jb20v" title="https://easynetq.com/">EasyNetQ<i class="fa fa-external-link"></i></span>一個封裝RabbitMq Client .net框架</p>
-<ul>
-<li>小型DI容器</li>
-<li>對於RabbitMq封裝</li>
-<li>對於連接使用lazy connection連接RabbitMq</li>
-</ul>
-<blockquote>
-<p>If the server disconnects for any reason (maybe a network fault, maybe the RabbitMQ server itself has been bounced), EasyNetQ will revert to polling the endpoint until it can reconnect.</p>
-</blockquote>
-<p>使用EasyNetQ來操作RabbitMq簡單很多，但在使用上有些地方需要注意</p>
-<p>本篇會再跟大家分享</p>
-<h2 id="RabbitMq-Client-vs-EasyNetQ程式碼比較"><a href="#RabbitMq-Client-vs-EasyNetQ程式碼比較" class="headerlink" title="RabbitMq Client vs EasyNetQ程式碼比較"></a>RabbitMq Client vs EasyNetQ程式碼比較</h2><p>我會使用之前使用RabbitMq Client寫的範例利用EasyNetQ來改寫一次.</p>
-<p>程式原始碼 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXM=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples">Sample Code<i class="fa fa-external-link"></i></span></p>
-<h3 id="Publisher程式碼"><a href="#Publisher程式碼" class="headerlink" title="Publisher程式碼"></a>Publisher程式碼</h3><p>這是使用RabbitMq Client寫的版本</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//建立連接工廠</span></span><br><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"localhost"</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())<span class="comment">//创建通道</span></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> 如果在RabbitMq手動建立可以忽略這段程式</span></span><br><span class="line">    <span class="comment">//建立一個Queue</span></span><br><span class="line">    channel.QueueDeclare(queueName, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//建立一個Exchange</span></span><br><span class="line">    channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//把Queue跟Exchange</span></span><br><span class="line">    channel.QueueBind(queueName, exchangeName, routeKey); </span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"\nRabbitMQ連接成功,如需離開請按下Escape鍵"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> input = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> messageBytes = Encoding.UTF8.GetBytes(input);</span><br><span class="line">        channel.BasicPublish(exchange: exchangeName,</span><br><span class="line">                              routingKey: routeKey,</span><br><span class="line">                              body: messageBytes);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我在利用EasyNetQ改寫後變的如下，是不是簡潔很多?</p>
-<blockquote>
-<p>因為EasyNetQ幫我們把一些程式封裝起來讓我們關注發送訊息</p>
-</blockquote>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>).Advanced)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">var</span> exchange = bus.ExchangeDeclare(exchangeName, ExchangeType.Direct);</span><br><span class="line">    <span class="keyword">var</span> queue = bus.QueueDeclare(queueName);</span><br><span class="line">    bus.Bind(exchange, queue, routeKey);</span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"請輸入訊息!"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        bus.Publish(exchange, <span class="string">"my.routing"</span>, <span class="literal">false</span>, <span class="keyword">new</span> Message&lt;<span class="keyword">string</span>&gt;(input));</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
-<p>稍後會跟大家揭密.</p>
-<h3 id="RabbitMQ-Consumer-程式碼"><a href="#RabbitMQ-Consumer-程式碼" class="headerlink" title="RabbitMQ Consumer 程式碼"></a>RabbitMQ Consumer 程式碼</h3><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"127.0.0.1"</span>,</span><br><span class="line">    Port = <span class="number">5672</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"DirectQueue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())</span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//channel.QueueBind</span></span><br><span class="line">    EventingBasicConsumer consumer = <span class="keyword">new</span> EventingBasicConsumer(channel);</span><br><span class="line">    channel.BasicQos(<span class="number">0</span>, <span class="number">1</span>, <span class="literal">false</span>);</span><br><span class="line">    <span class="comment">//接收到消息事件 consumer.IsRunning</span></span><br><span class="line">    consumer.Received += (ch, ea) =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> message = Encoding.UTF8.GetString(ea.Body);</span><br><span class="line"></span><br><span class="line">        Console.WriteLine(<span class="string">$"Queue:<span class="subst">&#123;queueName&#125;</span>收到資料： <span class="subst">&#123;message&#125;</span>"</span>);</span><br><span class="line">        channel.BasicAck(ea.DeliveryTag, <span class="literal">false</span>);</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    channel.BasicConsume(queueName, <span class="literal">false</span>, consumer); </span><br><span class="line">    Console.WriteLine(<span class="string">"接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我在利用EasyNetQ改寫後變如下</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>))</span><br><span class="line">&#123;</span><br><span class="line">    Task.Run(() =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            bus.SendReceive.Receive&lt;<span class="keyword">string</span>&gt;(queueName, (m) =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                Console.WriteLine(m);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    Console.WriteLine(<span class="string">"開始接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到EasyNetQ在API資料封裝幫我們做了些事情(原本RabbitMQ Client使用<code>byte[]</code>來傳輸資料，而EasyNetQ幫我們提供可以使用泛型或物件的方式傳遞)</p>
-<blockquote>
-<p>但EasyNetQ部分功能也不會平白產生，在MQ Header那邊有做些手腳.還記得我前面說的那個問題嗎?<br>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
-</blockquote>
-<h2 id="EasyNetQ小秘密"><a href="#EasyNetQ小秘密" class="headerlink" title="EasyNetQ小秘密"></a>EasyNetQ小秘密</h2><p>上面我有留一個問題</p>
-<blockquote>
-<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
-</blockquote>
-<p>如果你用EasyNetQ收RabbitMQ Client發送的訊息會發現Queue中會多出<code>EasyNetQ_Default_Error_Queue</code>(這個是收集<code>EasyNetQ</code>錯誤的Queue).</p>
-<p>錯誤訊息如下圖</p>
-<p><img src="https://i.imgur.com/FCB5JZp.png" alt></p>
-<p>如果知道的小夥伴可以忽略此節，但如果不知道的人我推薦你要來了解一下</p>
-<p>我們先利用EasyNetQ Publisher送一些訊息，再RabbitMq瀏覽畫面點選Queue</p>
-<p><img src="https://i.imgur.com/aVgYaQg.png" alt></p>
-<p>點選<strong>Get messages</strong>並按下Get Message按鈕，能看到<code>Properties</code>中有<code>type:System.String, System.Private.CoreLib</code>.</p>
-<p><img src="https://i.imgur.com/5xoyQ0E.png" alt="https://i.imgur.com/5xoyQ0E.png"></p>
-<p>聰明如你應該可以猜到原來EasyNetQ之所以可以在Publisher和Comsumer之間使用泛型是因為EasyNetQ在Property使用type來傳輸使用Type資訊.</p>
-<p>在Comsumer可以利用這些資訊來組裝物件.</p>
-<blockquote>
-<p>這邊有點要注意，因為她是傳送Type資訊，假如你兩個lib都有一個<code>Person</code>類別且裡面<code>Property</code>名稱,類型都一樣，但Publisher和Comsumer之間利用泛型轉換會報錯<br>因為兩個lib的<code>Person</code>類別Type的metadata資訊不一樣</p>
-</blockquote>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>有了EasyNetQ操作RabbitMq就簡單許多，但我個人覺得目前API還可以再加強多封裝些不一樣的情境，目前提供API有點少.</p>
-<blockquote>
-<p>目前如果要用特別一點的需求可以利用<code>IAdvancedBus</code>來完成</p>
-</blockquote>
-<p>另外EasyNetQ也有DI Container只是我還沒研究，等之後研究在跟大家分享</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/easy-net-mq-introduce/">https://isdaniel.github.io/easy-net-mq-introduce/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>javascript</category>
-        <category>vue.js</category>
-      </categories>
-      <tags>
-        <tag>javascript</tag>
-        <tag>vue.js</tag>
-        <tag>Restcountries</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>(SQL Server)Dynamic pivot 動態樞紐分析</title>
     <url>/dynamic-pivot/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>之前有和大家分享使用<span class="exturl" data-url="aHR0cHM6Ly9kb3RibG9ncy5jb20udHcvZGFuaWVsLzIwMTgvMDUvMDkvMTcyODA0" title="https://dotblogs.com.tw/daniel/2018/05/09/172804">CASE WHEN 搭配聚合函數<i class="fa fa-external-link"></i></span>實現樞紐分析</p>
@@ -2957,6 +2891,72 @@ GROUP BY userName
         <tag>SQL</tag>
         <tag>Dynamic-Pivot</tag>
         <tag>Pivot</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>.Net使用RabbitMq EasyNetQ介紹</title>
+    <url>/easy-net-mq-introduce/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現今越來越多系統使用MQ來達成非同步並來提升系統吞吐量，我今天想要介紹的是<span class="exturl" data-url="aHR0cHM6Ly9lYXN5bmV0cS5jb20v" title="https://easynetq.com/">EasyNetQ<i class="fa fa-external-link"></i></span>一個封裝RabbitMq Client .net框架</p>
+<ul>
+<li>小型DI容器</li>
+<li>對於RabbitMq封裝</li>
+<li>對於連接使用lazy connection連接RabbitMq</li>
+</ul>
+<blockquote>
+<p>If the server disconnects for any reason (maybe a network fault, maybe the RabbitMQ server itself has been bounced), EasyNetQ will revert to polling the endpoint until it can reconnect.</p>
+</blockquote>
+<p>使用EasyNetQ來操作RabbitMq簡單很多，但在使用上有些地方需要注意</p>
+<p>本篇會再跟大家分享</p>
+<h2 id="RabbitMq-Client-vs-EasyNetQ程式碼比較"><a href="#RabbitMq-Client-vs-EasyNetQ程式碼比較" class="headerlink" title="RabbitMq Client vs EasyNetQ程式碼比較"></a>RabbitMq Client vs EasyNetQ程式碼比較</h2><p>我會使用之前使用RabbitMq Client寫的範例利用EasyNetQ來改寫一次.</p>
+<p>程式原始碼 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL1NhbXBsZXM=" title="https://github.com/isdaniel/BlogSample/tree/master/src/Samples">Sample Code<i class="fa fa-external-link"></i></span></p>
+<h3 id="Publisher程式碼"><a href="#Publisher程式碼" class="headerlink" title="Publisher程式碼"></a>Publisher程式碼</h3><p>這是使用RabbitMq Client寫的版本</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment">//建立連接工廠</span></span><br><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"localhost"</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())<span class="comment">//创建通道</span></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="meta">#<span class="meta-keyword">region</span> 如果在RabbitMq手動建立可以忽略這段程式</span></span><br><span class="line">    <span class="comment">//建立一個Queue</span></span><br><span class="line">    channel.QueueDeclare(queueName, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//建立一個Exchange</span></span><br><span class="line">    channel.ExchangeDeclare(exchangeName, ExchangeType.Direct, <span class="literal">true</span>, <span class="literal">false</span>, <span class="literal">null</span>);</span><br><span class="line">    <span class="comment">//把Queue跟Exchange</span></span><br><span class="line">    channel.QueueBind(queueName, exchangeName, routeKey); </span><br><span class="line">    <span class="meta">#<span class="meta-keyword">endregion</span></span></span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"\nRabbitMQ連接成功,如需離開請按下Escape鍵"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> input = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">var</span> messageBytes = Encoding.UTF8.GetBytes(input);</span><br><span class="line">        channel.BasicPublish(exchange: exchangeName,</span><br><span class="line">                              routingKey: routeKey,</span><br><span class="line">                              body: messageBytes);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我在利用EasyNetQ改寫後變的如下，是不是簡潔很多?</p>
+<blockquote>
+<p>因為EasyNetQ幫我們把一些程式封裝起來讓我們關注發送訊息</p>
+</blockquote>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> exchangeName = <span class="string">"my.Exchange"</span>;</span><br><span class="line"><span class="keyword">string</span> routeKey = <span class="string">"my.routing"</span>;</span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>).Advanced)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">var</span> exchange = bus.ExchangeDeclare(exchangeName, ExchangeType.Direct);</span><br><span class="line">    <span class="keyword">var</span> queue = bus.QueueDeclare(queueName);</span><br><span class="line">    bus.Bind(exchange, queue, routeKey);</span><br><span class="line"></span><br><span class="line">    Console.WriteLine(<span class="string">"請輸入訊息!"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">string</span> input = Console.ReadLine();</span><br><span class="line"></span><br><span class="line">        bus.Publish(exchange, <span class="string">"my.routing"</span>, <span class="literal">false</span>, <span class="keyword">new</span> Message&lt;<span class="keyword">string</span>&gt;(input));</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (Console.ReadKey().Key != ConsoleKey.Escape);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
+<p>稍後會跟大家揭密.</p>
+<h3 id="RabbitMQ-Consumer-程式碼"><a href="#RabbitMQ-Consumer-程式碼" class="headerlink" title="RabbitMQ Consumer 程式碼"></a>RabbitMQ Consumer 程式碼</h3><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">ConnectionFactory factory = <span class="keyword">new</span> ConnectionFactory</span><br><span class="line">&#123;</span><br><span class="line">    UserName = <span class="string">"guest"</span>,</span><br><span class="line">    Password = <span class="string">"guest"</span>,</span><br><span class="line">    HostName = <span class="string">"127.0.0.1"</span>,</span><br><span class="line">    Port = <span class="number">5672</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">string</span> queueName = <span class="string">"DirectQueue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> connection = factory.CreateConnection())</span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> channel = connection.CreateModel())</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//channel.QueueBind</span></span><br><span class="line">    EventingBasicConsumer consumer = <span class="keyword">new</span> EventingBasicConsumer(channel);</span><br><span class="line">    channel.BasicQos(<span class="number">0</span>, <span class="number">1</span>, <span class="literal">false</span>);</span><br><span class="line">    <span class="comment">//接收到消息事件 consumer.IsRunning</span></span><br><span class="line">    consumer.Received += (ch, ea) =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> message = Encoding.UTF8.GetString(ea.Body);</span><br><span class="line"></span><br><span class="line">        Console.WriteLine(<span class="string">$"Queue:<span class="subst">&#123;queueName&#125;</span>收到資料： <span class="subst">&#123;message&#125;</span>"</span>);</span><br><span class="line">        channel.BasicAck(ea.DeliveryTag, <span class="literal">false</span>);</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    channel.BasicConsume(queueName, <span class="literal">false</span>, consumer); </span><br><span class="line">    Console.WriteLine(<span class="string">"接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我在利用EasyNetQ改寫後變如下</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">string</span> queueName = <span class="string">"my.queue"</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> (<span class="keyword">var</span> bus = RabbitHutch.CreateBus(<span class="string">"host=127.0.0.1;port=5672;username=guest;password=guest"</span>))</span><br><span class="line">&#123;</span><br><span class="line">    Task.Run(() =&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            bus.SendReceive.Receive&lt;<span class="keyword">string</span>&gt;(queueName, (m) =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                Console.WriteLine(m);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    Console.WriteLine(<span class="string">"開始接收訊息"</span>);</span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到EasyNetQ在API資料封裝幫我們做了些事情(原本RabbitMQ Client使用<code>byte[]</code>來傳輸資料，而EasyNetQ幫我們提供可以使用泛型或物件的方式傳遞)</p>
+<blockquote>
+<p>但EasyNetQ部分功能也不會平白產生，在MQ Header那邊有做些手腳.還記得我前面說的那個問題嗎?<br>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
+</blockquote>
+<h2 id="EasyNetQ小秘密"><a href="#EasyNetQ小秘密" class="headerlink" title="EasyNetQ小秘密"></a>EasyNetQ小秘密</h2><p>上面我有留一個問題</p>
+<blockquote>
+<p>如果你是用RabbitMQ Client可以正常收訊息EasyNetQ發送訊息，但如果使用EasyNetQ收RabbitMQ Client發送的訊息就會有問題是為什麼呢？</p>
+</blockquote>
+<p>如果你用EasyNetQ收RabbitMQ Client發送的訊息會發現Queue中會多出<code>EasyNetQ_Default_Error_Queue</code>(這個是收集<code>EasyNetQ</code>錯誤的Queue).</p>
+<p>錯誤訊息如下圖</p>
+<p><img src="https://i.imgur.com/FCB5JZp.png" alt></p>
+<p>如果知道的小夥伴可以忽略此節，但如果不知道的人我推薦你要來了解一下</p>
+<p>我們先利用EasyNetQ Publisher送一些訊息，再RabbitMq瀏覽畫面點選Queue</p>
+<p><img src="https://i.imgur.com/aVgYaQg.png" alt></p>
+<p>點選<strong>Get messages</strong>並按下Get Message按鈕，能看到<code>Properties</code>中有<code>type:System.String, System.Private.CoreLib</code>.</p>
+<p><img src="https://i.imgur.com/5xoyQ0E.png" alt="https://i.imgur.com/5xoyQ0E.png"></p>
+<p>聰明如你應該可以猜到原來EasyNetQ之所以可以在Publisher和Comsumer之間使用泛型是因為EasyNetQ在Property使用type來傳輸使用Type資訊.</p>
+<p>在Comsumer可以利用這些資訊來組裝物件.</p>
+<blockquote>
+<p>這邊有點要注意，因為她是傳送Type資訊，假如你兩個lib都有一個<code>Person</code>類別且裡面<code>Property</code>名稱,類型都一樣，但Publisher和Comsumer之間利用泛型轉換會報錯<br>因為兩個lib的<code>Person</code>類別Type的metadata資訊不一樣</p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>有了EasyNetQ操作RabbitMq就簡單許多，但我個人覺得目前API還可以再加強多封裝些不一樣的情境，目前提供API有點少.</p>
+<blockquote>
+<p>目前如果要用特別一點的需求可以利用<code>IAdvancedBus</code>來完成</p>
+</blockquote>
+<p>另外EasyNetQ也有DI Container只是我還沒研究，等之後研究在跟大家分享</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/easy-net-mq-introduce/">https://isdaniel.github.io/easy-net-mq-introduce/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>javascript</category>
+        <category>vue.js</category>
+      </categories>
+      <tags>
+        <tag>javascript</tag>
+        <tag>vue.js</tag>
+        <tag>Restcountries</tag>
       </tags>
   </entry>
   <entry>
@@ -6914,78 +6914,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>JOIN範圍條件Index優化</title>
-    <url>/join-index-improve/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p><code>JOIN</code>條件範圍時,執行計畫<strong>預估值</strong>容易不準確,這也間接導致查詢效能不好.</p>
-<blockquote>
-<p>就算有建立Index也會遇到上述問題</p>
-</blockquote>
-<p>假如我們想要提升<code>JOIN</code>條件範圍效能並讓Index可以發揮最大最用可以怎麼做?</p>
-<p>就讓我利用一個範例來跟大家分享.</p>
-<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p>此範例有使用到三張表</p>
-<ul>
-<li>Product表:擁有1-10編號產品</li>
-<li>ReportPeriod表:存放產每期報表的資訊(時間,和是否產報表)</li>
-<li>T99表:線上產品訂單資訊</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[Product](</span><br><span class="line">	[ProductId] <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[T99](</span><br><span class="line">	[TransactionId] [<span class="built_in">int</span>] <span class="keyword">IDENTITY</span>(<span class="number">1</span>,<span class="number">1</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[Amount] <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">6</span>),</span><br><span class="line">	[CreateDate] [datetime2](<span class="number">3</span>) <span class="literal">NULL</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[ReportPeriod](</span><br><span class="line">	[PerioidID] [<span class="built_in">int</span>] <span class="keyword">IDENTITY</span>(<span class="number">1</span>,<span class="number">1</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductId] <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[IsGenerate] [<span class="built_in">bit</span>] <span class="literal">NULL</span>,</span><br><span class="line">	[StartDate] [datetime2](<span class="number">3</span>) <span class="literal">NULL</span>,</span><br><span class="line">	[EndDate] [datetime2](<span class="number">3</span>) <span class="literal">NULL</span></span><br><span class="line">) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"><span class="keyword">GO</span></span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>我們利用<code>T99.CreateDate</code>來跟<code>ReportPeriod</code>判斷是屬於哪期報表.</p>
-</blockquote>
-<h3 id="資料初始化"><a href="#資料初始化" class="headerlink" title="資料初始化"></a>資料初始化</h3><p>我們利用亂數產生Sample資料來模擬線上大資料狀況.</p>
-<p><code>ReportPeriod</code>期別由<code>&#39;2019-08-01&#39;</code>到<code>&#39;2020-07-31&#39;</code></p>
-<p>因為產生報表以5分鐘為區間,所以可以利用CTE遞迴來幫我們產生資料.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">2</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">3</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">4</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">5</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">6</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">7</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">8</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">9</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @FromDate DATETIME2(<span class="number">3</span>) = <span class="string">'2019-08-01'</span></span><br><span class="line"><span class="keyword">declare</span> @ToDate DATETIME2(<span class="number">3</span>) = <span class="string">'2020-07-31'</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE <span class="keyword">AS</span> (</span><br><span class="line">	<span class="keyword">SELECT</span> @FromDate fromDt,@ToDate endDt</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="number">5</span>,fromDt),endDt</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="number">5</span>,fromDt) &lt; endDt</span><br><span class="line">)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span>  [dbo].[ReportPeriod] ([ProductId],[IsGenerate],[StartDate],[EndDate])</span><br><span class="line"><span class="keyword">SELECT</span> ProductId,<span class="number">0</span>,fromDt,<span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="number">5</span>,fromDt) </span><br><span class="line"><span class="keyword">FROM</span> CTE <span class="keyword">CROSS</span> <span class="keyword">JOIN</span> dbo.Product</span><br><span class="line"><span class="keyword">OPTION</span> (MAXRECURSION <span class="number">0</span>); </span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T99 ([CreateDate],Amount)</span><br><span class="line"><span class="keyword">SELECT</span> top <span class="number">1000000</span> <span class="keyword">dateadd</span>(<span class="keyword">SECOND</span>, </span><br><span class="line">          <span class="keyword">rand</span>(<span class="keyword">checksum</span>(newid()))*(<span class="number">1</span>+<span class="keyword">datediff</span>(<span class="keyword">SECOND</span>, @FromDate, @ToDate)), </span><br><span class="line">               @FromDate),</span><br><span class="line">	   <span class="keyword">CAST</span>(<span class="keyword">RAND</span>(<span class="keyword">CHECKSUM</span>(NEWID())) * <span class="number">100000</span> <span class="keyword">as</span> <span class="built_in">INT</span>) + <span class="number">1</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns c1 <span class="keyword">CROSS</span> <span class="keyword">JOIN</span> sys.all_columns c2</span><br></pre></td></tr></table></figure></div>
-<h3 id="建立Index"><a href="#建立Index" class="headerlink" title="建立Index"></a>建立Index</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED <span class="keyword">INDEX</span> [CIX_ReportPeriod_StartDate] <span class="keyword">ON</span> [dbo].[ReportPeriod]</span><br><span class="line">(</span><br><span class="line">	[StartDate] <span class="keyword">ASC</span>,</span><br><span class="line">    [EndDate] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, SORT_IN_TEMPDB = <span class="keyword">OFF</span>, DROP_EXISTING = <span class="keyword">OFF</span>, <span class="keyword">ONLINE</span> = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> [dbo].[ReportPeriod] <span class="keyword">ADD</span>  <span class="keyword">CONSTRAINT</span> [PK_ReportPeriod] PRIMARY <span class="keyword">KEY</span> NONCLUSTERED </span><br><span class="line">(</span><br><span class="line">	[PerioidID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductId] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, SORT_IN_TEMPDB = <span class="keyword">OFF</span>, IGNORE_DUP_KEY = <span class="keyword">OFF</span>, <span class="keyword">ONLINE</span> = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> CLUSTERED <span class="keyword">INDEX</span> [CIX_T99_CreateDate] <span class="keyword">ON</span> [dbo].[T99]</span><br><span class="line">(</span><br><span class="line">	[CreateDate] <span class="keyword">ASC</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">UNIQUE</span> NONCLUSTERED <span class="keyword">INDEX</span> [IX_T99_TransactionId] <span class="keyword">ON</span> [dbo].[T99]</span><br><span class="line">(</span><br><span class="line">	[TransactionId] <span class="keyword">ASC</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
-<h3 id="查詢語法"><a href="#查詢語法" class="headerlink" title="查詢語法"></a>查詢語法</h3><p>在線上我們會使用UDT當作參數來取得某些期別資訊.</p>
-<p>這裡為了方便模擬我使用Table Variable來取代.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">set</span> nocount <span class="keyword">on</span></span><br><span class="line"><span class="keyword">DECLARE</span> @<span class="keyword">Transaction</span> <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	TransactionId <span class="built_in">INT</span>,</span><br><span class="line">	ProductId <span class="built_in">INT</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @<span class="keyword">Transaction</span> <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @<span class="keyword">Transaction</span> <span class="keyword">VALUES</span> (<span class="number">101</span>,<span class="number">2</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @<span class="keyword">Transaction</span> <span class="keyword">VALUES</span> (<span class="number">1001</span>,<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> t.CreateDate <span class="keyword">BETWEEN</span> p.StartDate <span class="keyword">AND</span> p.EndDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
-<p>使用上面語法我們只需查詢三個期別資料,但看執行計畫時能發現，ReportPeriod使用的Clustered預估資訊有1百多萬筆</p>
-<p>Q:我明明有對於條件建立Index，但為什麼預估值卻會跑真那麼嚴重？</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED <span class="keyword">INDEX</span> [CIX_ReportPeriod_StartDate] <span class="keyword">ON</span> [dbo].[ReportPeriod]</span><br><span class="line">(</span><br><span class="line">	[StartDate] <span class="keyword">ASC</span>,</span><br><span class="line">    [EndDate] <span class="keyword">ASC</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
-<p><img src="https://i.imgur.com/QGNtlUr.png" alt></p>
-<blockquote>
-<p>原因出在範圍條件會因為查找範圍過大導致預估值不準確</p>
-</blockquote>
-<p>甚麼意思? 讓我們看看下圖(代表<code>ReportPeriod</code>內含日期資料)</p>
-<p><img src="https://i.imgur.com/3Z2dy2E.png" alt></p>
-<p>而我們在<code>JOIN</code>條件只有<code>t.CreateDate BETWEEN p.StartDate AND p.EndDate</code>這就會導致,我們需要查找<code>ReportPeriod</code>日期資料在挑出符合的資料</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">JOIN [dbo].[ReportPeriod] p ON t.CreateDate BETWEEN p.StartDate AND p.EndDate</span><br><span class="line">JOIN @Transaction t1 ON t.TransactionId = t1.TransactionId AND  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
-<p>最後就會看到走針的估計值</p>
-<p><img src="https://i.imgur.com/QGNtlUr.png" alt></p>
-<h3 id="如何優化"><a href="#如何優化" class="headerlink" title="如何優化?"></a>如何優化?</h3><blockquote>
-<p>效能差問題,選擇對Index和撰寫合理的查詢可以改善40%左右問題</p>
-</blockquote>
-<p>我們思考一下如果可以把範圍條件改成精準<code>=</code>查找條件不就可以更精準預估資訊了?</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">t.CreateDate BETWEEN p.StartDate AND p.EndDate</span><br></pre></td></tr></table></figure></div>
-<p>那我們怎麼把上面條件使用<code>=</code>取代<code>BETWEEN</code>範圍查詢呢?</p>
-<blockquote>
-<p>這時我們可以利用空間來換取時間</p>
-</blockquote>
-<p>建立一個新的<code>COLUMN</code>運用算法來計算每個期數<code>StartTime</code></p>
-<p>例如:<code>CreateDate = 2020/01/03 10:08:55</code>會歸類在<code>2020/01/03 10:05:00</code>中</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
-<p>建立完新<code>COLUMN</code>後別忘記加入一個<code>Index</code>給此<code>COLUMN</code>.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
-<p>最後我們修改一下查詢語法</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
-<p><img src="https://i.imgur.com/ZPsyQgH.png" alt></p>
-<p>預估值和讀取值已經可以大幅降低了!!</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>在<code>JOIN</code>範圍條件差效能問題,可以思考一下是否有辦法利用算法或是公式來優化查詢效能，如此次範例一樣.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/join-index-improve/">https://isdaniel.github.io/join-index-improve/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>DataBase</category>
-        <category>Turning</category>
-      </categories>
-      <tags>
-        <tag>sql-server</tag>
-        <tag>DataBase</tag>
-        <tag>Turning</tag>
-        <tag>Index</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>進入MVC原始碼世界 Route &amp; RouteTable 原始碼解析 (第9天)</title>
     <url>/ithelp-day9/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -7073,6 +7001,78 @@ email_url: dog830228@gmail.com
         <tag>Asp.net-MVC</tag>
         <tag>SourceCode</tag>
         <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>JOIN範圍條件Index優化</title>
+    <url>/join-index-improve/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p><code>JOIN</code>條件範圍時,執行計畫<strong>預估值</strong>容易不準確,這也間接導致查詢效能不好.</p>
+<blockquote>
+<p>就算有建立Index也會遇到上述問題</p>
+</blockquote>
+<p>假如我們想要提升<code>JOIN</code>條件範圍效能並讓Index可以發揮最大最用可以怎麼做?</p>
+<p>就讓我利用一個範例來跟大家分享.</p>
+<h2 id="案例"><a href="#案例" class="headerlink" title="案例"></a>案例</h2><p>此範例有使用到三張表</p>
+<ul>
+<li>Product表:擁有1-10編號產品</li>
+<li>ReportPeriod表:存放產每期報表的資訊(時間,和是否產報表)</li>
+<li>T99表:線上產品訂單資訊</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[Product](</span><br><span class="line">	[ProductId] <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[T99](</span><br><span class="line">	[TransactionId] [<span class="built_in">int</span>] <span class="keyword">IDENTITY</span>(<span class="number">1</span>,<span class="number">1</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[Amount] <span class="built_in">DECIMAL</span>(<span class="number">18</span>,<span class="number">6</span>),</span><br><span class="line">	[CreateDate] [datetime2](<span class="number">3</span>) <span class="literal">NULL</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">GO</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[ReportPeriod](</span><br><span class="line">	[PerioidID] [<span class="built_in">int</span>] <span class="keyword">IDENTITY</span>(<span class="number">1</span>,<span class="number">1</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[ProductId] <span class="built_in">INT</span> <span class="keyword">NOT</span> <span class="literal">NULL</span>,</span><br><span class="line">	[IsGenerate] [<span class="built_in">bit</span>] <span class="literal">NULL</span>,</span><br><span class="line">	[StartDate] [datetime2](<span class="number">3</span>) <span class="literal">NULL</span>,</span><br><span class="line">	[EndDate] [datetime2](<span class="number">3</span>) <span class="literal">NULL</span></span><br><span class="line">) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"><span class="keyword">GO</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>我們利用<code>T99.CreateDate</code>來跟<code>ReportPeriod</code>判斷是屬於哪期報表.</p>
+</blockquote>
+<h3 id="資料初始化"><a href="#資料初始化" class="headerlink" title="資料初始化"></a>資料初始化</h3><p>我們利用亂數產生Sample資料來模擬線上大資料狀況.</p>
+<p><code>ReportPeriod</code>期別由<code>&#39;2019-08-01&#39;</code>到<code>&#39;2020-07-31&#39;</code></p>
+<p>因為產生報表以5分鐘為區間,所以可以利用CTE遞迴來幫我們產生資料.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">1</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">2</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">3</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">4</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">5</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">6</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">7</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">8</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">9</span>);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> [dbo].[Product] <span class="keyword">VALUES</span> (<span class="number">10</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">declare</span> @FromDate DATETIME2(<span class="number">3</span>) = <span class="string">'2019-08-01'</span></span><br><span class="line"><span class="keyword">declare</span> @ToDate DATETIME2(<span class="number">3</span>) = <span class="string">'2020-07-31'</span></span><br><span class="line"></span><br><span class="line">;<span class="keyword">WITH</span> CTE <span class="keyword">AS</span> (</span><br><span class="line">	<span class="keyword">SELECT</span> @FromDate fromDt,@ToDate endDt</span><br><span class="line">	<span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line">	<span class="keyword">SELECT</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="number">5</span>,fromDt),endDt</span><br><span class="line">	<span class="keyword">FROM</span> CTE </span><br><span class="line">	<span class="keyword">WHERE</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="number">5</span>,fromDt) &lt; endDt</span><br><span class="line">)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span>  [dbo].[ReportPeriod] ([ProductId],[IsGenerate],[StartDate],[EndDate])</span><br><span class="line"><span class="keyword">SELECT</span> ProductId,<span class="number">0</span>,fromDt,<span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="number">5</span>,fromDt) </span><br><span class="line"><span class="keyword">FROM</span> CTE <span class="keyword">CROSS</span> <span class="keyword">JOIN</span> dbo.Product</span><br><span class="line"><span class="keyword">OPTION</span> (MAXRECURSION <span class="number">0</span>); </span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> T99 ([CreateDate],Amount)</span><br><span class="line"><span class="keyword">SELECT</span> top <span class="number">1000000</span> <span class="keyword">dateadd</span>(<span class="keyword">SECOND</span>, </span><br><span class="line">          <span class="keyword">rand</span>(<span class="keyword">checksum</span>(newid()))*(<span class="number">1</span>+<span class="keyword">datediff</span>(<span class="keyword">SECOND</span>, @FromDate, @ToDate)), </span><br><span class="line">               @FromDate),</span><br><span class="line">	   <span class="keyword">CAST</span>(<span class="keyword">RAND</span>(<span class="keyword">CHECKSUM</span>(NEWID())) * <span class="number">100000</span> <span class="keyword">as</span> <span class="built_in">INT</span>) + <span class="number">1</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns c1 <span class="keyword">CROSS</span> <span class="keyword">JOIN</span> sys.all_columns c2</span><br></pre></td></tr></table></figure></div>
+<h3 id="建立Index"><a href="#建立Index" class="headerlink" title="建立Index"></a>建立Index</h3><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED <span class="keyword">INDEX</span> [CIX_ReportPeriod_StartDate] <span class="keyword">ON</span> [dbo].[ReportPeriod]</span><br><span class="line">(</span><br><span class="line">	[StartDate] <span class="keyword">ASC</span>,</span><br><span class="line">    [EndDate] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, SORT_IN_TEMPDB = <span class="keyword">OFF</span>, DROP_EXISTING = <span class="keyword">OFF</span>, <span class="keyword">ONLINE</span> = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> [dbo].[ReportPeriod] <span class="keyword">ADD</span>  <span class="keyword">CONSTRAINT</span> [PK_ReportPeriod] PRIMARY <span class="keyword">KEY</span> NONCLUSTERED </span><br><span class="line">(</span><br><span class="line">	[PerioidID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductId] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX = <span class="keyword">OFF</span>, STATISTICS_NORECOMPUTE = <span class="keyword">OFF</span>, SORT_IN_TEMPDB = <span class="keyword">OFF</span>, IGNORE_DUP_KEY = <span class="keyword">OFF</span>, <span class="keyword">ONLINE</span> = <span class="keyword">OFF</span>, ALLOW_ROW_LOCKS = <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS = <span class="keyword">ON</span>) <span class="keyword">ON</span> [PRIMARY]</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> CLUSTERED <span class="keyword">INDEX</span> [CIX_T99_CreateDate] <span class="keyword">ON</span> [dbo].[T99]</span><br><span class="line">(</span><br><span class="line">	[CreateDate] <span class="keyword">ASC</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">UNIQUE</span> NONCLUSTERED <span class="keyword">INDEX</span> [IX_T99_TransactionId] <span class="keyword">ON</span> [dbo].[T99]</span><br><span class="line">(</span><br><span class="line">	[TransactionId] <span class="keyword">ASC</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<h3 id="查詢語法"><a href="#查詢語法" class="headerlink" title="查詢語法"></a>查詢語法</h3><p>在線上我們會使用UDT當作參數來取得某些期別資訊.</p>
+<p>這裡為了方便模擬我使用Table Variable來取代.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">set</span> nocount <span class="keyword">on</span></span><br><span class="line"><span class="keyword">DECLARE</span> @<span class="keyword">Transaction</span> <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	TransactionId <span class="built_in">INT</span>,</span><br><span class="line">	ProductId <span class="built_in">INT</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @<span class="keyword">Transaction</span> <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @<span class="keyword">Transaction</span> <span class="keyword">VALUES</span> (<span class="number">101</span>,<span class="number">2</span>)</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> @<span class="keyword">Transaction</span> <span class="keyword">VALUES</span> (<span class="number">1001</span>,<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> t.CreateDate <span class="keyword">BETWEEN</span> p.StartDate <span class="keyword">AND</span> p.EndDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
+<p>使用上面語法我們只需查詢三個期別資料,但看執行計畫時能發現，ReportPeriod使用的Clustered預估資訊有1百多萬筆</p>
+<p>Q:我明明有對於條件建立Index，但為什麼預估值卻會跑真那麼嚴重？</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED <span class="keyword">INDEX</span> [CIX_ReportPeriod_StartDate] <span class="keyword">ON</span> [dbo].[ReportPeriod]</span><br><span class="line">(</span><br><span class="line">	[StartDate] <span class="keyword">ASC</span>,</span><br><span class="line">    [EndDate] <span class="keyword">ASC</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://i.imgur.com/QGNtlUr.png" alt></p>
+<blockquote>
+<p>原因出在範圍條件會因為查找範圍過大導致預估值不準確</p>
+</blockquote>
+<p>甚麼意思? 讓我們看看下圖(代表<code>ReportPeriod</code>內含日期資料)</p>
+<p><img src="https://i.imgur.com/3Z2dy2E.png" alt></p>
+<p>而我們在<code>JOIN</code>條件只有<code>t.CreateDate BETWEEN p.StartDate AND p.EndDate</code>這就會導致,我們需要查找<code>ReportPeriod</code>日期資料在挑出符合的資料</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">JOIN [dbo].[ReportPeriod] p ON t.CreateDate BETWEEN p.StartDate AND p.EndDate</span><br><span class="line">JOIN @Transaction t1 ON t.TransactionId = t1.TransactionId AND  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
+<p>最後就會看到走針的估計值</p>
+<p><img src="https://i.imgur.com/QGNtlUr.png" alt></p>
+<h3 id="如何優化"><a href="#如何優化" class="headerlink" title="如何優化?"></a>如何優化?</h3><blockquote>
+<p>效能差問題,選擇對Index和撰寫合理的查詢可以改善40%左右問題</p>
+</blockquote>
+<p>我們思考一下如果可以把範圍條件改成精準<code>=</code>查找條件不就可以更精準預估資訊了?</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line">t.CreateDate BETWEEN p.StartDate AND p.EndDate</span><br></pre></td></tr></table></figure></div>
+<p>那我們怎麼把上面條件使用<code>=</code>取代<code>BETWEEN</code>範圍查詢呢?</p>
+<blockquote>
+<p>這時我們可以利用空間來換取時間</p>
+</blockquote>
+<p>建立一個新的<code>COLUMN</code>運用算法來計算每個期數<code>StartTime</code></p>
+<p>例如:<code>CreateDate = 2020/01/03 10:08:55</code>會歸類在<code>2020/01/03 10:05:00</code>中</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> <span class="keyword">DATEADD</span>(<span class="keyword">MINUTE</span>,<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate) %<span class="number">5</span> * <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	<span class="keyword">DATEPART</span>(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<p>建立完新<code>COLUMN</code>後別忘記加入一個<code>Index</code>給此<code>COLUMN</code>.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">INDEX</span> IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br></pre></td></tr></table></figure></div>
+<p>最後我們修改一下查詢語法</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> p.*</span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate = t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> @<span class="keyword">Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId = t1.TransactionId <span class="keyword">AND</span>  p.ProductId = t1.ProductId</span><br></pre></td></tr></table></figure></div>
+<p><img src="https://i.imgur.com/ZPsyQgH.png" alt></p>
+<p>預估值和讀取值已經可以大幅降低了!!</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>在<code>JOIN</code>範圍條件差效能問題,可以思考一下是否有辦法利用算法或是公式來優化查詢效能，如此次範例一樣.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/join-index-improve/">https://isdaniel.github.io/join-index-improve/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DataBase</category>
+        <category>Turning</category>
+      </categories>
+      <tags>
+        <tag>sql-server</tag>
+        <tag>DataBase</tag>
+        <tag>Turning</tag>
+        <tag>Index</tag>
       </tags>
   </entry>
   <entry>
