@@ -4076,6 +4076,64 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>【財政部查詢類電子發票API】框架解說 C#</title>
+    <url>/invoicetw-framework/</url>
+    <content><![CDATA[<p>小弟之前有分享過串接【財政部查詢類電子發票API】小框架使用文</p>
+<p>使用文連結 <span class="exturl" data-url="aHR0cHM6Ly9pdGhlbHAuaXRob21lLmNvbS50dy9hcnRpY2xlcy8xMDE4MzkwNA==" title="https://ithelp.ithome.com.tw/articles/10183904">快速使用財政部電子發票API 使用 C#<i class="fa fa-external-link"></i></span><br>串接文件下載 <span class="exturl" data-url="aHR0cHM6Ly93d3cuZWludm9pY2UubmF0Lmdvdi50dy9ob21lL0Rvd25Mb2FkP2ZpbGVOYW1lPTE0NzY4NTUzODc0NTVfMC40LjQucGRm" title="https://www.einvoice.nat.gov.tw/home/DownLoad?fileName=1476855387455_0.4.4.pdf">電子發票查詢API 1.4.4<i class="fa fa-external-link"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">程式原始碼連結<i class="fa fa-external-link"></i></span></p>
+<p>這次想跟大家分享我做出此框架的歷程..</p>
+<hr>
+<p>框架目的：希望可以做出方便日後維護擴展的API。</p>
+<p>串接API時發現他們有幾個共同之處</p>
+<ol>
+<li>API請求參數名稱需降冪排列</li>
+<li>請求參數最後會加上簽章</li>
+<li>都有時間戳記</li>
+<li>回應資料格式都是Json</li>
+<li>都是使用Http (Get or Post) </li>
+</ol>
+<p>我就想到可以使用 <strong>工廠模式來實作這系列產品</strong> (工廠模式主要是切割產品的使用和生產)</p>
+<h2 id="產品解說"><a href="#產品解說" class="headerlink" title="產品解說"></a>產品解說</h2><p>因為他們都有共同的能力<strong>傳入一組參數回傳一串Json </strong><br>我就先寫出一個API共同的介面簽章  <code>IApiRunner</code><br>這個介面為基礎來撰寫後面的程式碼</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行api的介面</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IApiRunner</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 執行api</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>傳入的參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span>回傳資料<span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我在中間多一個抽象泛型類別 ApiBase<t> (用泛型是為了給子類決定傳入參數的Model)<br>原因:</t></p>
+<ol>
+<li>中間使用泛型抽象類別讓子類決定要傳入哪組參數</li>
+<li>可以將一些共通的方法寫在裡面</li>
+<li>子類別只需要知道要提供哪些動作，所以在ApiBase中提供兩個方法來override<ul>
+<li>請求URL   目前預設讀取Config (GetApiURL)</li>
+<li>參數的組合 (SetParamter)</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 子類繼承提供參數</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">string</span> <span class="title">SetParamter</span>(<span class="params">T model</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 取得api的Url路徑</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">GetApiURL</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">string</span> apiname = <span class="keyword">this</span>.GetType().Name;</span><br><span class="line">    <span class="keyword">if</span> (!ConfigurationManager.AppSettings.AllKeys.Contains(apiname))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="keyword">string</span>.Format(<span class="string">"請確認Config的appsetting有無此參數 &#123;0&#125;"</span>,</span><br><span class="line">            apiname));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ConfigurationManager.AppSettings[apiname];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行Api</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//建立所需參數</span></span><br><span class="line">    <span class="keyword">string</span> result = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> postData = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> posturl = GetApiURL();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> data = ObjectToModel(model);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//取得加密後的參數</span></span><br><span class="line">    postData = GetInvoiceParamter(SetParamter(data));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        ServicePointManager.ServerCertificateValidationCallback</span><br><span class="line">            = HttpTool.ValidateServerCertificate;</span><br><span class="line">        result = HttpTool.HttpPost(posturl, postData);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex)</span><br><span class="line">    &#123;</span><br><span class="line">        result = GetSysErrorMsg();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>目前產品部分已經建構好了。</p>
+<h2 id="工廠解說"><a href="#工廠解說" class="headerlink" title="工廠解說"></a>工廠解說</h2><p>工廠部分這次我選擇使用【反射方式來實現工廠】</p>
+<p>工廠類別 <code>MoblieInvoiceApiFactroy</code> 其實最主要是使用GetInstance方法<br><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 提供api的工廠</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Model和Api命名要相關</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 例如:testModel 對 testApi</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>Model參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IApiRunner <span class="title">GetInstace</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (model == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"不能傳空的參數"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> modelName = model.GetType().Name;</span><br><span class="line">    <span class="keyword">return</span> (IApiRunner)Activator.CreateInstance</span><br><span class="line">        (GetInstanceType(model), <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其中我把決定使用哪個組API的決定權交給Model並寫在標籤上(Attirbute)<br>在執行時他可獲取此參數Model所註冊參數的型別，來動態產生產品</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 反射取得綁定Model上綁定的API型別</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Type <span class="title">GetInstanceType</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> modelType = model.GetType();</span><br><span class="line">    <span class="keyword">var</span> attr = modelType.GetCustomAttribute(<span class="keyword">typeof</span>(ApiTypeAttribute)) <span class="keyword">as</span> ApiTypeAttribute;</span><br><span class="line">    <span class="keyword">if</span> (attr != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetApiType(attr);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">"Model尚未賦予ApiTypeAttribute"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>EX:查詢中獎號碼API Model 可以很清楚知道這個Model隸屬於哪個API </p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">ApiType(ApiType = typeof(QryWinningListApi), MockApiType = typeof(QryWinningListMockApi))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QryWinningListModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> invTerm &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>值得一提的是它有多一個MockApiType 為什麼會有這個?<br>原因：如果財政部伺服器連不到我們可以改成假資料或是模擬資料(讀取資料庫或是其他方式)。</p>
+<p>以上就是此框架的解說</p>
+<p>外部只需要呼叫工廠的GetInstance方法並傳入參數Model就會回傳相對應的產品API類別<br>這樣就降低執行和產生產品的耦合度，因為外部不是直接強耦合於Api類別而是透過工廠<br>日後如需增加API產品只需擴展新的類別 <strong>符合OCP(開放封閉原則)</strong><br>已經達到目的：希望可以做出方便日後維護擴展的API。</p>
+<p>Ps:這次我除了使用 <strong>工廠模式,也有用到樣板模式,代理模式</strong> 剩下兩個模式讓大家來找看看吧^^</p>
+<blockquote>
+<p>一般來說很少只用一個模式就可以解決一個問題的，通常都是配合使用</p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/invoicetw-framework/">https://isdaniel.github.io/invoicetw-framework/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>SourceCode</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Design-Pattern</tag>
+        <tag>Open-Source</tag>
+        <tag>OOP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>IOC(控制反轉)，DI(依賴注入) 深入淺出~~</title>
     <url>/ioc-di/</url>
     <content><![CDATA[<p><code>IOC</code>是一個oop重要的程式設計思想。</p>
@@ -4165,64 +4223,6 @@ email_url: dog830228@gmail.com
         <tag>IOC</tag>
         <tag>Autofac</tag>
         <tag>Design-Pattern</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>【財政部查詢類電子發票API】框架解說 C#</title>
-    <url>/invoicetw-framework/</url>
-    <content><![CDATA[<p>小弟之前有分享過串接【財政部查詢類電子發票API】小框架使用文</p>
-<p>使用文連結 <span class="exturl" data-url="aHR0cHM6Ly9pdGhlbHAuaXRob21lLmNvbS50dy9hcnRpY2xlcy8xMDE4MzkwNA==" title="https://ithelp.ithome.com.tw/articles/10183904">快速使用財政部電子發票API 使用 C#<i class="fa fa-external-link"></i></span><br>串接文件下載 <span class="exturl" data-url="aHR0cHM6Ly93d3cuZWludm9pY2UubmF0Lmdvdi50dy9ob21lL0Rvd25Mb2FkP2ZpbGVOYW1lPTE0NzY4NTUzODc0NTVfMC40LjQucGRm" title="https://www.einvoice.nat.gov.tw/home/DownLoad?fileName=1476855387455_0.4.4.pdf">電子發票查詢API 1.4.4<i class="fa fa-external-link"></i></span><br><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0VsZWN0cm9uaWNJbnZvaWNlX1RX" title="https://github.com/isdaniel/ElectronicInvoice_TW">程式原始碼連結<i class="fa fa-external-link"></i></span></p>
-<p>這次想跟大家分享我做出此框架的歷程..</p>
-<hr>
-<p>框架目的：希望可以做出方便日後維護擴展的API。</p>
-<p>串接API時發現他們有幾個共同之處</p>
-<ol>
-<li>API請求參數名稱需降冪排列</li>
-<li>請求參數最後會加上簽章</li>
-<li>都有時間戳記</li>
-<li>回應資料格式都是Json</li>
-<li>都是使用Http (Get or Post) </li>
-</ol>
-<p>我就想到可以使用 <strong>工廠模式來實作這系列產品</strong> (工廠模式主要是切割產品的使用和生產)</p>
-<h2 id="產品解說"><a href="#產品解說" class="headerlink" title="產品解說"></a>產品解說</h2><p>因為他們都有共同的能力<strong>傳入一組參數回傳一串Json </strong><br>我就先寫出一個API共同的介面簽章  <code>IApiRunner</code><br>這個介面為基礎來撰寫後面的程式碼</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行api的介面</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IApiRunner</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> 執行api</span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>傳入的參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line">    <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span>回傳資料<span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line">    <span class="function"><span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我在中間多一個抽象泛型類別 ApiBase<t> (用泛型是為了給子類決定傳入參數的Model)<br>原因:</t></p>
-<ol>
-<li>中間使用泛型抽象類別讓子類決定要傳入哪組參數</li>
-<li>可以將一些共通的方法寫在裡面</li>
-<li>子類別只需要知道要提供哪些動作，所以在ApiBase中提供兩個方法來override<ul>
-<li>請求URL   目前預設讀取Config (GetApiURL)</li>
-<li>參數的組合 (SetParamter)</li>
-</ul>
-</li>
-</ol>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 子類繼承提供參數</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">string</span> <span class="title">SetParamter</span>(<span class="params">T model</span>)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 取得api的Url路徑</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">GetApiURL</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">string</span> apiname = <span class="keyword">this</span>.GetType().Name;</span><br><span class="line">    <span class="keyword">if</span> (!ConfigurationManager.AppSettings.AllKeys.Contains(apiname))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="keyword">string</span>.Format(<span class="string">"請確認Config的appsetting有無此參數 &#123;0&#125;"</span>,</span><br><span class="line">            apiname));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ConfigurationManager.AppSettings[apiname];</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 執行Api</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">string</span> <span class="title">ExcuteApi</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">//建立所需參數</span></span><br><span class="line">    <span class="keyword">string</span> result = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> postData = <span class="keyword">string</span>.Empty;</span><br><span class="line">    <span class="keyword">string</span> posturl = GetApiURL();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> data = ObjectToModel(model);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//取得加密後的參數</span></span><br><span class="line">    postData = GetInvoiceParamter(SetParamter(data));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        ServicePointManager.ServerCertificateValidationCallback</span><br><span class="line">            = HttpTool.ValidateServerCertificate;</span><br><span class="line">        result = HttpTool.HttpPost(posturl, postData);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (Exception ex)</span><br><span class="line">    &#123;</span><br><span class="line">        result = GetSysErrorMsg();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>目前產品部分已經建構好了。</p>
-<h2 id="工廠解說"><a href="#工廠解說" class="headerlink" title="工廠解說"></a>工廠解說</h2><p>工廠部分這次我選擇使用【反射方式來實現工廠】</p>
-<p>工廠類別 <code>MoblieInvoiceApiFactroy</code> 其實最主要是使用GetInstance方法<br><figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 提供api的工廠</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Model和Api命名要相關</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 例如:testModel 對 testApi</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span>Model參數<span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IApiRunner <span class="title">GetInstace</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (model == <span class="literal">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">"不能傳空的參數"</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> modelName = model.GetType().Name;</span><br><span class="line">    <span class="keyword">return</span> (IApiRunner)Activator.CreateInstance</span><br><span class="line">        (GetInstanceType(model), <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p>其中我把決定使用哪個組API的決定權交給Model並寫在標籤上(Attirbute)<br>在執行時他可獲取此參數Model所註冊參數的型別，來動態產生產品</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 反射取得綁定Model上綁定的API型別</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;param name="model"&gt;</span><span class="doctag">&lt;/param&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Type <span class="title">GetInstanceType</span>(<span class="params"><span class="keyword">object</span> model</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> modelType = model.GetType();</span><br><span class="line">    <span class="keyword">var</span> attr = modelType.GetCustomAttribute(<span class="keyword">typeof</span>(ApiTypeAttribute)) <span class="keyword">as</span> ApiTypeAttribute;</span><br><span class="line">    <span class="keyword">if</span> (attr != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetApiType(attr);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">"Model尚未賦予ApiTypeAttribute"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>EX:查詢中獎號碼API Model 可以很清楚知道這個Model隸屬於哪個API </p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">ApiType(ApiType = typeof(QryWinningListApi), MockApiType = typeof(QryWinningListMockApi))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">QryWinningListModel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> invTerm &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>值得一提的是它有多一個MockApiType 為什麼會有這個?<br>原因：如果財政部伺服器連不到我們可以改成假資料或是模擬資料(讀取資料庫或是其他方式)。</p>
-<p>以上就是此框架的解說</p>
-<p>外部只需要呼叫工廠的GetInstance方法並傳入參數Model就會回傳相對應的產品API類別<br>這樣就降低執行和產生產品的耦合度，因為外部不是直接強耦合於Api類別而是透過工廠<br>日後如需增加API產品只需擴展新的類別 <strong>符合OCP(開放封閉原則)</strong><br>已經達到目的：希望可以做出方便日後維護擴展的API。</p>
-<p>Ps:這次我除了使用 <strong>工廠模式,也有用到樣板模式,代理模式</strong> 剩下兩個模式讓大家來找看看吧^^</p>
-<blockquote>
-<p>一般來說很少只用一個模式就可以解決一個問題的，通常都是配合使用</p>
-</blockquote>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/invoicetw-framework/">https://isdaniel.github.io/invoicetw-framework/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>SourceCode</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Design-Pattern</tag>
-        <tag>Open-Source</tag>
-        <tag>OOP</tag>
       </tags>
   </entry>
   <entry>
@@ -8644,7 +8644,7 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       </tags>
   </entry>
   <entry>
-    <title>postgresql</title>
+    <title>postgresql source code install</title>
     <url>/postgresql-debug-source-code/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>因為工作需要最近在研究 postgresql DB，postgresql DB 是一個 Open Source RDBMS，所以有任何問題疑問都可以把 source code 下載並 debug 了解原因，本篇希望可以快速幫助想要透過 source code 安裝 postgresql DB 的人</p>
 <h3 id="Install-Postgresl"><a href="#Install-Postgresl" class="headerlink" title="Install Postgresl"></a>Install Postgresl</h3><p>假如你跟我一樣是 Ubuntu 在安裝前需要先把開發環境設定完畢，詳細資訊可參考 <span class="exturl" data-url="aHR0cHM6Ly93aWtpLnBvc3RncmVzcWwub3JnL3dpa2kvQ29tcGlsZV9hbmRfSW5zdGFsbF9mcm9tX3NvdXJjZV9jb2Rl" title="https://wiki.postgresql.org/wiki/Compile_and_Install_from_source_code">Postgresql Compile_and_Install_from_source_code<i class="fa fa-external-link"></i></span></p>
@@ -8945,6 +8945,60 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       </tags>
   </entry>
   <entry>
+    <title>RabbitMQ cluster-operator</title>
+    <url>/rabbitmq-cluster-operator/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 Rabbitmq 官方 Github 有開源一個 k8s 操作管理  RabbitMQ clusters 環境 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3I=" title="https://github.com/rabbitmq/cluster-operator">cluster-operator<i class="fa fa-external-link"></i></span>.</p>
+<p>這個專案在2020啟動，我個人覺得官方有些說明還沒很完善，本篇文章跟大家介紹如何去使用</p>
+<h2 id="建立-operator"><a href="#建立-operator" class="headerlink" title="建立 operator"></a>建立 operator</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml</span><br></pre></td></tr></table></figure></div>
+<p>下面的yaml檔案是建立一個<code>RabbitmqCluster</code></p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure></div>
+<p>透過 <code>kubectl apply -f {your yaml filename}</code> 後就可以透過 <code>kubectl get all</code> 查看 RabbitMQ cluster 是否建立完成</p>
+<p>如果建立完成會出現類似下圖</p>
+<p><img src="https://i.imgur.com/5qtQixT.png" alt></p>
+<p>綠色框框是這次建立的 RabbitMQ cluster 能看到 Pod 有三台</p>
+<p>我們可以利用 Ingress Rule &amp; Ingress 把我們的服務對外出來，可以執行下面yaml</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">rabbitmq-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">http:</span></span><br><span class="line">      <span class="attr">paths:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/</span></span><br><span class="line">        <span class="attr">pathType:</span> <span class="string">Prefix</span></span><br><span class="line">        <span class="attr">backend:</span> <span class="comment">## to service</span></span><br><span class="line">          <span class="attr">service:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line">            <span class="attr">port:</span></span><br><span class="line">              <span class="attr">number:</span> <span class="number">15672</span></span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>注意 <code>backend.service.name</code> 名稱要對應上面的 <code>metadata.name</code> 不然 Ingress Endpoint會綁定不到</p>
+</blockquote>
+<p>能看到畫面後會發現利用 <code>guest/guest</code> 登入會失敗，稍後會跟大家說明原因</p>
+<h2 id="修改登入預設密碼"><a href="#修改登入預設密碼" class="headerlink" title="修改登入預設密碼"></a>修改登入預設密碼</h2><p>啟動完 RabbitMQ clusters 透過 ingress controller 對外暴露，服務但會發現使用RabbitMq預設密碼不能登入….</p>
+<p>那是因為他的預設密碼有透過特別處理.</p>
+<p>在官方Guide文件中 <span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2t1YmVybmV0ZXMvb3BlcmF0b3Ivb3BlcmF0b3Itb3ZlcnZpZXcuaHRtbCNsaW1pdGF0aW9ucw==" title="https://www.rabbitmq.com/kubernetes/operator/operator-overview.html#limitations">Limitations<i class="fa fa-external-link"></i></span> 由提到</p>
+<blockquote>
+<p>Deleted <strong>Secret</strong> objects will be recreated by the Kubernetes Operator but the newly generated <strong>secret</strong> value will not be deployed to the RabbitMQ cluster</p>
+</blockquote>
+<p>經由上面我們可以知道密碼可能藏在<strong>secret</strong>上</p>
+<p>利用<code>kubectl get secret</code>可以看到有多了幾個RabbitMQ Secret</p>
+<p><img src="https://i.imgur.com/y7026UN.png" alt></p>
+<blockquote>
+<p><code>secret</code>可以透過 base64 解碼，就可以看到原始的資料(就可以看到 RabbitmqCluster 幫我們預設建立 password &amp; username)</p>
+</blockquote>
+<p>但我下面會介紹如何透過 yaml 檔案設定預設帳號密碼</p>
+<p>我們把剛剛建立的 RabbitmqCluster 稍微改一下，新增 <code>additionalConfig</code> 區段</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">rabbitmq:</span></span><br><span class="line">    <span class="attr">additionalConfig:</span> <span class="string">|</span></span><br><span class="line">      <span class="string">default_user=guest</span></span><br><span class="line">      <span class="string">default_pass=guest</span></span><br></pre></td></tr></table></figure></div>
+<p>改完後再執行刪除跟重建</p>
+<blockquote>
+<p>因為要把<code>secret</code>更新 這樣做比較快XDD</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">kubectl</span> <span class="string">delete</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br><span class="line"><span class="string">kubectl</span> <span class="string">apply</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br></pre></td></tr></table></figure></div>
+<p>再次利用 <code>guest/guest</code> 理論上就可以登入進去了</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Rabbitmq 官方很佛心 幫我們建立 k8s cluster 機制，讓我們可以方便操作，雖然目前有一些 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3IvdHJlZS9tYWluL2RvY3MvZXhhbXBsZXM=" title="https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples">sample<i class="fa fa-external-link"></i></span> 可以參考</p>
+<p>但我覺得Sample 文件資訊還是有點少，到導致有些需求要花蠻多時間去查找的</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-cluster-operator/">https://isdaniel.github.io/rabbitmq-cluster-operator/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>k8s</category>
+        <category>Kubernetes</category>
+        <category>RabbitMQ</category>
+      </categories>
+      <tags>
+        <tag>k8s</tag>
+        <tag>Kubernetes</tag>
+        <tag>RabbitMQ</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>postgresql WAL (Write-Ahead Logging) 機制</title>
     <url>/postgresql-wal-introduce/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>WAL 是一種 Tx Log實踐機制</p>
@@ -9014,60 +9068,6 @@ CONNECT BY PRIOR PartNo = ParentPartNo
         <tag>Turning</tag>
         <tag>postgresql</tag>
         <tag>WAL</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>RabbitMQ cluster-operator</title>
-    <url>/rabbitmq-cluster-operator/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 Rabbitmq 官方 Github 有開源一個 k8s 操作管理  RabbitMQ clusters 環境 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3I=" title="https://github.com/rabbitmq/cluster-operator">cluster-operator<i class="fa fa-external-link"></i></span>.</p>
-<p>這個專案在2020啟動，我個人覺得官方有些說明還沒很完善，本篇文章跟大家介紹如何去使用</p>
-<h2 id="建立-operator"><a href="#建立-operator" class="headerlink" title="建立 operator"></a>建立 operator</h2><div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="code"><pre><span class="line">kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml</span><br></pre></td></tr></table></figure></div>
-<p>下面的yaml檔案是建立一個<code>RabbitmqCluster</code></p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure></div>
-<p>透過 <code>kubectl apply -f {your yaml filename}</code> 後就可以透過 <code>kubectl get all</code> 查看 RabbitMQ cluster 是否建立完成</p>
-<p>如果建立完成會出現類似下圖</p>
-<p><img src="https://i.imgur.com/5qtQixT.png" alt></p>
-<p>綠色框框是這次建立的 RabbitMQ cluster 能看到 Pod 有三台</p>
-<p>我們可以利用 Ingress Rule &amp; Ingress 把我們的服務對外出來，可以執行下面yaml</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">networking.k8s.io/v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Ingress</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">rabbitmq-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">rules:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">http:</span></span><br><span class="line">      <span class="attr">paths:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">/</span></span><br><span class="line">        <span class="attr">pathType:</span> <span class="string">Prefix</span></span><br><span class="line">        <span class="attr">backend:</span> <span class="comment">## to service</span></span><br><span class="line">          <span class="attr">service:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line">            <span class="attr">port:</span></span><br><span class="line">              <span class="attr">number:</span> <span class="number">15672</span></span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>注意 <code>backend.service.name</code> 名稱要對應上面的 <code>metadata.name</code> 不然 Ingress Endpoint會綁定不到</p>
-</blockquote>
-<p>能看到畫面後會發現利用 <code>guest/guest</code> 登入會失敗，稍後會跟大家說明原因</p>
-<h2 id="修改登入預設密碼"><a href="#修改登入預設密碼" class="headerlink" title="修改登入預設密碼"></a>修改登入預設密碼</h2><p>啟動完 RabbitMQ clusters 透過 ingress controller 對外暴露，服務但會發現使用RabbitMq預設密碼不能登入….</p>
-<p>那是因為他的預設密碼有透過特別處理.</p>
-<p>在官方Guide文件中 <span class="exturl" data-url="aHR0cHM6Ly93d3cucmFiYml0bXEuY29tL2t1YmVybmV0ZXMvb3BlcmF0b3Ivb3BlcmF0b3Itb3ZlcnZpZXcuaHRtbCNsaW1pdGF0aW9ucw==" title="https://www.rabbitmq.com/kubernetes/operator/operator-overview.html#limitations">Limitations<i class="fa fa-external-link"></i></span> 由提到</p>
-<blockquote>
-<p>Deleted <strong>Secret</strong> objects will be recreated by the Kubernetes Operator but the newly generated <strong>secret</strong> value will not be deployed to the RabbitMQ cluster</p>
-</blockquote>
-<p>經由上面我們可以知道密碼可能藏在<strong>secret</strong>上</p>
-<p>利用<code>kubectl get secret</code>可以看到有多了幾個RabbitMQ Secret</p>
-<p><img src="https://i.imgur.com/y7026UN.png" alt></p>
-<blockquote>
-<p><code>secret</code>可以透過 base64 解碼，就可以看到原始的資料(就可以看到 RabbitmqCluster 幫我們預設建立 password &amp; username)</p>
-</blockquote>
-<p>但我下面會介紹如何透過 yaml 檔案設定預設帳號密碼</p>
-<p>我們把剛剛建立的 RabbitmqCluster 稍微改一下，新增 <code>additionalConfig</code> 區段</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br><span class="line">  <span class="attr">rabbitmq:</span></span><br><span class="line">    <span class="attr">additionalConfig:</span> <span class="string">|</span></span><br><span class="line">      <span class="string">default_user=guest</span></span><br><span class="line">      <span class="string">default_pass=guest</span></span><br></pre></td></tr></table></figure></div>
-<p>改完後再執行刪除跟重建</p>
-<blockquote>
-<p>因為要把<code>secret</code>更新 這樣做比較快XDD</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="YAML"><figure class="iseeu highlight /yaml"><table><tr><td class="code"><pre><span class="line"><span class="string">kubectl</span> <span class="string">delete</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br><span class="line"><span class="string">kubectl</span> <span class="string">apply</span> <span class="string">-f</span> <span class="string">&#123;your</span> <span class="string">yaml</span> <span class="string">filename&#125;</span></span><br></pre></td></tr></table></figure></div>
-<p>再次利用 <code>guest/guest</code> 理論上就可以登入進去了</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Rabbitmq 官方很佛心 幫我們建立 k8s cluster 機制，讓我們可以方便操作，雖然目前有一些 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JhYmJpdG1xL2NsdXN0ZXItb3BlcmF0b3IvdHJlZS9tYWluL2RvY3MvZXhhbXBsZXM=" title="https://github.com/rabbitmq/cluster-operator/tree/main/docs/examples">sample<i class="fa fa-external-link"></i></span> 可以參考</p>
-<p>但我覺得Sample 文件資訊還是有點少，到導致有些需求要花蠻多時間去查找的</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-cluster-operator/">https://isdaniel.github.io/rabbitmq-cluster-operator/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>k8s</category>
-        <category>Kubernetes</category>
-        <category>RabbitMQ</category>
-      </categories>
-      <tags>
-        <tag>k8s</tag>
-        <tag>Kubernetes</tag>
-        <tag>RabbitMQ</tag>
       </tags>
   </entry>
   <entry>
@@ -9295,6 +9295,88 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
+    <title>利用Redlock演算法實現自己的分佈式鎖</title>
+    <url>/redlock-deepknow/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我之前有寫透過 <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">lock or CAS</a> 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>
+<p>下面程式在單體服務或應用程式不會出問題，但如果服務器有多台問題可就大了，因為下面的 lock 只限於單體 Server 上</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">[<span class="meta">HttpGet()</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">Get</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> remainCount;</span><br><span class="line">    <span class="keyword">lock</span> (_lock)</span><br><span class="line">    &#123;</span><br><span class="line">        </span><br><span class="line">        remainCount = (<span class="keyword">int</span>)RedisConnection.GetDatabase().StringGet(_productId);</span><br><span class="line">        <span class="keyword">if</span> (remainCount &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            RedisConnection.GetDatabase().StringSet(_productId, --remainCount);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> productMsg = remainCount &lt;= <span class="number">0</span> ? <span class="string">"沒貨了賣完了"</span> : <span class="string">$"還剩下 <span class="subst">&#123;remainCount&#125;</span> 商品"</span>;</span><br><span class="line">    <span class="keyword">string</span> result = <span class="string">$"<span class="subst">&#123;Dns.GetHostName()&#125;</span> 處理貨物狀態!! <span class="subst">&#123;productMsg&#125;</span>"</span>;</span><br><span class="line">    _logger.LogInformation(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果有聽過 Redis 可能就會聽過 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhbWNvb2svUmVkTG9jay5uZXQ=" title="https://github.com/samcook/RedLock.net">RedLock.net<i class="fa fa-external-link"></i></span> 來處理，但您知道 RedLock.net 底層大致上怎麼實作的嗎?</p>
+<p>本篇文章會帶領大家透過 distlock 算法時做出，自己的Redlock</p>
+<blockquote>
+<p>本篇只介紹核心概念，細部防錯我沒有寫出來，所以建議本篇程式不要用在 prod 環境</p>
+</blockquote>
+<p>我使用 docker-compose 建立問題架構，架構圖如下</p>
+<p><img src="https://i.imgur.com/nt8Q9Sv.png" alt></p>
+<p>原始碼位置 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL1JlZGxvY2stQ3NoYXJw" title="https://github.com/isdaniel/Redlock-Csharp">Redlock-Csharp<i class="fa fa-external-link"></i></span></p>
+<h2 id="How-to-Run"><a href="#How-to-Run" class="headerlink" title="How to Run"></a>How to Run</h2><p>在根目錄使用 <code>docker-compose up -d</code> 跑起來後應該會有下面五個組件</p>
+<p><img src="https://i.imgur.com/7Zyji6N.png" alt></p>
+<p>後面我們進入 Redis Server 利用命令建立一個商品和數量 <code>set pid:1 1000</code></p>
+<blockquote>
+<p><code>pid=1</code> 有 1000 個</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -it b489eb20ab74 bash</span><br><span class="line">root@b489eb20ab74:/data<span class="comment"># redis-cli</span></span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> pid:1 1000</span><br><span class="line">OK</span><br></pre></td></tr></table></figure></div>
+<p>在查詢 <code>http://localhost:8080/WebStore</code> 可以獲得下圖代表組件建立完畢</p>
+<p><img src="https://i.imgur.com/nqxIxwD.png" alt></p>
+<h2 id="Redlock-演算法"><a href="#Redlock-演算法" class="headerlink" title="Redlock 演算法"></a>Redlock 演算法</h2><p>其實 <span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby90b3BpY3MvZGlzdGxvY2s=" title="https://redis.io/topics/distlock">distlock<i class="fa fa-external-link"></i></span> 算法說明在 Redis 官網有一篇專門來說明，</p>
+<p>測試檔案已經準備好了 <code>/test/shopping.jmx</code>，我們使用 jmeter 來壓測，使用壓力測試程式，建議 Jmeter 使用 Thread 最好小於或等於 cpu core count (最好設定2的倍數)</p>
+<p>ex: 我的電腦 8 core 我可以設定 8 thread concurrent</p>
+<p>這邊有一個情境假設，有一個商品秒殺只有 200 個商品</p>
+<p>這邊我們要怎麼防止賣超呢?</p>
+<p>我們把 <code>lock</code> 部分替換成我們自己寫的 <code>RedLock</code> 物件．我有透過 Redis 算法實現一個簡單的分佈式鎖</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">HttpGet()</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">Get</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    RedLock redlock = <span class="keyword">new</span> RedLock(RedisConnection);</span><br><span class="line">    <span class="keyword">int</span> remainCount;</span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        redlock.LockInstance(<span class="string">"redkey"</span>, <span class="keyword">new</span> TimeSpan(<span class="number">00</span>, <span class="number">00</span>, <span class="number">10</span>), <span class="keyword">out</span> <span class="keyword">var</span> lockObject);</span><br><span class="line">        remainCount = (<span class="keyword">int</span>)RedisConnection.GetDatabase().StringGet(_productId);</span><br><span class="line">        <span class="keyword">if</span> (remainCount &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            RedisConnection.GetDatabase().StringSet(_productId, --remainCount);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        redlock.UnlockInstance(<span class="string">"redkey"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">string</span> productMsg = remainCount &lt;= <span class="number">0</span> ? <span class="string">"沒貨了賣完了"</span> : <span class="string">$"還剩下 <span class="subst">&#123;remainCount&#125;</span> 商品"</span>;</span><br><span class="line">    <span class="keyword">string</span> result = <span class="string">$"<span class="subst">&#123;Dns.GetHostName()&#125;</span> 處理貨物狀態!! <span class="subst">&#123;productMsg&#125;</span>"</span>;</span><br><span class="line">    _logger.LogInformation(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>透過 jmeter 壓力測試</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">$ .\jmeter -n -t .\shopping.jmx -l .\shopping.jtl</span><br><span class="line">Creating summariser &lt;summary&gt;</span><br><span class="line">Starting standalone </span><br><span class="line">Waiting <span class="keyword">for</span> possible Shutdown/StopTestNow/HeapDump/ThreadDump message on port 4445</span><br><span class="line">summary +      1 <span class="keyword">in</span> 00:00:01 =    1.0/s Avg:    91 Min:    91 Max:    91 Err:     0 (0.00%) Active: 15 Started: 15 Finished: 0</span><br><span class="line">summary +   1599 <span class="keyword">in</span> 00:00:12 =  137.1/s Avg:    77 Min:     3 Max:  8921 Err:     0 (0.00%) Active: 0 Started: 16 Finished: 16</span><br><span class="line">summary =   1600 <span class="keyword">in</span> 00:00:13 =  126.8/s Avg:    77 Min:     3 Max:  8921 Err:     0 (0.00%)</span><br><span class="line">Tidying up ...    @ Mon Oct 25 11:37:15 CST 2021 (1635133035562)</span><br><span class="line">... end of run</span><br></pre></td></tr></table></figure></div>
+<p>結果如下：</p>
+<p>在多台 server 上並沒有出現賣超</p>
+<p><img src="https://i.imgur.com/SGdamvC.png" alt></p>
+<h3 id="RedLock-解說程式"><a href="#RedLock-解說程式" class="headerlink" title="RedLock 解說程式"></a>RedLock 解說程式</h3><p>裡面最核心程式是 <code>RedLock</code> 類別．建構子會傳入我們使用 <code>Redis</code> Connection</p>
+<p>其中核心方式是</p>
+<ul>
+<li>LockInstance</li>
+<li>UnlockInstance</li>
+</ul>
+<h4 id="LockInstance"><a href="#LockInstance" class="headerlink" title="LockInstance"></a>LockInstance</h4><p>在 Lock 需要注意 Atomic 並且需要給一個 TTL 不然假如機器突然當機或跳電，會造成鎖不會解放其他人會無限期 blocking</p>
+<p>下面這段話是來是官網</p>
+<blockquote>
+<p>since this is actually a viable solution in applications where a race condition from time to time is acceptable, and because locking into a single instance is the foundation we’ll use for the distributed algorithm described here.</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">SET resource_name my_random_value NX PX 30000</span><br></pre></td></tr></table></figure></div>
+<blockquote>
+<p>NX – Only set the key if it does not already exist.</p>
+</blockquote>
+<p>Redis 操作命令是一個 single Thread 執行所以命令如果可以包在一包或一條來執行就可以保證 Atomic，<span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby9jb21tYW5kcy9zZXQ=" title="https://redis.io/commands/set">SET<i class="fa fa-external-link"></i></span> <code>NX</code> 命令<strong>不存在</strong> key 建立數值 (具有 Atomic )</p>
+<p>另外我為了避免一直在空轉，我會判斷假如目前有人佔有鎖我會自旋等待一個時間( lock TTL )，到了後在嘗試訪問（可以有更優的算法但我懶得寫了）避免浪費資源空轉</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedLock</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IConnectionMultiplexer _connection;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">string</span> _keyId;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RedLock</span>(<span class="params">IConnectionMultiplexer connection</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _connection = connection;</span><br><span class="line">        _keyId = <span class="string">$"<span class="subst">&#123;Guid.NewGuid().ToString()&#125;</span>-Tid:<span class="subst">&#123;Thread.CurrentThread.ManagedThreadId&#125;</span>"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">bool</span> <span class="title">LockInstance</span>(<span class="params"><span class="keyword">string</span> resource, TimeSpan ttl, <span class="keyword">out</span> LockObject lockObject</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;   </span><br><span class="line">        <span class="keyword">bool</span> result;</span><br><span class="line">        lockObject = <span class="keyword">new</span> LockObject(resource, _keyId, ttl);</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">        </span><br><span class="line">            <span class="keyword">do</span></span><br><span class="line">            &#123;</span><br><span class="line">            result = _connection.GetDatabase().StringSet(resource, _keyId, ttl, When.NotExists);</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">if</span>(!result)</span><br><span class="line">                    WaitForLock(resource);</span><br><span class="line"></span><br><span class="line">            &#125; <span class="keyword">while</span> (!result);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Exception)</span><br><span class="line">        &#123;</span><br><span class="line">            result = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">WaitForLock</span>(<span class="params"><span class="keyword">string</span> resource</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> waitTime = _connection.GetDatabase().KeyTimeToLive(resource);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(waitTime.HasValue)&#123;</span><br><span class="line">            SpinWait.SpinUntil(()=&gt;<span class="literal">true</span>,waitTime.Value.Milliseconds);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="UnlockInstance"><a href="#UnlockInstance" class="headerlink" title="UnlockInstance"></a>UnlockInstance</h4><p>我們必須讓 <strong>查詢</strong> 跟 <strong>刪除</strong> keyid 有 Atomic 所以有兩種做法</p>
+<ol>
+<li>透過 Lua 腳本讓命令連續</li>
+<li>使用 Redis transaction 模式</li>
+</ol>
+<p>本次程式解鎖程式是靠 Lua 腳本來完成( Redis 官網推薦)</p>
+<p>下面是官網的說明</p>
+<blockquote>
+<p>This is important in order to avoid removing a lock that was created by another client. For example a client may acquire the lock, get blocked in some operation for longer than the lock validity time (the time at which the key will expire), and later remove the lock, that was already acquired by some other client. Using just DEL is not safe as a client may remove the lock of another client. With the above script instead every lock is “signed” with a random string, so the lock will be removed only if it is still the one that was set by the client trying to remove it.</p>
+</blockquote>
+<p>建議在 Keyid 那邊可以標示是由你產生的鎖避免刪除到別人 lock，所以我的程式 keyid 使用 GUID + ThreadId 來保證不會有人跟我產生一樣的 keyId</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedLock</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IConnectionMultiplexer _connection;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">string</span> _keyId;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">string</span> UNLOCK_SCRIPT = <span class="string">@"</span></span><br><span class="line"><span class="string">        if redis.call(""get"",KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">            return redis.call(""del"",KEYS[1])</span></span><br><span class="line"><span class="string">        else</span></span><br><span class="line"><span class="string">            return 0</span></span><br><span class="line"><span class="string">        end"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RedLock</span>(<span class="params">IConnectionMultiplexer connection</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _connection = connection;</span><br><span class="line">        _keyId = <span class="string">$"<span class="subst">&#123;Guid.NewGuid().ToString()&#125;</span>-Tid:<span class="subst">&#123;Thread.CurrentThread.ManagedThreadId&#125;</span>"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UnlockInstance</span>(<span class="params"><span class="keyword">string</span> resource</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        RedisKey[] keys = &#123; resource &#125;;</span><br><span class="line">        RedisValue[] values = &#123; _keyId &#125;;</span><br><span class="line">        _connection.GetDatabase().ScriptEvaluate(</span><br><span class="line">            UNLOCK_SCRIPT,</span><br><span class="line">            keys,</span><br><span class="line">            values</span><br><span class="line">            );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://i.imgur.com/3w0cD8l.png" alt></p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本次跟大家介紹 Redlock 算法帶著大家快速走過一遍，能發現實現 lock 算法其實不會很難，這邊留一個地方讓大家考慮一下</p>
+<p>之前我有篇文章討論 <a href="https://isdaniel.github.io/lock-deepknow/">c# lock</a> 原理，裡面有討論可重入鎖模式，假如給你實現可重入鎖你會實現嗎？</p>
+<p>在實現的過程中你會發現原來 lock 核心是算法而不是實作，實作可以由許多方式來處理但算法概念不會變</p>
+<p>本程式不建議在 Prod 上使用，因為我沒有實現多台 master Redis 同步 lock、鎖 TTL 到了 logic 還在執行需要延長等等問題…</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/redlock-deepknow/">https://isdaniel.github.io/redlock-deepknow/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Redis</tag>
+        <tag>Redlock</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Redis Cluster 介紹</title>
     <url>/redis-cluster-introduce-01/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在巨量資料下，資料庫合理的分片(DB sharding)可以幫助我們承受更高量的資料量(前提Index還有設定都調教到很好在考慮 sharding)</p>
@@ -9436,88 +9518,6 @@ using (var channel = connection.CreateModel())
       <tags>
         <tag>Redis</tag>
         <tag>Cluster</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>利用Redlock演算法實現自己的分佈式鎖</title>
-    <url>/redlock-deepknow/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我之前有寫透過 <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">lock or CAS</a> 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>
-<p>下面程式在單體服務或應用程式不會出問題，但如果服務器有多台問題可就大了，因為下面的 lock 只限於單體 Server 上</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">static</span> <span class="keyword">object</span> _lock = <span class="keyword">new</span> <span class="keyword">object</span>();</span><br><span class="line">[<span class="meta">HttpGet()</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">Get</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> remainCount;</span><br><span class="line">    <span class="keyword">lock</span> (_lock)</span><br><span class="line">    &#123;</span><br><span class="line">        </span><br><span class="line">        remainCount = (<span class="keyword">int</span>)RedisConnection.GetDatabase().StringGet(_productId);</span><br><span class="line">        <span class="keyword">if</span> (remainCount &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            RedisConnection.GetDatabase().StringSet(_productId, --remainCount);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">string</span> productMsg = remainCount &lt;= <span class="number">0</span> ? <span class="string">"沒貨了賣完了"</span> : <span class="string">$"還剩下 <span class="subst">&#123;remainCount&#125;</span> 商品"</span>;</span><br><span class="line">    <span class="keyword">string</span> result = <span class="string">$"<span class="subst">&#123;Dns.GetHostName()&#125;</span> 處理貨物狀態!! <span class="subst">&#123;productMsg&#125;</span>"</span>;</span><br><span class="line">    _logger.LogInformation(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>如果有聽過 Redis 可能就會聽過 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3NhbWNvb2svUmVkTG9jay5uZXQ=" title="https://github.com/samcook/RedLock.net">RedLock.net<i class="fa fa-external-link"></i></span> 來處理，但您知道 RedLock.net 底層大致上怎麼實作的嗎?</p>
-<p>本篇文章會帶領大家透過 distlock 算法時做出，自己的Redlock</p>
-<blockquote>
-<p>本篇只介紹核心概念，細部防錯我沒有寫出來，所以建議本篇程式不要用在 prod 環境</p>
-</blockquote>
-<p>我使用 docker-compose 建立問題架構，架構圖如下</p>
-<p><img src="https://i.imgur.com/nt8Q9Sv.png" alt></p>
-<p>原始碼位置 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL1JlZGxvY2stQ3NoYXJw" title="https://github.com/isdaniel/Redlock-Csharp">Redlock-Csharp<i class="fa fa-external-link"></i></span></p>
-<h2 id="How-to-Run"><a href="#How-to-Run" class="headerlink" title="How to Run"></a>How to Run</h2><p>在根目錄使用 <code>docker-compose up -d</code> 跑起來後應該會有下面五個組件</p>
-<p><img src="https://i.imgur.com/7Zyji6N.png" alt></p>
-<p>後面我們進入 Redis Server 利用命令建立一個商品和數量 <code>set pid:1 1000</code></p>
-<blockquote>
-<p><code>pid=1</code> 有 1000 個</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">$ docker <span class="built_in">exec</span> -it b489eb20ab74 bash</span><br><span class="line">root@b489eb20ab74:/data<span class="comment"># redis-cli</span></span><br><span class="line">127.0.0.1:6379&gt; <span class="built_in">set</span> pid:1 1000</span><br><span class="line">OK</span><br></pre></td></tr></table></figure></div>
-<p>在查詢 <code>http://localhost:8080/WebStore</code> 可以獲得下圖代表組件建立完畢</p>
-<p><img src="https://i.imgur.com/nqxIxwD.png" alt></p>
-<h2 id="Redlock-演算法"><a href="#Redlock-演算法" class="headerlink" title="Redlock 演算法"></a>Redlock 演算法</h2><p>其實 <span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby90b3BpY3MvZGlzdGxvY2s=" title="https://redis.io/topics/distlock">distlock<i class="fa fa-external-link"></i></span> 算法說明在 Redis 官網有一篇專門來說明，</p>
-<p>測試檔案已經準備好了 <code>/test/shopping.jmx</code>，我們使用 jmeter 來壓測，使用壓力測試程式，建議 Jmeter 使用 Thread 最好小於或等於 cpu core count (最好設定2的倍數)</p>
-<p>ex: 我的電腦 8 core 我可以設定 8 thread concurrent</p>
-<p>這邊有一個情境假設，有一個商品秒殺只有 200 個商品</p>
-<p>這邊我們要怎麼防止賣超呢?</p>
-<p>我們把 <code>lock</code> 部分替換成我們自己寫的 <code>RedLock</code> 物件．我有透過 Redis 算法實現一個簡單的分佈式鎖</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">[<span class="meta">HttpGet()</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">string</span> <span class="title">Get</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    RedLock redlock = <span class="keyword">new</span> RedLock(RedisConnection);</span><br><span class="line">    <span class="keyword">int</span> remainCount;</span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        redlock.LockInstance(<span class="string">"redkey"</span>, <span class="keyword">new</span> TimeSpan(<span class="number">00</span>, <span class="number">00</span>, <span class="number">10</span>), <span class="keyword">out</span> <span class="keyword">var</span> lockObject);</span><br><span class="line">        remainCount = (<span class="keyword">int</span>)RedisConnection.GetDatabase().StringGet(_productId);</span><br><span class="line">        <span class="keyword">if</span> (remainCount &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            RedisConnection.GetDatabase().StringSet(_productId, --remainCount);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        redlock.UnlockInstance(<span class="string">"redkey"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">string</span> productMsg = remainCount &lt;= <span class="number">0</span> ? <span class="string">"沒貨了賣完了"</span> : <span class="string">$"還剩下 <span class="subst">&#123;remainCount&#125;</span> 商品"</span>;</span><br><span class="line">    <span class="keyword">string</span> result = <span class="string">$"<span class="subst">&#123;Dns.GetHostName()&#125;</span> 處理貨物狀態!! <span class="subst">&#123;productMsg&#125;</span>"</span>;</span><br><span class="line">    _logger.LogInformation(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>透過 jmeter 壓力測試</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">$ .\jmeter -n -t .\shopping.jmx -l .\shopping.jtl</span><br><span class="line">Creating summariser &lt;summary&gt;</span><br><span class="line">Starting standalone </span><br><span class="line">Waiting <span class="keyword">for</span> possible Shutdown/StopTestNow/HeapDump/ThreadDump message on port 4445</span><br><span class="line">summary +      1 <span class="keyword">in</span> 00:00:01 =    1.0/s Avg:    91 Min:    91 Max:    91 Err:     0 (0.00%) Active: 15 Started: 15 Finished: 0</span><br><span class="line">summary +   1599 <span class="keyword">in</span> 00:00:12 =  137.1/s Avg:    77 Min:     3 Max:  8921 Err:     0 (0.00%) Active: 0 Started: 16 Finished: 16</span><br><span class="line">summary =   1600 <span class="keyword">in</span> 00:00:13 =  126.8/s Avg:    77 Min:     3 Max:  8921 Err:     0 (0.00%)</span><br><span class="line">Tidying up ...    @ Mon Oct 25 11:37:15 CST 2021 (1635133035562)</span><br><span class="line">... end of run</span><br></pre></td></tr></table></figure></div>
-<p>結果如下：</p>
-<p>在多台 server 上並沒有出現賣超</p>
-<p><img src="https://i.imgur.com/SGdamvC.png" alt></p>
-<h3 id="RedLock-解說程式"><a href="#RedLock-解說程式" class="headerlink" title="RedLock 解說程式"></a>RedLock 解說程式</h3><p>裡面最核心程式是 <code>RedLock</code> 類別．建構子會傳入我們使用 <code>Redis</code> Connection</p>
-<p>其中核心方式是</p>
-<ul>
-<li>LockInstance</li>
-<li>UnlockInstance</li>
-</ul>
-<h4 id="LockInstance"><a href="#LockInstance" class="headerlink" title="LockInstance"></a>LockInstance</h4><p>在 Lock 需要注意 Atomic 並且需要給一個 TTL 不然假如機器突然當機或跳電，會造成鎖不會解放其他人會無限期 blocking</p>
-<p>下面這段話是來是官網</p>
-<blockquote>
-<p>since this is actually a viable solution in applications where a race condition from time to time is acceptable, and because locking into a single instance is the foundation we’ll use for the distributed algorithm described here.</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="BASH"><figure class="iseeu highlight /bash"><table><tr><td class="code"><pre><span class="line">SET resource_name my_random_value NX PX 30000</span><br></pre></td></tr></table></figure></div>
-<blockquote>
-<p>NX – Only set the key if it does not already exist.</p>
-</blockquote>
-<p>Redis 操作命令是一個 single Thread 執行所以命令如果可以包在一包或一條來執行就可以保證 Atomic，<span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby9jb21tYW5kcy9zZXQ=" title="https://redis.io/commands/set">SET<i class="fa fa-external-link"></i></span> <code>NX</code> 命令<strong>不存在</strong> key 建立數值 (具有 Atomic )</p>
-<p>另外我為了避免一直在空轉，我會判斷假如目前有人佔有鎖我會自旋等待一個時間( lock TTL )，到了後在嘗試訪問（可以有更優的算法但我懶得寫了）避免浪費資源空轉</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedLock</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IConnectionMultiplexer _connection;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">string</span> _keyId;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RedLock</span>(<span class="params">IConnectionMultiplexer connection</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _connection = connection;</span><br><span class="line">        _keyId = <span class="string">$"<span class="subst">&#123;Guid.NewGuid().ToString()&#125;</span>-Tid:<span class="subst">&#123;Thread.CurrentThread.ManagedThreadId&#125;</span>"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">bool</span> <span class="title">LockInstance</span>(<span class="params"><span class="keyword">string</span> resource, TimeSpan ttl, <span class="keyword">out</span> LockObject lockObject</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;   </span><br><span class="line">        <span class="keyword">bool</span> result;</span><br><span class="line">        lockObject = <span class="keyword">new</span> LockObject(resource, _keyId, ttl);</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">        </span><br><span class="line">            <span class="keyword">do</span></span><br><span class="line">            &#123;</span><br><span class="line">            result = _connection.GetDatabase().StringSet(resource, _keyId, ttl, When.NotExists);</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">if</span>(!result)</span><br><span class="line">                    WaitForLock(resource);</span><br><span class="line"></span><br><span class="line">            &#125; <span class="keyword">while</span> (!result);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Exception)</span><br><span class="line">        &#123;</span><br><span class="line">            result = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">WaitForLock</span>(<span class="params"><span class="keyword">string</span> resource</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        <span class="keyword">var</span> waitTime = _connection.GetDatabase().KeyTimeToLive(resource);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(waitTime.HasValue)&#123;</span><br><span class="line">            SpinWait.SpinUntil(()=&gt;<span class="literal">true</span>,waitTime.Value.Milliseconds);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h4 id="UnlockInstance"><a href="#UnlockInstance" class="headerlink" title="UnlockInstance"></a>UnlockInstance</h4><p>我們必須讓 <strong>查詢</strong> 跟 <strong>刪除</strong> keyid 有 Atomic 所以有兩種做法</p>
-<ol>
-<li>透過 Lua 腳本讓命令連續</li>
-<li>使用 Redis transaction 模式</li>
-</ol>
-<p>本次程式解鎖程式是靠 Lua 腳本來完成( Redis 官網推薦)</p>
-<p>下面是官網的說明</p>
-<blockquote>
-<p>This is important in order to avoid removing a lock that was created by another client. For example a client may acquire the lock, get blocked in some operation for longer than the lock validity time (the time at which the key will expire), and later remove the lock, that was already acquired by some other client. Using just DEL is not safe as a client may remove the lock of another client. With the above script instead every lock is “signed” with a random string, so the lock will be removed only if it is still the one that was set by the client trying to remove it.</p>
-</blockquote>
-<p>建議在 Keyid 那邊可以標示是由你產生的鎖避免刪除到別人 lock，所以我的程式 keyid 使用 GUID + ThreadId 來保證不會有人跟我產生一樣的 keyId</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedLock</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IConnectionMultiplexer _connection;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">string</span> _keyId;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">string</span> UNLOCK_SCRIPT = <span class="string">@"</span></span><br><span class="line"><span class="string">        if redis.call(""get"",KEYS[1]) == ARGV[1] then</span></span><br><span class="line"><span class="string">            return redis.call(""del"",KEYS[1])</span></span><br><span class="line"><span class="string">        else</span></span><br><span class="line"><span class="string">            return 0</span></span><br><span class="line"><span class="string">        end"</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">RedLock</span>(<span class="params">IConnectionMultiplexer connection</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        _connection = connection;</span><br><span class="line">        _keyId = <span class="string">$"<span class="subst">&#123;Guid.NewGuid().ToString()&#125;</span>-Tid:<span class="subst">&#123;Thread.CurrentThread.ManagedThreadId&#125;</span>"</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UnlockInstance</span>(<span class="params"><span class="keyword">string</span> resource</span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        RedisKey[] keys = &#123; resource &#125;;</span><br><span class="line">        RedisValue[] values = &#123; _keyId &#125;;</span><br><span class="line">        _connection.GetDatabase().ScriptEvaluate(</span><br><span class="line">            UNLOCK_SCRIPT,</span><br><span class="line">            keys,</span><br><span class="line">            values</span><br><span class="line">            );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/3w0cD8l.png" alt></p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本次跟大家介紹 Redlock 算法帶著大家快速走過一遍，能發現實現 lock 算法其實不會很難，這邊留一個地方讓大家考慮一下</p>
-<p>之前我有篇文章討論 <a href="https://isdaniel.github.io/lock-deepknow/">c# lock</a> 原理，裡面有討論可重入鎖模式，假如給你實現可重入鎖你會實現嗎？</p>
-<p>在實現的過程中你會發現原來 lock 核心是算法而不是實作，實作可以由許多方式來處理但算法概念不會變</p>
-<p>本程式不建議在 Prod 上使用，因為我沒有實現多台 master Redis 同步 lock、鎖 TTL 到了 logic 還在執行需要延長等等問題…</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/redlock-deepknow/">https://isdaniel.github.io/redlock-deepknow/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Redis</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Redis</tag>
-        <tag>Redlock</tag>
       </tags>
   </entry>
   <entry>
