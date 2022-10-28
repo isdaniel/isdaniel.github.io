@@ -152,7 +152,7 @@
 <meta property="og:description" content="前言AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探 資料 &amp;amp; 測試資料資訊本次執行 Sample Data 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748CREATE TABL">
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://i.imgur.com/U1iC4ez.png">
-<meta property="og:updated_time" content="2022-10-20T10:30:37.341Z">
+<meta property="og:updated_time" content="2022-10-28T03:12:06.224Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Postgresql AutoVacuum 介紹">
 <meta name="twitter:description" content="前言AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探 資料 &amp;amp; 測試資料資訊本次執行 Sample Data 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748CREATE TABL">
@@ -516,7 +516,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2022-10-20 10:30:37" itemprop="dateModified" datetime="2022-10-20T10:30:37+00:00">2022-10-20</time>
+                <time title="Modified: 2022-10-28 03:12:06" itemprop="dateModified" datetime="2022-10-28T03:12:06+00:00">2022-10-28</time>
               
             
           </span>
@@ -589,7 +589,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">6.7k</span>
+                <span title="Symbols count in article">7k</span>
               
 
               
@@ -603,7 +603,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">12 mins.</span>
+                <span title="Reading time">13 mins.</span>
               
             </div>
           
@@ -722,6 +722,12 @@
 <p><img src="https://i.imgur.com/4hec84Q.png" alt></p>
 <p>假如我們更新的資料還沒到臨界值就會造成，造成統計資訊和 dead tuple 過多</p>
 <div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SQL"><figure class="iseeu highlight /sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> t2</span><br><span class="line"><span class="keyword">SET</span> val = <span class="number">100</span></span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">id</span> &lt;= <span class="number">999</span></span><br></pre></td></tr></table></figure></div>
+<h3 id="auto-vaccum-與-insert-data"><a href="#auto-vaccum-與-insert-data" class="headerlink" title="auto vaccum 與 insert data"></a>auto vaccum 與 insert data</h3><p>上面都是講述 daed tuple 假如是新增是否會觸發 auto vaccum 呢?</p>
+<p>答案：是要看你使用 Postgresql 版本是多少，假如是 PG 13 之前新增資料超過 thresholds 不會執行,但 PG 13 之後會執行 auto vaccum</p>
+<p>假如你的場景是常常大量 Insert PG 版本我會建議更新到 PG 13 以上，這樣才會比較規律更新統計資訊</p>
+<blockquote>
+<p><span class="exturl" data-url="aHR0cHM6Ly9wb3N0Z3Jlc3Byby5jb20vbGlzdC9pZC9DQU9EWml2NU0rZzdEbXRWWWkyVnFYV2g0NEZOZ25CTk1rd0VGYkNfV0NMTERLbis9N2dAbWFpbC5nbWFpbC5jb20jaGVhZA==" title="https://postgrespro.com/list/id/CAODZiv5M+g7DmtVYi2VqXWh44FNgnBNMkwEFbC_WCLLDKn+=7g@mail.gmail.com#head">https://postgrespro.com/list/id/CAODZiv5M+g7DmtVYi2VqXWh44FNgnBNMkwEFbC_WCLLDKn+=7g@mail.gmail.com#head<i class="fa fa-external-link"></i></span></p>
+</blockquote>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>經過查找一系列資料跟比較之前使用 sql-server 經驗，postgres 可以針對每個 Table 特性設定他適合的 <code>autovacuum</code> 閥值，來定期更新統計資訊</p>
 <p>執行 <code>vacuum</code> 會針對資料表上 <code>SHARE UPDATE EXCLUSIVE</code> lock 且會有少許 IO 操作</p>
 <blockquote>
@@ -1333,7 +1339,7 @@ Certifications：
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#資料-amp-測試資料資訊"><span class="nav-number">2.</span> <span class="nav-text">資料 &amp; 測試資料資訊</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ANALYZE-amp-VACUUM"><span class="nav-number">2.1.</span> <span class="nav-text">ANALYZE &amp; VACUUM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-ANALYZE-amp-VACUUM-後續"><span class="nav-number">2.2.</span> <span class="nav-text">使用 ANALYZE &amp; VACUUM 後續</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Auto-vacuum-時機"><span class="nav-number">3.</span> <span class="nav-text">Auto vacuum 時機</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#By-Table-設定-autovacuum"><span class="nav-number">3.1.</span> <span class="nav-text">By Table 設定 autovacuum</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">4.</span> <span class="nav-text">小結</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#資料-amp-測試資料資訊"><span class="nav-number">2.</span> <span class="nav-text">資料 &amp; 測試資料資訊</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ANALYZE-amp-VACUUM"><span class="nav-number">2.1.</span> <span class="nav-text">ANALYZE &amp; VACUUM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用-ANALYZE-amp-VACUUM-後續"><span class="nav-number">2.2.</span> <span class="nav-text">使用 ANALYZE &amp; VACUUM 後續</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Auto-vacuum-時機"><span class="nav-number">3.</span> <span class="nav-text">Auto vacuum 時機</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#By-Table-設定-autovacuum"><span class="nav-number">3.1.</span> <span class="nav-text">By Table 設定 autovacuum</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#auto-vaccum-與-insert-data"><span class="nav-number">3.2.</span> <span class="nav-text">auto vaccum 與 insert data</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">4.</span> <span class="nav-text">小結</span></a></li></ol></div>
             
 
           </div>
