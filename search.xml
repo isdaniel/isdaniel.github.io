@@ -6956,78 +6956,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler (第7天)</title>
-    <url>/ithelp-day7/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#%e5%91%bc%e5%8f%abhttpappliaction%e5%8f%96%e5%be%97httphandler%e4%b8%a6%e5%91%bc%e5%8f%ab">呼叫HttpAppliaction取得HttpHandler並呼叫</a><ul>
-<li><a href="#maphandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">MapHandlerExecutionStep程式碼解說</a></li>
-<li><a href="#callhandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">CallHandlerExecutionStep程式碼解說</a></li>
-</ul>
-</li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面和大家分享<code>StepManager</code>是如何建立管道和依序呼叫<code>IHttpModule</code>註冊事件</p>
-<blockquote>
-<p>查看原始碼好站 <span class="exturl" data-url="aHR0cHM6Ly9yZWZlcmVuY2Vzb3VyY2UubWljcm9zb2Z0LmNvbS8=" title="https://referencesource.microsoft.com/">Reference Source<i class="fa fa-external-link"></i></span></p>
-</blockquote>
-<blockquote>
-<p>此文的程式碼比較多我會在原始碼上邊上說明相對應編號方便大家觀看</p>
-</blockquote>
-<p>今天跟大家分享<code>HttpAppliaction</code>是如何找到要執行的<code>IHttpHandler</code>物件.</p>
-<h2 id="呼叫HttpAppliaction取得HttpHandler並呼叫"><a href="#呼叫HttpAppliaction取得HttpHandler並呼叫" class="headerlink" title="呼叫HttpAppliaction取得HttpHandler並呼叫"></a>呼叫HttpAppliaction取得HttpHandler並呼叫</h2><p>在<code>ApplicationStepManager</code>的<code>IExecutionStep</code>中重要的實現類別有兩個</p>
-<ol>
-<li><code>MapHandlerExecutionStep</code>:找到執行<code>IHttpHander</code></li>
-<li><code>CallHandlerExecutionStep</code></li>
-</ol>
-<h3 id="MapHandlerExecutionStep程式碼解說"><a href="#MapHandlerExecutionStep程式碼解說" class="headerlink" title="MapHandlerExecutionStep程式碼解說"></a>MapHandlerExecutionStep程式碼解說</h3><p>前面說過<code>IExecutionStep</code>最核心就是要找到一個<code>Execute</code>方法</p>
-<p><code>MapHandlerExecutionStep</code>的<code>Execute</code>方法是為了找到一個要執行的<code>HttpHander</code></p>
-<blockquote>
-<p>每次請求都會呼叫<code>HttpContext.Handler</code>屬性.</p>
-</blockquote>
-<p><code>MapHttpHandler</code>會依照下面權重來取得<code>HttpHander</code>物件.</p>
-<ol>
-<li><code>context.RemapHandlerInstance</code>如果有物件就優先返回(很重要因為這就是Asp.net MVC使用的<code>HttpHander</code>物件)</li>
-<li>透過<code>IHttpHandlerFactory</code>工廠來取得物件,依照我們在<code>Config</code>註冊的<code>HttpHander</code>對應資料<ul>
-<li>副檔名<code>*.ashx</code>泛型處理常式透過<code>SimpleHandlerFactory</code></li>
-<li>副檔名<code>*.aspx</code>泛型處理常式透過<code>PageHandlerFactory</code></li>
-</ul>
-</li>
-</ol>
-<blockquote>
-<p>想知道更多可以查看<code>applicationhost.config</code>註冊表</p>
-</blockquote>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">MapHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">        HttpContext context = _application.Context;</span><br><span class="line">        HttpRequest request = context.Request;</span><br><span class="line"></span><br><span class="line">        context.Handler = _application.MapHttpHandler(</span><br><span class="line">            context,</span><br><span class="line">            request.RequestType,</span><br><span class="line">            request.FilePathObject,</span><br><span class="line">            request.PhysicalPathInternal,</span><br><span class="line">            <span class="literal">false</span> <span class="comment">/*useAppConfig*/</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">internal</span> IHttpHandler <span class="title">MapHttpHandler</span>(<span class="params">HttpContext context, String requestType, VirtualPath path, String pathTranslated, <span class="keyword">bool</span> useAppConfig</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">		IHttpHandler handler = (context.ServerExecuteDepth == <span class="number">0</span>) ? context.RemapHandlerInstance : <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">using</span> (<span class="keyword">new</span> ApplicationImpersonationContext()) &#123;</span><br><span class="line">			<span class="comment">// Use remap handler if possible</span></span><br><span class="line">			<span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">				<span class="keyword">return</span> handler;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Map new handler</span></span><br><span class="line">			HttpHandlerAction mapping = GetHandlerMapping(context, requestType, path, useAppConfig);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (mapping == <span class="literal">null</span>) &#123;</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_NOT_FOUND);</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_FAILED);</span><br><span class="line">				<span class="keyword">throw</span> <span class="keyword">new</span> HttpException(SR.GetString(SR.Http_handler_not_found_for_request_type, requestType));</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			IHttpHandlerFactory factory = GetFactory(mapping);</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				IHttpHandlerFactory2 factory2 = factory <span class="keyword">as</span> IHttpHandlerFactory2;</span><br><span class="line"></span><br><span class="line">				<span class="keyword">if</span> (factory2 != <span class="literal">null</span>) &#123;</span><br><span class="line">					handler = factory2.GetHandler(context, requestType, path, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">else</span> &#123;</span><br><span class="line">					handler = factory.GetHandler(context, requestType, path.VirtualPathString, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> (FileNotFoundException e) &#123;</span><br><span class="line">				<span class="comment">//...丟Exception</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Remember for recycling</span></span><br><span class="line">			<span class="keyword">if</span> (_handlerRecycleList == <span class="literal">null</span>)</span><br><span class="line">				_handlerRecycleList = <span class="keyword">new</span> ArrayList();</span><br><span class="line">			_handlerRecycleList.Add(<span class="keyword">new</span> HandlerWithFactory(handler, factory));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p><code>MapHandlerExecutionStep</code>是為了找到我們要執行的<code>HttpHandler</code>物件.</p>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">	<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>在一開始先判斷<code>handler</code>是否已經有值如果有就直接返回(這個很重要因為這是為什麼<code>MVC</code>,<code>WebAPI</code>可以運作且不用在<code>Config</code>設定配對<code>IHttpHandlerFactory</code>原因).</p>
-<blockquote>
-<p>只需要在<code>MapHandlerExecutionStep</code>執行前將<code>context.RemapHandlerInstance</code>給一個<code>HttpHandler</code>物件即可.</p>
-</blockquote>
-<h3 id="CallHandlerExecutionStep程式碼解說"><a href="#CallHandlerExecutionStep程式碼解說" class="headerlink" title="CallHandlerExecutionStep程式碼解說"></a>CallHandlerExecutionStep程式碼解說</h3><p><code>CallHandlerExecutionStep</code>物件透過<code>context.Handler</code>可以找到要執行的<code>HttpHandler</code>,這邊也是優先判斷是否可執行異步請求.</p>
-<ul>
-<li>異步呼叫<code>beginProcessRequestDelegate</code>方法(此方法將實現<code>IHttpAsyncHandler</code>物件封裝成一個<code>Func&lt;T, AsyncCallback, object, IAsyncResult&gt;</code>委派方法),之後再調用返回一個<code>IAsyncResult</code>物件(處理後結果最後呼叫<code>EndProcessRequest</code>方法).</li>
-<li>同步呼叫<code>ProcessRequest</code>:判斷<code>context.Handler</code>不是<code>IHttpAsyncHandler</code>型別就值型同步動作</li>
-</ul>
-<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// execution step -- call HTTP handler (used to be a separate module)</span></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">CallHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> HttpApplication   _application;</span><br><span class="line">	<span class="keyword">private</span> AsyncCallback     _completionCallback;</span><br><span class="line">	<span class="keyword">private</span> IHttpAsyncHandler _handler;       <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> AsyncStepCompletionInfo _asyncStepCompletionInfo; <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">bool</span>              _sync;          <span class="comment">// per call</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">CallHandlerExecutionStep</span>(<span class="params">HttpApplication app</span>)</span> &#123;</span><br><span class="line">		_application = app;</span><br><span class="line">		_completionCallback = <span class="keyword">new</span> AsyncCallback(<span class="keyword">this</span>.OnAsyncHandlerCompletion);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...其他方法</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">		HttpContext context = _application.Context;</span><br><span class="line">		IHttpHandler handler = context.Handler;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler != <span class="literal">null</span> &amp;&amp; HttpRuntime.UseIntegratedPipeline) &#123;</span><br><span class="line">			IIS7WorkerRequest wr = context.WorkerRequest <span class="keyword">as</span> IIS7WorkerRequest;</span><br><span class="line">			<span class="keyword">if</span> (wr != <span class="literal">null</span> &amp;&amp; wr.IsHandlerExecutionDenied()) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				HttpException error = <span class="keyword">new</span> HttpException(<span class="number">403</span>, SR.GetString(SR.Handler_access_denied));</span><br><span class="line">				error.SetFormatter(<span class="keyword">new</span> PageForbiddenErrorFormatter(context.Request.Path, SR.GetString(SR.Handler_access_denied)));</span><br><span class="line">				<span class="keyword">throw</span> error;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler == <span class="literal">null</span>) &#123;</span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> <span class="keyword">if</span> (handler <span class="keyword">is</span> IHttpAsyncHandler) &#123;</span><br><span class="line">			<span class="comment">// asynchronous handler</span></span><br><span class="line">			IHttpAsyncHandler asyncHandler = (IHttpAsyncHandler)handler;</span><br><span class="line"></span><br><span class="line">			_sync = <span class="literal">false</span>;</span><br><span class="line">			_handler = asyncHandler;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> beginProcessRequestDelegate = AppVerifier.WrapBeginMethod&lt;HttpContext&gt;(_application, asyncHandler.BeginProcessRequest);</span><br><span class="line"></span><br><span class="line">			_asyncStepCompletionInfo.Reset();</span><br><span class="line">			context.SyncContext.AllowVoidAsyncOperations();</span><br><span class="line">			IAsyncResult ar;</span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				ar = beginProcessRequestDelegate(context, _completionCallback, <span class="literal">null</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> &#123;</span><br><span class="line">				<span class="comment">// The asynchronous step has completed, so we should disallow further</span></span><br><span class="line">				<span class="comment">// async operations until the next step.</span></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line">				<span class="keyword">throw</span>;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">bool</span> operationCompleted;</span><br><span class="line">			<span class="keyword">bool</span> mustCallEndHandler;</span><br><span class="line">			_asyncStepCompletionInfo.RegisterBeginUnwound(ar, <span class="keyword">out</span> operationCompleted, <span class="keyword">out</span> mustCallEndHandler);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (operationCompleted) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				_handler = <span class="literal">null</span>; <span class="comment">// not to remember</span></span><br><span class="line"></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line"></span><br><span class="line">				<span class="keyword">try</span> &#123;</span><br><span class="line">					<span class="keyword">if</span> (mustCallEndHandler) &#123;</span><br><span class="line">						asyncHandler.EndProcessRequest(ar);</span><br><span class="line">					&#125;</span><br><span class="line"></span><br><span class="line">					_asyncStepCompletionInfo.ReportError();</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">finally</span> &#123;</span><br><span class="line">					SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">					context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// synchronous handler</span></span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">			context.SyncContext.SetSyncCaller();</span><br><span class="line"></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				handler.ProcessRequest(context);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">finally</span> &#123;</span><br><span class="line">				context.SyncContext.ResetSyncCaller();</span><br><span class="line"></span><br><span class="line">				SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">				context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>希望可以讓大家對於為什麼<code>Asp.net</code>為何可以針對<code>IHttpModule</code>擴充且為何最後都會請求一個<code>IHttpHandler</code>有更深入的了解.</p>
-<p>微軟透過一系列的管道設計模式提供有高度擴展的系統對外提供一個<code>IHttpHandler</code>讓我們可以客製化擴充要執行的請求.</p>
-<p>對於此次請求又有<code>IHttpModule</code>可對於<code>HttpApplication</code>事件做擴充(透過AOP編成方式).</p>
-<p>今天之後我們會開始講解<strong>Asp.net MVC</strong>相關的原始程式碼.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day7/">https://isdaniel.github.io/ithelp-day7/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Asp.Net重要物件HttpApplication(二) 建置執行管道 (第6天)</title>
     <url>/ithelp-day6/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -7126,6 +7054,78 @@ email_url: dog830228@gmail.com
 </ul>
 <p>微軟管道設計(透過事件)讓程式開發人員提供高擴展設計方式(<code>AOP</code>編成),值得讓我們思考且學習.</p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day6/">https://isdaniel.github.io/ithelp-day6/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler (第7天)</title>
+    <url>/ithelp-day7/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#%e5%91%bc%e5%8f%abhttpappliaction%e5%8f%96%e5%be%97httphandler%e4%b8%a6%e5%91%bc%e5%8f%ab">呼叫HttpAppliaction取得HttpHandler並呼叫</a><ul>
+<li><a href="#maphandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">MapHandlerExecutionStep程式碼解說</a></li>
+<li><a href="#callhandlerexecutionstep%e7%a8%8b%e5%bc%8f%e7%a2%bc%e8%a7%a3%e8%aa%aa">CallHandlerExecutionStep程式碼解說</a></li>
+</ul>
+</li>
+<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前面和大家分享<code>StepManager</code>是如何建立管道和依序呼叫<code>IHttpModule</code>註冊事件</p>
+<blockquote>
+<p>查看原始碼好站 <span class="exturl" data-url="aHR0cHM6Ly9yZWZlcmVuY2Vzb3VyY2UubWljcm9zb2Z0LmNvbS8=" title="https://referencesource.microsoft.com/">Reference Source<i class="fa fa-external-link"></i></span></p>
+</blockquote>
+<blockquote>
+<p>此文的程式碼比較多我會在原始碼上邊上說明相對應編號方便大家觀看</p>
+</blockquote>
+<p>今天跟大家分享<code>HttpAppliaction</code>是如何找到要執行的<code>IHttpHandler</code>物件.</p>
+<h2 id="呼叫HttpAppliaction取得HttpHandler並呼叫"><a href="#呼叫HttpAppliaction取得HttpHandler並呼叫" class="headerlink" title="呼叫HttpAppliaction取得HttpHandler並呼叫"></a>呼叫HttpAppliaction取得HttpHandler並呼叫</h2><p>在<code>ApplicationStepManager</code>的<code>IExecutionStep</code>中重要的實現類別有兩個</p>
+<ol>
+<li><code>MapHandlerExecutionStep</code>:找到執行<code>IHttpHander</code></li>
+<li><code>CallHandlerExecutionStep</code></li>
+</ol>
+<h3 id="MapHandlerExecutionStep程式碼解說"><a href="#MapHandlerExecutionStep程式碼解說" class="headerlink" title="MapHandlerExecutionStep程式碼解說"></a>MapHandlerExecutionStep程式碼解說</h3><p>前面說過<code>IExecutionStep</code>最核心就是要找到一個<code>Execute</code>方法</p>
+<p><code>MapHandlerExecutionStep</code>的<code>Execute</code>方法是為了找到一個要執行的<code>HttpHander</code></p>
+<blockquote>
+<p>每次請求都會呼叫<code>HttpContext.Handler</code>屬性.</p>
+</blockquote>
+<p><code>MapHttpHandler</code>會依照下面權重來取得<code>HttpHander</code>物件.</p>
+<ol>
+<li><code>context.RemapHandlerInstance</code>如果有物件就優先返回(很重要因為這就是Asp.net MVC使用的<code>HttpHander</code>物件)</li>
+<li>透過<code>IHttpHandlerFactory</code>工廠來取得物件,依照我們在<code>Config</code>註冊的<code>HttpHander</code>對應資料<ul>
+<li>副檔名<code>*.ashx</code>泛型處理常式透過<code>SimpleHandlerFactory</code></li>
+<li>副檔名<code>*.aspx</code>泛型處理常式透過<code>PageHandlerFactory</code></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>想知道更多可以查看<code>applicationhost.config</code>註冊表</p>
+</blockquote>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">MapHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">        HttpContext context = _application.Context;</span><br><span class="line">        HttpRequest request = context.Request;</span><br><span class="line"></span><br><span class="line">        context.Handler = _application.MapHttpHandler(</span><br><span class="line">            context,</span><br><span class="line">            request.RequestType,</span><br><span class="line">            request.FilePathObject,</span><br><span class="line">            request.PhysicalPathInternal,</span><br><span class="line">            <span class="literal">false</span> <span class="comment">/*useAppConfig*/</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">internal</span> IHttpHandler <span class="title">MapHttpHandler</span>(<span class="params">HttpContext context, String requestType, VirtualPath path, String pathTranslated, <span class="keyword">bool</span> useAppConfig</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">		IHttpHandler handler = (context.ServerExecuteDepth == <span class="number">0</span>) ? context.RemapHandlerInstance : <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">using</span> (<span class="keyword">new</span> ApplicationImpersonationContext()) &#123;</span><br><span class="line">			<span class="comment">// Use remap handler if possible</span></span><br><span class="line">			<span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">				<span class="keyword">return</span> handler;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Map new handler</span></span><br><span class="line">			HttpHandlerAction mapping = GetHandlerMapping(context, requestType, path, useAppConfig);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (mapping == <span class="literal">null</span>) &#123;</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_NOT_FOUND);</span><br><span class="line">				PerfCounters.IncrementCounter(AppPerfCounter.REQUESTS_FAILED);</span><br><span class="line">				<span class="keyword">throw</span> <span class="keyword">new</span> HttpException(SR.GetString(SR.Http_handler_not_found_for_request_type, requestType));</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			IHttpHandlerFactory factory = GetFactory(mapping);</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Get factory from the mapping</span></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				IHttpHandlerFactory2 factory2 = factory <span class="keyword">as</span> IHttpHandlerFactory2;</span><br><span class="line"></span><br><span class="line">				<span class="keyword">if</span> (factory2 != <span class="literal">null</span>) &#123;</span><br><span class="line">					handler = factory2.GetHandler(context, requestType, path, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">else</span> &#123;</span><br><span class="line">					handler = factory.GetHandler(context, requestType, path.VirtualPathString, pathTranslated);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> (FileNotFoundException e) &#123;</span><br><span class="line">				<span class="comment">//...丟Exception</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Remember for recycling</span></span><br><span class="line">			<span class="keyword">if</span> (_handlerRecycleList == <span class="literal">null</span>)</span><br><span class="line">				_handlerRecycleList = <span class="keyword">new</span> ArrayList();</span><br><span class="line">			_handlerRecycleList.Add(<span class="keyword">new</span> HandlerWithFactory(handler, factory));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p><code>MapHandlerExecutionStep</code>是為了找到我們要執行的<code>HttpHandler</code>物件.</p>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">if</span> (handler != <span class="literal">null</span>)&#123;</span><br><span class="line">	<span class="keyword">return</span> handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<p>在一開始先判斷<code>handler</code>是否已經有值如果有就直接返回(這個很重要因為這是為什麼<code>MVC</code>,<code>WebAPI</code>可以運作且不用在<code>Config</code>設定配對<code>IHttpHandlerFactory</code>原因).</p>
+<blockquote>
+<p>只需要在<code>MapHandlerExecutionStep</code>執行前將<code>context.RemapHandlerInstance</code>給一個<code>HttpHandler</code>物件即可.</p>
+</blockquote>
+<h3 id="CallHandlerExecutionStep程式碼解說"><a href="#CallHandlerExecutionStep程式碼解說" class="headerlink" title="CallHandlerExecutionStep程式碼解說"></a>CallHandlerExecutionStep程式碼解說</h3><p><code>CallHandlerExecutionStep</code>物件透過<code>context.Handler</code>可以找到要執行的<code>HttpHandler</code>,這邊也是優先判斷是否可執行異步請求.</p>
+<ul>
+<li>異步呼叫<code>beginProcessRequestDelegate</code>方法(此方法將實現<code>IHttpAsyncHandler</code>物件封裝成一個<code>Func&lt;T, AsyncCallback, object, IAsyncResult&gt;</code>委派方法),之後再調用返回一個<code>IAsyncResult</code>物件(處理後結果最後呼叫<code>EndProcessRequest</code>方法).</li>
+<li>同步呼叫<code>ProcessRequest</code>:判斷<code>context.Handler</code>不是<code>IHttpAsyncHandler</code>型別就值型同步動作</li>
+</ul>
+<div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// execution step -- call HTTP handler (used to be a separate module)</span></span><br><span class="line"><span class="keyword">internal</span> <span class="keyword">class</span> <span class="title">CallHandlerExecutionStep</span> : <span class="title">IExecutionStep</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> HttpApplication   _application;</span><br><span class="line">	<span class="keyword">private</span> AsyncCallback     _completionCallback;</span><br><span class="line">	<span class="keyword">private</span> IHttpAsyncHandler _handler;       <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> AsyncStepCompletionInfo _asyncStepCompletionInfo; <span class="comment">// per call</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">bool</span>              _sync;          <span class="comment">// per call</span></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">CallHandlerExecutionStep</span>(<span class="params">HttpApplication app</span>)</span> &#123;</span><br><span class="line">		_application = app;</span><br><span class="line">		_completionCallback = <span class="keyword">new</span> AsyncCallback(<span class="keyword">this</span>.OnAsyncHandlerCompletion);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//...其他方法</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">void</span> IExecutionStep.Execute() &#123;</span><br><span class="line">		HttpContext context = _application.Context;</span><br><span class="line">		IHttpHandler handler = context.Handler;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler != <span class="literal">null</span> &amp;&amp; HttpRuntime.UseIntegratedPipeline) &#123;</span><br><span class="line">			IIS7WorkerRequest wr = context.WorkerRequest <span class="keyword">as</span> IIS7WorkerRequest;</span><br><span class="line">			<span class="keyword">if</span> (wr != <span class="literal">null</span> &amp;&amp; wr.IsHandlerExecutionDenied()) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				HttpException error = <span class="keyword">new</span> HttpException(<span class="number">403</span>, SR.GetString(SR.Handler_access_denied));</span><br><span class="line">				error.SetFormatter(<span class="keyword">new</span> PageForbiddenErrorFormatter(context.Request.Path, SR.GetString(SR.Handler_access_denied)));</span><br><span class="line">				<span class="keyword">throw</span> error;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (handler == <span class="literal">null</span>) &#123;</span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> <span class="keyword">if</span> (handler <span class="keyword">is</span> IHttpAsyncHandler) &#123;</span><br><span class="line">			<span class="comment">// asynchronous handler</span></span><br><span class="line">			IHttpAsyncHandler asyncHandler = (IHttpAsyncHandler)handler;</span><br><span class="line"></span><br><span class="line">			_sync = <span class="literal">false</span>;</span><br><span class="line">			_handler = asyncHandler;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> beginProcessRequestDelegate = AppVerifier.WrapBeginMethod&lt;HttpContext&gt;(_application, asyncHandler.BeginProcessRequest);</span><br><span class="line"></span><br><span class="line">			_asyncStepCompletionInfo.Reset();</span><br><span class="line">			context.SyncContext.AllowVoidAsyncOperations();</span><br><span class="line">			IAsyncResult ar;</span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				ar = beginProcessRequestDelegate(context, _completionCallback, <span class="literal">null</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">catch</span> &#123;</span><br><span class="line">				<span class="comment">// The asynchronous step has completed, so we should disallow further</span></span><br><span class="line">				<span class="comment">// async operations until the next step.</span></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line">				<span class="keyword">throw</span>;</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">bool</span> operationCompleted;</span><br><span class="line">			<span class="keyword">bool</span> mustCallEndHandler;</span><br><span class="line">			_asyncStepCompletionInfo.RegisterBeginUnwound(ar, <span class="keyword">out</span> operationCompleted, <span class="keyword">out</span> mustCallEndHandler);</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> (operationCompleted) &#123;</span><br><span class="line">				_sync = <span class="literal">true</span>;</span><br><span class="line">				_handler = <span class="literal">null</span>; <span class="comment">// not to remember</span></span><br><span class="line"></span><br><span class="line">				context.SyncContext.ProhibitVoidAsyncOperations();</span><br><span class="line"></span><br><span class="line">				<span class="keyword">try</span> &#123;</span><br><span class="line">					<span class="keyword">if</span> (mustCallEndHandler) &#123;</span><br><span class="line">						asyncHandler.EndProcessRequest(ar);</span><br><span class="line">					&#125;</span><br><span class="line"></span><br><span class="line">					_asyncStepCompletionInfo.ReportError();</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">finally</span> &#123;</span><br><span class="line">					SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">					context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// synchronous handler</span></span><br><span class="line">			_sync = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">			context.SyncContext.SetSyncCaller();</span><br><span class="line"></span><br><span class="line">			<span class="keyword">try</span> &#123;</span><br><span class="line">				handler.ProcessRequest(context);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">finally</span> &#123;</span><br><span class="line">				context.SyncContext.ResetSyncCaller();</span><br><span class="line"></span><br><span class="line">				SuppressPostEndRequestIfNecessary(context);</span><br><span class="line"></span><br><span class="line">				context.Response.GenerateResponseHeadersForHandler();</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>希望可以讓大家對於為什麼<code>Asp.net</code>為何可以針對<code>IHttpModule</code>擴充且為何最後都會請求一個<code>IHttpHandler</code>有更深入的了解.</p>
+<p>微軟透過一系列的管道設計模式提供有高度擴展的系統對外提供一個<code>IHttpHandler</code>讓我們可以客製化擴充要執行的請求.</p>
+<p>對於此次請求又有<code>IHttpModule</code>可對於<code>HttpApplication</code>事件做擴充(透過AOP編成方式).</p>
+<p>今天之後我們會開始講解<strong>Asp.net MVC</strong>相關的原始程式碼.</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day7/">https://isdaniel.github.io/ithelp-day7/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -10240,7 +10240,8 @@ using (var channel = connection.CreateModel())
     <title>Understand TLS/SSL networking flow</title>
     <url>/tls-ssl/</url>
     <content><![CDATA[<h2 id="Foreword"><a href="#Foreword" class="headerlink" title="Foreword"></a>Foreword</h2><p>TLS (Transport Layer Security) is a cryptographic protocol that provides secure communication over a network, commonly used to secure HTTP traffic (i.e., HTTPS). Here’s a high-level overview of the TLS workflow, which includes handshake and data transfer phases.</p>
-<p>After TCP handshake, it will execute TLS handshake if client require, below image is my experiment TLS workflow from PostgreSQL server, Red-frame represent TCP 3 handshake, and yellow-frame represent TLS handshake</p>
+<p>After TCP handshake, it will execute TLS handshake if client require.</p>
+<p>Below image is my experiment TLS (TLS 1.2) workflow from PostgreSQL server, Red-frame represent TCP 3 handshake, and yellow-frame represent TLS handshake.</p>
 <p><img src="/images/tls-ssl/2024-11-11_15h17_11.png" alt="img"></p>
 <p>In the beginning, client will send a request to require sslmode connection (SSL/TLS), if server support it will reply (‘S’).</p>
 <p><img src="/images/tls-ssl/2024-11-11_17h48_32.png" alt="img"></p>
@@ -10257,14 +10258,43 @@ using (var channel = connection.CreateModel())
 </li>
 <li>Server Hello:<ul>
 <li>The TLS version and cipher suite that it chose based on the client’s list.</li>
-<li>A random number.</li>
-<li>Other optional configurations, such as session IDs or extensions.</li>
+<li>A random number (used later for generating encryption keys).</li>
 </ul>
 </li>
-<li>Server Certificate and Optional Server Key Exchange</li>
-<li>Server Hello Done</li>
-<li>Client Key Exchange</li>
+<li>Server Certificate and Optional Server Key Exchange: The server sends its digital certificate to the client to prove its identity. This certificate includes the server’s public key and is typically signed by a trusted Certificate Authority (CA).<ul>
+<li>Checking its expiration date.</li>
+<li>Ensuring that the certificate is signed by a CA trusted by the client’s operating system or browser.</li>
+</ul>
+</li>
+<li>Server Hello Done : The server sends a ServerHelloDone message, indicating it has finished its part of the handshake.</li>
+<li>Client Key Exchange<ul>
+<li>The client generates a pre-master secret (a random value used for encryption key generation) and encrypts it with the server’s public key (from the server’s certificate).</li>
+<li>This encrypted pre-master secret is sent to the server. Only the server, with its private key, can decrypt this secret.<br><img src="/images/tls-ssl/2024-11-11_18h53_01.png" alt="img"></li>
+</ul>
+</li>
+<li>Generating Session Keys: Both the client and server now have enough information (random numbers and the pre-master secret) to generate session keys.<ul>
+<li>Symmetric encryption of the data sent over the connection.</li>
+<li>Message integrity to ensure data is not tampered with.</li>
+</ul>
+</li>
 </ol>
+<p>Above items, I pointed out in below snapshot workflow.</p>
+<p><img src="/images/tls-ssl/2024-11-11_18h47_35.png" alt="img"></p>
+<h2 id="Certificate-File"><a href="#Certificate-File" class="headerlink" title="Certificate File"></a>Certificate File</h2><p>A certificate file is an important part within TLS workflow, that for doing Client Key Exchange, and client will encrypt data via public key (server side can decrypt by private key).</p>
+<p>Certificate file contains several important pieces of information:</p>
+<ul>
+<li>Public Key: The certificate includes the public key of the entity being certified (e.g., a server or individual). This key can be used to encrypt data or verify signatures.</li>
+<li>Subject Information: Identifying information about the certificate holder, such as:<ul>
+<li>Common Name (CN) – often the domain name for websites.</li>
+<li>Organization (O), Organizational Unit (OU).</li>
+<li>Country (C).</li>
+</ul>
+</li>
+<li>Issuer Information: Identifying information about the Certificate Authority (CA) that issued the certificate.</li>
+<li>Validity Period: The start and end dates defining the period during which the certificate is valid.</li>
+<li>Digital Signature: A cryptographic signature from the CA, which verifies the certificate’s authenticity.</li>
+<li>Certificate Serial Number: A unique identifier for the certificate issued by the CA.</li>
+</ul>
 <h3 id="Certificate-amp-Root-Certificate-file"><a href="#Certificate-amp-Root-Certificate-file" class="headerlink" title="Certificate &amp; Root Certificate file"></a>Certificate &amp; Root Certificate file</h3><ul>
 <li>Root Certificate file: A root certificate is the top-level certificate in a certificate chain and serves as the foundation of trust for all other certificates within the hierarchy.<ul>
 <li>Lifespan: Root certificates are used to issue intermediate certificates, which in turn issue end-entity certificates. This hierarchy enhances security by limiting direct exposure of the root certificate.</li>

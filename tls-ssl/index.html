@@ -153,7 +153,9 @@
 <meta property="og:locale" content="zh-tw">
 <meta property="og:image" content="https://isdaniel.github.io/images/tls-ssl/2024-11-11_15h17_11.png">
 <meta property="og:image" content="https://isdaniel.github.io/images/tls-ssl/2024-11-11_17h48_32.png">
-<meta property="og:updated_time" content="2024-11-11T09:53:26.352Z">
+<meta property="og:image" content="https://isdaniel.github.io/images/tls-ssl/2024-11-11_18h53_01.png">
+<meta property="og:image" content="https://isdaniel.github.io/images/tls-ssl/2024-11-11_18h47_35.png">
+<meta property="og:updated_time" content="2024-11-11T11:11:48.092Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Understand TLS&#x2F;SSL networking flow">
 <meta name="twitter:description" content="ForewordTLS (Transport Layer Security) is a cryptographic protocol that provides secure communication over a network, commonly used to secure HTTP traffic (i.e., HTTPS). Here’s a high-level overview o">
@@ -500,7 +502,7 @@
                 
               
 
-              <time title="Created: 2024-11-11 22:30:11 / Modified: 09:53:26" itemprop="dateCreated datePublished" datetime="2024-11-11T22:30:11+00:00">2024-11-11</time>
+              <time title="Created: 2024-11-11 22:30:11 / Modified: 11:11:48" itemprop="dateCreated datePublished" datetime="2024-11-11T22:30:11+00:00">2024-11-11</time>
             
 
             
@@ -578,7 +580,7 @@
                 
                   <span class="post-meta-item-text">Symbols count in article: </span>
                 
-                <span title="Symbols count in article">2.1k</span>
+                <span title="Symbols count in article">3.9k</span>
               
 
               
@@ -592,7 +594,7 @@
                 
                   <span class="post-meta-item-text">Reading time &asymp;</span>
                 
-                <span title="Reading time">4 mins.</span>
+                <span title="Reading time">7 mins.</span>
               
             </div>
           
@@ -613,7 +615,8 @@
 
       
         <h2 id="Foreword"><a href="#Foreword" class="headerlink" title="Foreword"></a>Foreword</h2><p>TLS (Transport Layer Security) is a cryptographic protocol that provides secure communication over a network, commonly used to secure HTTP traffic (i.e., HTTPS). Here’s a high-level overview of the TLS workflow, which includes handshake and data transfer phases.</p>
-<p>After TCP handshake, it will execute TLS handshake if client require, below image is my experiment TLS workflow from PostgreSQL server, Red-frame represent TCP 3 handshake, and yellow-frame represent TLS handshake</p>
+<p>After TCP handshake, it will execute TLS handshake if client require.</p>
+<p>Below image is my experiment TLS (TLS 1.2) workflow from PostgreSQL server, Red-frame represent TCP 3 handshake, and yellow-frame represent TLS handshake.</p>
 <p><img src="/images/tls-ssl/2024-11-11_15h17_11.png" alt="img"></p>
 <p>In the beginning, client will send a request to require sslmode connection (SSL/TLS), if server support it will reply (‘S’).</p>
 <p><img src="/images/tls-ssl/2024-11-11_17h48_32.png" alt="img"></p>
@@ -630,14 +633,43 @@
 </li>
 <li>Server Hello:<ul>
 <li>The TLS version and cipher suite that it chose based on the client’s list.</li>
-<li>A random number.</li>
-<li>Other optional configurations, such as session IDs or extensions.</li>
+<li>A random number (used later for generating encryption keys).</li>
 </ul>
 </li>
-<li>Server Certificate and Optional Server Key Exchange</li>
-<li>Server Hello Done</li>
-<li>Client Key Exchange</li>
+<li>Server Certificate and Optional Server Key Exchange: The server sends its digital certificate to the client to prove its identity. This certificate includes the server’s public key and is typically signed by a trusted Certificate Authority (CA).<ul>
+<li>Checking its expiration date.</li>
+<li>Ensuring that the certificate is signed by a CA trusted by the client’s operating system or browser.</li>
+</ul>
+</li>
+<li>Server Hello Done : The server sends a ServerHelloDone message, indicating it has finished its part of the handshake.</li>
+<li>Client Key Exchange<ul>
+<li>The client generates a pre-master secret (a random value used for encryption key generation) and encrypts it with the server’s public key (from the server’s certificate).</li>
+<li>This encrypted pre-master secret is sent to the server. Only the server, with its private key, can decrypt this secret.<br><img src="/images/tls-ssl/2024-11-11_18h53_01.png" alt="img"></li>
+</ul>
+</li>
+<li>Generating Session Keys: Both the client and server now have enough information (random numbers and the pre-master secret) to generate session keys.<ul>
+<li>Symmetric encryption of the data sent over the connection.</li>
+<li>Message integrity to ensure data is not tampered with.</li>
+</ul>
+</li>
 </ol>
+<p>Above items, I pointed out in below snapshot workflow.</p>
+<p><img src="/images/tls-ssl/2024-11-11_18h47_35.png" alt="img"></p>
+<h2 id="Certificate-File"><a href="#Certificate-File" class="headerlink" title="Certificate File"></a>Certificate File</h2><p>A certificate file is an important part within TLS workflow, that for doing Client Key Exchange, and client will encrypt data via public key (server side can decrypt by private key).</p>
+<p>Certificate file contains several important pieces of information:</p>
+<ul>
+<li>Public Key: The certificate includes the public key of the entity being certified (e.g., a server or individual). This key can be used to encrypt data or verify signatures.</li>
+<li>Subject Information: Identifying information about the certificate holder, such as:<ul>
+<li>Common Name (CN) – often the domain name for websites.</li>
+<li>Organization (O), Organizational Unit (OU).</li>
+<li>Country (C).</li>
+</ul>
+</li>
+<li>Issuer Information: Identifying information about the Certificate Authority (CA) that issued the certificate.</li>
+<li>Validity Period: The start and end dates defining the period during which the certificate is valid.</li>
+<li>Digital Signature: A cryptographic signature from the CA, which verifies the certificate’s authenticity.</li>
+<li>Certificate Serial Number: A unique identifier for the certificate issued by the CA.</li>
+</ul>
 <h3 id="Certificate-amp-Root-Certificate-file"><a href="#Certificate-amp-Root-Certificate-file" class="headerlink" title="Certificate &amp; Root Certificate file"></a>Certificate &amp; Root Certificate file</h3><ul>
 <li>Root Certificate file: A root certificate is the top-level certificate in a certificate chain and serves as the foundation of trust for all other certificates within the hierarchy.<ul>
 <li>Lifespan: Root certificates are used to issue intermediate certificates, which in turn issue end-entity certificates. This hierarchy enhances security by limiting direct exposure of the root certificate.</li>
@@ -1263,7 +1295,7 @@ Certifications：
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Foreword"><span class="nav-number">1.</span> <span class="nav-text">Foreword</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TLS-work-flow"><span class="nav-number">1.1.</span> <span class="nav-text">TLS work-flow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Certificate-amp-Root-Certificate-file"><span class="nav-number">1.2.</span> <span class="nav-text">Certificate &amp; Root Certificate file</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Foreword"><span class="nav-number">1.</span> <span class="nav-text">Foreword</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TLS-work-flow"><span class="nav-number">1.1.</span> <span class="nav-text">TLS work-flow</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Certificate-File"><span class="nav-number">2.</span> <span class="nav-text">Certificate File</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Certificate-amp-Root-Certificate-file"><span class="nav-number">2.1.</span> <span class="nav-text">Certificate &amp; Root Certificate file</span></a></li></ol></li></ol></div>
             
 
           </div>
@@ -1296,7 +1328,7 @@ Certifications：
       <i class="fa fa-area-chart"></i>
     </span>
     
-    <span title="Symbols count total">545k</span>
+    <span title="Symbols count total">546k</span>
   
 
   
@@ -1305,7 +1337,7 @@ Certifications：
       <i class="fa fa-coffee"></i>
     </span>
     
-    <span title="Reading time total">16:30</span>
+    <span title="Reading time total">16:33</span>
   
 </div>
 
