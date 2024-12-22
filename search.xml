@@ -871,86 +871,6 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
       </tags>
   </entry>
   <entry>
-    <title>【深入淺出】Base編碼 (Base64為例子)</title>
-    <url>/base64-principle/</url>
-    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
-<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
-<p>此篇和大家分享Base家族的秘密</p>
-<hr>
-<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
-<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
-<blockquote>
-<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
-</blockquote>
-<p>它使用下面表中所使用的字符與編碼。</p>
-<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
-<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
-<p><code>Base64</code> 中的64其實是有含意的</p>
-<p>他會把資料轉成</p>
-<pre><code>a~z (26)
-A~Z (26)
-0~9 (10)
-+ (1)
-/ (1)
-</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
-<blockquote>
-<p>64 = 26+26+10+1+1</p>
-</blockquote>
-<hr>
-<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
-<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
-<blockquote>
-<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
-</blockquote>
-<p>這邊有幾個重點</p>
-<ol>
-<li>會把資料分割成每 3 byte (24bit) 為單位</li>
-<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
-<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
-<li>直到全部輸入資料轉換完成</li>
-</ol>
-<p>下面有個例子方便大家了解！</p>
-<hr>
-<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
-<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
-<ol>
-<li>將字元轉換成二進制</li>
-</ol>
-<ul>
-<li>B (66) = 0    1    0    0    0    0    1    0</li>
-<li>C (67) = 0    1    0    0    0    0    1    1</li>
-</ul>
-<ol start="2">
-<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
-</li>
-<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
-</li>
-<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
-</li>
-</ol>
-<p><img src="/images/Base64_1.PNG" alt="img"></p>
-<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
-<blockquote>
-<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
-</blockquote>
-<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
-<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
-<p><code>Base32 : a~z , 2~7</code></p>
-<p>原理其實都是一樣的</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>WebDesign</category>
-      </categories>
-      <tags>
-        <tag>WebDesign</tag>
-        <tag>Base64</tag>
-        <tag>Encoding</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>C# Boxing vs UnBoxing</title>
     <url>/boxing-unboxing/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p><code>Boxing</code>跟<code>UnBoxing</code>在.net中,我們可能在無意識使用到但這個事情確會造成一些效能影響…</p>
@@ -1045,6 +965,86 @@ A~Z (26)
       </categories>
       <tags>
         <tag>C#</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>【深入淺出】Base編碼 (Base64為例子)</title>
+    <url>/base64-principle/</url>
+    <content><![CDATA[<p>Base家族以Base64最為出名，這邊會用Base64編碼來做介紹</p>
+<p>寫網站應該都用過Base64但你對於他的原理了解嗎?</p>
+<p>此篇和大家分享Base家族的秘密</p>
+<hr>
+<h2 id="用途："><a href="#用途：" class="headerlink" title="用途："></a>用途：</h2><p>Base64主要用途是某些系統中只能使用ASCII字符，為了避免某些機器無法識別我們傳輸資料</p>
+<p>Base64就是用來將非ASCII字符的數據轉換成ASCII字符的一種方法。</p>
+<blockquote>
+<p>　base64特別適合在http，mime協議下快速傳輸數據(例如我們常使用 Email)</p>
+</blockquote>
+<p>它使用下面表中所使用的字符與編碼。</p>
+<p><img src="http://www.asciitable.com/index/asciifull.gif" alt="http://www.asciitable.com/index/asciifull.gif"></p>
+<p><span class="exturl" data-url="aHR0cDovL3d3dy5hc2NpaXRhYmxlLmNvbS8=" title="http://www.asciitable.com/">圖片連結<i class="fa fa-external-link"></i></span></p>
+<p><code>Base64</code> 中的64其實是有含意的</p>
+<p>他會把資料轉成</p>
+<pre><code>a~z (26)
+A~Z (26)
+0~9 (10)
++ (1)
+/ (1)
+</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
+<blockquote>
+<p>64 = 26+26+10+1+1</p>
+</blockquote>
+<hr>
+<h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
+<p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
+<p><span class="exturl" data-url="aHR0cHM6Ly96aC53aWtpcGVkaWEub3JnL3dpa2kvQmFzZTY0" title="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明<i class="fa fa-external-link"></i></span></p>
+<blockquote>
+<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
+</blockquote>
+<p>這邊有幾個重點</p>
+<ol>
+<li>會把資料分割成每 3 byte (24bit) 為單位</li>
+<li>資料不足3 byte的話，於緩衝區中剩下的bit用0補足</li>
+<li>計算出來值依照下表索引轉換成Base64可用字元 <img src="http://i.imgur.com/4wh9OVF.png" alt="Base64 wiki說明"></li>
+<li>直到全部輸入資料轉換完成</li>
+</ol>
+<p>下面有個例子方便大家了解！</p>
+<hr>
+<h2 id="實際例子："><a href="#實際例子：" class="headerlink" title="實際例子："></a>實際例子：</h2><p>先來看看下面的例子：</p>
+<p><code>BC</code> 用 <code>Base64</code> 轉成 <code>QkM=</code> 過程．</p>
+<ol>
+<li>將字元轉換成二進制</li>
+</ol>
+<ul>
+<li>B (66) = 0    1    0    0    0    0    1    0</li>
+<li>C (67) = 0    1    0    0    0    0    1    1</li>
+</ul>
+<ol start="2">
+<li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
+</li>
+<li><p>最左邊數字為頭，用每組６bit來重新分組轉換後的資料.</p>
+</li>
+<li><p>將轉換後的資料依照Base64轉換表 轉換成Base64字元.</p>
+</li>
+</ol>
+<p><img src="/images/Base64_1.PNG" alt="img"></p>
+<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
+<blockquote>
+<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
+</blockquote>
+<p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
+<p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
+<p><code>Base32 : a~z , 2~7</code></p>
+<p>原理其實都是一樣的</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>WebDesign</category>
+      </categories>
+      <tags>
+        <tag>WebDesign</tag>
+        <tag>Base64</tag>
+        <tag>Encoding</tag>
       </tags>
   </entry>
   <entry>
@@ -1929,7 +1929,7 @@ class Program
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight /c"><table><tr><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ForEachState</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="keyword">const</span> List *l;				<span class="comment">/* list we're looping through */</span></span><br><span class="line">	<span class="keyword">int</span>			i;				<span class="comment">/* current element index */</span></span><br><span class="line">&#125; ForEachState;</span><br></pre></td></tr></table></figure></div>
 <p>Here is the sample code, we can easy use foreach to iterator <code>List*</code> objects.</p>
 <div class="highlight-wrap"autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true"data-rel="C"><figure class="iseeu highlight /c"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line">    srand( time(<span class="literal">NULL</span>) );    </span><br><span class="line">    ListCell   *item;</span><br><span class="line">    List *<span class="built_in">list</span> = InitialStudents();</span><br><span class="line"></span><br><span class="line">    foreach(item, <span class="built_in">list</span>) &#123;</span><br><span class="line">        Student *stu = lfirst_node(Student, item);</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">"student name: %s, age: %d\n"</span>, stu-&gt;name,stu-&gt;age);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Free allocated memory</span></span><br><span class="line">    <span class="built_in">free</span>(<span class="built_in">list</span>-&gt;elements-&gt;ptr_value);</span><br><span class="line">    <span class="built_in">free</span>(<span class="built_in">list</span>-&gt;elements);</span><br><span class="line">    <span class="built_in">free</span>(<span class="built_in">list</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<p>My smaple code link: <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL0NfU2FtcGxlL2ZvcmVhY2hfbG9vcA==" title="https://github.com/isdaniel/BlogSample/tree/master/src/C_Sample/foreach_loop">foreach loop<i class="fa fa-external-link"></i></span></p>
+<p>Example code: <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0Jsb2dTYW1wbGUvdHJlZS9tYXN0ZXIvc3JjL0NfU2FtcGxlL2ZvcmVhY2hfbG9vcA==" title="https://github.com/isdaniel/BlogSample/tree/master/src/C_Sample/foreach_loop">foreach loop<i class="fa fa-external-link"></i></span></p>
 <p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c_foreach/">https://isdaniel.github.io/c_foreach/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
