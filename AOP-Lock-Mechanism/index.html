@@ -1,176 +1,53 @@
 <!DOCTYPE html>
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-<html class="theme-next gemini use-motion" lang="zh-tw">
-<head><meta name="generator" content="Hexo 3.9.0">
-  
+<html lang="zh-tw">
+<head>
   <meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
 
 
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-
-  
-  
-    
-    
-  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
-  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-  
-  
-
-  
-    
-    
-  
-
-  
-
-  
-
-  
-    
-      
-    
-
-    
-  
-
-  
-    
-      
-    
-
-    
-  
-
-  
-    
-    
-    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
-  
-
-
-
-
-
-
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
-
-<link rel="stylesheet" href="/css/main.css?v=7.1.1">
-
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
-
-
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
-
-
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
-
-
-  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
-
-
-
-
-
-
-
-<script id="hexo.configurations">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    root: '/',
-    scheme: 'Gemini',
-    version: '7.1.1',
-    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
-    back2top: true,
-    back2top_sidebar: false,
-    fancybox: false,
-    fastclick: false,
-    lazyload: false,
-    tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
-    algolia: {
-      applicationID: '',
-      apiKey: '',
-      indexName: '',
-      hits: {"per_page":10},
-      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
-    }
-  };
-</script>
-
-
-  
-
-
-
-
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
 
   <meta name="description" content="前言:在系統中多少會遇到某些交易間需要互斥(不然容易造成DeadLock). 在我們當前系統中有許多動作間需要互斥,不然會有DeadLock問題 藉由已經分析DeadLock Report後,我開始構思如何讓建立Lock可以變得更容易且好理解. 所以就建構出此Lock架構. 如何在此框架使用Lock機制我們只需要做幾個步驟:  在使用Lock類別上掛LockerInterceptor攔截器標籤.">
-<meta name="keywords" content="C#,IOC,Autofac,AOP,Lock">
 <meta property="og:type" content="article">
 <meta property="og:title" content="AOP Lock Architecture">
-<meta property="og:url" content="https://isdaniel.github.io/aop-lock-mechanism/index.html">
+<meta property="og:url" content="https://isdaniel.github.io/AOP-Lock-Mechanism/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
 <meta property="og:description" content="前言:在系統中多少會遇到某些交易間需要互斥(不然容易造成DeadLock). 在我們當前系統中有許多動作間需要互斥,不然會有DeadLock問題 藉由已經分析DeadLock Report後,我開始構思如何讓建立Lock可以變得更容易且好理解. 所以就建構出此Lock架構. 如何在此框架使用Lock機制我們只需要做幾個步驟:  在使用Lock類別上掛LockerInterceptor攔截器標籤.">
-<meta property="og:locale" content="zh-tw">
+<meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/kESEvl4.png">
-<meta property="og:updated_time" content="2024-12-22T13:36:55.483Z">
+<meta property="article:published_time" content="2020-11-10T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-12-22T23:54:47.720Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="C#">
+<meta property="article:tag" content="IOC">
+<meta property="article:tag" content="Autofac">
+<meta property="article:tag" content="AOP">
+<meta property="article:tag" content="Lock">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="AOP Lock Architecture">
-<meta name="twitter:description" content="前言:在系統中多少會遇到某些交易間需要互斥(不然容易造成DeadLock). 在我們當前系統中有許多動作間需要互斥,不然會有DeadLock問題 藉由已經分析DeadLock Report後,我開始構思如何讓建立Lock可以變得更容易且好理解. 所以就建構出此Lock架構. 如何在此框架使用Lock機制我們只需要做幾個步驟:  在使用Lock類別上掛LockerInterceptor攔截器標籤.">
 <meta name="twitter:image" content="https://i.imgur.com/kESEvl4.png">
 
+<link rel="canonical" href="https://isdaniel.github.io/AOP-Lock-Mechanism/">
 
 
-
-
-  
-  
-  <link rel="canonical" href="https://isdaniel.github.io/aop-lock-mechanism/">
-
-
-
-<script id="page.configurations">
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
+    isHome : false,
+    isPost : true
   };
 </script>
 
@@ -182,15 +59,8 @@
 
 
 
-
-
-
-
-
-
   <noscript>
   <style>
-  .use-motion .motion-element,
   .use-motion .brand,
   .use-motion .menu-item,
   .sidebar-inner,
@@ -199,9 +69,8 @@
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-title { opacity: initial; }
+  .use-motion .collection-header { opacity: initial; }
 
-  .use-motion .logo,
   .use-motion .site-title,
   .use-motion .site-subtitle {
     opacity: initial;
@@ -213,414 +82,184 @@
   </style>
 </noscript>
 
-  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
-
-  
-  
-    
-  
-
-  <div class="container sidebar-position-left page-post-detail">
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
     <div class="headband"></div>
 
-    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
-  <div class="site-meta">
-    
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
 
-    <div class="custom-logo-site-title">
+  <div class="site-meta">
+
+    <div>
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">石頭的coding之路</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-    
-      
-        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
-      
-    
-    
+        <p class="site-subtitle">Hello World</p>
   </div>
 
-  <div class="site-nav-toggle">
-    <button aria-label="Toggle navigation bar">
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
   </div>
 </div>
-
 
 
 <nav class="site-nav">
   
-    <ul id="menu" class="menu">
-      
-        
-        
-        
-          
-          <li class="menu-item menu-item-home">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-about">
+        <li class="menu-item menu-item-about">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-course">
+        <li class="menu-item menu-item-course">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-tags">
+        <li class="menu-item menu-item-tags">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">121</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">121</span></a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-categories">
+        <li class="menu-item menu-item-categories">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">52</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">52</span></a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-archives">
+        <li class="menu-item menu-item-archives">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">117</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">179</span></a>
 
   </li>
+  </ul>
 
-      
-      
-        <li class="menu-item menu-item-search">
-          
-            <a href="javascript:;" class="popup-trigger">
-          
-            
-              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
-        </li>
-      
-    </ul>
-  
-
-  
-
-  
-    <div class="site-search">
-      
-  <div class="popup search-popup local-search-popup">
-  <div class="local-search-header clearfix">
-    <span class="search-icon">
-      <i class="fa fa-search"></i>
-    </span>
-    <span class="popup-btn-close">
-      <i class="fa fa-times-circle"></i>
-    </span>
-    <div class="local-search-input-wrapper">
-      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
-    </div>
-  </div>
-  <div id="local-search-result"></div>
-</div>
-
-
-
-    </div>
-  
 </nav>
-
-
-
-  
-
-
-
 </div>
     </header>
 
     
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
 
 
-    <main id="main" class="main">
+    <main class="main">
       <div class="main-inner">
         <div class="content-wrap">
           
+
+          <div class="content">
             
 
-
-          
-          <div id="content" class="content">
-            
-
-  <div id="posts" class="posts-expand">
-    
-
-  
-
+  <div class="posts-expand">
+      
   
   
-  
-
-  
-    <div class="reading-progress-bar"></div>
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/aop-lock-mechanism/">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/AOP-Lock-Mechanism/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
       <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
-
-    
       <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">AOP Lock Architecture
-
-              
-            
-          </h2>
-        
+        <h1 class="post-title" itemprop="name headline">
+          AOP Lock Architecture
+        </h1>
 
         <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
+            <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-
-              
-                
-              
+              <span class="post-meta-item-text">Posted on</span>
 
               <time title="Created: 2020-11-10 16:00:00" itemprop="dateCreated datePublished" datetime="2020-11-10T16:00:00+00:00">2020-11-10</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
+            </span>
+              <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2024-12-22 13:36:55" itemprop="dateModified" datetime="2024-12-22T13:36:55+00:00">2024-12-22</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2024-12-22 23:54:47" itemprop="dateModified" datetime="2024-12-22T23:54:47+00:00">2024-12-22</time>
+              </span>
+            <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">In</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a></span>
-
-                
-                
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
                   , 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/C/Lock/" itemprop="url" rel="index"><span itemprop="name">Lock</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-              
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/Lock/" itemprop="url" rel="index"><span itemprop="name">Lock</span></a>
                 </span>
-            
-                <span class="post-meta-item-text">Comments: </span>
-                <a href="/aop-lock-mechanism/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="aop-lock-mechanism/" itemprop="commentCount"></span>
-                </a>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/AOP-Lock-Mechanism/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="AOP-Lock-Mechanism/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
               </span>
-            
-          
-
-          
-          
-
-          
-            <span class="post-meta-divider">|</span>
-            <span class="post-meta-item-icon">
-            <i class="fa fa-eye"></i>
-             Views:  
-            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.5k</span>
             </span>
-          
-
-          
-            <div class="post-symbolscount">
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Symbols count in article: </span>
-                
-                <span title="Symbols count in article">7.3k</span>
-              
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Reading time &asymp;</span>
-                
-                <span title="Reading time">13 mins.</span>
-              
-            </div>
-          
-
-          
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
 
         </div>
       </header>
-    
 
     
     
     
     <div class="post-body" itemprop="articleBody">
-
-      
-      
 
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
@@ -637,15 +276,15 @@
 <p>目前寫法是針對單一Server Mutiple Thread來建立互斥Lock. 假如有遇到多台Servers需要建立互斥模式可以,參考Redis的<code>Redlock.Net</code>.</p>
 </blockquote>
 <p>使用方法如下,這樣在多執行緒系統中<code>MethodA1</code>跟<code>MethodB_A</code>就不會有同時執行問題,這樣就可以造成這兩個動作互斥.</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
-<h2 id="架構解說"><a href="#架構解說" class="headerlink" title="架構解說"></a>架構解說</h2><p>我是使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnJlYWRlcndyaXRlcmxvY2tzbGltP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim<i class="fa fa-external-link"></i></span></p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="string">&quot;A&quot;</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done&quot;</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="string">&quot;A&quot;</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done&quot;</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">5</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="架構解說"><a href="#架構解說" class="headerlink" title="架構解說"></a>架構解說</h2><p>我是使用<a href="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim</a></p>
 <blockquote>
 <p>因為支援ReadLock不互斥,WriteLock互斥邏輯</p>
 </blockquote>
-<p><img src="https://i.imgur.com/kESEvl4.png" alt></p>
+<p><img src="https://i.imgur.com/kESEvl4.png" alt=""></p>
 <p>我是如何讓使用者輸入<code>Key</code>來建立不同lock呢?</p>
 <blockquote>
-<p>我是使用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0uY29sbGVjdGlvbnMuY29uY3VycmVudC5jb25jdXJyZW50ZGljdGlvbmFyeS0yP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2?view=netcore-3.1">ConcurrentDictionary<i class="fa fa-external-link"></i></span>來處理此問題,每個<code>Key</code>都有不同<code>Lock</code>物件</p>
+<p>我是使用<a href="https://docs.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2?view=netcore-3.1">ConcurrentDictionary</a>來處理此問題,每個<code>Key</code>都有不同<code>Lock</code>物件</p>
 </blockquote>
 <h3 id="LockAttribute"><a href="#LockAttribute" class="headerlink" title="LockAttribute"></a>LockAttribute</h3><p><code>LockAttribute</code>有幾個屬性.</p>
 <ul>
@@ -657,10 +296,10 @@
 </li>
 <li><code>Order</code>:因為支援多個<code>LockAttribute</code>,此屬性決定執行此方法前要求鎖順序</li>
 </ul>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">AttributeUsage(AttributeTargets.Method, AllowMultiple = true)</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">LockAttribute</span> : <span class="title">Attribute</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">string</span> Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> LockMode Mode &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; = LockMode.XLock;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> Order &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">AttributeUsage(AttributeTargets.Method, AllowMultiple = true)</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">LockAttribute</span> : <span class="title">Attribute</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> Key &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> LockMode Mode &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125; = LockMode.XLock;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">int</span> Order &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h3 id="LockerInterceptor"><a href="#LockerInterceptor" class="headerlink" title="LockerInterceptor"></a>LockerInterceptor</h3><p>我們直接來<code>IInterceptor</code>物件最核心邏輯方法<code>Intercept(IInvocation invocation)</code>.</p>
 <p>利用<code>GetCustomAttributes</code>取得方法上所有<code>LockAttribute</code>並在方法執行前要求拿到,所需要<code>Lock</code>資源才可以執行方法,最後在<code>finally</code>時釋放lock資源</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Intercept</span>(<span class="params">IInvocation invocation</span>)</span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">var</span> methodName = invocation.Method.Name;</span><br><span class="line">    <span class="keyword">var</span> lockAttributes = invocation.Method.GetCustomAttributes(<span class="keyword">typeof</span>(LockAttribute), <span class="literal">true</span>) <span class="keyword">as</span> LockAttribute[];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (IsMarkLockLockAttribute(lockAttributes))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> lockProviders = GetLockProviders(lockAttributes);</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.AddLock();</span><br><span class="line">            &#125;</span><br><span class="line">            invocation.Proceed();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Exception e)</span><br><span class="line">        &#123;</span><br><span class="line">            _log.Exception(<span class="string">"Something wrong!"</span>, e);</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.ReleaseLock();</span><br><span class="line">            &#125;</span><br><span class="line">            _log.Info(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> <span class="subst">&#123;methodName&#125;</span> Release Lock"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        invocation.Proceed();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Intercept</span>(<span class="params">IInvocation invocation</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">var</span> methodName = invocation.Method.Name;</span><br><span class="line">    <span class="keyword">var</span> lockAttributes = invocation.Method.GetCustomAttributes(<span class="keyword">typeof</span>(LockAttribute), <span class="literal">true</span>) <span class="keyword">as</span> LockAttribute[];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (IsMarkLockLockAttribute(lockAttributes))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> lockProviders = GetLockProviders(lockAttributes);</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.AddLock();</span><br><span class="line">            &#125;</span><br><span class="line">            invocation.Proceed();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (Exception e)</span><br><span class="line">        &#123;</span><br><span class="line">            _log.Exception(<span class="string">&quot;Something wrong!&quot;</span>, e);</span><br><span class="line">            <span class="keyword">throw</span> e;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">foreach</span> (<span class="keyword">var</span> lockProvider <span class="keyword">in</span> lockProviders)</span><br><span class="line">            &#123;</span><br><span class="line">                lockProvider.ReleaseLock();</span><br><span class="line">            &#125;</span><br><span class="line">            _log.Info(<span class="string">$&quot;<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> <span class="subst">&#123;methodName&#125;</span> Release Lock&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">        invocation.Proceed();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="SampleCode"><a href="#SampleCode" class="headerlink" title="SampleCode"></a>SampleCode</h2><p>我利用Nunit寫一個簡單程式Print在console讓我們方便觀看結果.</p>
 <ul>
 <li><code>MethodA</code>:Shared lock mode on key A</li>
@@ -669,651 +308,187 @@
 <li><code>MethodB</code>:X lock mode on key B</li>
 </ul>
 <p>理論上<code>MethodB</code>只會對於<code>MethodB_A</code>互斥,<code>MethodB</code>並不會跟<code>MethodA</code>,<code>MethodA1</code>有互斥反應.</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CSHARP"><figure class="iseeu highlight /csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>, Mode = LockMode.SharedLock)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA</span> (<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"A"</span>)</span>]</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"B"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="meta-string">"B"</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span>  <span class="keyword">void</span> <span class="title">MethodB</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$"<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB Done"</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA</span>(<span class="params"></span>)</span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA1</span>(<span class="params"></span>)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB_A</span>(<span class="params"></span>)</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB</span>(<span class="params"></span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AutofacConfig</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> IContainer Container &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Register</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line">        builder.RegisterType&lt;LockerInterceptor&gt;().AsSelf();</span><br><span class="line">        builder.RegisterType&lt;LockerContext&gt;().As&lt;ILockerContext&gt;().EnableClassInterceptors();</span><br><span class="line">        builder.RegisterType&lt;ConsoleProvider&gt;().As&lt;ISysLog&gt;().SingleInstance();</span><br><span class="line">        Container = builder.Build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">[<span class="meta">TestFixture</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerTest</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//You can use the following additional attributes as you write your tests:</span></span><br><span class="line">    [<span class="meta">OneTimeSetUp</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">OneTimeSetUp</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123;</span><br><span class="line">        AutofacConfig.Register();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Test</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">LockGroupTest</span>(<span class="params"></span>)</span></span><br><span class="line"><span class="function"></span>    &#123; </span><br><span class="line">        <span class="keyword">var</span> lockerContext= AutofacConfig.Container.Resolve&lt;ILockerContext&gt;();</span><br><span class="line">        </span><br><span class="line">        List&lt;Task&gt; taskList =<span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA1(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB_A(); &#125;));                </span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB(); &#125;));</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Task.WaitAll(taskList.ToArray());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">Intercept(typeof(LockerInterceptor))</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerContext</span> : <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="string">&quot;A&quot;</span>, Mode = LockMode.SharedLock)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA</span> ()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA Done&quot;</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="string">&quot;A&quot;</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodA1</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodA1 Done&quot;</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="string">&quot;A&quot;</span>)</span>]</span><br><span class="line">    [<span class="meta">Lock(Key = <span class="string">&quot;B&quot;</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">MethodB_A</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB_A Done&quot;</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Lock(Key = <span class="string">&quot;B&quot;</span>)</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span>  <span class="keyword">void</span> <span class="title">MethodB</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;<span class="subst">&#123;DateTime.Now:HH:mm:ss fff&#125;</span> MethodB Done&quot;</span>);</span><br><span class="line">        Thread.Sleep(<span class="number">100</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ILockerContext</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA</span>()</span>;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodA1</span>()</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB_A</span>()</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">MethodB</span>()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">AutofacConfig</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> IContainer Container &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Register</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line">        builder.RegisterType&lt;LockerInterceptor&gt;().AsSelf();</span><br><span class="line">        builder.RegisterType&lt;LockerContext&gt;().As&lt;ILockerContext&gt;().EnableClassInterceptors();</span><br><span class="line">        builder.RegisterType&lt;ConsoleProvider&gt;().As&lt;ISysLog&gt;().SingleInstance();</span><br><span class="line">        Container = builder.Build();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">[<span class="meta">TestFixture</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">LockerTest</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//You can use the following additional attributes as you write your tests:</span></span><br><span class="line">    [<span class="meta">OneTimeSetUp</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">OneTimeSetUp</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        AutofacConfig.Register();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    [<span class="meta">Test</span>]</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">LockGroupTest</span>()</span></span><br><span class="line">    &#123; </span><br><span class="line">        <span class="keyword">var</span> lockerContext= AutofacConfig.Container.Resolve&lt;ILockerContext&gt;();</span><br><span class="line">        </span><br><span class="line">        List&lt;Task&gt; taskList =<span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodA1(); &#125;));</span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB_A(); &#125;));                </span><br><span class="line">            taskList.Add(Task.Factory.StartNew(() =&gt; &#123; lockerContext.MethodB(); &#125;));</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        Task.WaitAll(taskList.ToArray());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><strong>Result</strong></p>
 <p>我們發現<code>MethodB_A</code>這個方法會對於,所有key是<code>A</code>,<code>B</code>方法互斥,<code>MethodA</code>則不會對於<code>MethodA</code>,<code>MethodB</code>互斥.</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="PLAIN"><figure class="iseeu highlight /plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line">14:26:59 815 MethodA1 Done</span><br><span class="line">14:26:59 816 MethodB Done</span><br><span class="line">14:26:59 919 MethodA1 Release Lock</span><br><span class="line">14:26:59 920 MethodB Release Lock</span><br><span class="line">14:27:00 020 MethodB Done</span><br><span class="line">14:27:00 120 MethodB Release Lock</span><br><span class="line">14:27:00 220 MethodB_A Done</span><br><span class="line">14:27:00 320 MethodB_A Release Lock</span><br><span class="line">14:27:00 420 MethodA1 Done</span><br><span class="line">14:27:00 520 MethodA1 Release Lock</span><br><span class="line">14:27:00 620 MethodB_A Done</span><br><span class="line">14:27:00 720 MethodB_A Release Lock</span><br><span class="line">14:27:00 820 MethodB Done</span><br><span class="line">14:27:00 820 MethodA1 Done</span><br><span class="line">14:27:00 920 MethodB Release Lock</span><br><span class="line">14:27:00 920 MethodA1 Release Lock</span><br><span class="line">14:27:01 020 MethodB_A Done</span><br><span class="line">14:27:01 120 MethodB_A Release Lock</span><br><span class="line">14:27:01 220 MethodB_A Done</span><br><span class="line">14:27:01 320 MethodB_A Release Lock</span><br><span class="line">14:27:01 420 MethodB Done</span><br><span class="line">14:27:01 420 MethodA1 Done</span><br><span class="line">14:27:01 520 MethodB Release Lock</span><br><span class="line">14:27:01 520 MethodA1 Release Lock</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 820 MethodB Done</span><br><span class="line">14:27:01 920 MethodB Release Lock</span><br><span class="line">14:27:02 020 MethodB Done</span><br><span class="line">14:27:02 120 MethodB Release Lock</span><br><span class="line">14:27:02 220 MethodB_A Done</span><br><span class="line">14:27:02 320 MethodB_A Release Lock</span><br><span class="line">14:27:02 420 MethodA1 Done</span><br><span class="line">14:27:02 520 MethodA1 Release Lock</span><br><span class="line">14:27:02 620 MethodB_A Done</span><br><span class="line">14:27:02 720 MethodB_A Release Lock</span><br><span class="line">14:27:02 820 MethodB_A Done</span><br><span class="line">14:27:02 920 MethodB_A Release Lock</span><br><span class="line">14:27:03 020 MethodA1 Done</span><br><span class="line">14:27:03 020 MethodB Done</span><br><span class="line">14:27:03 120 MethodA1 Release Lock</span><br><span class="line">14:27:03 120 MethodB Release Lock</span><br><span class="line">14:27:03 220 MethodA1 Done</span><br><span class="line">14:27:03 220 MethodB Done</span><br><span class="line">14:27:03 320 MethodA1 Release Lock</span><br><span class="line">14:27:03 320 MethodB Release Lock</span><br><span class="line">14:27:03 420 MethodB_A Done</span><br><span class="line">14:27:03 520 MethodB_A Release Lock</span><br><span class="line">14:27:03 620 MethodA1 Done</span><br><span class="line">14:27:03 720 MethodA1 Release Lock</span><br><span class="line">14:27:03 820 MethodB_A Done</span><br><span class="line">14:27:03 920 MethodB_A Release Lock</span><br><span class="line">14:27:04 020 MethodA1 Done</span><br><span class="line">14:27:04 020 MethodB Done</span><br><span class="line">14:27:04 120 MethodA1 Release Lock</span><br><span class="line">14:27:04 120 MethodB Release Lock</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 420 MethodB Done</span><br><span class="line">14:27:04 520 MethodB Release Lock</span><br><span class="line">14:27:04 620 MethodB_A Done</span><br><span class="line">14:27:04 720 MethodB_A Release Lock</span><br><span class="line">14:27:04 820 MethodA1 Done</span><br><span class="line">14:27:04 920 MethodA1 Release Lock</span><br><span class="line">14:27:05 020 MethodA Done</span><br><span class="line">14:27:05 120 MethodA Release Lock</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line">14:26:59 815 MethodA1 Done</span><br><span class="line">14:26:59 816 MethodB Done</span><br><span class="line">14:26:59 919 MethodA1 Release Lock</span><br><span class="line">14:26:59 920 MethodB Release Lock</span><br><span class="line">14:27:00 020 MethodB Done</span><br><span class="line">14:27:00 120 MethodB Release Lock</span><br><span class="line">14:27:00 220 MethodB_A Done</span><br><span class="line">14:27:00 320 MethodB_A Release Lock</span><br><span class="line">14:27:00 420 MethodA1 Done</span><br><span class="line">14:27:00 520 MethodA1 Release Lock</span><br><span class="line">14:27:00 620 MethodB_A Done</span><br><span class="line">14:27:00 720 MethodB_A Release Lock</span><br><span class="line">14:27:00 820 MethodB Done</span><br><span class="line">14:27:00 820 MethodA1 Done</span><br><span class="line">14:27:00 920 MethodB Release Lock</span><br><span class="line">14:27:00 920 MethodA1 Release Lock</span><br><span class="line">14:27:01 020 MethodB_A Done</span><br><span class="line">14:27:01 120 MethodB_A Release Lock</span><br><span class="line">14:27:01 220 MethodB_A Done</span><br><span class="line">14:27:01 320 MethodB_A Release Lock</span><br><span class="line">14:27:01 420 MethodB Done</span><br><span class="line">14:27:01 420 MethodA1 Done</span><br><span class="line">14:27:01 520 MethodB Release Lock</span><br><span class="line">14:27:01 520 MethodA1 Release Lock</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 620 MethodA Done</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 720 MethodA Release Lock</span><br><span class="line">14:27:01 820 MethodB Done</span><br><span class="line">14:27:01 920 MethodB Release Lock</span><br><span class="line">14:27:02 020 MethodB Done</span><br><span class="line">14:27:02 120 MethodB Release Lock</span><br><span class="line">14:27:02 220 MethodB_A Done</span><br><span class="line">14:27:02 320 MethodB_A Release Lock</span><br><span class="line">14:27:02 420 MethodA1 Done</span><br><span class="line">14:27:02 520 MethodA1 Release Lock</span><br><span class="line">14:27:02 620 MethodB_A Done</span><br><span class="line">14:27:02 720 MethodB_A Release Lock</span><br><span class="line">14:27:02 820 MethodB_A Done</span><br><span class="line">14:27:02 920 MethodB_A Release Lock</span><br><span class="line">14:27:03 020 MethodA1 Done</span><br><span class="line">14:27:03 020 MethodB Done</span><br><span class="line">14:27:03 120 MethodA1 Release Lock</span><br><span class="line">14:27:03 120 MethodB Release Lock</span><br><span class="line">14:27:03 220 MethodA1 Done</span><br><span class="line">14:27:03 220 MethodB Done</span><br><span class="line">14:27:03 320 MethodA1 Release Lock</span><br><span class="line">14:27:03 320 MethodB Release Lock</span><br><span class="line">14:27:03 420 MethodB_A Done</span><br><span class="line">14:27:03 520 MethodB_A Release Lock</span><br><span class="line">14:27:03 620 MethodA1 Done</span><br><span class="line">14:27:03 720 MethodA1 Release Lock</span><br><span class="line">14:27:03 820 MethodB_A Done</span><br><span class="line">14:27:03 920 MethodB_A Release Lock</span><br><span class="line">14:27:04 020 MethodA1 Done</span><br><span class="line">14:27:04 020 MethodB Done</span><br><span class="line">14:27:04 120 MethodA1 Release Lock</span><br><span class="line">14:27:04 120 MethodB Release Lock</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 220 MethodA Done</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 320 MethodA Release Lock</span><br><span class="line">14:27:04 420 MethodB Done</span><br><span class="line">14:27:04 520 MethodB Release Lock</span><br><span class="line">14:27:04 620 MethodB_A Done</span><br><span class="line">14:27:04 720 MethodB_A Release Lock</span><br><span class="line">14:27:04 820 MethodA1 Done</span><br><span class="line">14:27:04 920 MethodA1 Release Lock</span><br><span class="line">14:27:05 020 MethodA Done</span><br><span class="line">14:27:05 120 MethodA Release Lock</span><br></pre></td></tr></table></figure>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本篇主要想要介紹使用Lock機制.</p>
-<p>利用<span class="exturl" data-url="aHR0cHM6Ly9kb2NzLm1pY3Jvc29mdC5jb20vZW4tdXMvZG90bmV0L2FwaS9zeXN0ZW0udGhyZWFkaW5nLnJlYWRlcndyaXRlcmxvY2tzbGltP3ZpZXc9bmV0Y29yZS0zLjE=" title="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim<i class="fa fa-external-link"></i></span>就可以建立如DB lock,實在非常方便.</p>
+<p>利用<a href="https://docs.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=netcore-3.1">ReaderWriterLockSlim</a>就可以建立如DB lock,實在非常方便.</p>
 <p>假如想要細部了解<a href="https://isdaniel.github.io/Autofac-AOP/">Autofac + Interceptors(AOP) 動態代理</a>可以參考我之前寫文章,這裡我就不多敘述了.</p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVsL0V4dGVuaW9uVG9vbC90cmVlL21hc3Rlci9zcmMvRXh0ZW5zaW9uVG9vbC9UaGlyZFBhcnR5RXh0ZW5zaW9uL0xvY2tTZXJ2aWNl" title="https://github.com/isdaniel/ExtenionTool/tree/master/src/ExtensionTool/ThirdPartyExtension/LockService">SourceCode LockService<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/aop-lock-mechanism/">https://isdaniel.github.io/aop-lock-mechanism/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+<p><a href="https://github.com/isdaniel/ExtenionTool/tree/master/src/ExtensionTool/ThirdPartyExtension/LockService">SourceCode LockService</a></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/AOP-Lock-Mechanism/">https://isdaniel.github.io/AOP-Lock-Mechanism/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
-      
     </div>
 
     
+    
+    
       
-
   <div class="popular-posts-header">Related Posts</div>
   <ul class="popular-posts">
-  
     <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\acid\" rel="bookmark">ACID</a></div>
-      
+      <div class="popular-posts-title"><a href="/aop-lock-mechanism/" rel="bookmark">AOP Lock Architecture</a></div>
     </li>
-  
     <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\autofac-introduce\" rel="bookmark">Autofac (IOC)容器介紹</a></div>
-      
+      <div class="popular-posts-title"><a href="/ACID/" rel="bookmark">ACID</a></div>
     </li>
-  
     <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\autofac-aop\" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
-      
+      <div class="popular-posts-title"><a href="/Autofac-AOP/" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
     </li>
-  
     <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\ioc-di\" rel="bookmark">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></div>
-      
+      <div class="popular-posts-title"><a href="/Autofac-introduce/" rel="bookmark">Autofac (IOC)容器介紹</a></div>
     </li>
-  
     <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\awesomeproxy-net\" rel="bookmark">【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</a></div>
-      
+      <div class="popular-posts-title"><a href="/acid/" rel="bookmark">ACID</a></div>
     </li>
-  
   </ul>
-
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-        <div class="post-tags">
-          
-            <a href="/tags/C/" rel="tag"># C#</a>
-          
-            <a href="/tags/IOC/" rel="tag"># IOC</a>
-          
-            <a href="/tags/Autofac/" rel="tag"># Autofac</a>
-          
-            <a href="/tags/AOP/" rel="tag"># AOP</a>
-          
-            <a href="/tags/Lock/" rel="tag"># Lock</a>
-          
-        </div>
-      
-
-      
-      
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/heap-stack-globle/" rel="next" title=".Net 三種區塊記憶體位置 Heap , Stack , Globle??">
-                <i class="fa fa-chevron-left"></i> .Net 三種區塊記憶體位置 Heap , Stack , Globle??
-              </a>
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/sqlquerystress-intro/" rel="prev" title="資料庫壓測好工具-SQLQueryStress">
-                資料庫壓測好工具-SQLQueryStress <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
-      
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-  </div>
-  <br>
-  <div style="text-align: center;">
+<div style="text-align: center;">
     如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
 </div>
 
 <img src="https://i.imgur.com/1D2UpQk.png">
 
 
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C#</a>
+              <a href="/tags/IOC/" rel="tag"># IOC</a>
+              <a href="/tags/Autofac/" rel="tag"># Autofac</a>
+              <a href="/tags/AOP/" rel="tag"># AOP</a>
+              <a href="/tags/Lock/" rel="tag"># Lock</a>
           </div>
-          
 
-  
-    <div class="comments" id="comments">
-      <div id="disqus_thread">
-        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
-      </div>
-    </div>
-
-  
-
-
-
-        </div>
         
-          
-  
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/aop-lock-mechanism/" rel="prev" title="AOP Lock Architecture">
+      <i class="fa fa-chevron-left"></i> AOP Lock Architecture
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/sqlquerystress-intro/" rel="next" title="資料庫壓測好工具-SQLQueryStress">
+      資料庫壓測好工具-SQLQueryStress <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
   </div>
 
-  <aside id="sidebar" class="sidebar">
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
     <div class="sidebar-inner">
 
-      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
 
-      
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            Table of Contents
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            Overview
-          </li>
-        </ul>
-      
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%9C%A8%E6%AD%A4%E6%A1%86%E6%9E%B6%E4%BD%BF%E7%94%A8Lock%E6%A9%9F%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">如何在此框架使用Lock機制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%A7%8B%E8%A7%A3%E8%AA%AA"><span class="nav-number">3.</span> <span class="nav-text">架構解說</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LockAttribute"><span class="nav-number">3.1.</span> <span class="nav-text">LockAttribute</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LockerInterceptor"><span class="nav-number">3.2.</span> <span class="nav-text">LockerInterceptor</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SampleCode"><span class="nav-number">4.</span> <span class="nav-text">SampleCode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
 
       <div class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-            
-              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
-            
-              <p class="site-author-name" itemprop="name">Daniel Shih</p>
-              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
-          </div>
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">121</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https://github.com/isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https://www.facebook.com/profile.php?id=100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https://stackoverflow.com/users/5176071/d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
 
-          
-            <nav class="site-state motion-element">
-              
-                <div class="site-state-item site-state-posts">
-                
-                  <a href="/archives/">
-                
-                    <span class="site-state-item-count">117</span>
-                    <span class="site-state-item-name">posts</span>
-                  </a>
-                </div>
-              
 
-              
-                
-                
-                <div class="site-state-item site-state-categories">
-                  
-                    
-                      <a href="/categories/">
-                    
-                  
-                    
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                    <span class="site-state-item-count">52</span>
-                    <span class="site-state-item-name">categories</span>
-                  </a>
-                </div>
-              
 
-              
-                
-                
-                <div class="site-state-item site-state-tags">
-                  
-                    
-                      <a href="/tags/">
-                    
-                  
-                    
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                    <span class="site-state-item-count">121</span>
-                    <span class="site-state-item-name">tags</span>
-                  </a>
-                </div>
-              
-            </nav>
-          
-
-          
-
-          
-
-          
-            <div class="links-of-author motion-element">
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
-                </span>
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
-                </span>
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
-                </span>
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
-                </span>
-              
-            </div>
-          
-
-          
-
-          
-          
-
-          
-            
-          
-          
-<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
 
 <div>
 <a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
@@ -1323,108 +498,46 @@ Certifications：
 
 <div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
 
-
-        </div>
       </div>
-
-      
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#如何在此框架使用Lock機制"><span class="nav-number">2.</span> <span class="nav-text">如何在此框架使用Lock機制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#架構解說"><span class="nav-number">3.</span> <span class="nav-text">架構解說</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#LockAttribute"><span class="nav-number">3.1.</span> <span class="nav-text">LockAttribute</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LockerInterceptor"><span class="nav-number">3.2.</span> <span class="nav-text">LockerInterceptor</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SampleCode"><span class="nav-number">4.</span> <span class="nav-text">SampleCode</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
-      
-
-      
 
     </div>
   </aside>
-  
+  <div id="sidebar-dimmer"></div>
 
 
-        
       </div>
     </main>
 
-    <footer id="footer" class="footer">
+    <footer class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
-  <span class="with-love" id="animate">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
-
-  
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    
-    <span title="Symbols count total">546k</span>
-  
-
-  
+    <span title="Symbols count total">869k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    
-    <span title="Reading time total">16:33</span>
-  
+    <span title="Reading time total">13:10</span>
 </div>
-
-
-
-  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.9.0</div>
-
-
-
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
   <span class="post-meta-divider">|</span>
-
-
-
-  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
-
-
-
+  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
 
         
-<div class="busuanzi-count">
-  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-  
-    <span class="post-meta-item-icon">
-      <i class="fa fa-user"></i>
-    </span>
-    <span class="site-uv" title="Total Visitors">
-      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
-    </span>
-  
-
-  
-    <span class="post-meta-divider">|</span>
-  
-
-  
-    <span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-    </span>
-    <span class="site-pv" title="Total Views">
-      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
-    </span>
-  
-</div>
 
 
 
@@ -1433,32 +546,30 @@ Certifications：
 
 
 
-
-        
       </div>
     </footer>
-
-    
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-        
-      </div>
-    
-
-    
-
-    
-
-    
   </div>
 
   
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
 
-<script>
-  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
-    window.Promise = null;
-  }
-</script>
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
 
 
 
@@ -1474,548 +585,49 @@ Certifications：
 
 
   
-    
-    
-  
-  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
-
-
-
-
-
-
-
-
-
-
 
   
-
-
-
-  
-  <script src="/lib/jquery/index.js?v=2.1.3"></script>
-
-  
-  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-
-  
-  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-
-  
-  <script src="/lib/reading_progress/reading_progress.js"></script>
-
-
-  
-
-
-  <script src="/js/utils.js?v=7.1.1"></script>
-
-  <script src="/js/motion.js?v=7.1.1"></script>
-
-
-
-  
-  
-
-
-  <script src="/js/affix.js?v=7.1.1"></script>
-
-  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
-
-
-
-
-  
-  <script src="/js/scrollspy.js?v=7.1.1"></script>
-<script src="/js/post-details.js?v=7.1.1"></script>
-
-<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'UA-141257985-1');
-</script>
-
-
-  
-
-
-  <script src="/js/next-boot.js?v=7.1.1"></script>
-
-
-  
-
-  
-  <script src="/js/exturl.js?v=7.1.1"></script>
-
-
-  
-
-  
-  
-  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
-
-
-<script>
-  var disqus_config = function() {
-    this.page.url = "https://isdaniel.github.io/aop-lock-mechanism/";
-    this.page.identifier = "aop-lock-mechanism/";
-    this.page.title = 'AOP Lock Architecture';
-    };
-  function loadComments() {
-    var d = document, s = d.createElement('script');
-    s.src = 'https://danielshih.disqus.com/embed.js';
-    s.setAttribute('data-timestamp', '' + +new Date());
-    (d.head || d.body).appendChild(s);
-  }
-  
-    $(function() {
-      var offsetTop = $('#comments').offset().top - $(window).height();
-      if (offsetTop <= 0) {
-        // load directly when there's no a scrollbar
-        loadComments();
-      } else {
-        $(window).on('scroll.disqus_scroll', function() {
-          // offsetTop may changes because of manually resizing browser window or lazy loading images.
-          var offsetTop = $('#comments').offset().top - $(window).height();
-          var scrollTop = $(window).scrollTop();
-
-          // pre-load comments a bit? (margin or anything else)
-          if (offsetTop - scrollTop < 60) {
-            $(window).off('.disqus_scroll');
-            loadComments();
-          }
-        });
-      }
-    });
-  
-</script>
-
-
-
-
-
-  
-    
-
-<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-
-
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
-
-
-
-<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
-
-<script>
-  var gitalk = new Gitalk({
-    clientID: '',
-    clientSecret: '',
-    repo: '',
-    owner: '',
-    admin: [''],
-    id: md5(location.pathname),
-    
-      language: window.navigator.language || window.navigator.userLanguage,
-    
-    distractionFreeMode: 'true'
-  });
-  gitalk.render('gitalk-container');
-</script>
-
-  
-
-
-  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
   <script>
-    // Popup Window;
-    var isfetched = false;
-    var isXml = true;
-    // Search DB path;
-    var search_path = "search.xml";
-    if (search_path.length === 0) {
-      search_path = "search.xml";
-    } else if (/json$/i.test(search_path)) {
-      isXml = false;
-    }
-    var path = "/" + search_path;
-    // monitor main search box;
-
-    var onPopupClose = function (e) {
-      $('.popup').hide();
-      $('#local-search-input').val('');
-      $('.search-result-list').remove();
-      $('#no-result').remove();
-      $(".local-search-pop-overlay").remove();
-      $('body').css('overflow', '');
-    }
-
-    function proceedsearch() {
-      $("body")
-        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
-        .css('overflow', 'hidden');
-      $('.search-popup-overlay').click(onPopupClose);
-      $('.popup').toggle();
-      var $localSearchInput = $('#local-search-input');
-      $localSearchInput.attr("autocapitalize", "none");
-      $localSearchInput.attr("autocorrect", "off");
-      $localSearchInput.focus();
-    }
-
-    // search function;
-    var searchFunc = function(path, search_id, content_id) {
-      'use strict';
-
-      // start loading animation
-      $("body")
-        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
-          '<div id="search-loading-icon">' +
-          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
-          '</div>' +
-          '</div>')
-        .css('overflow', 'hidden');
-      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
-
-      
-
-      $.ajax({
-        url: path,
-        dataType: isXml ? "xml" : "json",
-        async: true,
-        success: function(res) {
-          // get the contents from search data
-          isfetched = true;
-          $('.popup').detach().appendTo('.header-inner');
-          var datas = isXml ? $("entry", res).map(function() {
-            return {
-              title: $("title", this).text(),
-              content: $("content",this).text(),
-              url: $("url" , this).text()
-            };
-          }).get() : res;
-          var input = document.getElementById(search_id);
-          var resultContent = document.getElementById(content_id);
-          var inputEventFunction = function() {
-            var searchText = input.value.trim().toLowerCase();
-            var keywords = searchText.split(/[\s\-]+/);
-            if (keywords.length > 1) {
-              keywords.push(searchText);
-            }
-            var resultItems = [];
-            if (searchText.length > 0) {
-              // perform local searching
-              datas.forEach(function(data) {
-                var isMatch = false;
-                var hitCount = 0;
-                var searchTextCount = 0;
-                var title = data.title.trim();
-                var titleInLowerCase = title.toLowerCase();
-                var content = data.content.trim().replace(/<[^>]+>/g,"");
-                
-                var contentInLowerCase = content.toLowerCase();
-                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
-                var indexOfTitle = [];
-                var indexOfContent = [];
-                // only match articles with not empty titles
-                if(title != '') {
-                  keywords.forEach(function(keyword) {
-                    function getIndexByWord(word, text, caseSensitive) {
-                      var wordLen = word.length;
-                      if (wordLen === 0) {
-                        return [];
-                      }
-                      var startPosition = 0, position = [], index = [];
-                      if (!caseSensitive) {
-                        text = text.toLowerCase();
-                        word = word.toLowerCase();
-                      }
-                      while ((position = text.indexOf(word, startPosition)) > -1) {
-                        index.push({position: position, word: word});
-                        startPosition = position + wordLen;
-                      }
-                      return index;
-                    }
-
-                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
-                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
-                  });
-                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
-                    isMatch = true;
-                    hitCount = indexOfTitle.length + indexOfContent.length;
-                  }
-                }
-
-                // show search results
-
-                if (isMatch) {
-                  // sort index by position of keyword
-
-                  [indexOfTitle, indexOfContent].forEach(function (index) {
-                    index.sort(function (itemLeft, itemRight) {
-                      if (itemRight.position !== itemLeft.position) {
-                        return itemRight.position - itemLeft.position;
-                      } else {
-                        return itemLeft.word.length - itemRight.word.length;
-                      }
-                    });
-                  });
-
-                  // merge hits into slices
-
-                  function mergeIntoSlice(text, start, end, index) {
-                    var item = index[index.length - 1];
-                    var position = item.position;
-                    var word = item.word;
-                    var hits = [];
-                    var searchTextCountInSlice = 0;
-                    while (position + word.length <= end && index.length != 0) {
-                      if (word === searchText) {
-                        searchTextCountInSlice++;
-                      }
-                      hits.push({position: position, length: word.length});
-                      var wordEnd = position + word.length;
-
-                      // move to next position of hit
-
-                      index.pop();
-                      while (index.length != 0) {
-                        item = index[index.length - 1];
-                        position = item.position;
-                        word = item.word;
-                        if (wordEnd > position) {
-                          index.pop();
-                        } else {
-                          break;
-                        }
-                      }
-                    }
-                    searchTextCount += searchTextCountInSlice;
-                    return {
-                      hits: hits,
-                      start: start,
-                      end: end,
-                      searchTextCount: searchTextCountInSlice
-                    };
-                  }
-
-                  var slicesOfTitle = [];
-                  if (indexOfTitle.length != 0) {
-                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
-                  }
-
-                  var slicesOfContent = [];
-                  while (indexOfContent.length != 0) {
-                    var item = indexOfContent[indexOfContent.length - 1];
-                    var position = item.position;
-                    var word = item.word;
-                    // cut out 100 characters
-                    var start = position - 20;
-                    var end = position + 80;
-                    if(start < 0){
-                      start = 0;
-                    }
-                    if (end < position + word.length) {
-                      end = position + word.length;
-                    }
-                    if(end > content.length){
-                      end = content.length;
-                    }
-                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
-                  }
-
-                  // sort slices in content by search text's count and hits' count
-
-                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
-                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
-                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
-                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
-                      return sliceRight.hits.length - sliceLeft.hits.length;
-                    } else {
-                      return sliceLeft.start - sliceRight.start;
-                    }
-                  });
-
-                  // select top N slices in content
-
-                  var upperBound = parseInt('1');
-                  if (upperBound >= 0) {
-                    slicesOfContent = slicesOfContent.slice(0, upperBound);
-                  }
-
-                  // highlight title and content
-
-                  function highlightKeyword(text, slice) {
-                    var result = '';
-                    var prevEnd = slice.start;
-                    slice.hits.forEach(function (hit) {
-                      result += text.substring(prevEnd, hit.position);
-                      var end = hit.position + hit.length;
-                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
-                      prevEnd = end;
-                    });
-                    result += text.substring(prevEnd, slice.end);
-                    return result;
-                  }
-
-                  var resultItem = '';
-
-                  if (slicesOfTitle.length != 0) {
-                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
-                  } else {
-                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
-                  }
-
-                  slicesOfContent.forEach(function (slice) {
-                    resultItem += "<a href='" + articleUrl + "'>" +
-                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
-                      "...</p>" + "</a>";
-                  });
-
-                  resultItem += "</li>";
-                  resultItems.push({
-                    item: resultItem,
-                    searchTextCount: searchTextCount,
-                    hitCount: hitCount,
-                    id: resultItems.length
-                  });
-                }
-              })
-            };
-            if (keywords.length === 1 && keywords[0] === "") {
-              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
-            } else if (resultItems.length === 0) {
-              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
-            } else {
-              resultItems.sort(function (resultLeft, resultRight) {
-                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
-                  return resultRight.searchTextCount - resultLeft.searchTextCount;
-                } else if (resultLeft.hitCount !== resultRight.hitCount) {
-                  return resultRight.hitCount - resultLeft.hitCount;
-                } else {
-                  return resultRight.id - resultLeft.id;
-                }
-              });
-              var searchResultList = '<ul class=\"search-result-list\">';
-              resultItems.forEach(function (result) {
-                searchResultList += result.item;
-              })
-              searchResultList += "</ul>";
-              resultContent.innerHTML = searchResultList;
-            }
-          }
-
-          if ('auto' === 'auto') {
-            input.addEventListener('input', inputEventFunction);
-          } else {
-            $('.search-icon').click(inputEventFunction);
-            input.addEventListener('keypress', function (event) {
-              if (event.keyCode === 13) {
-                inputEventFunction();
-              }
-            });
-          }
-
-          // remove loading animation
-          $(".local-search-pop-overlay").remove();
-          $('body').css('overflow', '');
-
-          proceedsearch();
-        }
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/AOP-Lock-Mechanism/',]
       });
-    }
-
-    // handle and trigger popup window;
-    $('.popup-trigger').click(function(e) {
-      e.stopPropagation();
-      if (isfetched === false) {
-        searchFunc(path, 'local-search-input', 'local-search-result');
-      } else {
-        proceedsearch();
-      };
-    });
-
-    $('.popup-btn-close').click(onPopupClose);
-    $('.popup').click(function(e){
-      e.stopPropagation();
-    });
-    $(document).on('keyup', function (event) {
-      var shouldDismissSearchPopup = event.which === 27 &&
-        $('.search-popup').is(':visible');
-      if (shouldDismissSearchPopup) {
-        onPopupClose();
-      }
-    });
+      });
   </script>
 
-
-
-
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 <script>
-  $('.highlight').not('.gist .highlight').each(function(i, e) {
-    var $wrap = $('<div>').addClass('highlight-wrap');
-    $(e).after($wrap);
-    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
-      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
-        return $(e).text();
-      }).toArray().join('\n');
-      var ta = document.createElement('textarea');
-      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
-      ta.style.top = yPosition + 'px'; // Prevent page scroll
-      ta.style.position = 'absolute';
-      ta.style.opacity = '0';
-      ta.readOnly = true;
-      ta.value = code;
-      document.body.appendChild(ta);
-      ta.select();
-      ta.setSelectionRange(0, code.length);
-      ta.readOnly = false;
-      var result = document.execCommand('copy');
-      
-        if (result) $(this).text('Copied');
-        else $(this).text('Copy failed');
-      
-      ta.blur(); // For iOS
-      $(this).blur();
-    })).on('mouseleave', function(e) {
-      var $b = $(this).find('.copy-btn');
-      setTimeout(function() {
-        $b.text('Copy');
-      }, 300);
-    }).append(e);
-  })
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
 </script>
-
-
-  
-
-  
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/AOP-Lock-Mechanism/";
+    this.page.identifier = "AOP-Lock-Mechanism/";
+    this.page.title = "AOP Lock Architecture";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
 
 </body>
 </html>

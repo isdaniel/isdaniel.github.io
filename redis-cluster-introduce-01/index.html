@@ -1,176 +1,50 @@
 <!DOCTYPE html>
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-<html class="theme-next gemini use-motion" lang="zh-tw">
-<head><meta name="generator" content="Hexo 3.9.0">
-  
+<html lang="zh-tw">
+<head>
   <meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
 
 
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
-
-  
-  
-    
-    
-  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
-  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-  
-  
-
-  
-    
-    
-  
-
-  
-
-  
-
-  
-    
-      
-    
-
-    
-  
-
-  
-    
-      
-    
-
-    
-  
-
-  
-    
-    
-    <link rel="stylesheet" href="/fonts/css?family=Lato:300,300italic,400,400italic,700,700italic|Georgia:300,300italic,400,400italic,700,700italic|PT Mono:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext">
-  
-
-
-
-
-
-
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
-
-<link rel="stylesheet" href="/css/main.css?v=7.1.1">
-
-
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
-
-
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
-
-
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
-
-
-  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
-
-
-
-
-
-
-
-<script id="hexo.configurations">
-  var NexT = window.NexT || {};
-  var CONFIG = {
-    root: '/',
-    scheme: 'Gemini',
-    version: '7.1.1',
-    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
-    back2top: true,
-    back2top_sidebar: false,
-    fancybox: false,
-    fastclick: false,
-    lazyload: false,
-    tabs: true,
-    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
-    algolia: {
-      applicationID: '',
-      apiKey: '',
-      indexName: '',
-      hits: {"per_page":10},
-      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
-    }
-  };
-</script>
-
-
-  
-
-
-
-
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
 
   <meta name="description" content="前言在巨量資料下，資料庫合理的分片(DB sharding)可以幫助我們承受更高量的資料量(前提Index還有設定都調教到很好在考慮 sharding) 而在 Redis 世界裡也有 redis cluster 來做 sharding 事情，今天就來跟大家分享介紹 我使用是 bitnami redis-cluster 這個 Image 來做這次 Poc 此案例是 3 master - 3 slav">
-<meta name="keywords" content="Redis,Cluster">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis Cluster 介紹">
 <meta property="og:url" content="https://isdaniel.github.io/redis-cluster-introduce-01/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
 <meta property="og:description" content="前言在巨量資料下，資料庫合理的分片(DB sharding)可以幫助我們承受更高量的資料量(前提Index還有設定都調教到很好在考慮 sharding) 而在 Redis 世界裡也有 redis cluster 來做 sharding 事情，今天就來跟大家分享介紹 我使用是 bitnami redis-cluster 這個 Image 來做這次 Poc 此案例是 3 master - 3 slav">
-<meta property="og:locale" content="zh-tw">
+<meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/8EUN7Vu.png">
-<meta property="og:updated_time" content="2024-12-22T13:36:55.514Z">
+<meta property="article:published_time" content="2022-01-12T08:12:43.000Z">
+<meta property="article:modified_time" content="2024-12-22T23:54:47.728Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="Cluster">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Redis Cluster 介紹">
-<meta name="twitter:description" content="前言在巨量資料下，資料庫合理的分片(DB sharding)可以幫助我們承受更高量的資料量(前提Index還有設定都調教到很好在考慮 sharding) 而在 Redis 世界裡也有 redis cluster 來做 sharding 事情，今天就來跟大家分享介紹 我使用是 bitnami redis-cluster 這個 Image 來做這次 Poc 此案例是 3 master - 3 slav">
 <meta name="twitter:image" content="https://i.imgur.com/8EUN7Vu.png">
 
+<link rel="canonical" href="https://isdaniel.github.io/redis-cluster-introduce-01/">
 
 
-
-
-  
-  
-  <link rel="canonical" href="https://isdaniel.github.io/redis-cluster-introduce-01/">
-
-
-
-<script id="page.configurations">
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
+    isHome : false,
+    isPost : true
   };
 </script>
 
@@ -182,15 +56,8 @@
 
 
 
-
-
-
-
-
-
   <noscript>
   <style>
-  .use-motion .motion-element,
   .use-motion .brand,
   .use-motion .menu-item,
   .sidebar-inner,
@@ -199,9 +66,8 @@
   .use-motion .comments,
   .use-motion .post-header,
   .use-motion .post-body,
-  .use-motion .collection-title { opacity: initial; }
+  .use-motion .collection-header { opacity: initial; }
 
-  .use-motion .logo,
   .use-motion .site-title,
   .use-motion .site-subtitle {
     opacity: initial;
@@ -213,406 +79,179 @@
   </style>
 </noscript>
 
-  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="zh-tw">
-
-  
-  
-    
-  
-
-  <div class="container sidebar-position-left page-post-detail">
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
     <div class="headband"></div>
 
-    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-wrapper">
-  <div class="site-meta">
-    
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
 
-    <div class="custom-logo-site-title">
+  <div class="site-meta">
+
+    <div>
       <a href="/" class="brand" rel="start">
         <span class="logo-line-before"><i></i></span>
         <span class="site-title">石頭的coding之路</span>
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-    
-      
-        <h1 class="site-subtitle" itemprop="description">Hello World</h1>
-      
-    
-    
+        <p class="site-subtitle">Hello World</p>
   </div>
 
-  <div class="site-nav-toggle">
-    <button aria-label="Toggle navigation bar">
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-      <span class="btn-bar"></span>
-    </button>
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
   </div>
 </div>
-
 
 
 <nav class="site-nav">
   
-    <ul id="menu" class="menu">
-      
-        
-        
-        
-          
-          <li class="menu-item menu-item-home">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>Home</a>
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-about">
+        <li class="menu-item menu-item-about">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>About</a>
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-course">
+        <li class="menu-item menu-item-course">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/Course/" rel="section"><i class="menu-item-icon fa fa-fw fa-book"></i> <br>Course</a>
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-tags">
+        <li class="menu-item menu-item-tags">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>Tags<span class="badge">121</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">121</span></a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-categories">
+        <li class="menu-item menu-item-categories">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>Categories<span class="badge">52</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">52</span></a>
 
   </li>
-        
-        
-        
-          
-          <li class="menu-item menu-item-archives">
+        <li class="menu-item menu-item-archives">
 
-    
-    
-    
-      
-    
-
-    
-      
-    
-
-    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>Archives<span class="badge">117</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">179</span></a>
 
   </li>
+  </ul>
 
-      
-      
-        <li class="menu-item menu-item-search">
-          
-            <a href="javascript:;" class="popup-trigger">
-          
-            
-              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>Search</a>
-        </li>
-      
-    </ul>
-  
-
-  
-
-  
-    <div class="site-search">
-      
-  <div class="popup search-popup local-search-popup">
-  <div class="local-search-header clearfix">
-    <span class="search-icon">
-      <i class="fa fa-search"></i>
-    </span>
-    <span class="popup-btn-close">
-      <i class="fa fa-times-circle"></i>
-    </span>
-    <div class="local-search-input-wrapper">
-      <input autocomplete="off" placeholder="Searching..." spellcheck="false" type="text" id="local-search-input">
-    </div>
-  </div>
-  <div id="local-search-result"></div>
-</div>
-
-
-
-    </div>
-  
 </nav>
-
-
-
-  
-
-
-
 </div>
     </header>
 
     
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
 
 
-    <main id="main" class="main">
+    <main class="main">
       <div class="main-inner">
         <div class="content-wrap">
           
+
+          <div class="content">
             
 
-
-          
-          <div id="content" class="content">
-            
-
-  <div id="posts" class="posts-expand">
-    
-
-  
-
+  <div class="posts-expand">
+      
   
   
-  
-
-  
-    <div class="reading-progress-bar"></div>
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/redis-cluster-introduce-01/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
       <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
-
-    
       <header class="post-header">
-
-        
-        
-          <h2 class="post-title" itemprop="name headline">Redis Cluster 介紹
-
-              
-            
-          </h2>
-        
+        <h1 class="post-title" itemprop="name headline">
+          Redis Cluster 介紹
+        </h1>
 
         <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
+            <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-calendar-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-
-              
-                
-              
+              <span class="post-meta-item-text">Posted on</span>
 
               <time title="Created: 2022-01-12 08:12:43" itemprop="dateCreated datePublished" datetime="2022-01-12T08:12:43+00:00">2022-01-12</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
+            </span>
+              <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2024-12-22 13:36:55" itemprop="dateModified" datetime="2024-12-22T13:36:55+00:00">2024-12-22</time>
-              
-            
-          </span>
-
-          
-            <span class="post-category">
-            
-              <span class="post-meta-divider">|</span>
-            
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2024-12-22 23:54:47" itemprop="dateModified" datetime="2024-12-22T23:54:47+00:00">2024-12-22</time>
+              </span>
+            <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="fa fa-folder-o"></i>
               </span>
-              
-                <span class="post-meta-item-text">In</span>
-              
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a></span>
-
-                
-                
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
                   , 
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Redis/Cluster/" itemprop="url" rel="index"><span itemprop="name">Cluster</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-            
-            
-              
-              <span class="post-comments-count">
-                <span class="post-meta-divider">|</span>
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-comment-o"></i>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/Cluster/" itemprop="url" rel="index"><span itemprop="name">Cluster</span></a>
                 </span>
-            
-                <span class="post-meta-item-text">Comments: </span>
-                <a href="/redis-cluster-introduce-01/#comments" itemprop="discussionUrl">
-                  <span class="post-comments-count disqus-comment-count" data-disqus-identifier="redis-cluster-introduce-01/" itemprop="commentCount"></span>
-                </a>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/redis-cluster-introduce-01/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="redis-cluster-introduce-01/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
               </span>
-            
-          
-
-          
-          
-
-          
-            <span class="post-meta-divider">|</span>
-            <span class="post-meta-item-icon">
-            <i class="fa fa-eye"></i>
-             Views:  
-            <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>18k</span>
             </span>
-          
-
-          
-            <div class="post-symbolscount">
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-file-word-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Symbols count in article: </span>
-                
-                <span title="Symbols count in article">17k</span>
-              
-
-              
-                <span class="post-meta-divider">|</span>
-              
-
-              
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-clock-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Reading time &asymp;</span>
-                
-                <span title="Reading time">32 mins.</span>
-              
-            </div>
-          
-
-          
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>16 mins.</span>
+            </span>
 
         </div>
       </header>
-    
 
     
     
@@ -620,30 +259,18 @@
     <div class="post-body" itemprop="articleBody">
 
       
-      
         <div class="post-gallery" itemscope itemtype="http://schema.org/ImageGallery">
-          
-          
-            <div class="post-gallery-row">
-              <img src="https://i.imgur.com/8EUN7Vu.png" itemprop="contentUrl">
-            
-          
-
-          
-          </div>
+            <img src="https://i.imgur.com/8EUN7Vu.png" itemprop="contentUrl">
         </div>
-      
-
-      
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在巨量資料下，資料庫合理的分片(DB sharding)可以幫助我們承受更高量的資料量(前提Index還有設定都調教到很好在考慮 sharding)</p>
 <p>而在 Redis 世界裡也有 redis cluster 來做 sharding 事情，今天就來跟大家分享介紹</p>
-<p>我使用是 <span class="exturl" data-url="aHR0cHM6Ly9odWIuZG9ja2VyLmNvbS9yL2JpdG5hbWkvcmVkaXMtY2x1c3Rlci8=" title="https://hub.docker.com/r/bitnami/redis-cluster/">bitnami redis-cluster<i class="fa fa-external-link"></i></span> 這個 Image 來做這次 Poc</p>
+<p>我使用是 <a href="https://hub.docker.com/r/bitnami/redis-cluster/">bitnami redis-cluster</a> 這個 Image 來做這次 Poc</p>
 <p>此案例是 3 master - 3 slave Redis server 範例</p>
-<h2 id="建立-Redis-Cluster"><a href="#建立-Redis-Cluster" class="headerlink" title="建立 Redis Cluster"></a>建立 Redis Cluster</h2><h3 id="How-to-Use"><a href="#How-to-Use" class="headerlink" title="How to Use"></a>How to Use</h3><div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="EBNF"><figure class="iseeu highlight /ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">docker-compose up -d</span></span><br></pre></td></tr></table></figure></div>
+<h2 id="建立-Redis-Cluster"><a href="#建立-Redis-Cluster" class="headerlink" title="建立 Redis Cluster"></a>建立 Redis Cluster</h2><h3 id="How-to-Use"><a href="#How-to-Use" class="headerlink" title="How to Use"></a>How to Use</h3><figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">docker-compose up -d</span></span><br></pre></td></tr></table></figure>
 <p>跑完之後就會出現 6 台 Redis Container，如下表</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ docker ps</span><br><span class="line">CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS          PORTS                                       NAMES</span><br><span class="line"><span class="number">1</span>a0c740cbb96   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">31</span> seconds ago   Up <span class="number">27</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-5</span>_1</span><br><span class="line"><span class="number">1651</span>a81a286f   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">30</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-2</span>_1</span><br><span class="line"><span class="number">5</span>d93edfc55e6   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">31</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-4</span>_1</span><br><span class="line"><span class="number">8</span>ab5bbbb7364   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">29</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-3</span>_1</span><br><span class="line"><span class="number">8</span>edf90bed3fb   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">29</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-1</span>_1</span><br><span class="line">e11ac0ec56aa   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">37</span> seconds ago   Up <span class="number">30</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-0</span>_1</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ docker ps</span><br><span class="line">CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS          PORTS                                       NAMES</span><br><span class="line">1a0c740cbb96   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   31 seconds ago   Up 27 seconds   0.0.0.0:8105-&gt;6379/tcp, :::8105-&gt;6379/tcp   rediscluster_redis-node-5_1</span><br><span class="line">1651a81a286f   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 30 seconds   0.0.0.0:8102-&gt;6379/tcp, :::8102-&gt;6379/tcp   rediscluster_redis-node-2_1</span><br><span class="line">5d93edfc55e6   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 31 seconds   0.0.0.0:8104-&gt;6379/tcp, :::8104-&gt;6379/tcp   rediscluster_redis-node-4_1</span><br><span class="line">8ab5bbbb7364   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 29 seconds   0.0.0.0:8103-&gt;6379/tcp, :::8103-&gt;6379/tcp   rediscluster_redis-node-3_1</span><br><span class="line">8edf90bed3fb   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 29 seconds   0.0.0.0:8101-&gt;6379/tcp, :::8101-&gt;6379/tcp   rediscluster_redis-node-1_1</span><br><span class="line">e11ac0ec56aa   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 30 seconds   0.0.0.0:8100-&gt;6379/tcp, :::8100-&gt;6379/tcp   rediscluster_redis-node-0_1</span><br></pre></td></tr></table></figure>
 <h3 id="查看-Redis-Cluster-架構"><a href="#查看-Redis-Cluster-架構" class="headerlink" title="查看 Redis Cluster 架構"></a>查看 Redis Cluster 架構</h3><p>我們進入 <code>rediscluster_redis-node-0_1</code> 這台Container 利用 redis-cli 輸入 <code>CLUSTER INFO</code> 可以查看目前 Cluster 基本狀態</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">$ docker exec -it rediscluster_redis-node<span class="number">-0</span>_1 bash</span><br><span class="line">/$ redis-cli -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">6379</span>&gt; CLUSTER INFO</span><br><span class="line">cluster_state:ok</span><br><span class="line">cluster_slots_assigned:<span class="number">16384</span></span><br><span class="line">cluster_slots_ok:<span class="number">16384</span></span><br><span class="line">cluster_slots_pfail:<span class="number">0</span></span><br><span class="line">cluster_slots_fail:<span class="number">0</span></span><br><span class="line">cluster_known_nodes:<span class="number">6</span></span><br><span class="line">cluster_size:<span class="number">3</span></span><br><span class="line">cluster_current_epoch:<span class="number">6</span></span><br><span class="line">cluster_my_epoch:<span class="number">1</span></span><br><span class="line">cluster_stats_messages_ping_sent:<span class="number">1723</span></span><br><span class="line">cluster_stats_messages_pong_sent:<span class="number">1833</span></span><br><span class="line">cluster_stats_messages_sent:<span class="number">3556</span></span><br><span class="line">cluster_stats_messages_ping_received:<span class="number">1828</span></span><br><span class="line">cluster_stats_messages_pong_received:<span class="number">1723</span></span><br><span class="line">cluster_stats_messages_meet_received:<span class="number">5</span></span><br><span class="line">cluster_stats_messages_received:<span class="number">3556</span></span><br></pre></td></tr></table></figure></div>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">$ docker exec -it rediscluster_redis-node<span class="number">-0</span>_1 bash</span><br><span class="line">/$ redis-<span class="keyword">cli</span> -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">6379</span>&gt; CLUSTER INFO</span><br><span class="line"><span class="symbol">cluster_state:</span>ok</span><br><span class="line"><span class="symbol">cluster_slots_assigned:</span><span class="number">16384</span></span><br><span class="line"><span class="symbol">cluster_slots_ok:</span><span class="number">16384</span></span><br><span class="line"><span class="symbol">cluster_slots_pfail:</span><span class="number">0</span></span><br><span class="line"><span class="symbol">cluster_slots_fail:</span><span class="number">0</span></span><br><span class="line"><span class="symbol">cluster_known_nodes:</span><span class="number">6</span></span><br><span class="line"><span class="symbol">cluster_size:</span><span class="number">3</span></span><br><span class="line"><span class="symbol">cluster_current_epoch:</span><span class="number">6</span></span><br><span class="line"><span class="symbol">cluster_my_epoch:</span><span class="number">1</span></span><br><span class="line"><span class="symbol">cluster_stats_messages_ping_sent:</span><span class="number">1723</span></span><br><span class="line"><span class="symbol">cluster_stats_messages_pong_sent:</span><span class="number">1833</span></span><br><span class="line"><span class="symbol">cluster_stats_messages_sent:</span><span class="number">3556</span></span><br><span class="line"><span class="symbol">cluster_stats_messages_ping_received:</span><span class="number">1828</span></span><br><span class="line"><span class="symbol">cluster_stats_messages_pong_received:</span><span class="number">1723</span></span><br><span class="line"><span class="symbol">cluster_stats_messages_meet_received:</span><span class="number">5</span></span><br><span class="line"><span class="symbol">cluster_stats_messages_received:</span><span class="number">3556</span></span><br></pre></td></tr></table></figure>
 <blockquote>
 <p>本篇我 redis password 統一使用 <code>redisCluster</code> 所以進入 redis 操作之前記得輸入 <code>-a</code> 跟密碼</p>
 </blockquote>
@@ -655,11 +282,11 @@
 <li>cluster_slots_assigned</li>
 </ul>
 <p>代表目前 Cluster 啟動狀態OK，再來我們利用 <code>--cluster check</code> 了解該 Redis Server Cluster 中 master-slave 跟各節點對應關係</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster check 127.0.0.1:6379 -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster check 127.0.0.1:6379 -a redisCluster</span><br></pre></td></tr></table></figure>
 <p>結果如下</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 0 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 0 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 0 keys | 5461 slots | 1 slaves.</span><br><span class="line">[OK] 0 keys <span class="keyword">in</span> 3 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 0 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 0 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 0 keys | 5461 slots | 1 slaves.</span><br><span class="line">[OK] 0 keys <span class="keyword">in</span> 3 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure>
 <p>依照上面資訊我們可以畫出架構如圖</p>
-<p><img src="https://i.imgur.com/0GiiHuE.png" alt></p>
+<p><img src="https://i.imgur.com/0GiiHuE.png" alt=""></p>
 <ul>
 <li><code>Master 1 =&gt; slave 1 = 172.22.0.2 =&gt; 172.22.0.3</code></li>
 <li><code>Master 2 =&gt; slave 2 = 172.22.0.5 =&gt; 172.22.0.7</code></li>
@@ -669,27 +296,27 @@
 <p>redis 幫我們分配 master 對應 slave 並沒有特別順序，所以你建立的跟我建立很可能不一樣</p>
 </blockquote>
 <p>我們可以在透過下面命令顯示 container 對應使用 ip</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ docker inspect -f <span class="string">'&#123;&#123;.Name&#125;&#125; - &#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;'</span> $(docker ps -q)</span><br><span class="line"></span><br><span class="line">/rediscluster_redis-node-5_1 - 172.22.0.7</span><br><span class="line">/rediscluster_redis-node-2_1 - 172.22.0.4</span><br><span class="line">/rediscluster_redis-node-4_1 - 172.22.0.3</span><br><span class="line">/rediscluster_redis-node-3_1 - 172.22.0.6</span><br><span class="line">/rediscluster_redis-node-1_1 - 172.22.0.5</span><br><span class="line">/rediscluster_redis-node-0_1 - 172.22.0.2</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ docker inspect -f <span class="string">&#x27;&#123;&#123;.Name&#125;&#125; - &#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;&#x27;</span> $(docker ps -q)</span><br><span class="line"></span><br><span class="line">/rediscluster_redis-node-5_1 - 172.22.0.7</span><br><span class="line">/rediscluster_redis-node-2_1 - 172.22.0.4</span><br><span class="line">/rediscluster_redis-node-4_1 - 172.22.0.3</span><br><span class="line">/rediscluster_redis-node-3_1 - 172.22.0.6</span><br><span class="line">/rediscluster_redis-node-1_1 - 172.22.0.5</span><br><span class="line">/rediscluster_redis-node-0_1 - 172.22.0.2</span><br></pre></td></tr></table></figure>
 <blockquote>
 <p>使用上面命令可以更好理解，Container Name之間對應關係</p>
 </blockquote>
 <h3 id="在-Redis-Clsuter-新增-key-注意事項"><a href="#在-Redis-Clsuter-新增-key-注意事項" class="headerlink" title="在 Redis Clsuter 新增 key 注意事項"></a>在 Redis Clsuter 新增 key 注意事項</h3><p>我進入其中一台 master container <code>rediscluster_redis-node-0_1</code></p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli -h 172.22.0.2 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k1 1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k2 1</span><br><span class="line">OK</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k3 1</span><br><span class="line">OK</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k4 1</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k5 1</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli -h 172.22.0.2 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k1 1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k2 1</span><br><span class="line">OK</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k3 1</span><br><span class="line">OK</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k4 1</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; <span class="built_in">set</span> k5 1</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure>
 <p>使用 <code>get</code> 拿資料時發現我們只拿的到 <code>k2,k3</code> 的資料</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.2:6379&gt; get k1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; get k2</span><br><span class="line"><span class="string">"1"</span></span><br><span class="line">172.22.0.2:6379&gt; get k3</span><br><span class="line"><span class="string">"1"</span></span><br><span class="line">172.22.0.2:6379&gt; get k4</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; get k5</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure></div>
-<p>我們可以透過 <code>CLUSTER KEYSLOT {key}</code> 來算出我們 key 算出來的 slot 數值</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k1</span><br><span class="line">(<span class="built_in">integer</span>) 12706</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k2</span><br><span class="line">(<span class="built_in">integer</span>) 449</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k3</span><br><span class="line">(<span class="built_in">integer</span>) 4576</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k4</span><br><span class="line">(<span class="built_in">integer</span>) 8455</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k5</span><br><span class="line">(<span class="built_in">integer</span>) 12582</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.2:6379&gt; get k1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; get k2</span><br><span class="line"><span class="string">&quot;1&quot;</span></span><br><span class="line">172.22.0.2:6379&gt; get k3</span><br><span class="line"><span class="string">&quot;1&quot;</span></span><br><span class="line">172.22.0.2:6379&gt; get k4</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; get k5</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure>
+<p>我們可以透過 <code>CLUSTER KEYSLOT &#123;key&#125;</code> 來算出我們 key 算出來的 slot 數值</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k1</span><br><span class="line">(<span class="built_in">integer</span>) 12706</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k2</span><br><span class="line">(<span class="built_in">integer</span>) 449</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k3</span><br><span class="line">(<span class="built_in">integer</span>) 4576</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k4</span><br><span class="line">(<span class="built_in">integer</span>) 8455</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k5</span><br><span class="line">(<span class="built_in">integer</span>) 12582</span><br></pre></td></tr></table></figure>
 <p>因為我們是進入 <code>172.22.0.2</code> 這台 Redis server 操作 我們只能操作屬於我們 slot 也就是介於 <code>[0-5460]</code> slot 資料，所以只有 <code>k2,k3</code> 符合</p>
-<p><img src="https://i.imgur.com/uRvqz9a.png" alt></p>
+<p><img src="https://i.imgur.com/uRvqz9a.png" alt=""></p>
 <p>那你會想這樣不就跟單機操作一樣，別急讓我來說怎麼正確使用 Redis Cluster</p>
 <p>我們先退出當前 redis-cli 操作 <code>redis-cli -h 172.22.0.2 -a redisCluster -c</code> 在此輸入並在最後多一個參數 <code>-c</code></p>
 <blockquote>
 <p><code>-c</code> 代表是要使用 cluster 操作</p>
 </blockquote>
-<p>在執行 <code>set {key} {value}</code> 命令，會發現已經沒有 error 但取而代之是 <code>Redirected to slot</code></p>
+<p>在執行 <code>set &#123;key&#125; &#123;value&#125;</code> 命令，會發現已經沒有 error 但取而代之是 <code>Redirected to slot</code></p>
 <p>那是因為 <code>-c</code> 模式下會幫我們在資料寫入前轉到該 slot redis server node 中在執行命令.</p>
 <p>所以能發現出現 <code>Redirected to slot</code> Redis server ip 就會改變</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli -h <span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span> -a redisCluster -c</span><br><span class="line"></span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k1 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">12706</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k2 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">449</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k3 <span class="number">1</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k4 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">8455</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.5</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.5</span>:<span class="number">6379</span>&gt; <span class="keyword">set</span> k5 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot [<span class="number">12582</span>] located at <span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight accesslog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli -h <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span> -a redisCluster -c</span><br><span class="line"></span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k1 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[12706]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.4:6379</span>&gt; set k2 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[449]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k3 <span class="number">1</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k4 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[8455]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.5:6379</span>&gt; set k5 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[12582]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
 <blockquote>
 <p>所以在操作 Redis cluster 記得要使用 cluster 操作模式</p>
 </blockquote>
@@ -705,38 +332,38 @@
 <blockquote>
 <p>因為在使用 docker-compose 啟動時已經幫我們建立一個 network 所以我們需要指定新加的兩個 Container 在 <code>rediscluster_default</code> 中這樣他們才可以訪問的到</p>
 </blockquote>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="DSCONFIG"><figure class="iseeu highlight /dsconfig"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">docker </span><span class="string">run </span>-d <span class="built_in">--name</span> <span class="string">redis-new-</span><span class="string">master01 </span><span class="built_in">--network</span> <span class="string">rediscluster_default </span><span class="built_in">--privileged=true</span>  -p <span class="string">8106:6379 </span><span class="string">redis:6.</span>2 <span class="built_in">--cluster-enabled</span> <span class="string">yes </span><span class="built_in">--appendonly</span> <span class="string">yes </span> <span class="built_in">--requirepass</span> <span class="string">"redisCluster"</span></span><br><span class="line"></span><br><span class="line"><span class="string">docker </span><span class="string">run </span>-d <span class="built_in">--name</span> <span class="string">redis-new-</span><span class="string">slave01 </span><span class="built_in">--network</span> <span class="string">rediscluster_default </span><span class="built_in">--privileged=true</span>  -p <span class="string">8107:6379 </span><span class="string">redis:6.</span>2 <span class="built_in">--cluster-enabled</span> <span class="string">yes </span><span class="built_in">--appendonly</span> <span class="string">yes </span> <span class="built_in">--requirepass</span> <span class="string">"redisCluster"</span></span><br></pre></td></tr></table></figure></div>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker run -d <span class="attr">--name</span> redis-new-master01 <span class="attr">--network</span> rediscluster_default <span class="attr">--privileged</span>=true  -<span class="selector-tag">p</span> <span class="number">8106</span>:<span class="number">6379</span> redis:<span class="number">6.2</span> <span class="attr">--cluster-enabled</span> yes <span class="attr">--appendonly</span> yes  <span class="attr">--requirepass</span> <span class="string">&quot;redisCluster&quot;</span></span><br><span class="line"></span><br><span class="line">docker run -d <span class="attr">--name</span> redis-new-slave01 <span class="attr">--network</span> rediscluster_default <span class="attr">--privileged</span>=true  -<span class="selector-tag">p</span> <span class="number">8107</span>:<span class="number">6379</span> redis:<span class="number">6.2</span> <span class="attr">--cluster-enabled</span> yes <span class="attr">--appendonly</span> yes  <span class="attr">--requirepass</span> <span class="string">&quot;redisCluster&quot;</span></span><br></pre></td></tr></table></figure>
 <p>在利用 <code>docker ps</code> 我們發現剛建立的兩個 Container 已經建立完畢</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS         PORTS                                       NAMES</span><br><span class="line">e2c017e625db   redis:<span class="number">6.2</span>                   <span class="string">"docker-entrypoint.s…"</span>   <span class="number">4</span> seconds ago    Up <span class="number">3</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8107</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8107</span>-&gt;<span class="number">6379</span>/tcp   redis-new-slave01</span><br><span class="line"><span class="number">0</span>bc645dc5ba8   redis:<span class="number">6.2</span>                   <span class="string">"docker-entrypoint.s…"</span>   <span class="number">11</span> seconds ago   Up <span class="number">9</span> seconds   <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8106</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8106</span>-&gt;<span class="number">6379</span>/tcp   redis-new-master01</span><br><span class="line"><span class="number">1</span>a0c740cbb96   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8105</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-5</span>_1</span><br><span class="line"><span class="number">1651</span>a81a286f   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8102</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-2</span>_1</span><br><span class="line"><span class="number">5</span>d93edfc55e6   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8104</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-4</span>_1</span><br><span class="line"><span class="number">8</span>ab5bbbb7364   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8103</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-3</span>_1</span><br><span class="line"><span class="number">8</span>edf90bed3fb   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8101</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-1</span>_1</span><br><span class="line">e11ac0ec56aa   bitnami/redis-cluster:<span class="number">6.2</span>   <span class="string">"/opt/bitnami/script…"</span>   <span class="number">3</span> hours ago      Up <span class="number">3</span> hours     <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>:<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp, :::<span class="number">8100</span>-&gt;<span class="number">6379</span>/tcp   rediscluster_redis-node<span class="number">-0</span>_1</span><br><span class="line"></span><br><span class="line">$ docker inspect -f <span class="string">'&#123;&#123;.Name&#125;&#125; - &#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;'</span> $(docker ps -q)</span><br><span class="line">/redis-new-slave01 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.9</span></span><br><span class="line">/redis-new-master01 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.8</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-5</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.7</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-2</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-4</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.3</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-3</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.6</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-1</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.5</span></span><br><span class="line">/rediscluster_redis-node<span class="number">-0</span>_1 - <span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span></span><br></pre></td></tr></table></figure></div>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS         PORTS                                       NAMES</span><br><span class="line">e2c017e625db   redis:6.2                   <span class="string">&quot;docker-entrypoint.s…&quot;</span>   4 seconds ago    Up 3 seconds   0.0.0.0:8107-&gt;6379/tcp, :::8107-&gt;6379/tcp   redis-new-slave01</span><br><span class="line">0bc645dc5ba8   redis:6.2                   <span class="string">&quot;docker-entrypoint.s…&quot;</span>   11 seconds ago   Up 9 seconds   0.0.0.0:8106-&gt;6379/tcp, :::8106-&gt;6379/tcp   redis-new-master01</span><br><span class="line">1a0c740cbb96   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   3 hours ago      Up 3 hours     0.0.0.0:8105-&gt;6379/tcp, :::8105-&gt;6379/tcp   rediscluster_redis-node-5_1</span><br><span class="line">1651a81a286f   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   3 hours ago      Up 3 hours     0.0.0.0:8102-&gt;6379/tcp, :::8102-&gt;6379/tcp   rediscluster_redis-node-2_1</span><br><span class="line">5d93edfc55e6   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   3 hours ago      Up 3 hours     0.0.0.0:8104-&gt;6379/tcp, :::8104-&gt;6379/tcp   rediscluster_redis-node-4_1</span><br><span class="line">8ab5bbbb7364   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   3 hours ago      Up 3 hours     0.0.0.0:8103-&gt;6379/tcp, :::8103-&gt;6379/tcp   rediscluster_redis-node-3_1</span><br><span class="line">8edf90bed3fb   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   3 hours ago      Up 3 hours     0.0.0.0:8101-&gt;6379/tcp, :::8101-&gt;6379/tcp   rediscluster_redis-node-1_1</span><br><span class="line">e11ac0ec56aa   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   3 hours ago      Up 3 hours     0.0.0.0:8100-&gt;6379/tcp, :::8100-&gt;6379/tcp   rediscluster_redis-node-0_1</span><br><span class="line"></span><br><span class="line">$ docker inspect -f <span class="string">&#x27;&#123;&#123;.Name&#125;&#125; - &#123;&#123;range .NetworkSettings.Networks&#125;&#125;&#123;&#123;.IPAddress&#125;&#125;&#123;&#123;end&#125;&#125;&#x27;</span> $(docker ps -q)</span><br><span class="line">/redis-new-slave01 - 172.22.0.9</span><br><span class="line">/redis-new-master01 - 172.22.0.8</span><br><span class="line">/rediscluster_redis-node-5_1 - 172.22.0.7</span><br><span class="line">/rediscluster_redis-node-2_1 - 172.22.0.4</span><br><span class="line">/rediscluster_redis-node-4_1 - 172.22.0.3</span><br><span class="line">/rediscluster_redis-node-3_1 - 172.22.0.6</span><br><span class="line">/rediscluster_redis-node-1_1 - 172.22.0.5</span><br><span class="line">/rediscluster_redis-node-0_1 - 172.22.0.2</span><br></pre></td></tr></table></figure>
 <p>查詢到 <code>redis-new-master01</code> 使用 IP 我們可以利用 <code>--cluster add-node</code> 將新的 master node 加入 cluster 中</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster add-node  172.22.0.8:6379 172.22.0.2:6379 -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster add-node  172.22.0.8:6379 172.22.0.2:6379 -a redisCluster</span><br></pre></td></tr></table></figure>
 <p>加入成功後我們在利用 <code>--cluster check</code> 命令查詢 Cluster 資訊，會看到目前多了一筆資料 <code>172.22.0.8:6379 (0885f85b...) -&gt; 0 keys | 0 slots | 0 slaves.</code> 下一步就需要分配 slot 給這個 master</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">/$  redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 0 keys | 0 slots | 0 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots: (0 slots) master</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">/$  redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 0 keys | 0 slots | 0 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots: (0 slots) master</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure>
 <p>目前要做的是把當前 Cluster 上 master 上的 slot 分配給，剛建立 master container，達到資料分擔</p>
-<p>我們可以透過 <code>redis-cli --cluster reshard {被分配 Redis Cluster 節點 IP}</code>，由上面資訊得知新建立 master id 是 <code>172.22.0.8:6379</code></p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster reshard <span class="number">172.22</span><span class="number">.0</span><span class="number">.8</span>:<span class="number">6379</span> -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<p>我們可以透過 <code>redis-cli --cluster reshard &#123;被分配 Redis Cluster 節點 IP&#125;</code>，由上面資訊得知新建立 master id 是 <code>172.22.0.8:6379</code></p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-<span class="keyword">cli</span> --<span class="keyword">cluster</span> reshard 172.22.0.8:6379 -a redisCluster</span><br></pre></td></tr></table></figure>
 <p>執行後我們會被詢問要轉移多少 slot 數量給新的 master，我們知道 Redis Cluster 有 16384 個 slot 所以為了平均分配 <code>16384/4 = 4096</code> </p>
 <ul>
 <li><code>How many slots do you want to move (from 1 to 16384)</code> 我們可以輸入 <code>4096</code></li>
 <li><code>What is the receiving node ID?</code> 我們由上面資訊知道 新建立 master id 是 <code>0885f85b94f8ddc186f1eac8f532be532fb7f5b1</code></li>
 </ul>
 <p>最後可以輸入 <code>all</code> 就會開始分配 slot</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ROUTEROS"><figure class="iseeu highlight /routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Please enter all the source node IDs.</span><br><span class="line"> <span class="built_in"> Type </span><span class="string">'all'</span> <span class="keyword">to</span> use all the nodes as source nodes <span class="keyword">for</span> the hash slots.</span><br><span class="line"> <span class="built_in"> Type </span><span class="string">'done'</span> once you entered all the source nodes IDs.</span><br><span class="line">Source node #1: all</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Please enter <span class="keyword">all</span> the <span class="keyword">source</span> node IDs.</span><br><span class="line">  Type <span class="string">&#x27;all&#x27;</span> <span class="keyword">to</span> use <span class="keyword">all</span> the nodes <span class="keyword">as</span> <span class="keyword">source</span> nodes <span class="keyword">for</span> the hash slots.</span><br><span class="line">  Type <span class="string">&#x27;done&#x27;</span> once you entered <span class="keyword">all</span> the <span class="keyword">source</span> nodes IDs.</span><br><span class="line">Source node #<span class="number">1</span>: <span class="keyword">all</span></span><br></pre></td></tr></table></figure>
 <p>跑完後我們利用  <code>redis-cli --cluster check 172.22.0.8:6379 -a redisCluster</code> 查詢可以看到 slot 已經平均分配到四個 master 上面了</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SH"><figure class="iseeu highlight /sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 1 keys | 4096 slots | 0 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 4096 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 1 keys | 4096 slots | 1 slaves.</span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 4096 slots | 1 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.8:6379)</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots:[0-1364],[5461-6826],[10923-12287] (4096 slots) master</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[12288-16383] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[1365-5460] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[6827-10922] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 1 keys | 4096 slots | 0 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 4096 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 1 keys | 4096 slots | 1 slaves.</span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 4096 slots | 1 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.8:6379)</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots:[0-1364],[5461-6826],[10923-12287] (4096 slots) master</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[12288-16383] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[1365-5460] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[6827-10922] (4096 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure>
 <p>最後一步就是把 新的 slave redis 掛載到剛剛的 master redis 上</p>
 <p>我們可以利用下面命令 template 來處理</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SMALI"><figure class="iseeu highlight /smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster<span class="built_in"> add-node </span>&#123;new-slave-redis IP&#125; &#123;cluster-redis IP&#125;  --cluster-slave --cluster-master-id 新節點master-id -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster<span class="built_in"> add-node </span>&#123;new-slave-redis IP&#125; &#123;cluster-redis IP&#125;  --cluster-slave --cluster-master-id 新節點master-id -a redisCluster</span><br></pre></td></tr></table></figure>
 <p>轉換成可執行命令如下</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="SMALI"><figure class="iseeu highlight /smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster<span class="built_in"> add-node </span>172.22.0.9:6379 172.22.0.8:6379  --cluster-slave --cluster-master-id 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster<span class="built_in"> add-node </span>172.22.0.9:6379 172.22.0.8:6379  --cluster-slave --cluster-master-id 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 -a redisCluster</span><br></pre></td></tr></table></figure>
 <p>看到下面執行結果代表掛載成功</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CRMSH"><figure class="iseeu highlight /crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">//...</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check for open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All <span class="number">16384</span> slots covered.</span><br><span class="line">&gt;&gt;&gt; Send CLUSTER MEET to <span class="keyword">node</span> <span class="title">172</span>.<span class="number">22.0</span>.<span class="number">9</span>:<span class="number">6379</span> to make it join the cluster.</span><br><span class="line">Waiting for the cluster to join</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt; Configure <span class="keyword">node</span> <span class="title">as</span> replica of <span class="number">172.22</span>.<span class="number">0.8</span>:<span class="number">6379</span>.</span><br><span class="line">[OK] New <span class="keyword">node</span> <span class="title">added</span> correctly.</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">//...</span><br><span class="line">[<span class="symbol">OK</span>] <span class="symbol">All</span> nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; <span class="symbol">Check</span> for open slots...</span><br><span class="line">&gt;&gt;&gt; <span class="symbol">Check</span> slots coverage...</span><br><span class="line">[<span class="symbol">OK</span>] <span class="symbol">All</span> <span class="number">16384</span> slots covered.</span><br><span class="line">&gt;&gt;&gt; <span class="symbol">Send</span> <span class="symbol">CLUSTER</span> <span class="symbol">MEET</span> to node <span class="number">172.22</span><span class="number">.0</span><span class="number">.9</span>:<span class="number">6379</span> to make it join the cluster.</span><br><span class="line"><span class="symbol">Waiting</span> for the cluster to join</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt; <span class="symbol">Configure</span> node as replica of <span class="number">172.22</span><span class="number">.0</span><span class="number">.8</span>:<span class="number">6379.</span></span><br><span class="line">[<span class="symbol">OK</span>] <span class="symbol">New</span> node added correctly.</span><br></pre></td></tr></table></figure>
 <p>全部執行完後結果，我們就有四個節點可以存放 Redis 資料</p>
-<p><img src="https://i.imgur.com/up3oWrr.png" alt></p>
+<p><img src="https://i.imgur.com/up3oWrr.png" alt=""></p>
 <p>處理完後 Redis Cluster 架構圖就如下</p>
-<p><img src="https://i.imgur.com/AMmTkUx.png" alt></p>
+<p><img src="https://i.imgur.com/AMmTkUx.png" alt=""></p>
 <h4 id="cluster-rebalance-命令"><a href="#cluster-rebalance-命令" class="headerlink" title="cluster rebalance 命令"></a>cluster rebalance 命令</h4><p>假如我們原本想要平均分配每個 master node slot 數量，但不小心設定錯誤可以使用  <code>--cluster rebalance</code> 來重新分配 slot 數量，讓每個 master 得到平衡的 slot 數量</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster rebalance <span class="number">172.21</span><span class="number">.0</span><span class="number">.8</span>:<span class="number">6379</span> -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-<span class="keyword">cli</span> --<span class="keyword">cluster</span> rebalance 172.21.0.8:6379 -a redisCluster</span><br></pre></td></tr></table></figure>
 <h2 id="縮容-Redis-Cluster"><a href="#縮容-Redis-Cluster" class="headerlink" title="縮容 Redis Cluster"></a>縮容 Redis Cluster</h2><p>縮容 Redis Cluster 也有相對應步驟，步驟跟擴容相反步驟</p>
 <ol>
 <li>將　slave　Redis container 移除 Cluster 並刪除</li>
@@ -744,630 +371,185 @@
 <li>刪除 master Redis container slot</li>
 </ol>
 <p>本次目標要把 <code>Master1-Slave1</code> 移除 Cluster</p>
-<p><img src="https://i.imgur.com/i77MKB5.png" alt></p>
+<p><img src="https://i.imgur.com/i77MKB5.png" alt=""></p>
 <p>將slave　Redis container 移除 Cluster 並刪除，我們可以執行下面命令</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster <span class="built_in">del</span>-node &#123;要刪除的 Redis IP&#125; &#123;要刪除的 Redis ID&#125; -a redisCluster</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster <span class="built_in">del</span>-node &#123;要刪除的 Redis IP&#125; &#123;要刪除的 Redis ID&#125; -a redisCluster</span><br></pre></td></tr></table></figure>
 <p>在刪除前先查看資訊 Cluster 資訊</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli --cluster check <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> (<span class="number">3</span>decf740...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">2</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">8</span>:<span class="number">6379</span> (<span class="number">0885</span>f85b...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line">[OK] <span class="number">5</span> keys <span class="keyword">in</span> <span class="number">4</span> masters.</span><br><span class="line"><span class="number">0</span>.<span class="number">00</span> keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">3</span>:<span class="number">6379</span>)</span><br><span class="line"><span class="function">S: 2<span class="title">c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0</span> 172.22.0.3:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 3<span class="title">decf740935f98a40d2d73416937e63abc3f4781</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span> 172.22.0.5:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[6827-10922] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">M</span>: 3<span class="title">decf740935f98a40d2d73416937e63abc3f4781</span> 172.22.0.2:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[1365-5460] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: 0<span class="title">abc62f3da4a649a5dea58739e6c087bf52c387f</span> 172.22.0.9:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span> 172.22.0.4:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[12288-16383] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">c93879a2f37ab14b9bb25f54a8e856a2526e4621</span> 172.22.0.7:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span> 172.22.0.8:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[0-1364],[5461-6826],[10923-12287] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">bbeafa6b1e703035c364a2d0f476951268d0a9ff</span> 172.22.0.6:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span></span></span><br></pre></td></tr></table></figure></div>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli --cluster check <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> (<span class="number">3</span>decf740...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">2</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">8</span>:<span class="number">6379</span> (<span class="number">0885</span>f85b...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line">[OK] <span class="number">5</span> keys <span class="keyword">in</span> <span class="number">4</span> masters.</span><br><span class="line"><span class="number">0</span>.<span class="number">00</span> keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">3</span>:<span class="number">6379</span>)</span><br><span class="line"><span class="function">S: 2<span class="title">c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0</span> 172.22.0.3:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 3<span class="title">decf740935f98a40d2d73416937e63abc3f4781</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span> 172.22.0.5:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[6827-10922] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">M</span>: 3<span class="title">decf740935f98a40d2d73416937e63abc3f4781</span> 172.22.0.2:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[1365-5460] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: 0<span class="title">abc62f3da4a649a5dea58739e6c087bf52c387f</span> 172.22.0.9:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span> 172.22.0.4:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[12288-16383] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">c93879a2f37ab14b9bb25f54a8e856a2526e4621</span> 172.22.0.7:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span> 172.22.0.8:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[0-1364],[5461-6826],[10923-12287] (4096 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">bbeafa6b1e703035c364a2d0f476951268d0a9ff</span> 172.22.0.6:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span></span></span><br></pre></td></tr></table></figure>
 <p>確認要刪除 Redis 資訊是 <code>172.22.0.3:6379</code> 跟 <code>2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0</code></p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli --cluster <span class="built_in">del</span>-node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">3</span>:<span class="number">6379</span> <span class="number">2</span>c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 -a redisCluster</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt; Removing node <span class="number">2</span>c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 from cluster <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">3</span>:<span class="number">6379</span></span><br><span class="line">&gt;&gt;&gt; Sending CLUSTER FORGET messages to the cluster...</span><br><span class="line">&gt;&gt;&gt; Sending CLUSTER RESET SOFT to the deleted node.</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli --cluster <span class="built_in">del</span>-node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">3</span>:<span class="number">6379</span> <span class="number">2</span>c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 -a redisCluster</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt; Removing node <span class="number">2</span>c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 from cluster <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">3</span>:<span class="number">6379</span></span><br><span class="line">&gt;&gt;&gt; Sending CLUSTER FORGET messages to the cluster...</span><br><span class="line">&gt;&gt;&gt; Sending CLUSTER RESET SOFT to the deleted node.</span><br></pre></td></tr></table></figure>
 <p>刪除 slave1 之後能發現 master1 原本對應的 slave 已經不見了</p>
-<p><img src="https://i.imgur.com/wxUjlku.png" alt></p>
+<p><img src="https://i.imgur.com/wxUjlku.png" alt=""></p>
 <p>這次轉移 master slot 我使用 <code>reshard</code> 另一種寫法</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster reshard <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> \</span><br><span class="line">--cluster-from <span class="number">3</span>decf740935f98a40d2d73416937e63abc3f4781 \</span><br><span class="line">--cluster-to  <span class="number">0885</span>f85b94f8ddc186f1eac8f532be532fb7f5b1 \</span><br><span class="line">--cluster-slots <span class="number">4096</span> \</span><br><span class="line">--cluster-yes \</span><br><span class="line">-a redisCluster</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">2</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">8</span>:<span class="number">6379</span> (<span class="number">0885</span>f85b...) -&gt; <span class="number">2</span> keys | <span class="number">8192</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> (<span class="number">3</span>decf740...) -&gt; <span class="number">0</span> keys | <span class="number">0</span> slots | <span class="number">0</span> slaves.</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster reshard <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> \</span><br><span class="line">--cluster-from <span class="number">3</span>decf740935f98a40d2d73416937e63abc3f4781 \</span><br><span class="line">--cluster-to  <span class="number">0885</span>f85b94f8ddc186f1eac8f532be532fb7f5b1 \</span><br><span class="line">--cluster-slots <span class="number">4096</span> \</span><br><span class="line">--cluster-yes \</span><br><span class="line">-a redisCluster</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">2</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">8</span>:<span class="number">6379</span> (<span class="number">0885</span>f85b...) -&gt; <span class="number">2</span> keys | <span class="number">8192</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">4096</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> (<span class="number">3</span>decf740...) -&gt; <span class="number">0</span> keys | <span class="number">0</span> slots | <span class="number">0</span> slaves.</span><br></pre></td></tr></table></figure>
 <p>執行完後發現到 172.22.0.2:6379 身上已經沒有其他 Slot 了，之後可以利用上面說到 <code>rebalance</code> 命令來重新分配 slot</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="ANGELSCRIPT"><figure class="iseeu highlight /angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster rebalance <span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span> -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">3</span> keys | <span class="number">5462</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.8</span>:<span class="number">6379</span> (<span class="number">0885f</span>85b...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172.22</span><span class="number">.0</span><span class="number">.2</span>:<span class="number">6379</span> (<span class="number">3</span>decf740...) -&gt; <span class="number">0</span> keys | <span class="number">0</span> slots | <span class="number">0</span> slaves.</span><br></pre></td></tr></table></figure></div>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">redis</span>-cli --cluster rebalance <span class="number">172.22.0.4:6379</span> -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="attribute">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">3</span> keys | <span class="number">5462</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="attribute">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">8</span>:<span class="number">6379</span> (<span class="number">0885</span>f85b...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="attribute">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="attribute">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> (<span class="number">3</span>decf740...) -&gt; <span class="number">0</span> keys | <span class="number">0</span> slots | <span class="number">0</span> slaves.</span><br></pre></td></tr></table></figure>
 <p>分配完後結果如上</p>
 <p>最後我們就可以執行最後一步：刪除 master redis 使用 <code>--cluster del-node</code> 命令即可</p>
-<div class="highlight-wrap" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" contenteditable="true" data-rel="CMD"><figure class="iseeu highlight /cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster <span class="built_in">del</span>-node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> <span class="number">3</span>decf740935f98a40d2d73416937e63abc3f4781 -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">3</span> keys | <span class="number">5462</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">8</span>:<span class="number">6379</span> (<span class="number">0885</span>f85b...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line">[OK] <span class="number">5</span> keys <span class="keyword">in</span> <span class="number">3</span> masters.</span><br><span class="line"><span class="number">0</span>.<span class="number">00</span> keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span>)</span><br><span class="line"><span class="function">M: <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span> 172.22.0.4:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[0-1365],[12288-16383] (5462 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">M</span>: 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span> 172.22.0.8:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[2731-6826],[10923-12287] (5461 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">c93879a2f37ab14b9bb25f54a8e856a2526e4621</span> 172.22.0.7:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span></span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">bbeafa6b1e703035c364a2d0f476951268d0a9ff</span> 172.22.0.6:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span> 172.22.0.5:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[1366-2730],[6827-10922] (5461 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: 0<span class="title">abc62f3da4a649a5dea58739e6c087bf52c387f</span> 172.22.0.9:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span></span></span><br><span class="line"><span class="function">[<span class="title">OK</span>] <span class="title">All</span> <span class="title">nodes</span> <span class="title">agree</span> <span class="title">about</span> <span class="title">slots</span> <span class="title">configuration</span>.</span></span><br></pre></td></tr></table></figure></div>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">redis-cli --cluster <span class="built_in">del</span>-node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span> <span class="number">3</span>decf740935f98a40d2d73416937e63abc3f4781 -a redisCluster</span><br><span class="line"></span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span> (ee76b9f8...) -&gt; <span class="number">3</span> keys | <span class="number">5462</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">8</span>:<span class="number">6379</span> (<span class="number">0885</span>f85b...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line"><span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span> (<span class="number">7186</span>bbf7...) -&gt; <span class="number">1</span> keys | <span class="number">5461</span> slots | <span class="number">1</span> slaves.</span><br><span class="line">[OK] <span class="number">5</span> keys <span class="keyword">in</span> <span class="number">3</span> masters.</span><br><span class="line"><span class="number">0</span>.<span class="number">00</span> keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span>)</span><br><span class="line"><span class="function">M: <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span> 172.22.0.4:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[0-1365],[12288-16383] (5462 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">M</span>: 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span> 172.22.0.8:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[2731-6826],[10923-12287] (5461 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">c93879a2f37ab14b9bb25f54a8e856a2526e4621</span> 172.22.0.7:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span></span></span><br><span class="line"><span class="function"><span class="title">S</span>: <span class="title">bbeafa6b1e703035c364a2d0f476951268d0a9ff</span> 172.22.0.6:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> <span class="title">ee76b9f8f8c261918b44caf856070acab1a5072a</span></span></span><br><span class="line"><span class="function"><span class="title">M</span>: 7186<span class="title">bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span> 172.22.0.5:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>:[1366-2730],[6827-10922] (5461 <span class="title">slots</span>) <span class="title">master</span></span></span><br><span class="line"><span class="function">   1 <span class="title">additional</span> <span class="title">replica</span>(<span class="title">s</span>)</span></span><br><span class="line"><span class="function"><span class="title">S</span>: 0<span class="title">abc62f3da4a649a5dea58739e6c087bf52c387f</span> 172.22.0.9:6379</span></span><br><span class="line"><span class="function">   <span class="title">slots</span>: (0 <span class="title">slots</span>) <span class="title">slave</span></span></span><br><span class="line"><span class="function">   <span class="title">replicates</span> 0885<span class="title">f85b94f8ddc186f1eac8f532be532fb7f5b1</span></span></span><br><span class="line"><span class="function">[<span class="title">OK</span>] <span class="title">All</span> <span class="title">nodes</span> <span class="title">agree</span> <span class="title">about</span> <span class="title">slots</span> <span class="title">configuration</span>.</span></span><br></pre></td></tr></table></figure>
 <p>刪除後結果如上，在 Cluster 已經看不到 master1 蹤影了</p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Redis 官方對於 Cluster 支援還有說明文件寫得很棒，推薦大家去看</p>
-<p>如果會有 Redis 為何使用 16384 當作 slot 數量可以參考作者回答的資料 <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL3JlZGlzL3JlZGlzL2lzc3Vlcy8yNTc2" title="https://github.com/redis/redis/issues/2576">why redis-cluster use 16384 slots<i class="fa fa-external-link"></i></span></p>
-<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><p><span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby90b3BpY3MvY2x1c3Rlci1zcGVj" title="https://redis.io/topics/cluster-spec">cluster-spec<i class="fa fa-external-link"></i></span></p>
-<p><span class="exturl" data-url="aHR0cHM6Ly9yZWRpcy5pby90b3BpY3MvY2x1c3Rlci10dXRvcmlhbA==" title="https://redis.io/topics/cluster-tutorial">Redis cluster tutorial<i class="fa fa-external-link"></i></span></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br><strong>此文地址</strong>： <a href="https://isdaniel.github.io/redis-cluster-introduce-01/">https://isdaniel.github.io/redis-cluster-introduce-01/</a> <br><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <span class="exturl" data-url="aHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LW5jLXNhLzMuMC90dy8=" title="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW<i class="fa fa-external-link"></i></span> 許可協議。轉載請註明出處！</p>
+<p>如果會有 Redis 為何使用 16384 當作 slot 數量可以參考作者回答的資料 <a href="https://github.com/redis/redis/issues/2576">why redis-cluster use 16384 slots</a></p>
+<h2 id="參考資料"><a href="#參考資料" class="headerlink" title="參考資料"></a>參考資料</h2><p><a href="https://redis.io/topics/cluster-spec">cluster-spec</a></p>
+<p><a href="https://redis.io/topics/cluster-tutorial">Redis cluster tutorial</a></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/redis-cluster-introduce-01/">https://isdaniel.github.io/redis-cluster-introduce-01/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
-      
     </div>
 
     
+    
+    
       
-
   <div class="popular-posts-header">Related Posts</div>
   <ul class="popular-posts">
-  
     <li class="popular-posts-item">
-      
-      
-      <div class="popular-posts-title"><a href="\redlock-deepknow\" rel="bookmark">利用Redlock演算法實現自己的分佈式鎖</a></div>
-      
+      <div class="popular-posts-title"><a href="/redlock-deepknow/" rel="bookmark">利用Redlock演算法實現自己的分佈式鎖</a></div>
     </li>
-  
   </ul>
-
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-        <div class="post-tags">
-          
-            <a href="/tags/Redis/" rel="tag"># Redis</a>
-          
-            <a href="/tags/Cluster/" rel="tag"># Cluster</a>
-          
-        </div>
-      
-
-      
-      
-      
-
-      
-        <div class="post-nav">
-          <div class="post-nav-next post-nav-item">
-            
-              <a href="/ndepend-code-quality/" rel="next" title="Ndepend 靜態分析 .Net 專案好物">
-                <i class="fa fa-chevron-left"></i> Ndepend 靜態分析 .Net 專案好物
-              </a>
-            
-          </div>
-
-          <span class="post-nav-divider"></span>
-
-          <div class="post-nav-prev post-nav-item">
-            
-              <a href="/postgresql-autovacuum/" rel="prev" title="Postgresql AutoVacuum 介紹">
-                Postgresql AutoVacuum 介紹 <i class="fa fa-chevron-right"></i>
-              </a>
-            
-          </div>
-        </div>
-      
-
-      
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-  </div>
-  <br>
-  <div style="text-align: center;">
+<div style="text-align: center;">
     如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
 </div>
 
 <img src="https://i.imgur.com/1D2UpQk.png">
 
 
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Redis/" rel="tag"># Redis</a>
+              <a href="/tags/Cluster/" rel="tag"># Cluster</a>
           </div>
-          
 
-  
-    <div class="comments" id="comments">
-      <div id="disqus_thread">
-        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
-      </div>
-    </div>
-
-  
-
-
-
-        </div>
         
-          
-  
-  <div class="sidebar-toggle">
-    <div class="sidebar-toggle-line-wrap">
-      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
-      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/ndepend-code-quality/" rel="prev" title="Ndepend 靜態分析 .Net 專案好物">
+      <i class="fa fa-chevron-left"></i> Ndepend 靜態分析 .Net 專案好物
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/postgresql-autovacuum/" rel="next" title="Postgresql AutoVacuum 介紹">
+      Postgresql AutoVacuum 介紹 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
   </div>
 
-  <aside id="sidebar" class="sidebar">
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
     <div class="sidebar-inner">
 
-      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
 
-      
-        <ul class="sidebar-nav motion-element">
-          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            Table of Contents
-          </li>
-          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            Overview
-          </li>
-        </ul>
-      
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B-Redis-Cluster"><span class="nav-number">2.</span> <span class="nav-text">建立 Redis Cluster</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#How-to-Use"><span class="nav-number">2.1.</span> <span class="nav-text">How to Use</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B-Redis-Cluster-%E6%9E%B6%E6%A7%8B"><span class="nav-number">2.2.</span> <span class="nav-text">查看 Redis Cluster 架構</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8-Redis-Clsuter-%E6%96%B0%E5%A2%9E-key-%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A0%85"><span class="nav-number">2.3.</span> <span class="nav-text">在 Redis Clsuter 新增 key 注意事項</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%93%B4%E5%85%85-Redis-Cluster"><span class="nav-number">3.</span> <span class="nav-text">擴充 Redis Cluster</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%93%B4%E5%85%85%E6%AD%A5%E9%A9%9F"><span class="nav-number">3.1.</span> <span class="nav-text">擴充步驟</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#cluster-rebalance-%E5%91%BD%E4%BB%A4"><span class="nav-number">3.1.1.</span> <span class="nav-text">cluster rebalance 命令</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B8%AE%E5%AE%B9-Redis-Cluster"><span class="nav-number">4.</span> <span class="nav-text">縮容 Redis Cluster</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%83%E8%80%83%E8%B3%87%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">參考資料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
 
       <div class="site-overview-wrap sidebar-panel">
-        <div class="site-overview">
-          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-            
-              <img class="site-author-image" itemprop="image" src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4" alt="Daniel Shih">
-            
-              <p class="site-author-name" itemprop="name">Daniel Shih</p>
-              <div class="site-description motion-element" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
-          </div>
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">121</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https://github.com/isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https://www.facebook.com/profile.php?id=100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https://stackoverflow.com/users/5176071/d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
 
-          
-            <nav class="site-state motion-element">
-              
-                <div class="site-state-item site-state-posts">
-                
-                  <a href="/archives/">
-                
-                    <span class="site-state-item-count">117</span>
-                    <span class="site-state-item-name">posts</span>
-                  </a>
-                </div>
-              
 
-              
-                
-                
-                <div class="site-state-item site-state-categories">
-                  
-                    
-                      <a href="/categories/">
-                    
-                  
-                    
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                    <span class="site-state-item-count">52</span>
-                    <span class="site-state-item-name">categories</span>
-                  </a>
-                </div>
-              
 
-              
-                
-                
-                <div class="site-state-item site-state-tags">
-                  
-                    
-                      <a href="/tags/">
-                    
-                  
-                    
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                      
-                    
-                    <span class="site-state-item-count">121</span>
-                    <span class="site-state-item-name">tags</span>
-                  </a>
-                </div>
-              
-            </nav>
-          
-
-          
-
-          
-
-          
-            <div class="links-of-author motion-element">
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="aHR0cHM6Ly9naXRodWIuY29tL2lzZGFuaWVs" title="GitHub &rarr; https://github.com/isdaniel"><i class="fa fa-fw fa-github"></i>GitHub</span>
-                </span>
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="bWFpbHRvOmRvZzgzMDAyMjhAZ21haWwuY29t" title="Email &rarr; mailto:dog8300228@gmail.com"><i class="fa fa-fw fa-envelope"></i>Email</span>
-                </span>
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="aHR0cHM6Ly93d3cuZmFjZWJvb2suY29tL3Byb2ZpbGUucGhwP2lkPTEwMDAwMTQwMDMxOTEzNg==" title="FaceBook &rarr; https://www.facebook.com/profile.php?id=100001400319136"><i class="fa fa-fw fa-facebook"></i>FaceBook</span>
-                </span>
-              
-                <span class="links-of-author-item">
-                  
-                  
-                    
-                  
-                  
-                    
-                  
-                  <span class="exturl" data-url="aHR0cHM6Ly9zdGFja292ZXJmbG93LmNvbS91c2Vycy81MTc2MDcxL2Qtc2hpaA==" title="StackOverflow &rarr; https://stackoverflow.com/users/5176071/d-shih"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</span>
-                </span>
-              
-            </div>
-          
-
-          
-
-          
-          
-
-          
-            
-          
-          
-<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208"> </a></p>
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
 
 <div>
 <a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
@@ -1377,108 +559,46 @@ Certifications：
 
 <div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
 
-
-        </div>
       </div>
-
-      
-      <!--noindex-->
-        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
-          <div class="post-toc">
-
-            
-            
-            
-            
-
-            
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#建立-Redis-Cluster"><span class="nav-number">2.</span> <span class="nav-text">建立 Redis Cluster</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#How-to-Use"><span class="nav-number">2.1.</span> <span class="nav-text">How to Use</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看-Redis-Cluster-架構"><span class="nav-number">2.2.</span> <span class="nav-text">查看 Redis Cluster 架構</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#在-Redis-Clsuter-新增-key-注意事項"><span class="nav-number">2.3.</span> <span class="nav-text">在 Redis Clsuter 新增 key 注意事項</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#擴充-Redis-Cluster"><span class="nav-number">3.</span> <span class="nav-text">擴充 Redis Cluster</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#擴充步驟"><span class="nav-number">3.1.</span> <span class="nav-text">擴充步驟</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#cluster-rebalance-命令"><span class="nav-number">3.1.1.</span> <span class="nav-text">cluster rebalance 命令</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#縮容-Redis-Cluster"><span class="nav-number">4.</span> <span class="nav-text">縮容 Redis Cluster</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#小結"><span class="nav-number">5.</span> <span class="nav-text">小結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#參考資料"><span class="nav-number">6.</span> <span class="nav-text">參考資料</span></a></li></ol></div>
-            
-
-          </div>
-        </div>
-      <!--/noindex-->
-      
-
-      
 
     </div>
   </aside>
-  
+  <div id="sidebar-dimmer"></div>
 
 
-        
       </div>
     </main>
 
-    <footer id="footer" class="footer">
+    <footer class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2024</span>
-  <span class="with-love" id="animate">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2024</span>
+  <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
   <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
-
-  
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    
-    <span title="Symbols count total">546k</span>
-  
-
-  
+    <span title="Symbols count total">869k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    
-    <span title="Reading time total">16:33</span>
-  
+    <span title="Reading time total">13:10</span>
 </div>
-
-
-
-  <div class="powered-by">Powered by <a rel="external nofollow" class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> v3.9.0</div>
-
-
-
+  <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
   <span class="post-meta-divider">|</span>
-
-
-
-  <div class="theme-info">Theme – <span class="exturl theme-link" data-url="aHR0cHM6Ly90aGVtZS1uZXh0Lm9yZw==">NexT.Gemini</span> v7.1.1</div>
-
-
-
+  <div class="theme-info">Theme – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
 
         
-<div class="busuanzi-count">
-  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-  
-    <span class="post-meta-item-icon">
-      <i class="fa fa-user"></i>
-    </span>
-    <span class="site-uv" title="Total Visitors">
-      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
-    </span>
-  
-
-  
-    <span class="post-meta-divider">|</span>
-  
-
-  
-    <span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-    </span>
-    <span class="site-pv" title="Total Views">
-      <span class="busuanzi-value" id="busuanzi_value_page_pv"></span>
-    </span>
-  
-</div>
 
 
 
@@ -1487,589 +607,88 @@ Certifications：
 
 
 
-
-        
       </div>
     </footer>
-
-    
-      <div class="back-to-top">
-        <i class="fa fa-arrow-up"></i>
-        
-      </div>
-    
-
-    
-
-    
-
-    
   </div>
 
   
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/redis-cluster-introduce-01/',]
+      });
+      });
+  </script>
 
 <script>
-  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
-    window.Promise = null;
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
   }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
 </script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-    
-    
-  
-  <script color="0,0,255" opacity="0.6" zindex="-1" count="150" src="/lib/canvas-nest/canvas-nest.min.js"></script>
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-  
-  <script src="/lib/jquery/index.js?v=2.1.3"></script>
-
-  
-  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
-
-  
-  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
-
-  
-  <script src="/lib/reading_progress/reading_progress.js"></script>
-
-
-  
-
-
-  <script src="/js/utils.js?v=7.1.1"></script>
-
-  <script src="/js/motion.js?v=7.1.1"></script>
-
-
-
-  
-  
-
-
-  <script src="/js/affix.js?v=7.1.1"></script>
-
-  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
-
-
-
-
-  
-  <script src="/js/scrollspy.js?v=7.1.1"></script>
-<script src="/js/post-details.js?v=7.1.1"></script>
-
-<!-- Global site tag (gtag.js) - Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=UA-141257985-1"></script><script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'UA-141257985-1');
-</script>
-
-
-  
-
-
-  <script src="/js/next-boot.js?v=7.1.1"></script>
-
-
-  
-
-  
-  <script src="/js/exturl.js?v=7.1.1"></script>
-
-
-  
-
-  
-  
-  <script id="dsq-count-scr" src="https://danielshih.disqus.com/count.js" async></script>
-
-
 <script>
   var disqus_config = function() {
     this.page.url = "https://isdaniel.github.io/redis-cluster-introduce-01/";
     this.page.identifier = "redis-cluster-introduce-01/";
-    this.page.title = 'Redis Cluster 介紹';
+    this.page.title = "Redis Cluster 介紹";
     };
-  function loadComments() {
-    var d = document, s = d.createElement('script');
-    s.src = 'https://danielshih.disqus.com/embed.js';
-    s.setAttribute('data-timestamp', '' + +new Date());
-    (d.head || d.body).appendChild(s);
-  }
-  
-    $(function() {
-      var offsetTop = $('#comments').offset().top - $(window).height();
-      if (offsetTop <= 0) {
-        // load directly when there's no a scrollbar
-        loadComments();
-      } else {
-        $(window).on('scroll.disqus_scroll', function() {
-          // offsetTop may changes because of manually resizing browser window or lazy loading images.
-          var offsetTop = $('#comments').offset().top - $(window).height();
-          var scrollTop = $(window).scrollTop();
-
-          // pre-load comments a bit? (margin or anything else)
-          if (offsetTop - scrollTop < 60) {
-            $(window).off('.disqus_scroll');
-            loadComments();
-          }
-        });
-      }
-    });
-  
-</script>
-
-
-
-
-
-  
-    
-
-<script src="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
-
-
-
-<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
-
-
-
-<script src="//cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
-
-<script>
-  var gitalk = new Gitalk({
-    clientID: '',
-    clientSecret: '',
-    repo: '',
-    owner: '',
-    admin: [''],
-    id: md5(location.pathname),
-    
-      language: window.navigator.language || window.navigator.userLanguage,
-    
-    distractionFreeMode: 'true'
-  });
-  gitalk.render('gitalk-container');
-</script>
-
-  
-
-
-  
-  <script>
-    // Popup Window;
-    var isfetched = false;
-    var isXml = true;
-    // Search DB path;
-    var search_path = "search.xml";
-    if (search_path.length === 0) {
-      search_path = "search.xml";
-    } else if (/json$/i.test(search_path)) {
-      isXml = false;
-    }
-    var path = "/" + search_path;
-    // monitor main search box;
-
-    var onPopupClose = function (e) {
-      $('.popup').hide();
-      $('#local-search-input').val('');
-      $('.search-result-list').remove();
-      $('#no-result').remove();
-      $(".local-search-pop-overlay").remove();
-      $('body').css('overflow', '');
-    }
-
-    function proceedsearch() {
-      $("body")
-        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
-        .css('overflow', 'hidden');
-      $('.search-popup-overlay').click(onPopupClose);
-      $('.popup').toggle();
-      var $localSearchInput = $('#local-search-input');
-      $localSearchInput.attr("autocapitalize", "none");
-      $localSearchInput.attr("autocorrect", "off");
-      $localSearchInput.focus();
-    }
-
-    // search function;
-    var searchFunc = function(path, search_id, content_id) {
-      'use strict';
-
-      // start loading animation
-      $("body")
-        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
-          '<div id="search-loading-icon">' +
-          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
-          '</div>' +
-          '</div>')
-        .css('overflow', 'hidden');
-      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
-
-      
-
-      $.ajax({
-        url: path,
-        dataType: isXml ? "xml" : "json",
-        async: true,
-        success: function(res) {
-          // get the contents from search data
-          isfetched = true;
-          $('.popup').detach().appendTo('.header-inner');
-          var datas = isXml ? $("entry", res).map(function() {
-            return {
-              title: $("title", this).text(),
-              content: $("content",this).text(),
-              url: $("url" , this).text()
-            };
-          }).get() : res;
-          var input = document.getElementById(search_id);
-          var resultContent = document.getElementById(content_id);
-          var inputEventFunction = function() {
-            var searchText = input.value.trim().toLowerCase();
-            var keywords = searchText.split(/[\s\-]+/);
-            if (keywords.length > 1) {
-              keywords.push(searchText);
-            }
-            var resultItems = [];
-            if (searchText.length > 0) {
-              // perform local searching
-              datas.forEach(function(data) {
-                var isMatch = false;
-                var hitCount = 0;
-                var searchTextCount = 0;
-                var title = data.title.trim();
-                var titleInLowerCase = title.toLowerCase();
-                var content = data.content.trim().replace(/<[^>]+>/g,"");
-                
-                var contentInLowerCase = content.toLowerCase();
-                var articleUrl = decodeURIComponent(data.url).replace(/\/{2,}/g, '/');
-                var indexOfTitle = [];
-                var indexOfContent = [];
-                // only match articles with not empty titles
-                if(title != '') {
-                  keywords.forEach(function(keyword) {
-                    function getIndexByWord(word, text, caseSensitive) {
-                      var wordLen = word.length;
-                      if (wordLen === 0) {
-                        return [];
-                      }
-                      var startPosition = 0, position = [], index = [];
-                      if (!caseSensitive) {
-                        text = text.toLowerCase();
-                        word = word.toLowerCase();
-                      }
-                      while ((position = text.indexOf(word, startPosition)) > -1) {
-                        index.push({position: position, word: word});
-                        startPosition = position + wordLen;
-                      }
-                      return index;
-                    }
-
-                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
-                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
-                  });
-                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
-                    isMatch = true;
-                    hitCount = indexOfTitle.length + indexOfContent.length;
-                  }
-                }
-
-                // show search results
-
-                if (isMatch) {
-                  // sort index by position of keyword
-
-                  [indexOfTitle, indexOfContent].forEach(function (index) {
-                    index.sort(function (itemLeft, itemRight) {
-                      if (itemRight.position !== itemLeft.position) {
-                        return itemRight.position - itemLeft.position;
-                      } else {
-                        return itemLeft.word.length - itemRight.word.length;
-                      }
-                    });
-                  });
-
-                  // merge hits into slices
-
-                  function mergeIntoSlice(text, start, end, index) {
-                    var item = index[index.length - 1];
-                    var position = item.position;
-                    var word = item.word;
-                    var hits = [];
-                    var searchTextCountInSlice = 0;
-                    while (position + word.length <= end && index.length != 0) {
-                      if (word === searchText) {
-                        searchTextCountInSlice++;
-                      }
-                      hits.push({position: position, length: word.length});
-                      var wordEnd = position + word.length;
-
-                      // move to next position of hit
-
-                      index.pop();
-                      while (index.length != 0) {
-                        item = index[index.length - 1];
-                        position = item.position;
-                        word = item.word;
-                        if (wordEnd > position) {
-                          index.pop();
-                        } else {
-                          break;
-                        }
-                      }
-                    }
-                    searchTextCount += searchTextCountInSlice;
-                    return {
-                      hits: hits,
-                      start: start,
-                      end: end,
-                      searchTextCount: searchTextCountInSlice
-                    };
-                  }
-
-                  var slicesOfTitle = [];
-                  if (indexOfTitle.length != 0) {
-                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
-                  }
-
-                  var slicesOfContent = [];
-                  while (indexOfContent.length != 0) {
-                    var item = indexOfContent[indexOfContent.length - 1];
-                    var position = item.position;
-                    var word = item.word;
-                    // cut out 100 characters
-                    var start = position - 20;
-                    var end = position + 80;
-                    if(start < 0){
-                      start = 0;
-                    }
-                    if (end < position + word.length) {
-                      end = position + word.length;
-                    }
-                    if(end > content.length){
-                      end = content.length;
-                    }
-                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
-                  }
-
-                  // sort slices in content by search text's count and hits' count
-
-                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
-                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
-                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
-                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
-                      return sliceRight.hits.length - sliceLeft.hits.length;
-                    } else {
-                      return sliceLeft.start - sliceRight.start;
-                    }
-                  });
-
-                  // select top N slices in content
-
-                  var upperBound = parseInt('1');
-                  if (upperBound >= 0) {
-                    slicesOfContent = slicesOfContent.slice(0, upperBound);
-                  }
-
-                  // highlight title and content
-
-                  function highlightKeyword(text, slice) {
-                    var result = '';
-                    var prevEnd = slice.start;
-                    slice.hits.forEach(function (hit) {
-                      result += text.substring(prevEnd, hit.position);
-                      var end = hit.position + hit.length;
-                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
-                      prevEnd = end;
-                    });
-                    result += text.substring(prevEnd, slice.end);
-                    return result;
-                  }
-
-                  var resultItem = '';
-
-                  if (slicesOfTitle.length != 0) {
-                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
-                  } else {
-                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
-                  }
-
-                  slicesOfContent.forEach(function (slice) {
-                    resultItem += "<a href='" + articleUrl + "'>" +
-                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
-                      "...</p>" + "</a>";
-                  });
-
-                  resultItem += "</li>";
-                  resultItems.push({
-                    item: resultItem,
-                    searchTextCount: searchTextCount,
-                    hitCount: hitCount,
-                    id: resultItems.length
-                  });
-                }
-              })
-            };
-            if (keywords.length === 1 && keywords[0] === "") {
-              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x"></i></div>'
-            } else if (resultItems.length === 0) {
-              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x"></i></div>'
-            } else {
-              resultItems.sort(function (resultLeft, resultRight) {
-                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
-                  return resultRight.searchTextCount - resultLeft.searchTextCount;
-                } else if (resultLeft.hitCount !== resultRight.hitCount) {
-                  return resultRight.hitCount - resultLeft.hitCount;
-                } else {
-                  return resultRight.id - resultLeft.id;
-                }
-              });
-              var searchResultList = '<ul class=\"search-result-list\">';
-              resultItems.forEach(function (result) {
-                searchResultList += result.item;
-              })
-              searchResultList += "</ul>";
-              resultContent.innerHTML = searchResultList;
-            }
-          }
-
-          if ('auto' === 'auto') {
-            input.addEventListener('input', inputEventFunction);
-          } else {
-            $('.search-icon').click(inputEventFunction);
-            input.addEventListener('keypress', function (event) {
-              if (event.keyCode === 13) {
-                inputEventFunction();
-              }
-            });
-          }
-
-          // remove loading animation
-          $(".local-search-pop-overlay").remove();
-          $('body').css('overflow', '');
-
-          proceedsearch();
-        }
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
       });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
     }
-
-    // handle and trigger popup window;
-    $('.popup-trigger').click(function(e) {
-      e.stopPropagation();
-      if (isfetched === false) {
-        searchFunc(path, 'local-search-input', 'local-search-result');
-      } else {
-        proceedsearch();
-      };
-    });
-
-    $('.popup-btn-close').click(onPopupClose);
-    $('.popup').click(function(e){
-      e.stopPropagation();
-    });
-    $(document).on('keyup', function (event) {
-      var shouldDismissSearchPopup = event.which === 27 &&
-        $('.search-popup').is(':visible');
-      if (shouldDismissSearchPopup) {
-        onPopupClose();
-      }
-    });
-  </script>
-
-
-
-
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-<script>
-  $('.highlight').not('.gist .highlight').each(function(i, e) {
-    var $wrap = $('<div>').addClass('highlight-wrap');
-    $(e).after($wrap);
-    $wrap.append($('<button>').addClass('copy-btn').append('Copy').on('click', function(e) {
-      var code = $(this).parent().find('.code').find('.line').map(function(i, e) {
-        return $(e).text();
-      }).toArray().join('\n');
-      var ta = document.createElement('textarea');
-      var yPosition = window.pageYOffset || document.documentElement.scrollTop;
-      ta.style.top = yPosition + 'px'; // Prevent page scroll
-      ta.style.position = 'absolute';
-      ta.style.opacity = '0';
-      ta.readOnly = true;
-      ta.value = code;
-      document.body.appendChild(ta);
-      ta.select();
-      ta.setSelectionRange(0, code.length);
-      ta.readOnly = false;
-      var result = document.execCommand('copy');
-      
-        if (result) $(this).text('Copied');
-        else $(this).text('Copy failed');
-      
-      ta.blur(); // For iOS
-      $(this).blur();
-    })).on('mouseleave', function(e) {
-      var $b = $(this).find('.copy-btn');
-      setTimeout(function() {
-        $b.text('Copy');
-      }, 300);
-    }).append(e);
-  })
+  });
 </script>
-
-
-  
-
-  
 
 </body>
 </html>
