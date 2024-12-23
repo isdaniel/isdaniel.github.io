@@ -20,16 +20,16 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="之前有介紹 (SQL Server) CTE RECURSIVE (遞迴)製作月曆 在Oracle 有提供一個精簡的語法產生階層資料 CONNECT BY  CONNECT BY 有幾個常用Key Word.  LEVEL目前在樹節點第幾階層 START WITH 設定哪筆做為起始點開始樹 PRIOR用於指定父資料欄位  製造出的階層樹，概念如下 [圖來自Oracle] 範例一建立連續數字 1~1">
+  <meta name="description" content="之前有介紹 (SQL Server) CTE RECURSIVE (遞迴)製作月曆 在Oracle 有提供一個精簡的語法產生階層資料 CONNECT BY  CONNECT BY 有幾個常用Key Word.  LEVEL 目前在樹節點第幾階層 START WITH 設定哪筆做為起始點開始樹 PRIOR 用於指定父資料欄位  製造出的階層樹，概念如下 [圖來自Oracle] 範例一建立連續數字 1">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Oracle [CONNECT BY]">
 <meta property="og:url" content="https://isdaniel.github.io/oracle-connect-by/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="之前有介紹 (SQL Server) CTE RECURSIVE (遞迴)製作月曆 在Oracle 有提供一個精簡的語法產生階層資料 CONNECT BY  CONNECT BY 有幾個常用Key Word.  LEVEL目前在樹節點第幾階層 START WITH 設定哪筆做為起始點開始樹 PRIOR用於指定父資料欄位  製造出的階層樹，概念如下 [圖來自Oracle] 範例一建立連續數字 1~1">
+<meta property="og:description" content="之前有介紹 (SQL Server) CTE RECURSIVE (遞迴)製作月曆 在Oracle 有提供一個精簡的語法產生階層資料 CONNECT BY  CONNECT BY 有幾個常用Key Word.  LEVEL 目前在樹節點第幾階層 START WITH 設定哪筆做為起始點開始樹 PRIOR 用於指定父資料欄位  製造出的階層樹，概念如下 [圖來自Oracle] 範例一建立連續數字 1">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://docs.oracle.com/cd/B19306_01/server.102/b14200/img/sqlrf002.gif">
 <meta property="article:published_time" content="2019-06-02T22:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="SQL">
 <meta property="article:tag" content="Oracle">
@@ -204,7 +204,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -259,15 +259,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>之前有介紹 <a href="/cte-recursive/" title="(SQL Server) CTE RECURSIVE (遞迴)製作月曆">(SQL Server) CTE RECURSIVE (遞迴)製作月曆</a> 在<code>Oracle</code> 有提供一個精簡的語法產生階層資料 <code>CONNECT BY</code></p>
-<p> CONNECT BY 有幾個常用Key Word.</p>
+        <p>之前有介紹 <a href="/cte-recursive/" title="(SQL Server) CTE RECURSIVE (遞迴)製作月曆">(SQL Server) CTE RECURSIVE (遞迴)製作月曆</a> 在<code>Oracle</code> 有提供一個精簡的語法產生階層資料 <code>CONNECT BY</code></p>
+<p> CONNECT BY 有幾個常用Key Word.</p>
 <ol>
-<li><code>LEVEL</code>目前在樹節點第幾階層</li>
+<li><code>LEVEL </code>目前在樹節點第幾階層</li>
 <li><code>START WITH</code> 設定哪筆做為起始點開始樹</li>
-<li><code>PRIOR</code>用於指定父資料欄位</li>
+<li><code>PRIOR </code>用於指定父資料欄位</li>
 </ol>
 <p>製造出的階層樹，概念如下</p>
-<p><img src="https://docs.oracle.com/cd/B19306_01/server.102/b14200/img/sqlrf002.gif" alt="">[圖來自Oracle]</p>
+<p><img src="https://docs.oracle.com/cd/B19306_01/server.102/b14200/img/sqlrf002.gif">[圖來自Oracle]</p>
 <h2 id="範例一"><a href="#範例一" class="headerlink" title="範例一"></a>範例一</h2><div class="note note--normal">建立連續數字 1~10</div>
 
 <pre><code>&lt;code class=&quot;language-sql&quot;&gt;SELECT X + LEVEL
@@ -276,7 +276,8 @@ FROM (
   FROM DUAL
  )
 CONNECT BY LEVEL &lt;= 10
-</code></pre><p>此範例使用 <code>LEVEL</code> 在 <code>CONNECT BY</code> 上當條件 建立列值到<code>LEVEL</code> 大於等於 10</p>
+</code></pre>
+<p>此範例使用 <code>LEVEL </code> 在 <code>CONNECT BY</code> 上當條件 建立列值到<code>LEVEL</code> 大於等於 10</p>
 <p><a href="https://rextester.com/WLJA28068">sqlfiddle</a></p>
 <h2 id="範例二"><a href="#範例二" class="headerlink" title="範例二"></a>範例二</h2><p>建立日曆表</p>
 <pre><code>&lt;code class=&quot;language-sql&quot;&gt;SELECT startDt + LEVEL - 1
@@ -285,10 +286,11 @@ FROM (
   FROM DUAL
 )t1
 CONNECT BY startDt - endDt + LEVEL &lt;= 0
-</code></pre><p>一開始有兩個欄位 </p>
+</code></pre>
+<p>一開始有兩個欄位 </p>
 <ol>
 <li>StartDt 起始時間(10天前)</li>
-<li>EndDt  最後時間(現在時間)</li>
+<li>EndDt  最後時間(現在時間)</li>
 </ol>
 <p>期望建立一個結果集從10天前日期到現在，一樣是使用<code>LEVEL</code>在當Offset的時間</p>
 <h2 id="範例三"><a href="#範例三" class="headerlink" title="範例三"></a>範例三</h2><p><code>CONNECT BY</code> 最強大的地方是在於建立階層表</p>
@@ -299,28 +301,31 @@ CONNECT BY startDt - endDt + LEVEL &lt;= 0
        ParentPartNo INT
 );
 
-INSERT INTO HierarchyDemo VALUES(1,&apos;Boss&apos;,0);
-INSERT INTO HierarchyDemo VALUES(2,&apos;Jack&apos;,1);
-INSERT INTO HierarchyDemo VALUES(3,&apos;TOM&apos;,2);
-INSERT INTO HierarchyDemo VALUES(4,&apos;AMY&apos;,3);
-INSERT INTO HierarchyDemo VALUES(5,&apos;Daniel&apos;,2);
-</code></pre><p>SQL腳本：</p>
+INSERT INTO HierarchyDemo VALUES(1,&#39;Boss&#39;,0);
+INSERT INTO HierarchyDemo VALUES(2,&#39;Jack&#39;,1);
+INSERT INTO HierarchyDemo VALUES(3,&#39;TOM&#39;,2);
+INSERT INTO HierarchyDemo VALUES(4,&#39;AMY&#39;,3);
+INSERT INTO HierarchyDemo VALUES(5,&#39;Daniel&#39;,2);
+</code></pre>
+<p>SQL腳本：</p>
 <pre><code>SELECT t1.*,LEVEL
 FROM HierarchyDemo t1
 START WITH ParentPartNo = 0
 CONNECT BY PRIOR PartNo = ParentPartNo
-</code></pre><p><code>START WITH ParentPartNo = 0</code> 設置為起始點，開始找尋建立子階級</p>
-<p><code>PRIOR PartNo</code> 代表下一次由<code>PartNo</code>當作根結點 找尋 <code>PartNo = ParentPartNo</code> 的列</p>
+</code></pre>
+<p><code>START WITH ParentPartNo = 0</code> 設置為起始點，開始找尋建立子階級</p>
+<p><code>PRIOR PartNo</code> 代表下一次由<code>PartNo </code>當作根結點 找尋 <code>PartNo = ParentPartNo</code> 的列</p>
 <p>最後變成下圖</p>
-<pre><code>| PARTNO |   NAME | PARENTPARTNO | LEVEL |
-|--------|--------|--------------|-------|
-|      1 |   Boss |            0 |     1 |
-|      2 |   Jack |            1 |     2 |
-|      3 |    TOM |            2 |     3 |
-|      4 |    AMY |            3 |     4 |
-|      5 | Daniel |            2 |     3 |
-</code></pre><p>參考資料：<a href="https://docs.oracle.com/cd/B19306_01/server.102/b14200/queries003.htm">Oracle Hierarchical Queries</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/oracle-connect-by/">https://isdaniel.github.io/oracle-connect-by/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<pre><code>    | PARTNO |   NAME | PARENTPARTNO | LEVEL |
+    |--------|--------|--------------|-------|
+    |      1 |   Boss |            0 |     1 |
+    |      2 |   Jack |            1 |     2 |
+    |      3 |    TOM |            2 |     3 |
+    |      4 |    AMY |            3 |     4 |
+    |      5 | Daniel |            2 |     3 |
+</code></pre>
+<p>參考資料：<a href="https://docs.oracle.com/cd/B19306_01/server.102/b14200/queries003.htm">Oracle Hierarchical Queries</a></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/oracle-connect-by/">https://isdaniel.github.io/oracle-connect-by/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -525,12 +530,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

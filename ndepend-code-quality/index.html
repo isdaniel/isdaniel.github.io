@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://i.imgur.com/yif7FfJ.png">
 <meta property="og:image" content="https://i.imgur.com/t2Yuf4U.png">
 <meta property="article:published_time" content="2021-12-04T00:00:00.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Ndepend">
@@ -208,7 +208,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -244,7 +244,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>2.9k</span>
+              <span>3k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -265,10 +265,10 @@
       
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>當一個專案越來越大，在開發新產品時同時要兼顧程式碼品質會越來越困難，今天要介紹的　<a href="https://www.ndepend.com/">Ndepend</a> 是一個很優秀靜態分析 .Net 專案好物</p>
 <p>會幫我們產生一個 DashBoard 來了解目前專案大致上分析後的問題，並提供建議解法和處理方向，讓我們提前更快速抓出未來或目前存在 bug，減少發生需要晚上起來 support 機率，讓客戶，老闆，工程師都開心的三大歡喜</p>
-<p>另外我們也可以透過 <a href="https://www.ndepend.com/">Ndepend</a> 來撰寫我們自己 Code Rule 並在 CI/CD 流程中進行靜態掃描，讓我們出產軟體更有品質</p>
+<p>另外我們也可以透過 <a href="https://www.ndepend.com/">Ndepend</a> 來撰寫我們自己 Code Rule 並在 CI&#x2F;CD 流程中進行靜態掃描，讓我們出產軟體更有品質</p>
 <p>本文我使用我自己的開源專案 <a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a> 來當作分析案例</p>
 <h2 id="建立-Ndepend-開始分析"><a href="#建立-Ndepend-開始分析" class="headerlink" title="建立 Ndepend 開始分析"></a>建立 Ndepend 開始分析</h2><p>安裝完 <code>Ndepend</code> 後我們可以在 virtual studio 上面的[延伸模組] 出現建立 <code>Ndepend</code> 項目，一開始我們利用 Attach New Ndepend Project to Current VS Solution ，來建立分析項目</p>
-<p><img src="https://i.imgur.com/flzNRXR.png" alt=""></p>
+<p><img src="https://i.imgur.com/flzNRXR.png"></p>
 <p><code>NDepend</code> 分析完程式後我們會在 sln 檔同級目錄下看到一個 <code>NDependOut</code> 資料夾跟 <code>.ndproj</code> 檔案</p>
 <ul>
 <li><code>.ndproj</code> 是 XML 格式儲存的專案檔，內容包含 <code>NDepend</code> 專案資訊及分析設定資訊</li>
@@ -277,25 +277,26 @@
 </ul>
 <p>假如不想在版控加入 Ndepend 分析紀錄，我們可以自行加上 gitignore 規則</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">**/NDependOut/</span><br><span class="line">*.ndproj</span><br></pre></td></tr></table></figure>
+
 <h2 id="Ndepend-DashBoard"><a href="#Ndepend-DashBoard" class="headerlink" title="Ndepend DashBoard"></a>Ndepend DashBoard</h2><p>在許多國外大公司都有使用 <code>Ndepend</code> 來幫助開發流程，我個人覺得有其中一個原因是因為　<code>Ndepend</code> DashBoard 讓我們開發人員可以一目了然目前有的問題</p>
 <p>Ndepend 提供許多有用的 Code Metrics，</p>
 <ul>
 <li>Lines of Code ：專案規模:</li>
 <li>Comment：註解撰寫註解覆蓋率</li>
-<li>Quality Gate：品質把控，設定本次 Release 程式檔至少要通過某些標準，在 CI/CD 環節扮演很重要一環</li>
+<li>Quality Gate：品質把控，設定本次 Release 程式檔至少要通過某些標準，在 CI&#x2F;CD 環節扮演很重要一環</li>
 <li>Debt：程式債比率 <code>Rating</code> 代表評分，百分比越低越好</li>
 <li>Rules：品質規則，建議 <code>Critical</code> 等級需要了解一下</li>
 <li>Issues：目前問題，建議 <code>Critical</code> 等級需要了解一下</li>
 </ul>
 <p>Ndepend 能針對一個基準點來比較調整前後，修改哪些問題</p>
 <p>例如下圖</p>
-<p><img src="https://i.imgur.com/Ig723uv.png" alt=""></p>
+<p><img src="https://i.imgur.com/Ig723uv.png"></p>
 <p>黃框：目前有的問題資訊<br>藍框：基於上一個 baseline 我們修改了哪些問題(我修正了一個，所以會看到-1)</p>
 <p>有了這項功能讓我們可以很好追蹤每次上到基於上次上版修改了哪些問題</p>
 <p><code>Ndepend</code> 利用上面介紹的 Metrics 來畫出炫砲圖表</p>
-<p><img src="https://i.imgur.com/aRvR5AE.png" alt=""></p>
+<p><img src="https://i.imgur.com/aRvR5AE.png"></p>
 <h2 id="Rule-介紹"><a href="#Rule-介紹" class="headerlink" title="Rule 介紹"></a>Rule 介紹</h2><p><code>NDependOut</code> 提供許多 Rule 來建議我們程式碼優化，且裡面有許多詳細的說明</p>
-<p><img src="https://i.imgur.com/yif7FfJ.png" alt=""></p>
+<p><img src="https://i.imgur.com/yif7FfJ.png"></p>
 <h3 id="建立自己-Code-Rule"><a href="#建立自己-Code-Rule" class="headerlink" title="建立自己 Code Rule"></a>建立自己 Code Rule</h3><p>我覺得使用 <code>NDepend</code> 有一個很大的優勢是可以很簡單制訂自己的 <code>Rules</code> </p>
 <p><code>NDepend</code>  自創 <a href="https://www.ndepend.com/Features/#CQL">CQL</a> (Code Query Language) 來制訂檢驗規則，寫法跟 c# LINQ 非常類似</p>
 <p>我們可以利用 CQL 來找尋符合，我們設定 Rule Metrics，並進行統計</p>
@@ -307,14 +308,15 @@
 <p>最後我們可以把我們關注資訊 <code>select</code> 用一個匿名類別來返回我們要的資料</p>
 <p>依照下面這個 Rule 我們判定是 <code>Severity.Medium</code>，另外對於每筆符合此 Rule 資料我們都會計算 <code>Debt</code> (程式債) 處理 + 10 分鐘</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// &lt;Name&gt;Methods prefixed with &#x27;Try&#x27; should return a boolean&lt;/Name&gt;</span></span><br><span class="line"><span class="comment">// &lt;Id&gt;ND2016:MethodsPrefixedWithTryShouldReturnABoolean&lt;/Id&gt;</span></span><br><span class="line"></span><br><span class="line">warnif count &gt; <span class="number">0</span></span><br><span class="line"><span class="keyword">from</span> m <span class="keyword">in</span> Application.Methods <span class="keyword">where</span></span><br><span class="line">  m.SimpleNameLike(<span class="string">&quot;^Try&quot;</span>) &amp;&amp;</span><br><span class="line">  m.ReturnType != <span class="literal">null</span> &amp;&amp;</span><br><span class="line">  m.ReturnType.FullName != <span class="string">&quot;System.Boolean&quot;</span></span><br><span class="line"><span class="keyword">select</span> <span class="keyword">new</span> &#123; </span><br><span class="line">   m, </span><br><span class="line">   m.ReturnType,</span><br><span class="line">   Debt = <span class="number">10.</span>ToMinutes().ToDebt(),</span><br><span class="line">   Severity = Severity.Medium</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//&lt;Description&gt;</span></span><br><span class="line"><span class="comment">// When a method has a name prefixed with **Try**, it is expected that</span></span><br><span class="line"><span class="comment">// it returns a *boolean*, that reflects the method execution status,</span></span><br><span class="line"><span class="comment">// *success* or *failure*.</span></span><br><span class="line"><span class="comment">//</span></span><br><span class="line"><span class="comment">// Such method usually returns a result through an *out parameter*.</span></span><br><span class="line"><span class="comment">// For example:  *System.Int32.TryParse(int,out string):bool*</span></span><br><span class="line"><span class="comment">//&lt;/Description&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//&lt;HowToFix&gt;</span></span><br><span class="line"><span class="comment">// To fix a violation of this rule,</span></span><br><span class="line"><span class="comment">// Rename the method, or transform it into an operation that can fail.</span></span><br><span class="line"><span class="comment">//&lt;/HowToFix&gt;</span></span><br></pre></td></tr></table></figure>
+
 <p>如果想要了解更多撰寫 Rule 方式可以參考<a href="https://www.ndepend.com/docs/write-your-own-code-rules">write-your-own-code-rules</a></p>
-<p>我們可以依照團隊習慣和風格慢慢打造屬於自己的 <strong>CQL Query</strong> 來協助我們整個開發流程更穩健且  <code>NDepend</code> 對於 CI/CD Azure + TFS 支援性蠻好，對於想要建立 high quality devops 具有很大的幫助</p>
+<p>我們可以依照團隊習慣和風格慢慢打造屬於自己的 <strong>CQL Query</strong> 來協助我們整個開發流程更穩健且  <code>NDepend</code> 對於 CI&#x2F;CD Azure + TFS 支援性蠻好，對於想要建立 high quality devops 具有很大的幫助</p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>我覺得 <code>NDepend</code> 是一個很優秀的靜態分析工具，裡面的建議修改提示就像是旁邊有一個大師在跟你指導，可以學習到不少東西</p>
-<p><code>NDepend</code> 對於 CI/CD 整合有提供豐富的影片跟資訊可以參考<br><a href="https://www.ndepend.com/docs/azure-devops-tfs-vsts-integration-ndepend">devops-tfs-vsts-integration-ndepend</a></p>
+<p><code>NDepend</code> 對於 CI&#x2F;CD 整合有提供豐富的影片跟資訊可以參考<br><a href="https://www.ndepend.com/docs/azure-devops-tfs-vsts-integration-ndepend">devops-tfs-vsts-integration-ndepend</a></p>
 <p>可以讓我們每次 Release 開發結果更透明，讓整個團隊人能一目了然看到該專案的狀態</p>
 <p>最後跟大家分享經由 <code>NDepend</code> 建議提示我調整了，我的專案分數跟程式複雜度有明顯下降</p>
-<p><img src="https://i.imgur.com/t2Yuf4U.png" alt=""></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ndepend-code-quality/">https://isdaniel.github.io/ndepend-code-quality/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p><img src="https://i.imgur.com/t2Yuf4U.png"></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ndepend-code-quality/">https://isdaniel.github.io/ndepend-code-quality/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -519,12 +521,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

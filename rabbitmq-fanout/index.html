@@ -20,16 +20,16 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="前言本篇利用RabbitMQ client來簡單實現MQ功能. 在RabbitMQ中有很重要兩個角色，Producer和Consumer，下面這個範例使用c# console來實現. 我個人覺得APMQ協議和Http協議有點類似，一樣有Header(Properties)，body…等等概念. Producer Code一開始我們宣告一個 ConnectionFactory 並設置RabbitMQ">
+  <meta name="description" content="前言本篇利用RabbitMQ client來簡單實現MQ功能. 在RabbitMQ中有很重要兩個角色，Producer和Consumer，下面這個範例使用c# console來實現. 我個人覺得APMQ協議和Http協議有點類似，一樣有Header(Properties)，body…等等概念. Producer Code一開始我們宣告一個 ConnectionFactory 並設置RabbitMQ">
 <meta property="og:type" content="article">
 <meta property="og:title" content="RabbitMQ (三) 簡單實作一個MQ">
 <meta property="og:url" content="https://isdaniel.github.io/rabbitmq-fanout/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="前言本篇利用RabbitMQ client來簡單實現MQ功能. 在RabbitMQ中有很重要兩個角色，Producer和Consumer，下面這個範例使用c# console來實現. 我個人覺得APMQ協議和Http協議有點類似，一樣有Header(Properties)，body…等等概念. Producer Code一開始我們宣告一個 ConnectionFactory 並設置RabbitMQ">
+<meta property="og:description" content="前言本篇利用RabbitMQ client來簡單實現MQ功能. 在RabbitMQ中有很重要兩個角色，Producer和Consumer，下面這個範例使用c# console來實現. 我個人覺得APMQ協議和Http協議有點類似，一樣有Header(Properties)，body…等等概念. Producer Code一開始我們宣告一個 ConnectionFactory 並設置RabbitMQ">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/338bdb11-eefe-41ac-a329-188b11796447/1548690458_72118.gif">
 <meta property="article:published_time" content="2019-06-02T22:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.863Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="RabbitMQ">
@@ -205,7 +205,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -259,13 +259,13 @@
         <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>本篇利用RabbitMQ client來簡單實現MQ功能.</p>
 <p>在RabbitMQ中有很重要兩個角色，<code>Producer</code>和<code>Consumer</code>，下面這個範例使用<code>c# console</code>來實現.</p>
 <p>我個人覺得APMQ協議和Http協議有點類似，一樣有Header(Properties)，body…等等概念.</p>
-<h2 id="Producer-Code"><a href="#Producer-Code" class="headerlink" title="Producer Code"></a>Producer Code</h2><p>一開始我們宣告一個 ConnectionFactory 並設置RabbitMQ Server連接參數</p>
+<h2 id="Producer-Code"><a href="#Producer-Code" class="headerlink" title="Producer Code"></a>Producer Code</h2><p>一開始我們宣告一個 ConnectionFactory 並設置RabbitMQ Server連接參數</p>
 <ul>
 <li>UserName:使用者帳號</li>
 <li>Password:使用者密碼</li>
 <li>HostName:連接FQDN或IP</li>
 </ul>
-<p>RabbitMQ預設密碼是 <code>guest</code></p>
+<p>RabbitMQ預設密碼是 <code>guest</code></p>
 <pre><code>//建立連接工廠
 ConnectionFactory factory = new ConnectionFactory
 &#123;
@@ -273,7 +273,8 @@ ConnectionFactory factory = new ConnectionFactory
     Password = &quot;guest&quot;,
     HostName = &quot;localhost&quot;
 &#125;;
-</code></pre><p>呼叫<code>factory.CreateConnection</code> 建立連接RabbitMQ連接物件，並呼叫 <code>CreateModel</code>方法建立一個<code>channel</code> Model</p>
+</code></pre>
+<p>呼叫<code>factory.CreateConnection</code> 建立連接RabbitMQ連接物件，並呼叫 <code>CreateModel</code>方法建立一個<code>channel</code> Model</p>
 <blockquote>
 <p>在之前有說過RabbitMq會利用同一個Connection來建立不同的channel來執行MQ連接.</p>
 </blockquote>
@@ -301,7 +302,8 @@ using (var channel = connection.CreateModel())
 
     &#125; while (Console.ReadKey().Key != ConsoleKey.Escape);
 &#125;
-</code></pre><p>最後在使用 <code>channel.BasicPublish</code>方法 將訊息推送給指定交換器，因為是走tcp所以將訊息轉換成二進制流</p>
+</code></pre>
+<p>最後在使用 <code>channel.BasicPublish </code>方法 將訊息推送給指定交換器，因為是走tcp所以將訊息轉換成二進制流</p>
 <hr>
 <h2 id="Consumer-Code"><a href="#Consumer-Code" class="headerlink" title="Consumer Code"></a>Consumer Code</h2><p>前面建立連接都大同小異都是利用<code>ConnectionFactory</code>來建立連接物件</p>
 <pre><code>ConnectionFactory factory = new ConnectionFactory
@@ -334,19 +336,21 @@ using (var channel = connection.CreateModel())
     Console.WriteLine(&quot;接收訊息&quot;);
     Console.ReadKey();
 &#125;
-</code></pre><p>值得一提的是 <code>EventingBasicConsumer</code> 這個類別有一個建構子函數，把 <code>channel</code> 物件傳入產生一個消費者</p>
+</code></pre>
+<p>值得一提的是 <code>EventingBasicConsumer</code> 這個類別有一個建構子函數，把 <code>channel</code> 物件傳入產生一個消費者</p>
 <pre><code>EventingBasicConsumer consumer = new EventingBasicConsumer(channel);
-</code></pre><p>在呼叫 <code>EventingBasicConsumer.Received</code>綁定接收訊息事件，</p>
+</code></pre>
+<p>在呼叫 <code>EventingBasicConsumer.Received</code>綁定接收訊息事件，</p>
 <ol>
 <li>第一個參數是<code>channel</code>物件本身</li>
-<li>第二個參數是 <code>Message</code>(訊息) 資訊</li>
+<li>第二個參數是 <code>Message </code>(訊息) 資訊</li>
 </ol>
 <p>裡面有一個<code>Body</code>欄位可取得 傳送的二進制流資料</p>
 <hr>
 <h2 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h2><p>為了簡單演示範例 我讓使用者輸入一個數字來跑迴圈，Producer 會把數字傳給Exchange並平均分配給所有consumer</p>
 <p>本次有兩個 consumer 等待接收資訊，我們可以看到Fanout交換器不用指定RouteKey且把訊息平均分配到consumer上</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/338bdb11-eefe-41ac-a329-188b11796447/1548690458_72118.gif" alt=""></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/rabbitmq-fanout/">https://isdaniel.github.io/rabbitmq-fanout/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/338bdb11-eefe-41ac-a329-188b11796447/1548690458_72118.gif"></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/rabbitmq-fanout/">https://isdaniel.github.io/rabbitmq-fanout/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -552,12 +556,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

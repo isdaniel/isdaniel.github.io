@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="前文本篇會跟大家對於SQL-Server資料表深入淺出的介紹. 關於子頁層資料會存在子頁層中(page),一個Page大小為 8K&#x2F;Page &#x3D;&gt; 8092(8060 bytes)  每個Page除了存取資料還會存放一些MetaData，我們可以先當作是每個Page大小是8K  Heap資料表如果一張資料表沒有Clustered Index就會為Heap資料表，這意味著Heap資料表的資料不">
+  <meta name="description" content="前文本篇會跟大家對於SQL-Server資料表深入淺出的介紹. 關於子頁層資料會存在子頁層中(page),一個Page大小為 8K&#x2F;Page &#x3D;&gt; 8092(8060 bytes)  每個Page除了存取資料還會存放一些MetaData，我們可以先當作是每個Page大小是8K  Heap資料表如果一張資料表沒有Clustered Index就會為Heap資料表，這意味著H">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SqlServer資料表深入淺出">
 <meta property="og:url" content="https://isdaniel.github.io/dbtable/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="前文本篇會跟大家對於SQL-Server資料表深入淺出的介紹. 關於子頁層資料會存在子頁層中(page),一個Page大小為 8K&#x2F;Page &#x3D;&gt; 8092(8060 bytes)  每個Page除了存取資料還會存放一些MetaData，我們可以先當作是每個Page大小是8K  Heap資料表如果一張資料表沒有Clustered Index就會為Heap資料表，這意味著Heap資料表的資料不">
+<meta property="og:description" content="前文本篇會跟大家對於SQL-Server資料表深入淺出的介紹. 關於子頁層資料會存在子頁層中(page),一個Page大小為 8K&#x2F;Page &#x3D;&gt; 8092(8060 bytes)  每個Page除了存取資料還會存放一些MetaData，我們可以先當作是每個Page大小是8K  Heap資料表如果一張資料表沒有Clustered Index就會為Heap資料表，這意味著H">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/Qw8Kx1q.png">
 <meta property="og:image" content="https://i.imgur.com/5drfCFZ.png">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://i.imgur.com/ZcgdAhc.png">
 <meta property="og:image" content="https://i.imgur.com/e87YROd.png">
 <meta property="article:published_time" content="2020-01-26T23:10:43.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="DataBase">
 <meta property="article:tag" content="Turning">
@@ -209,7 +209,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -245,7 +245,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.7k</span>
+              <span>3.8k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -265,7 +265,7 @@
 
       
         <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會跟大家對於<code>SQL-Server</code>資料表深入淺出的介紹.</p>
-<h2 id="關於子頁層"><a href="#關於子頁層" class="headerlink" title="關於子頁層"></a>關於子頁層</h2><p>資料會存在子頁層中(page),一個<code>Page</code>大小為 8K/Page =&gt; 8092(8060 bytes)</p>
+<h2 id="關於子頁層"><a href="#關於子頁層" class="headerlink" title="關於子頁層"></a>關於子頁層</h2><p>資料會存在子頁層中(page),一個<code>Page</code>大小為 8K&#x2F;Page &#x3D;&gt; 8092(8060 bytes)</p>
 <blockquote>
 <p>每個Page除了存取資料還會存放一些<code>MetaData</code>，我們可以先當作是每個Page大小是8K</p>
 </blockquote>
@@ -279,57 +279,64 @@
 </blockquote>
 <p>IAM Page在讀取資料的示意圖</p>
 <p>可以看到讀取Page中資料順序和新增資料順序不一樣.</p>
-<p><img src="https://i.imgur.com/Qw8Kx1q.png" alt=""></p>
+<p><img src="https://i.imgur.com/Qw8Kx1q.png"></p>
 <h2 id="forwarding-pointer"><a href="#forwarding-pointer" class="headerlink" title="forwarding pointer"></a>forwarding pointer</h2><p>假如在Heap資料表更新欄位資料，就可能會造成<code>forwarding pointer</code></p>
 <p>製造<code>forwarding pointer</code>是因為原本<code>Page</code>塞不下更新後資料就會先把資料搬到另一個新建立<code>Page</code>上並在原本<code>Page</code>建立一個類似指標東西指向它.</p>
 <blockquote>
 <p>這個指標會存在原本的Page大小是16 byte</p>
 </blockquote>
-<p><img src="https://i.imgur.com/5drfCFZ.png" alt=""></p>
+<p><img src="https://i.imgur.com/5drfCFZ.png"></p>
 <h3 id="forwarding-pointer-Demo"><a href="#forwarding-pointer-Demo" class="headerlink" title="forwarding pointer(Demo)"></a>forwarding pointer(Demo)</h3><p>一個Page大小是8k</p>
 <p>我們建立一個<code>ForwardingPointers</code>資料表，並且新增3筆資料進去</p>
 <blockquote>
 <p>其中有一筆資料<code>replicate(&#39;2&#39;,7800)</code>佔據78xxBytes.</p>
 </blockquote>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create table</span> dbo.ForwardingPointers</span><br><span class="line">(</span><br><span class="line"> ID <span class="type">int</span> <span class="keyword">not null</span>,</span><br><span class="line"> Val <span class="type">varchar</span>(<span class="number">8000</span>) <span class="keyword">null</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert into</span> dbo.ForwardingPointers(ID,Val)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>,<span class="keyword">null</span>),(<span class="number">2</span>,replicate(<span class="string">&#x27;2&#x27;</span>,<span class="number">7800</span>)),(<span class="number">3</span>,<span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
+
 <p>新增完後我們利用<code>DMV</code>查詢目前<code>ForwardingPointers</code>使用的Page數量可以看到只使用一頁</p>
 <blockquote>
 <p>因為目前資料大小可以放在同一個Page</p>
 </blockquote>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> page_count, avg_record_size_in_bytes, avg_page_space_used_in_percent</span><br><span class="line"> ,forwarded_record_count</span><br><span class="line"><span class="keyword">from</span> sys.dm_db_index_physical_stats(db_id(),object_id(N<span class="string">&#x27;dbo.ForwardingPointers&#x27;</span>),<span class="number">0</span></span><br><span class="line"> ,<span class="keyword">null</span>,<span class="string">&#x27;DETAILED&#x27;</span>);</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/7F9Kmcg.png" alt=""></p>
+
+<p><img src="https://i.imgur.com/7F9Kmcg.png"></p>
 <p>我們將<code>dbo.ForwardingPointers</code>另外兩個<br><code>Val IS NULL</code>更新成<code>replicate(&#39;2&#39;,7800)</code></p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> dbo.ForwardingPointers</span><br><span class="line"><span class="keyword">SET</span> Val <span class="operator">=</span> replicate(<span class="string">&#x27;2&#x27;</span>,<span class="number">7800</span>)</span><br><span class="line"><span class="keyword">WHERE</span> Val <span class="keyword">IS</span> <span class="keyword">NULL</span></span><br></pre></td></tr></table></figure>
+
 <p>再查詢一次<code>dbo.ForwardingPointers</code>使用Page，能發現已經使用了3個Page(因為已經觸發<code>forwarding pointer</code>)</p>
 <p>已經把這次更新的資料搬到新Page上，因為更新後的資料大小已經超過目前Page可以負擔的大小</p>
-<p><img src="https://i.imgur.com/ZcgdAhc.png" alt=""></p>
+<p><img src="https://i.imgur.com/ZcgdAhc.png"></p>
 <h3 id="RID-Lookup"><a href="#RID-Lookup" class="headerlink" title="RID Lookup"></a>RID Lookup</h3><p>在<a href="https://isdaniel.github.io/DBIndex-1/">資料庫索引深入淺出(一)</a>有說，資料表沒有<code>Clustered Index</code>且使用<code>Index</code>所有查詢欄位不包含在<code>Converting Index</code>中就會透過<code>RID Lookup</code>查找確切Page上的Row(藉由Row-Id)</p>
 <blockquote>
 <p>此資料表是<code>Heap</code>資料表在<code>NonClustered Index</code>中會存放<code>Heap RID</code></p>
 </blockquote>
-<p><img src="https://i.imgur.com/e87YROd.png" alt=""></p>
+<p><img src="https://i.imgur.com/e87YROd.png"></p>
 <blockquote>
 <p>記得在<code>DBCC IND</code>取得的PID是要找<code>PageType = 2</code></p>
 </blockquote>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DBCC traceon (<span class="number">3604</span>);</span><br><span class="line">DBCC IND ([Your DataBase],T1,<span class="number">-1</span>)</span><br><span class="line">DBCC PAGE([Your DataBase],<span class="number">1</span>,[Your PID],<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
 <p>透過<code>DBCC</code>可以看到查找資料表Page資料可以顯示如下結果集.</p>
 <p>如果是Heap資料表會有一個欄位是<code>Heap RID(Key)</code>欄位.</p>
 <blockquote>
 <p>HEAP RID:0x40110F0001002900<br>大小 8 bytes</p>
+</blockquote>
 <ul>
 <li>FID（2 bytes）</li>
 <li>PID（4 bytes）</li>
 <li>SLOT（2 bytes）</li>
 </ul>
-</blockquote>
 <p>可藉由下面的Script來拆解<code>Heap RID(Key)</code>資料</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--轉換RID為 FID:PID:slot格式</span></span><br><span class="line"><span class="keyword">declare</span> <span class="variable">@Heaprid</span> <span class="type">binary</span>(<span class="number">8</span>)</span><br><span class="line"><span class="keyword">set</span> <span class="variable">@Heaprid</span> <span class="operator">=</span> <span class="number">0x40110F0001002900</span></span><br><span class="line"><span class="keyword">select</span> [FID:PID:Slot]<span class="operator">=</span>      </span><br><span class="line">       <span class="keyword">CONVERT</span> (<span class="type">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="type">INT</span>, <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">6</span>, <span class="number">1</span>)</span><br><span class="line">       <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">5</span>, <span class="number">1</span>)))</span><br><span class="line">     <span class="operator">+</span> <span class="string">&#x27;:&#x27;</span></span><br><span class="line">     <span class="operator">+</span> <span class="keyword">CONVERT</span>(<span class="type">VARCHAR</span>(<span class="number">10</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="type">INT</span>, <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">4</span>, <span class="number">1</span>)</span><br><span class="line">        <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">3</span>, <span class="number">1</span>)</span><br><span class="line">        <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">2</span>, <span class="number">1</span>)</span><br><span class="line">        <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">1</span>, <span class="number">1</span>)))</span><br><span class="line">     <span class="operator">+</span> <span class="string">&#x27;:&#x27;</span></span><br><span class="line">          <span class="operator">+</span> <span class="keyword">CONVERT</span>(<span class="type">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">          <span class="keyword">CONVERT</span>(<span class="type">INT</span>, <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">8</span>, <span class="number">1</span>)</span><br><span class="line">          <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">7</span>, <span class="number">1</span>)))</span><br></pre></td></tr></table></figure>
+
 <p>透過上面Script我們可以得到<code>1:987456:41</code></p>
 <p>我們在透過</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DBCC PAGE(AdventureWorks2012_Data,<span class="number">1</span>,<span class="number">987456</span>,<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
 <p>就可以查找到我們要的資料在<code>PID = 987456</code>這個Page中.</p>
 <h2 id="dbcc-page-語法"><a href="#dbcc-page-語法" class="headerlink" title="dbcc page 語法"></a>dbcc page 語法</h2><p>下面語法透過<code>dbcc page</code>可以了解資料表存取資訊</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* 建立測試資料表 */</span></span><br><span class="line"><span class="keyword">drop</span> <span class="keyword">table</span> if <span class="keyword">exists</span> dbo.T;</span><br><span class="line"><span class="keyword">create table</span> dbo.T</span><br><span class="line">(</span><br><span class="line">	Name	nvarchar(<span class="number">10</span>) <span class="keyword">not null</span>,</span><br><span class="line">	EmpID	<span class="type">int</span> <span class="keyword">not null</span>,</span><br><span class="line">	CouID	<span class="type">int</span> <span class="keyword">not null</span>,</span><br><span class="line">	Locate	<span class="type">nchar</span>(<span class="number">2</span>) <span class="keyword">not null</span>,</span><br><span class="line">	Dist	<span class="type">nchar</span>(<span class="number">1</span>) <span class="keyword">not null</span>,</span><br><span class="line">	BDate	datetime <span class="keyword">not null</span>,</span><br><span class="line">	Address	nvarchar(<span class="number">100</span>) <span class="keyword">null</span>,</span><br><span class="line">	CheckID	<span class="type">int</span> <span class="keyword">not null</span></span><br><span class="line">);</span><br><span class="line">go</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 寫入測試資料 */</span></span><br><span class="line"><span class="keyword">insert into</span> dbo.T</span><br><span class="line">	(Name, EmpID, CouID, Locate, Dist, BDate, Address, CheckID)</span><br><span class="line"><span class="keyword">values</span></span><br><span class="line">	(N<span class="string">&#x27;Daniel&#x27;</span>,<span class="number">1</span>,<span class="number">950</span>,N<span class="string">&#x27;TW&#x27;</span>,N<span class="string">&#x27;M&#x27;</span>,<span class="string">&#x27;2020-01-01 00:00:00&#x27;</span>,N<span class="string">&#x27;Taipei City&#x27;</span>,<span class="number">9</span>);</span><br><span class="line">go</span><br><span class="line"></span><br><span class="line"><span class="comment">/* 先取得Page的位置 */</span></span><br><span class="line">dbcc ind (<span class="string">&#x27;DEMO&#x27;</span>,<span class="string">&#x27;dbo.T&#x27;</span>, <span class="number">-1</span>);</span><br><span class="line"><span class="comment">/* 16776 - 不會一樣, 依照產出的資料配置dbcc page */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* 查看Page內容 */</span></span><br><span class="line">dbcc traceon (<span class="number">3604</span>);</span><br><span class="line">dbcc page (<span class="string">&#x27;DEMO&#x27;</span>, <span class="number">1</span>, <span class="number">16776</span>, <span class="number">3</span>)</span><br><span class="line">dbcc traceoff (<span class="number">3604</span>);</span><br></pre></td></tr></table></figure>
+
 <p>PageType – the page type. Some common ones are:</p>
 <ul>
 <li>1 – data page</li>
@@ -341,6 +348,7 @@
 <li>11 – PFS page</li>
 </ul>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dbcc traceon (<span class="number">3604</span>);</span><br><span class="line">DBCC IND ( &#123; ‘dbname’ <span class="operator">|</span> dbid &#125;, &#123; ‘objname’ <span class="operator">|</span> objid &#125;,&#123; nonclustered indid <span class="operator">|</span> <span class="number">1</span> <span class="operator">|</span> <span class="number">0</span> <span class="operator">|</span> <span class="number">-1</span> <span class="operator">|</span> <span class="number">-2</span> &#125; [, partition_number] )</span><br></pre></td></tr></table></figure>
+
 <ul>
 <li>第一個參數是數據庫名或數據庫ID。</li>
 <li>第二個參數是數據庫中的對象名或對象ID，對象可以是表或者索引視圖。</li>
@@ -352,7 +360,7 @@
 </ul>
 </li>
 </ul>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbtable/">https://isdaniel.github.io/dbtable/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/dbtable/">https://isdaniel.github.io/dbtable/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -558,12 +566,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

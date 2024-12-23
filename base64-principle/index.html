@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="http://i.imgur.com/4wh9OVF.png">
 <meta property="article:published_time" content="2019-05-29T22:39:17.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="WebDesign">
 <meta property="article:tag" content="Base64">
@@ -205,7 +205,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -278,16 +278,17 @@ A~Z (26)
 0~9 (10)
 + (1)
 / (1)
-</code></pre><p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
+</code></pre>
+<p>上面編碼成上面五種種類字元的資料 64就是把所以可用字元數量總合</p>
 <blockquote>
-<p>64 = 26+26+10+1+1</p>
+<p>64 &#x3D; 26+26+10+1+1</p>
 </blockquote>
 <hr>
 <h2 id="原理："><a href="#原理：" class="headerlink" title="原理："></a>原理：</h2><p>那Base64是怎麼將資料轉成<code>a~z，A~Z，0~9，/，+</code>的組合呢?</p>
 <p>最終目標想要把資料轉成在Ascii Code 0 ~ 127 的字元</p>
 <p><a href="https://zh.wikipedia.org/wiki/Base64">Base64 wiki說明</a></p>
 <blockquote>
-<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
+<p>轉換的時候，將3位元組的資料，先後放入一個24位元的緩衝區中，先來的位元組占高位。資料不足3位元組的話，於緩衝區中剩下的位元用0補足。每次取出6位元，按照其值選擇ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+&#x2F;中的字元作為編碼後的輸出，直到全部輸入資料轉換完成。</p>
 </blockquote>
 <p>這邊有幾個重點</p>
 <ol>
@@ -304,8 +305,8 @@ A~Z (26)
 <li>將字元轉換成二進制</li>
 </ol>
 <ul>
-<li>B (66) = 0    1    0    0    0    0    1    0</li>
-<li>C (67) = 0    1    0    0    0    0    1    1</li>
+<li>B (66) &#x3D; 0    1    0    0    0    0    1    0</li>
+<li>C (67) &#x3D; 0    1    0    0    0    0    1    1</li>
 </ul>
 <ol start="2">
 <li><p>資料不足3 byte的話，於緩衝區中剩下的bit用0補足，所以我們將第三個Byte資料用0補齊</p>
@@ -316,16 +317,16 @@ A~Z (26)
 </li>
 </ol>
 <p><img src="/images/Base64_1.PNG" alt="img"></p>
-<p>Base64編碼    Q    k    M    =<br>範例來自於Wiki</p>
+<p>Base64編碼	Q	k	M	&#x3D;<br>範例來自於Wiki</p>
 <blockquote>
-<p>= 並不是`Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 = 或 == 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 = 符號</p>
+<p>&#x3D; 並不是&#96;Base64的字元 而是代表補0使用的<br>雖然Base64在最後常常會看到 &#x3D; 或 &#x3D;&#x3D; 結尾，那是因為遇到要補位的情況.如果字元剛剛好滿的狀態(3 bytes)就不會看到 &#x3D; 符號</p>
 </blockquote>
 <p><img src="/images/Base64_2.PNG" alt="img"><br>範例來自於Wiki</p>
 <h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>Base64分享到這邊！</p>
 <p>其實Base家族除了64還有 <code>Base32,Base16 ....</code> 你也可以自行依照上面算法建立自己 Base 編碼.</p>
 <p><code>Base32 : a~z , 2~7</code></p>
 <p>原理其實都是一樣的</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/base64-principle/">https://isdaniel.github.io/base64-principle/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -528,12 +529,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

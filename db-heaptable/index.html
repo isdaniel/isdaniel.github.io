@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/HT0bui0.png">
 <meta property="article:published_time" content="2021-06-19T22:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="DataBase">
 <meta property="article:tag" content="sql-server">
@@ -205,7 +205,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -283,7 +283,7 @@
 <p>這個指標會存在原本的Page大小是16 byte</p>
 </blockquote>
 <p><code>forwarding pointer</code> Page產生和概念如下圖</p>
-<p><img src="https://i.imgur.com/5drfCFZ.png" alt=""></p>
+<p><img src="https://i.imgur.com/5drfCFZ.png"></p>
 <p>讀取<code>forwarding pointer</code>執行動作如下圖所示</p>
 <p>假如我們有一個Scan的需求</p>
 <ol>
@@ -291,7 +291,7 @@
 <li>所以到<code>forwarding pointer</code> (<code>Page2</code>,<code>Page3</code>)搜索資料</li>
 <li>搜尋完<code>Page1</code>接者搜尋<code>Page2</code>,<code>Page3</code></li>
 </ol>
-<p><img src="https://i.imgur.com/HT0bui0.png" alt=""></p>
+<p><img src="https://i.imgur.com/HT0bui0.png"></p>
 <p>上面因為Page1資料<code>forwarding pointer</code>到其他Page導致Scan資料時多了2個page read,如果<code>forwarding pointer</code>數量一多對於讀的效能可想而知….</p>
 <h3 id="IAM-index-allocation-map"><a href="#IAM-index-allocation-map" class="headerlink" title="IAM(index allocation map)"></a>IAM(index allocation map)</h3><p>當Heap要搜尋資料<code>SQL-Server</code>透過IAM(index allocation map)去尋要掃描Page範圍，因為<code>IAM</code>會以範圍存在於檔案中的順序來表示它們，這代表循序的堆積掃描都將依檔案順序進行。</p>
 <blockquote>
@@ -301,8 +301,8 @@
 <blockquote>
 <p>因為透過IAM Page搜索資料是在做<strong>Allocation order scan</strong>,這也是為什麼Heap資料表和使用<code>With NOLOCK</code>查詢資料時,如果沒有使用<code>ORDER BY</code>順序會不如預期</p>
 </blockquote>
-<p><img src="https://i.imgur.com/Qw8Kx1q.png" alt=""></p>
-<h3 id="Allocation-order-scan-amp-Range-scan"><a href="#Allocation-order-scan-amp-Range-scan" class="headerlink" title="Allocation order scan &amp; Range scan"></a>Allocation order scan &amp; Range scan</h3><p>在sqlserver底層有隱藏兩種Scan方式</p>
+<p><img src="https://i.imgur.com/Qw8Kx1q.png"></p>
+<h3 id="Allocation-order-scan-Range-scan"><a href="#Allocation-order-scan-Range-scan" class="headerlink" title="Allocation order scan &amp; Range scan"></a>Allocation order scan &amp; Range scan</h3><p>在sqlserver底層有隱藏兩種Scan方式</p>
 <ul>
 <li>Allocation order scan: 使用with(nolock) or 查詢Heap table 使用(IAM)找尋Page和Extents</li>
 </ul>
@@ -312,19 +312,19 @@
 <ul>
 <li>Range scan(b-tree scan): 沒使用(IAM),靠著Clustered Index or NonClustered Index來查找資料.</li>
 </ul>
-<h2 id="GAM-amp-SGAM"><a href="#GAM-amp-SGAM" class="headerlink" title="GAM &amp; SGAM"></a>GAM &amp; SGAM</h2><p>GAM和SGAM Page可以讓SqlServer管理Page更有效率.</p>
+<h2 id="GAM-SGAM"><a href="#GAM-SGAM" class="headerlink" title="GAM &amp; SGAM"></a>GAM &amp; SGAM</h2><p>GAM和SGAM Page可以讓SqlServer管理Page更有效率.</p>
 <p>SQL-Server會依照Mixed或Uniforms來分配Extent使用(1個Extent可以管理8個page)</p>
-<p>SQL Server 有兩種Allocate extend的方法，而SGAM /GAM Page就是用來計錄File中每<br>個Extent的使用方法及狀況,SQL Server在藉此決定資料要落地的extent位置</p>
+<p>SQL Server 有兩種Allocate extend的方法，而SGAM &#x2F;GAM Page就是用來計錄File中每<br>個Extent的使用方法及狀況,SQL Server在藉此決定資料要落地的extent位置</p>
 <ul>
 <li><p>GAM(Global Allocation Map):計錄哪些Extent尚未配置，會存放一個bit值對應到一個extent，如果是1就是extent not allocated。</p>
 </li>
 <li><p>SGAM(Shared Global Allocation Map):計錄Extent是Mixed extent且還有Free space，會存放一個bit值對應到一個extent，如果是1代表</p>
 </li>
 </ul>
-<p><img src="https://i.imgur.com/m4tTh7z.png" alt=""></p>
+<p><img src="https://i.imgur.com/m4tTh7z.png"></p>
 <p>一個GAM page可以存64K Extend使用資訊,所以一個GAM Extent可以存放4GB資料Extent資訊</p>
 <blockquote>
-<p>64k <em> 8k(page size) </em> 8 (page count)  ~= 4GB</p>
+<p>64k * 8k(page size) * 8 (page count)  ~&#x3D; 4GB</p>
 </blockquote>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天對於Heap資料表有比較多深入探討,也對於Allocation order scan &amp; Range scan做了些介紹</p>
 <blockquote>
@@ -333,7 +333,7 @@
 <p>所以<code>WITH NOLOCK</code>要慎用,特別是交易系統就不要用<code>WITH NOLOCK</code>太害人了….</p>
 <p>日後有空我會再跟大家分享Page底層的一些細節,如果要學會效能調教這些資料庫原理的事物必須學會.</p>
 <p>雖然可能有些深澀但學成一定會有所幫助.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/db-heaptable/">https://isdaniel.github.io/db-heaptable/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/db-heaptable/">https://isdaniel.github.io/db-heaptable/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -452,7 +452,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Heap-%E8%B3%87%E6%96%99%E8%A1%A8"><span class="nav-number">1.</span> <span class="nav-text">Heap 資料表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Heap%E8%B3%87%E6%96%99%E8%A1%A8%E4%B8%AD%E4%B8%8D%E5%BE%97%E4%B8%8D%E7%9F%A5-forwarding-pointer"><span class="nav-number">1.1.</span> <span class="nav-text">Heap資料表中不得不知(forwarding pointer)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IAM-index-allocation-map"><span class="nav-number">1.2.</span> <span class="nav-text">IAM(index allocation map)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Allocation-order-scan-amp-Range-scan"><span class="nav-number">1.3.</span> <span class="nav-text">Allocation order scan &amp; Range scan</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GAM-amp-SGAM"><span class="nav-number">2.</span> <span class="nav-text">GAM &amp; SGAM</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">3.</span> <span class="nav-text">小結</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Heap-%E8%B3%87%E6%96%99%E8%A1%A8"><span class="nav-number">1.</span> <span class="nav-text">Heap 資料表</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Heap%E8%B3%87%E6%96%99%E8%A1%A8%E4%B8%AD%E4%B8%8D%E5%BE%97%E4%B8%8D%E7%9F%A5-forwarding-pointer"><span class="nav-number">1.1.</span> <span class="nav-text">Heap資料表中不得不知(forwarding pointer)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#IAM-index-allocation-map"><span class="nav-number">1.2.</span> <span class="nav-text">IAM(index allocation map)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Allocation-order-scan-Range-scan"><span class="nav-number">1.3.</span> <span class="nav-text">Allocation order scan &amp; Range scan</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GAM-SGAM"><span class="nav-number">2.</span> <span class="nav-text">GAM &amp; SGAM</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">3.</span> <span class="nav-text">小結</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -539,12 +539,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

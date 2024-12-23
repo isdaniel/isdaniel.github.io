@@ -20,18 +20,18 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Agenda 開賽前言： 為什麼想要選擇此主題 閱讀時建議事項 文章收穫   進入主題 瀏覽器請求IIS流程 如何辨別是否為靜態檔案? .Net CLR Httpmodule &amp; Httphandler 核心模組 W3WP應用程式   小結  開賽前言：三十篇文章架構基本遵循:  前言:前情提要，閱讀此文建議使用工具或知識. 標出大主題(大字體+錨點)之後在細項列出要說明的細節 小結：每篇">
+  <meta name="description" content="Agenda 開賽前言： 為什麼想要選擇此主題 閱讀時建議事項 文章收穫   進入主題 瀏覽器請求IIS流程 如何辨別是否為靜態檔案? .Net CLR Httpmodule &amp; Httphandler 核心模組 W3WP應用程式   小結  開賽前言：三十篇文章架構基本遵循:  **前言:**前情提要，閱讀此文建議使用工具或知識. 標出大主題(大字體+錨點)之後在細項列出要說明的細節 小">
 <meta property="og:type" content="article">
 <meta property="og:title" content="(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)">
 <meta property="og:url" content="https://isdaniel.github.io/Ithelp-day1/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="Agenda 開賽前言： 為什麼想要選擇此主題 閱讀時建議事項 文章收穫   進入主題 瀏覽器請求IIS流程 如何辨別是否為靜態檔案? .Net CLR Httpmodule &amp; Httphandler 核心模組 W3WP應用程式   小結  開賽前言：三十篇文章架構基本遵循:  前言:前情提要，閱讀此文建議使用工具或知識. 標出大主題(大字體+錨點)之後在細項列出要說明的細節 小結：每篇">
+<meta property="og:description" content="Agenda 開賽前言： 為什麼想要選擇此主題 閱讀時建議事項 文章收穫   進入主題 瀏覽器請求IIS流程 如何辨別是否為靜態檔案? .Net CLR Httpmodule &amp; Httphandler 核心模組 W3WP應用程式   小結  開賽前言：三十篇文章架構基本遵循:  **前言:**前情提要，閱讀此文建議使用工具或知識. 標出大主題(大字體+錨點)之後在細項列出要說明的細節 小">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png">
 <meta property="og:image" content="https://www.codeproject.com/KB/web-image/thumbnailer/thumbnailer_pipeline.gif">
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/1/w3wp.PNG">
 <meta property="article:published_time" content="2019-09-12T10:00:00.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.851Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.756Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Asp.net">
@@ -209,7 +209,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -261,24 +261,24 @@
 
       
         <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e9%96%8b%e8%b3%bd%e5%89%8d%e8%a8%80">開賽前言：</a><ul>
-<li><a href="#%e7%82%ba%e4%bb%80%e9%ba%bc%e6%83%b3%e8%a6%81%e9%81%b8%e6%93%87%e6%ad%a4%e4%b8%bb%e9%a1%8c">為什麼想要選擇此主題</a></li>
-<li><a href="#%e9%96%b1%e8%ae%80%e6%99%82%e5%bb%ba%e8%ad%b0%e4%ba%8b%e9%a0%85">閱讀時建議事項</a></li>
-<li><a href="#%e6%96%87%e7%ab%a0%e6%94%b6%e7%a9%ab">文章收穫</a></li>
+<li><a href="#%E9%96%8B%E8%B3%BD%E5%89%8D%E8%A8%80">開賽前言：</a><ul>
+<li><a href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E6%83%B3%E8%A6%81%E9%81%B8%E6%93%87%E6%AD%A4%E4%B8%BB%E9%A1%8C">為什麼想要選擇此主題</a></li>
+<li><a href="#%E9%96%B1%E8%AE%80%E6%99%82%E5%BB%BA%E8%AD%B0%E4%BA%8B%E9%A0%85">閱讀時建議事項</a></li>
+<li><a href="#%E6%96%87%E7%AB%A0%E6%94%B6%E7%A9%AB">文章收穫</a></li>
 </ul>
 </li>
-<li><a href="#%e9%80%b2%e5%85%a5%e4%b8%bb%e9%a1%8c">進入主題</a><ul>
-<li><a href="#%e7%80%8f%e8%a6%bd%e5%99%a8%e8%ab%8b%e6%b1%82iis%e6%b5%81%e7%a8%8b">瀏覽器請求IIS流程</a></li>
-<li><a href="#%e5%a6%82%e4%bd%95%e8%be%a8%e5%88%a5%e6%98%af%e5%90%a6%e7%82%ba%e9%9d%9c%e6%85%8b%e6%aa%94%e6%a1%88">如何辨別是否為靜態檔案?</a></li>
-<li><a href="#net-clr-httpmodule--httphandler-%e6%a0%b8%e5%bf%83%e6%a8%a1%e7%b5%84">.Net CLR Httpmodule &amp; Httphandler 核心模組</a></li>
-<li><a href="#w3wp%e6%87%89%e7%94%a8%e7%a8%8b%e5%bc%8f">W3WP應用程式</a></li>
+<li><a href="#%E9%80%B2%E5%85%A5%E4%B8%BB%E9%A1%8C">進入主題</a><ul>
+<li><a href="#%E7%80%8F%E8%A6%BD%E5%99%A8%E8%AB%8B%E6%B1%82iis%E6%B5%81%E7%A8%8B">瀏覽器請求IIS流程</a></li>
+<li><a href="#%E5%A6%82%E4%BD%95%E8%BE%A8%E5%88%A5%E6%98%AF%E5%90%A6%E7%82%BA%E9%9D%9C%E6%85%8B%E6%AA%94%E6%A1%88">如何辨別是否為靜態檔案?</a></li>
+<li><a href="#net-clr-httpmodule--httphandler-%E6%A0%B8%E5%BF%83%E6%A8%A1%E7%B5%84">.Net CLR Httpmodule &amp; Httphandler 核心模組</a></li>
+<li><a href="#w3wp%E6%87%89%E7%94%A8%E7%A8%8B%E5%BC%8F">W3WP應用程式</a></li>
 </ul>
 </li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結</a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
 </ul>
 <h2 id="開賽前言："><a href="#開賽前言：" class="headerlink" title="開賽前言："></a>開賽前言：</h2><p>三十篇文章架構基本遵循:</p>
 <ol>
-<li><strong>前言:</strong>前情提要，閱讀此文建議使用工具或知識.</li>
+<li>**前言:**前情提要，閱讀此文建議使用工具或知識.</li>
 <li>標出大主題(大字體+錨點)之後在細項列出要說明的細節</li>
 <li>小結：每篇都有一個小結快速總結今天重點</li>
 </ol>
@@ -327,7 +327,7 @@
 </ol>
 <h3 id="如何辨別是否為靜態檔案"><a href="#如何辨別是否為靜態檔案" class="headerlink" title="如何辨別是否為靜態檔案?"></a>如何辨別是否為靜態檔案?</h3><p>如何辨別是否為靜態檔案,就需要談談<code>HttpHandler</code>的註冊表(後面有文章會說到)</p>
 <p>基本上如果是請求<code>Html</code>,<code>css</code>,<code>js</code>…都會直接回傳不會在經過<code>.Net CLR</code></p>
-<h3 id="Net-CLR-Httpmodule-amp-Httphandler-核心模組"><a href="#Net-CLR-Httpmodule-amp-Httphandler-核心模組" class="headerlink" title=".Net CLR Httpmodule &amp; Httphandler 核心模組"></a>.Net CLR Httpmodule &amp; Httphandler 核心模組</h3><p>Asp.net所有應用程式都離不開兩個核心模組<code>Httpmodule &amp; Httphandler</code>且最終會找到一個繼承於<code>IHttpHanlder</code>物件來處理請求.</p>
+<h3 id="Net-CLR-Httpmodule-Httphandler-核心模組"><a href="#Net-CLR-Httpmodule-Httphandler-核心模組" class="headerlink" title=".Net CLR Httpmodule &amp; Httphandler 核心模組"></a>.Net CLR Httpmodule &amp; Httphandler 核心模組</h3><p>Asp.net所有應用程式都離不開兩個核心模組<code>Httpmodule &amp; Httphandler</code>且最終會找到一個繼承於<code>IHttpHanlder</code>物件來處理請求.</p>
 <p>在網路上看到一個很好地比喻<strong>HttpModule &amp; HttpHandler</strong></p>
 <p><strong>Http</strong>請求像是一個旅客身上帶著行李拿著票來搭火車.</p>
 <ul>
@@ -349,7 +349,7 @@
 </ol>
 <p>瀏覽器發出<strong>Http</strong>請求給IIS,IIS透過<code>Http.sys</code>來監聽請求並交給<code>w3wp.exe</code>這個應用程式來判斷是否要交由<code>.net</code>託管處理此次請求.</p>
 <p>下篇我們會來詳細講述<code>Httpmodule &amp; Httphandler</code></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/Ithelp-day1/">https://isdaniel.github.io/Ithelp-day1/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Ithelp-day1/">https://isdaniel.github.io/Ithelp-day1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -470,7 +470,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%96%8B%E8%B3%BD%E5%89%8D%E8%A8%80%EF%BC%9A"><span class="nav-number">1.1.</span> <span class="nav-text">開賽前言：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E6%83%B3%E8%A6%81%E9%81%B8%E6%93%87%E6%AD%A4%E4%B8%BB%E9%A1%8C"><span class="nav-number">1.1.1.</span> <span class="nav-text">為什麼想要選擇此主題</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%96%B1%E8%AE%80%E6%99%82%E5%BB%BA%E8%AD%B0%E4%BA%8B%E9%A0%85"><span class="nav-number">1.1.2.</span> <span class="nav-text">閱讀時建議事項</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E7%AB%A0%E6%94%B6%E7%A9%AB"><span class="nav-number">1.1.3.</span> <span class="nav-text">文章收穫</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%B2%E5%85%A5%E4%B8%BB%E9%A1%8C"><span class="nav-number">1.2.</span> <span class="nav-text">進入主題</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%80%8F%E8%A6%BD%E5%99%A8%E8%AB%8B%E6%B1%82IIS%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.1.</span> <span class="nav-text">瀏覽器請求IIS流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%BE%A8%E5%88%A5%E6%98%AF%E5%90%A6%E7%82%BA%E9%9D%9C%E6%85%8B%E6%AA%94%E6%A1%88"><span class="nav-number">1.2.2.</span> <span class="nav-text">如何辨別是否為靜態檔案?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Net-CLR-Httpmodule-amp-Httphandler-%E6%A0%B8%E5%BF%83%E6%A8%A1%E7%B5%84"><span class="nav-number">1.2.3.</span> <span class="nav-text">.Net CLR Httpmodule &amp; Httphandler 核心模組</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#W3WP%E6%87%89%E7%94%A8%E7%A8%8B%E5%BC%8F"><span class="nav-number">1.2.4.</span> <span class="nav-text">W3WP應用程式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">1.3.</span> <span class="nav-text">小結</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%96%8B%E8%B3%BD%E5%89%8D%E8%A8%80%EF%BC%9A"><span class="nav-number">1.1.</span> <span class="nav-text">開賽前言：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E6%83%B3%E8%A6%81%E9%81%B8%E6%93%87%E6%AD%A4%E4%B8%BB%E9%A1%8C"><span class="nav-number">1.1.1.</span> <span class="nav-text">為什麼想要選擇此主題</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%96%B1%E8%AE%80%E6%99%82%E5%BB%BA%E8%AD%B0%E4%BA%8B%E9%A0%85"><span class="nav-number">1.1.2.</span> <span class="nav-text">閱讀時建議事項</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E7%AB%A0%E6%94%B6%E7%A9%AB"><span class="nav-number">1.1.3.</span> <span class="nav-text">文章收穫</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%B2%E5%85%A5%E4%B8%BB%E9%A1%8C"><span class="nav-number">1.2.</span> <span class="nav-text">進入主題</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%80%8F%E8%A6%BD%E5%99%A8%E8%AB%8B%E6%B1%82IIS%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.1.</span> <span class="nav-text">瀏覽器請求IIS流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%BE%A8%E5%88%A5%E6%98%AF%E5%90%A6%E7%82%BA%E9%9D%9C%E6%85%8B%E6%AA%94%E6%A1%88"><span class="nav-number">1.2.2.</span> <span class="nav-text">如何辨別是否為靜態檔案?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Net-CLR-Httpmodule-Httphandler-%E6%A0%B8%E5%BF%83%E6%A8%A1%E7%B5%84"><span class="nav-number">1.2.3.</span> <span class="nav-text">.Net CLR Httpmodule &amp; Httphandler 核心模組</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#W3WP%E6%87%89%E7%94%A8%E7%A8%8B%E5%BC%8F"><span class="nav-number">1.2.4.</span> <span class="nav-text">W3WP應用程式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">1.3.</span> <span class="nav-text">小結</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -557,12 +557,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

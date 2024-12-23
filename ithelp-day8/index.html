@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/7-MVCModule.PNG">
 <meta property="article:published_time" content="2019-09-19T10:00:00.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Asp.net">
@@ -208,7 +208,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -260,15 +260,15 @@
 
       
         <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言：</a></li>
+<li><a href="#%E5%89%8D%E8%A8%80">前言：</a></li>
 <li><a href="#urlroutingmodule-40">UrlRoutingModule-4.0</a><ul>
-<li><a href="#onapplicationpostresolverequestcache%e4%ba%8b%e4%bb%b6">OnApplicationPostResolveRequestCache事件</a></li>
-<li><a href="#postresolverequestcache%e6%96%b9%e6%b3%95">PostResolveRequestCache方法</a></li>
-<li><a href="#iroutehandler%e5%8f%96%e5%be%97%e5%9f%b7%e8%a1%8chttphandler">IRouteHandler取得執行HttpHandler</a></li>
-<li><a href="#remaphandler%e8%a8%ad%e7%bd%aehttpcontext%e7%9a%84httphandler">RemapHandler設置HttpContext的HttpHandler</a></li>
+<li><a href="#onapplicationpostresolverequestcache%E4%BA%8B%E4%BB%B6">OnApplicationPostResolveRequestCache事件</a></li>
+<li><a href="#postresolverequestcache%E6%96%B9%E6%B3%95">PostResolveRequestCache方法</a></li>
+<li><a href="#iroutehandler%E5%8F%96%E5%BE%97%E5%9F%B7%E8%A1%8Chttphandler">IRouteHandler取得執行HttpHandler</a></li>
+<li><a href="#remaphandler%E8%A8%AD%E7%BD%AEhttpcontext%E7%9A%84httphandler">RemapHandler設置HttpContext的HttpHandler</a></li>
 </ul>
 </li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結</a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
 </ul>
 <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>前面幾篇文章已經詳細分享解說<code>Asp.net</code>如何透過<code>HttpApplication</code>找到<code>IHttpHandler</code>並執行呼叫介面方法.</p>
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png" alt="瀏覽器請求IIS流程"></p>
@@ -281,14 +281,18 @@
 <p>另外我們也可以看<code>applicationhost.config</code>檔案,也可以看到<code>UrlRoutingModule-4.0</code>也已經在裡面了.</p>
 <p>我們可以發現他是在<code>System.Web.Routing</code>這個命名空間下.</p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">modules</span>&gt;</span></span><br><span class="line">	....</span><br><span class="line">	<span class="tag">&lt;<span class="name">add</span> <span class="attr">name</span>=<span class="string">&quot;ServiceModel-4.0&quot;</span> <span class="attr">type</span>=<span class="string">&quot;System.ServiceModel.Activation.ServiceHttpModule,System.ServiceModel.Activation,Version=4.0.0.0,Culture=neutral,PublicKeyToken=31bf3856ad364e35&quot;</span> <span class="attr">preCondition</span>=<span class="string">&quot;managedHandler,runtimeVersionv4.0&quot;</span> /&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">add</span> <span class="attr">name</span>=<span class="string">&quot;UrlRoutingModule-4.0&quot;</span> <span class="attr">type</span>=<span class="string">&quot;System.Web.Routing.UrlRoutingModule&quot;</span> <span class="attr">preCondition</span>=<span class="string">&quot;managedHandler,runtimeVersionv4.0&quot;</span> /&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">modules</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
 <p>此連結可以看到 <a href="https://referencesource.microsoft.com/#System.Web/Routing/UrlRoutingModule.cs,9b4115ad16e4f4a1">UrlRoutingModule 原始碼</a></p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Init</span>(<span class="params">HttpApplication application</span>)</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Check if this module has been already addded</span></span><br><span class="line">	<span class="keyword">if</span> (application.Context.Items[_contextKey] != <span class="literal">null</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span>; <span class="comment">// already added to the pipeline</span></span><br><span class="line">	&#125;</span><br><span class="line">	application.Context.Items[_contextKey] = _contextKey;</span><br><span class="line"></span><br><span class="line">	application.PostResolveRequestCache += OnApplicationPostResolveRequestCache;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>前面文章有說道<code>Init</code>方法會在<code>HttpApplication</code>呼叫<code>InitInternal</code>方法時被呼叫.</p>
 <p>這這裡可看到<code>application.PostResolveRequestCache</code>多註冊一個<code>OnApplicationPostResolveRequestCache</code>事件.</p>
 <p>讓我們來看看此事件做了什麼事情</p>
 <h3 id="OnApplicationPostResolveRequestCache事件"><a href="#OnApplicationPostResolveRequestCache事件" class="headerlink" title="OnApplicationPostResolveRequestCache事件"></a>OnApplicationPostResolveRequestCache事件</h3><p><code>OnApplicationPostResolveRequestCache</code>方法中,利用 <code>HttpContextWrapper</code>轉接器模式把<code>app.Context</code>轉接成一個可接受<code>HttpContextBase</code>物件,並呼叫傳入<code>PostResolveRequestCache</code>方法中.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">OnApplicationPostResolveRequestCache</span>(<span class="params"><span class="built_in">object</span> sender, EventArgs e</span>)</span> &#123;</span><br><span class="line">	HttpApplication app = (HttpApplication)sender;</span><br><span class="line">	HttpContextBase context = <span class="keyword">new</span> HttpContextWrapper(app.Context);</span><br><span class="line">	PostResolveRequestCache(context);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h3 id="PostResolveRequestCache方法"><a href="#PostResolveRequestCache方法" class="headerlink" title="PostResolveRequestCache方法"></a>PostResolveRequestCache方法</h3><figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">PostResolveRequestCache</span>(<span class="params">HttpContextBase context</span>)</span> &#123;</span><br><span class="line">	<span class="comment">// Match the incoming URL against the route table</span></span><br><span class="line">	RouteData routeData = RouteCollection.GetRouteData(context);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Do nothing if no route found</span></span><br><span class="line">	<span class="keyword">if</span> (routeData == <span class="literal">null</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// If a route was found, get an IHttpHandler from the route&#x27;s RouteHandler</span></span><br><span class="line">	IRouteHandler routeHandler = routeData.RouteHandler;</span><br><span class="line"></span><br><span class="line">     <span class="comment">//... 判斷 error 程式碼</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (routeHandler <span class="keyword">is</span> StopRoutingHandler) &#123;</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	RequestContext requestContext = <span class="keyword">new</span> RequestContext(context, routeData);</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Dev10 766875	Adding RouteData to HttpContext</span></span><br><span class="line">	context.Request.RequestContext = requestContext;</span><br><span class="line"></span><br><span class="line">	IHttpHandler httpHandler = routeHandler.GetHttpHandler(requestContext);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//... 判斷 error 程式碼</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// Remap IIS7 to our handler</span></span><br><span class="line">	context.RemapHandler(httpHandler);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p><code>RouteCollection</code>是一個全域路由集合,註冊使用路由(<code>Asp.net Global.cs</code>中我們很常看到使用).</p>
 <blockquote>
 <p>對於此集合註冊路由,是<code>MVC</code>,<code>WebApi</code>能運行的關鍵喔</p>
@@ -298,19 +302,24 @@
 <p><code>Route</code>物件會提供一個<code>HttpHandler</code>來給我們呼叫使用.</p>
 </blockquote>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">&quot;Default&quot;</span>,</span><br><span class="line">    url: <span class="string">&quot;&#123;controller&#125;/&#123;action&#125;/&#123;id&#125;&quot;</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">&quot;Home&quot;</span>, action = <span class="string">&quot;Index&quot;</span>, id = UrlParameter.Optional &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
 <p><code>RouteCollection.GetRouteData(context)</code>取得路由中匹配此次請求的路由資料，藉由此註冊進集合並繼承<code>RouteBase</code>抽象類別的物件</p>
 <h3 id="IRouteHandler取得執行HttpHandler"><a href="#IRouteHandler取得執行HttpHandler" class="headerlink" title="IRouteHandler取得執行HttpHandler"></a>IRouteHandler取得執行HttpHandler</h3><p>在<code>routeData</code>會有一個重要的屬性<code>RouteHandler</code>是繼承於<code>IRouteHandler</code></p>
 <p>這個介面只有一個方法就是回傳<code>IHttpHandler</code>看到這基本上就可以知道<code>MVC</code>的<code>IHttpHandler</code>是呼叫<code>RouteHandler.GetHttpHandler</code>回傳的物件.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IRouteHandler</span> &#123;</span><br><span class="line">    <span class="function">IHttpHandler <span class="title">GetHttpHandler</span>(<span class="params">RequestContext requestContext</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>後面會對於此介面有更詳細介紹</p>
 </blockquote>
 <h3 id="RemapHandler設置HttpContext的HttpHandler"><a href="#RemapHandler設置HttpContext的HttpHandler" class="headerlink" title="RemapHandler設置HttpContext的HttpHandler"></a>RemapHandler設置HttpContext的HttpHandler</h3><p>在<code>PostResolveRequestCache</code>最後面幾段程式碼,是透過<code>routeHandler.GetHttpHandler(requestContext)</code>取得<code>IHttpHandler</code>，並將其設置給<code>context</code></p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">IHttpHandler httpHandler = routeHandler.GetHttpHandler(requestContext);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Remap IIS7 to our handler</span></span><br><span class="line">context.RemapHandler(httpHandler);</span><br></pre></td></tr></table></figure>
+
 <p>這邊說明一下<code>RemapHandler</code>作用,最主要是把傳入參數<code>handler</code>傳給<code>_remapHandler</code>欄位</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">RemapHandler</span>(<span class="params">IHttpHandler handler</span>)</span> &#123;</span><br><span class="line">    EnsureHasNotTransitionedToWebSocket();</span><br><span class="line"></span><br><span class="line">    IIS7WorkerRequest wr = _wr <span class="keyword">as</span> IIS7WorkerRequest;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (wr != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="comment">// Remap handler not allowed after ResolveRequestCache notification</span></span><br><span class="line">        <span class="keyword">if</span> (_notificationContext.CurrentNotification &gt;= RequestNotification.MapRequestHandler) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(SR.GetString(SR.Invoke_before_pipeline_event, <span class="string">&quot;HttpContext.RemapHandler&quot;</span>, <span class="string">&quot;HttpApplication.MapRequestHandler&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="built_in">string</span> handlerTypeName = <span class="literal">null</span>;</span><br><span class="line">        <span class="built_in">string</span> handlerName = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (handler != <span class="literal">null</span>) &#123;</span><br><span class="line">            Type handlerType = handler.GetType();</span><br><span class="line"></span><br><span class="line">            handlerTypeName = handlerType.AssemblyQualifiedName;</span><br><span class="line">            handlerName = handlerType.FullName;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        wr.SetRemapHandler(handlerTypeName, handlerName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _remapHandler = handler;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p><code>_remapHandler</code>就是<code>RemapHandlerInstance</code>屬性回傳的值</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">internal</span> IHttpHandler RemapHandlerInstance &#123;</span><br><span class="line">    <span class="keyword">get</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> _remapHandler;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>我們之前有分享<code>MapHandlerExecutionStep</code>,<code>MapHttpHandler</code>會優先讀取存在<code>context.RemapHandlerInstance</code>中<code>HttpHandler</code>如果有物件就給<code>CallHandlerExecutionStep</code>呼叫使用.</p>
 </blockquote>
@@ -323,7 +332,7 @@
 <li>因為在<code>MapHandlerExecutionStep</code>執行前已經決定<code>context.RemapHandlerInstance</code>所以就不會呼叫到<code>config</code>設定<code>HttpHander</code>物件</li>
 </ol>
 <p>基本上<code>Asp.net</code>部分已經介紹完了,接下來會進入<code>Asp.net MVC</code>的世界.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day8/">https://isdaniel.github.io/ithelp-day8/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day8/">https://isdaniel.github.io/ithelp-day8/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -531,12 +540,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

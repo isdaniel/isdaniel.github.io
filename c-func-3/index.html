@@ -28,7 +28,7 @@
 <meta property="og:description" content="前文：在Func和Action泛型委託中 有 In , Out 兩個關鍵字 那到底是神麼意思呢?   讓我們一起看下去…. &#x2F;&#x2F;Action delegate public delegate void Action&lt;in T&gt;(T obj);  &#x2F;&#x2F;fun delegate public delegate TResult Func&lt;in T, out TResult&gt;(T">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2019-06-02T11:12:43.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Func">
@@ -203,7 +203,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -266,7 +266,8 @@ public delegate void Action&lt;in T&gt;(T obj);
 
 //fun delegate
 public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
-</code></pre><p>上面程式碼我列出<code>Action</code>和<code>Func</code> 委派方法各其中一個重載</p>
+</code></pre>
+<p>上面程式碼我列出<code>Action</code>和<code>Func</code> 委派方法各其中一個重載</p>
 <p>我們可以發現到泛型中有關鍵字 <code>in</code> 和 <code>out</code> 這是代表神麼意思呢?</p>
 <p>讓我們繼續看下去…..</p>
 <h3 id="解說："><a href="#解說：" class="headerlink" title="解說："></a>解說：</h3><p>分享前先探討一個問題 泛型是否可以父類別指向子類別</p>
@@ -287,7 +288,8 @@ class Program
         Console.ReadKey();
     &#125;
 &#125;
-</code></pre><p>上面範例程式很清楚知道無法編譯，那我要怎麼處理和解決的？</p>
+</code></pre>
+<p>上面範例程式很清楚知道無法編譯，那我要怎麼處理和解決的？</p>
 <p>第一種解法 使用 <code>AS</code> :</p>
 <pre><code>public interface IGeneric&lt;T&gt; &#123; &#125;
 public class Base&lt;T&gt; : IGeneric&lt;T&gt; &#123; &#125;
@@ -306,7 +308,8 @@ class Program
         Console.ReadKey();
     &#125;
 &#125;
-</code></pre><p>第二種解法 在<code>interface</code>的泛型中使用 <code>Out</code> (今天要介紹的主角)</p>
+</code></pre>
+<p>第二種解法 在<code>interface</code>的泛型中使用 <code>Out</code> (今天要介紹的主角)</p>
 <pre><code>//這裡使用out將T 解釋為Covariance
 public interface IGeneric&lt;out T&gt; &#123; &#125;
 public class Base&lt;T&gt; : IGeneric&lt;T&gt; &#123; &#125;
@@ -325,7 +328,8 @@ class Program
         Console.ReadKey();
     &#125;
 &#125;
-</code></pre><h3 id="三個重要名詞-Covariance，Contravariance，Invariance"><a href="#三個重要名詞-Covariance，Contravariance，Invariance" class="headerlink" title="三個重要名詞 Covariance，Contravariance，Invariance"></a>三個重要名詞 <code>Covariance，Contravariance，Invariance</code></h3><p>MSDN中有解釋 此關鍵字 泛型中的共變數和反變數</p>
+</code></pre>
+<h3 id="三個重要名詞-Covariance，Contravariance，Invariance"><a href="#三個重要名詞-Covariance，Contravariance，Invariance" class="headerlink" title="三個重要名詞 Covariance，Contravariance，Invariance"></a>三個重要名詞 <code>Covariance，Contravariance，Invariance</code></h3><p>MSDN中有解釋 此關鍵字 泛型中的共變數和反變數</p>
 <p><code>Covariance</code>(共變數) ：</p>
 <blockquote>
 <p>MSDN說明：可讓您使用比原本指定更多衍生的類型。您可以將 IEnumerable<Derived> (在 Visual Basic 中為 IEnumerable(Of Derived)) 的執行個體指派給 IEnumerable<Base> 類型的變數<br>簡單說明：泛型支援父類指向子類別  [泛型中使用out ]  (支援泛型介面或泛型委派)<br>如下面的範例:</p>
@@ -349,7 +353,8 @@ class Program
         Console.ReadKey();
     &#125;
 &#125;
-</code></pre><p><code>Contravariance</code>(反變數)</p>
+</code></pre>
+<p><code>Contravariance</code>(反變數)</p>
 <blockquote>
 <p>MSDN說明：可讓您使用比原本所指定更泛型 (較少衍生) 的類型。您可以將 IEnumerable<Base> (在 Visual Basic 中為 IEnumerable(Of Base)) 的執行個體指派給IEnumerable<Derived> 類型的變數。</p>
 </blockquote>
@@ -404,15 +409,16 @@ class Program
         Console.ReadKey();
     &#125;
 &#125;
-</code></pre><p><code>Invariance</code> 只能該類別指向該類別<br>一般泛型預設就是這個</p>
+</code></pre>
+<p><code>Invariance</code> 只能該類別指向該類別<br>一般泛型預設就是這個</p>
 <hr>
 <h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p><code>Func</code> 泛型委派的最後一個泛型類型參數會指定委派簽章中的傳回值類型</p>
 <p><code>Covariance</code> (共變數) (<code>out</code> 關鍵字) 泛型支援父類指向子類別</p>
 <p><code>Contravariant</code> (反變數) (<code>in</code> 關鍵字)  泛型子類可以取得父類的引用</p>
 <p><code>Invariance</code> 一般泛型預設就是這個</p>
-<p><a href="https://msdn.microsoft.com/zh-tw/library/dd799517(v=vs.110">泛型中的共變數和反變數</a>.aspx)</p>
+<p><a href="https://msdn.microsoft.com/zh-tw/library/dd799517(v=vs.110).aspx">泛型中的共變數和反變數</a></p>
 <p><a href="https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/out-generic-modifier">out (generic modifier) (C# Reference)</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-3/">https://isdaniel.github.io/c-func-3/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/c-func-3/">https://isdaniel.github.io/c-func-3/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -618,12 +624,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

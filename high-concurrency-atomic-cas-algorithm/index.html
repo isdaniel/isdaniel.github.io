@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://i.imgur.com/BUCajHn.png">
 <meta property="og:image" content="https://i.imgur.com/eMjYN6P.png">
 <meta property="article:published_time" content="2021-07-14T22:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="atomic">
@@ -207,7 +207,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -243,7 +243,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>5.2k</span>
+              <span>5.3k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -270,9 +270,10 @@
 <p>下面Sample Code是這樣.</p>
 <p>我用<code>Task</code>假裝高併發，下面有一個<code>Member</code>類別預設給100000元的Balance</p>
 <p>有一個<code>UpdateBalance</code>每呼叫一次就扣10元，我透過<code>For</code>跑10000次</p>
-<p>理論上我預期在跑完下面顯示Balance會員餘額是0 (因為 10000*10 = 100000).</p>
+<p>理論上我預期在跑完下面顯示Balance會員餘額是0 (因為 10000*10 &#x3D; 100000).</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$&quot;member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>&quot;</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>()</span></span><br><span class="line">	&#123;</span><br><span class="line">		Balance -= <span class="number">10</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/44M2Jr7.png" alt=""></p>
+
+<p><img src="https://i.imgur.com/44M2Jr7.png"></p>
 <p>但執行後蠻常會是不等於0!!</p>
 <p>這時我會問面試者兩個問題</p>
 <ul>
@@ -288,19 +289,20 @@
 <li>將異動後值放回原本值的Memory。</li>
 </ol>
 <p>因為以上步驟，假如同一時間有兩個不同的Thread取到的Balance都是1000，並個別對於Balance減10元，我們原本預期這是兩個操作（預期資料為980）</p>
-<p>但因為取的瞬間都是1000-10=990把數值放回變數中就導致少扣一個10元…</p>
+<p>但因為取的瞬間都是1000-10&#x3D;990把數值放回變數中就導致少扣一個10元…</p>
 <p>概念如下圖.</p>
-<p><img src="https://i.imgur.com/zXprOIe.png" alt=""></p>
+<p><img src="https://i.imgur.com/zXprOIe.png"></p>
 <p>知道原因了要解決就簡單了.</p>
 <h3 id="使用Lock解決"><a href="#使用Lock解決" class="headerlink" title="使用Lock解決"></a>使用Lock解決</h3><p>因為這段程式碼遇到Data Raceing在同一個時間有兩個不同的Thread對於資料競爭</p>
 <p>如果要避免競爭lock是一個比較方便的方式，他可以保證一瞬間只有一個Thread(Session)來執行某段程式碼(通常會放在異動資料那部分)來保證Isolation.</p>
 <p>下面是使用lock版本的程式碼，能看到我在<code>Balance -= 10;</code>這一段使用lock來確保每一個瞬間只有一個Thread可以異動資料，其他的Thread需要blocking等他完成</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="built_in">object</span> _lock = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = <span class="number">100000</span> &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		<span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line"></span><br><span class="line">		Console.WriteLine(<span class="string">$&quot;member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>&quot;</span>);</span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span> &#123;</span><br><span class="line">	<span class="comment">//here</span></span><br><span class="line">	<span class="built_in">object</span> _lock = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">decimal</span> Balance &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>()</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>使用lock之後能發現不管執行幾次資料都會如我們預期顯示.</p>
 <p>使用lock執行概念圖如下.</p>
 <p>在同一時間我們會把要執行程式 利用一個類似保護網的方式，確保同一時間只有一個Thread來做操作.</p>
-<p>Thread2取得lock在操作Thread1就必須等待Thread2執行完,在取值=&gt;改值..等等動作</p>
-<p><img src="https://i.imgur.com/BUCajHn.png" alt=""></p>
+<p>Thread2取得lock在操作Thread1就必須等待Thread2執行完,在取值&#x3D;&gt;改值..等等動作</p>
+<p><img src="https://i.imgur.com/BUCajHn.png"></p>
 <blockquote>
 <p>只是使用lock會降低些許吞吐量(但資料正確性是最重要的)，所以要注意使用lock範圍大小</p>
 </blockquote>
@@ -315,14 +317,17 @@
 <li>將異動後值放回原本值的Memory。</li>
 </ol>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">balance -= <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
 <p>會拆解成類似下面動作</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br></pre></td></tr></table></figure>
+
 <p>假如在取balance(附值給temp)跟把值重新寫入balance中間有其他Thread來操作，就會造成所謂Data Racing，因為對於我們來說上面後兩部有不可分割性(Atomic).</p>
 <p>而這時候我們就可以使用CAS算法來幫我們解決問題，在C#如果我們想要達成變數修改的Atomic可以透過<code>Interlocked</code>類別</p>
 <h3 id="使用Interlocked提高效率"><a href="#使用Interlocked提高效率" class="headerlink" title="使用Interlocked提高效率"></a>使用Interlocked提高效率</h3><p>在C#中我們可以使用<a href="https://docs.microsoft.com/zh-tw/dotnet/api/system.threading.interlocked?view=net-5.0">Interlocked</a>這個類別</p>
 <p>對於<code>Int</code>,<code>Long</code>相關操作都有封裝成method.</p>
 <p>下面這段虛擬碼解釋<code>balance -= 10;</code>CAS中類似下面效果</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//original</span></span><br><span class="line"><span class="built_in">int</span> temp = balance;</span><br><span class="line">temp = temp <span class="number">-10</span>;</span><br><span class="line">balance = temp;</span><br><span class="line"></span><br><span class="line"><span class="comment">//CAS </span></span><br><span class="line"><span class="built_in">int</span> oldValue = balance;</span><br><span class="line"><span class="built_in">int</span> newValue = oldValue - <span class="number">1</span>;</span><br><span class="line"><span class="comment">//compare value source and set</span></span><br><span class="line">Interlocked.CompareExchange(<span class="keyword">ref</span> balance,newValue,oldValue);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Interlocked.CompareExchange類似下面做法，但具有Atomic</span></span><br><span class="line"><span class="comment">//if(ref balance == oldValue)&#123;</span></span><br><span class="line"><span class="comment">//	balance = newValue;</span></span><br><span class="line"><span class="comment">//&#125;</span></span><br></pre></td></tr></table></figure>
+
 <p>主要是把compare value source and set這段包成一個不可分割區段達到Atomic.</p>
 <p>＞ 我上面用<code>ref</code>來表示從記憶體位置取得<code>balance</code>原始資料</p>
 <ul>
@@ -332,8 +337,9 @@
 </ul>
 <p>除了上面我們還可以針對Reference Type做Atomic有興趣的人在自行了解</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">static</span> <span class="built_in">object</span> _lock = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line">	<span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		Stopwatch sw = <span class="keyword">new</span> Stopwatch();</span><br><span class="line">		<span class="built_in">int</span> balanceValue = <span class="number">10000000</span>;</span><br><span class="line">		Member member = <span class="keyword">new</span> Member() &#123; Balance = balanceValue &#125;;</span><br><span class="line">		List&lt;Task&gt; tasks = <span class="keyword">new</span> List&lt;Task&gt;();</span><br><span class="line">		sw.Start();</span><br><span class="line">		<span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalance()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">&quot;Lock Version&quot;</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$&quot;member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>&quot;</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$&quot;Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line">		tasks.Clear();</span><br><span class="line">		member.Balance = balanceValue;</span><br><span class="line">		sw.Restart();</span><br><span class="line">		<span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000000</span>; i++)</span><br><span class="line">		&#123;</span><br><span class="line">			tasks.Add(Task.Run(() =&gt; member.UpdateBalanceByInterlock()));</span><br><span class="line">		&#125;</span><br><span class="line">		Task.WaitAll(tasks.ToArray());</span><br><span class="line">		sw.Stop();</span><br><span class="line">		Console.WriteLine(<span class="string">&quot;InterLocked Version:&quot;</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$&quot;member remaining balance is <span class="subst">&#123;member.Balance&#125;</span>&quot;</span>);</span><br><span class="line">		Console.WriteLine(<span class="string">$&quot;Exec Time Cost : <span class="subst">&#123;sw.ElapsedMilliseconds&#125;</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line">		Console.ReadKey();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Member</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="built_in">object</span> _lock = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">int</span> Balance;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalance</span>()</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">lock</span> (_lock)</span><br><span class="line">		&#123;</span><br><span class="line">			Balance -= <span class="number">10</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">UpdateBalanceByInterlock</span>()</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="built_in">int</span> val;</span><br><span class="line">		<span class="keyword">do</span></span><br><span class="line">		&#123;</span><br><span class="line">			val = Balance;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">while</span> (val != Interlocked.CompareExchange(<span class="keyword">ref</span> Balance, val - <span class="number">10</span>, val));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>下圖是比較兩者執行時間還有併發計算數值，能發現數值兩個都正確計算出0，但Interlocked執行時間少於lock版本.</p>
-<p><img src="https://i.imgur.com/eMjYN6P.png" alt=""></p>
+<p><img src="https://i.imgur.com/eMjYN6P.png"></p>
 <p>Interlocked效率會比較高是因為block會造成Thread的blocking等待浪費,但Interlocked核心概念是在這段話Atomic<strong>取得資料跟原職比較(如果資料還沒改就把值修改進Memory中)</strong></p>
 <p>所以效率就會比lock好很多</p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>在有些情境適合使用Lock(例如許多操作需要有一致的Atomic)就比較適合.</p>
@@ -341,7 +347,7 @@
 <p>在多執行緒的世界中要顧慮的點真的很多，稍有不甚就會造成很多錯誤.</p>
 <p>因為多執行緒有許多地方需要注意,不然執行效率會不如單執行緒.</p>
 <p>我慢慢可以理解為什麼Redis,Node.js一開始要使用 single Thread 來運作了…</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -546,12 +552,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

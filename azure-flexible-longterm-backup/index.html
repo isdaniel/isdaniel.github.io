@@ -36,7 +36,7 @@
 <meta property="og:image" content="https://i.imgur.com/cJLGI1i.png">
 <meta property="og:image" content="https://i.imgur.com/ROSZvsp.png">
 <meta property="article:published_time" content="2022-12-25T22:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="Azure">
 <meta name="twitter:card" content="summary">
@@ -210,7 +210,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -277,31 +277,32 @@
 </ul>
 <p>Here is the sample code of Azure PostgreSQL Flexible long term backup with Managed Identity.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start program&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;=====================&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start installing postgresql client suit&#x27;</span></span><br><span class="line"><span class="built_in">sudo</span> apt update</span><br><span class="line"><span class="built_in">sudo</span> apt -y install postgresql-client</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;======================&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;postgresql client install ends&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start mount storage&#x27;</span></span><br><span class="line"></span><br><span class="line">wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb</span><br><span class="line"><span class="built_in">sudo</span> dpkg -i packages-microsoft-prod.deb</span><br><span class="line"><span class="built_in">sudo</span> apt-get update</span><br><span class="line"><span class="built_in">sudo</span> apt-get install blobfuse -y</span><br><span class="line"><span class="built_in">sudo</span> apt-get install jq -y</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ ! -f blob.conf  ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&#x27;accountName &lt;&lt;Your blob accountName&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;authType MSI&#x27;</span> &gt;&gt; fuse_connection.cfg</span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;identityObjectId &lt;&lt;Your blob accountKey&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;containerName &lt;&lt;Your blob Container Name&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="comment">#create a folder which can mount to blob</span></span><br><span class="line"><span class="built_in">mkdir</span> ~/data</span><br><span class="line"><span class="built_in">sudo</span> blobfuse ~/data --tmp-path=/mnt/resource/mycontainer  --config-file=./blob.conf -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;======= starting backup============&#x27;</span></span><br><span class="line">DNAME=`<span class="built_in">date</span> +%Y%m%d%H%M%S`</span><br><span class="line"><span class="built_in">export</span> PGPASSWORD=`curl -s <span class="string">&#x27;http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&amp;resource=https%3A%2F%2Fossrdbms-aad.database.windows.net&amp;client_id=&lt;&lt;MI client ID&gt;&gt;&#x27;</span> -H Metadata:<span class="literal">true</span> | jq -r .access_token`</span><br><span class="line">pg_dump --host=test-conn.postgres.database.azure.com --username=<span class="string">&#x27;MI-Demo&#x27;</span> -Fc -c  testdb &gt; ~/data/dump<span class="variable">$DNAME</span>.sql</span><br></pre></td></tr></table></figure>
+
 <h2 id="Experiments"><a href="#Experiments" class="headerlink" title="Experiments:"></a>Experiments:</h2><h3 id="Here-is-the-guideline-for-using-managed-identity-to-connect-to-your-DB-server-in-VM"><a href="#Here-is-the-guideline-for-using-managed-identity-to-connect-to-your-DB-server-in-VM" class="headerlink" title="Here is the guideline for using managed identity to connect to your DB server in VM."></a>Here is the guideline for using managed identity to connect to your DB server in VM.</h3><p>We would make sure the Authentication setting that was PostgreSQL and Azure Active Directory authentication.</p>
-<p><img src="https://i.imgur.com/BVNlWCx.png" alt=""></p>
+<p><img src="https://i.imgur.com/BVNlWCx.png"></p>
 <p>Selected which managed identity you want to add to the PostgreSQL flexible server.</p>
-<p><img src="https://i.imgur.com/61LOp1w.png" alt=""></p>
+<p><img src="https://i.imgur.com/61LOp1w.png"></p>
 <p>When we had added managed identity in Azure portal that will add the managed identity in the PostgreSQL server.</p>
 <p>In below script, we need to replace <code>&lt;&lt;MI client ID&gt;&gt;</code> by your MI Client Id and replace by your login MI as red frames that would tell Azure PostgreSQL server verify MI user by access token instead of user password.</p>
-<p><img src="https://i.imgur.com/r8IBDz8.png" alt=""></p>
+<p><img src="https://i.imgur.com/r8IBDz8.png"></p>
 <p>After we replace all content by your really connect information that I pointed out, we can try to run the script and the backup file would be back up by pg_dump without password.</p>
-<p><img src="https://i.imgur.com/qhOIDsV.png" alt=""></p>
+<p><img src="https://i.imgur.com/qhOIDsV.png"></p>
 <h3 id="Here-is-guideline-to-guide-us-how-to-mount-Linux-VM-from-blob-storage-by-MI"><a href="#Here-is-guideline-to-guide-us-how-to-mount-Linux-VM-from-blob-storage-by-MI" class="headerlink" title="Here is guideline to guide us how to mount Linux VM from blob storage by MI."></a>Here is guideline to guide us how to mount Linux VM from blob storage by MI.</h3><p>If you’re using User assigned managed identity, please add the identity in <code>User assigned</code> configuration of your Linux VM as shown below (choose which MI you want to use to verify.)</p>
-<p><img src="https://i.imgur.com/BgKLeeS.png" alt=""></p>
+<p><img src="https://i.imgur.com/BgKLeeS.png"></p>
 <p>Please following the step “Managed Identities -&gt; Azure role assignments -&gt; Add role assignment (Preview)” to choose which Blob storage you want to mounted and verified by the MI.</p>
-<p><img src="https://i.imgur.com/1Tpvopj.png" alt=""></p>
+<p><img src="https://i.imgur.com/1Tpvopj.png"></p>
 <p>Edit the storage account information which mark as red frame from the script which I provided to you.</p>
 <ul>
 <li>AccountName: blob Account Name</li>
 <li>AuthType: auth type must be MSI</li>
 <li>IdentityObjectId: Filled with your managed identity object it as below red arrow.</li>
-<li>ContainerName: blob Container Name<br><img src="https://i.imgur.com/cJLGI1i.png" alt=""></li>
+<li>ContainerName: blob Container Name<br><img src="https://i.imgur.com/cJLGI1i.png"></li>
 </ul>
 <p>After the execution, you could see the dump file has successfully uploaded to storage account.</p>
-<p><img src="https://i.imgur.com/ROSZvsp.png" alt=""></p>
+<p><img src="https://i.imgur.com/ROSZvsp.png"></p>
 <h2 id="More-information"><a href="#More-information" class="headerlink" title="More information"></a>More information</h2><p><a href="https://techcommunity.microsoft.com/t5/azure-paas-blog/mount-blob-storage-on-linux-vm-using-managed-identities-or/ba-p/1821744">https://techcommunity.microsoft.com/t5/azure-paas-blog/mount-blob-storage-on-linux-vm-using-managed-identities-or/ba-p/1821744</a></p>
 <p><a href="https://github.com/Azure/azure-storage-fuse/blob/master/README.md#valid-authentication-setups">https://github.com/Azure/azure-storage-fuse/blob/master/README.md#valid-authentication-setups</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/azure-flexible-longterm-backup/">https://isdaniel.github.io/azure-flexible-longterm-backup/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/azure-flexible-longterm-backup/">https://isdaniel.github.io/azure-flexible-longterm-backup/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -487,12 +488,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

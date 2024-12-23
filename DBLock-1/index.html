@@ -20,16 +20,16 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Agenda 前文 兩種圍度的Lock Lock範圍 Lock類型 Update Lock 存在的意義     Lock 互斥 Demo Locking Optimization NoLock的隱憂 Read Uncommitted 髒讀取     小結前文  之前有跟大家介紹資料庫交易中的ACID,今天我們就來談談常常聽到Lock 在討論Lock前我們必須先了解,為什麼會有Lock? 假如你的系">
+  <meta name="description" content="Agenda 前文 兩種圍度的Lock Lock範圍 Lock類型 Update Lock 存在的意義     Lock 互斥 Demo Locking Optimization NoLock的隱憂 Read Uncommitted 髒讀取     小結  前文之前有跟大家介紹資料庫交易中的ACID,今天我們就來談談常常聽到Lock 在討論Lock前我們必須先了解,為什麼會有Lock? 假如你的系">
 <meta property="og:type" content="article">
 <meta property="og:title" content="淺談SqlServer Lock(一)">
 <meta property="og:url" content="https://isdaniel.github.io/DBLock-1/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="Agenda 前文 兩種圍度的Lock Lock範圍 Lock類型 Update Lock 存在的意義     Lock 互斥 Demo Locking Optimization NoLock的隱憂 Read Uncommitted 髒讀取     小結前文  之前有跟大家介紹資料庫交易中的ACID,今天我們就來談談常常聽到Lock 在討論Lock前我們必須先了解,為什麼會有Lock? 假如你的系">
+<meta property="og:description" content="Agenda 前文 兩種圍度的Lock Lock範圍 Lock類型 Update Lock 存在的意義     Lock 互斥 Demo Locking Optimization NoLock的隱憂 Read Uncommitted 髒讀取     小結  前文之前有跟大家介紹資料庫交易中的ACID,今天我們就來談談常常聽到Lock 在討論Lock前我們必須先了解,為什麼會有Lock? 假如你的系">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/3WWvSXp.png">
 <meta property="article:published_time" content="2020-08-16T11:12:43.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.851Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.752Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="Lock">
 <meta property="article:tag" content="DataBase">
@@ -206,7 +206,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -242,7 +242,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.4k</span>
+              <span>3.5k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -265,26 +265,26 @@
             <img src="https://i.imgur.com/3WWvSXp.png" itemprop="contentUrl">
         </div>
         <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#前文">前文</a></li>
-<li><a href="#兩種圍度的lock">兩種圍度的Lock</a><ul>
-<li><a href="#lock範圍">Lock範圍</a></li>
-<li><a href="#lock類型">Lock類型</a><ul>
-<li><a href="#update-lock-存在的意義">Update Lock 存在的意義</a></li>
+<li><a href="#%E5%89%8D%E6%96%87">前文</a></li>
+<li><a href="#%E5%85%A9%E7%A8%AE%E5%9C%8D%E5%BA%A6%E7%9A%84lock">兩種圍度的Lock</a><ul>
+<li><a href="#lock%E7%AF%84%E5%9C%8D">Lock範圍</a></li>
+<li><a href="#lock%E9%A1%9E%E5%9E%8B">Lock類型</a><ul>
+<li><a href="#update-lock-%E5%AD%98%E5%9C%A8%E7%9A%84%E6%84%8F%E7%BE%A9">Update Lock 存在的意義</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#lock-互斥-demo">Lock 互斥 Demo</a><ul>
+<li><a href="#lock-%E4%BA%92%E6%96%A5-demo">Lock 互斥 Demo</a><ul>
 <li><a href="#locking-optimization">Locking Optimization</a></li>
-<li><a href="#nolock的隱憂">NoLock的隱憂</a><ul>
-<li><a href="#read-uncommitted-髒讀取">Read Uncommitted 髒讀取</a></li>
+<li><a href="#nolock%E7%9A%84%E9%9A%B1%E6%86%82">NoLock的隱憂</a><ul>
+<li><a href="#read-uncommitted-%E9%AB%92%E8%AE%80%E5%8F%96">Read Uncommitted 髒讀取</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#小結">小結</a><h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
 </ul>
-<p>之前有跟大家介紹資料庫交易中的<a href="https://isdaniel.github.io/ACID/">ACID</a>,今天我們就來談談常常聽到<strong>Lock</strong></p>
+<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>之前有跟大家介紹資料庫交易中的<a href="https://isdaniel.github.io/ACID/">ACID</a>,今天我們就來談談常常聽到<strong>Lock</strong></p>
 <p>在討論Lock前我們必須先了解,為什麼會有Lock?</p>
 <p>假如你的系統能保證只有一個使用著操作每個資源,其實也就不用lock存在,但現實生活中往往有個命令對於同一個資源操作.這時候我們為了確保資料正確性,必須使用lock來避免<a href="https://en.wikipedia.org/wiki/Race_condition">Racing Condition</a>.</p>
 <p>在早期系統我們要儲存資料會存放檔案在Disk並使用類似Excel方式來儲存,但這會導致每次讀取只有有一個使用者(因為對於檔案上Lock),被lock資源其他人就無法存入</p>
@@ -324,7 +324,7 @@
 <p>例如:你在使用查詢(Shared Lock),除了上XLock資源外其餘資料都可同步被查找出來.</p>
 <h4 id="Update-Lock-存在的意義"><a href="#Update-Lock-存在的意義" class="headerlink" title="Update Lock 存在的意義"></a>Update Lock 存在的意義</h4><p>我們在更新資料時使用Lock類型會如下</p>
 <blockquote>
-<p>Shared Lock =&gt; Update Lock =&gt; XLock</p>
+<p>Shared Lock &#x3D;&gt; Update Lock &#x3D;&gt; XLock</p>
 </blockquote>
 <ul>
 <li>Shared Lock：查詢更新的資料.</li>
@@ -337,7 +337,8 @@
 </blockquote>
 <p>假如有一個Update語法同時被執行.</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Update</span> T</span><br><span class="line"><span class="keyword">Set</span> Val <span class="operator">=</span> <span class="variable">@Val</span></span><br><span class="line"><span class="keyword">Where</span> id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
-<p>如果只有Shared Lock =&gt; XLock</p>
+
+<p>如果只有Shared Lock &#x3D;&gt; XLock</p>
 <ol>
 <li>語法1 產生Shared Lock</li>
 <li>語法2 產生Shared Lock</li>
@@ -357,10 +358,13 @@
 </blockquote>
 <h2 id="Lock-互斥-Demo"><a href="#Lock-互斥-Demo" class="headerlink" title="Lock 互斥 Demo"></a>Lock 互斥 Demo</h2><p>我們建立一張<code>T2</code>資料表</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> IF <span class="keyword">EXISTS</span> T2</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> T2 (Id <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T2 <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T2 <span class="keyword">VALUES</span> (<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
 <p>在使用Transaction + XLOCK hint在查詢語法(這時T2查詢的資料就會被上XLock了)</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
 <p>我們馬上開另一個Session,執行查詢<code>ID=1</code>語法</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
 <p>會發現我們需要等上面語法執行完才能查出資料，那是因為 X Lock 跟X Lock會互斥我們，必須等到XLock執行完我們才可以得到資料.</p>
 <h3 id="Locking-Optimization"><a href="#Locking-Optimization" class="headerlink" title="Locking Optimization"></a>Locking Optimization</h3><p>如果沒有髒讀取且是 Row 的 ShardLock，SQL-Server 會有個優化動作不對於此 ROW 上 SharedLock</p>
 <blockquote>
@@ -369,13 +373,17 @@
 <p>我們一樣可以開兩個視窗來跑下面語法，會發現 Session2 並<strong>不會</strong>被 Block</p>
 <p>Session1</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
 <p>Session2</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
 <p>但如果是使用 PageLock 就會導致 <code>Session2</code> 被 block，因為 Session2 會嘗試上 IX Lock 在 Page 上，但 Session1 已經把 Page 上 XLOCK (IX Lock 和 XLOCK 互斥)</p>
 <p>Session1</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK,PAGLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
 <p>Session2</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
 <p>參考資料：<a href="read-committed-shared-locks-and-rollbacks">read-committed-shared-locks-and-rollbacks</a></p>
 <h3 id="NoLock的隱憂"><a href="#NoLock的隱憂" class="headerlink" title="NoLock的隱憂"></a>NoLock的隱憂</h3><p>上文有提到Shard Lock會被XLock給Block住,如果我非得在資料上XLock時查詢資料有辦法嗎?</p>
 <p>有,我們在第二句查詢加上<code>With(Nolock)</code>hint或者是(設定<code>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</code>)不然 Shard Lock 會被 XLock 給 Block 住.</p>
@@ -384,9 +392,11 @@
 </blockquote>
 <h4 id="Read-Uncommitted-髒讀取"><a href="#Read-Uncommitted-髒讀取" class="headerlink" title="Read Uncommitted 髒讀取"></a>Read Uncommitted 髒讀取</h4><p>我們試著把上面範例稍微修改一下第一個查詢語法</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">UPDATE</span> dbo.T2</span><br><span class="line"><span class="keyword">Set</span> id <span class="operator">=</span> <span class="number">100</span></span><br><span class="line"><span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
 <p>第二個查詢語法</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">with</span>(nolock)</span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">100</span></span><br></pre></td></tr></table></figure>
-<p>在資料上XLock時使用<code>with(nolock)</code>來查詢資料,會發現可以查詢出Id=100資訊</p>
+
+<p>在資料上XLock時使用<code>with(nolock)</code>來查詢資料,會發現可以查詢出Id&#x3D;100資訊</p>
 <p><img src="https://i.imgur.com/aMvPo4W.png" alt="ss"></p>
 <p>但因為第一句語法因為一些原因RollBack,過段時間再查詢</p>
 <p><img src="https://i.imgur.com/5BqG419.png" alt="ss"></p>
@@ -402,7 +412,7 @@
 <p><code>with(nolock)</code>記得要慎用,他會造成資料讀取上有誤差,建議在高併發系統且交易有關程式碼,請別使用<code>with(nolock)</code>,這會造成資料不正確(有資料執行到一半RollBack,剛好被NoLock查詢讀到)</p>
 <p>日後有機會再慢慢介紹更多Lock運用時間和注意事項.</p>
 <p><a href="https://docs.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide?view=sql-server-2017">Transaction Locking and Row Versioning Guide</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/DBLock-1/">https://isdaniel.github.io/DBLock-1/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/DBLock-1/">https://isdaniel.github.io/DBLock-1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -609,12 +619,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

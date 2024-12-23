@@ -28,7 +28,7 @@
 <meta property="og:description" content="前言資料庫系統在寫入或新增資料時,為了確保交易正確可靠性,所以具備  原子性（atomicity，稱不可分割性） 一致性（consistency） 隔離性（isolation，稱獨立性） 持久性（durability）  這就是我們說的ACID. 下面我會跟大家簡述ACID. Atomicity(原子性)所有Logical Unit都必須符合原子性  整個流程要不是全部成功，不然就整段失敗，不會有">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2020-06-02T22:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.851Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.752Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="IOC">
@@ -204,7 +204,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -274,9 +274,11 @@
 </blockquote>
 <p>sample data.</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">IF (<span class="keyword">SELECT</span> OBJECT_ID(<span class="string">&#x27;dbo.ProductTest&#x27;</span>)) <span class="keyword">IS</span> <span class="keyword">NOT NULL</span>   </span><br><span class="line"> <span class="keyword">DROP</span> <span class="keyword">TABLE</span> dbo.ProductTest;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> dbo.ProductTest ( ProductID <span class="type">INT</span> <span class="keyword">CONSTRAINT</span> ValueEqualsOne <span class="keyword">CHECK</span> (ProductID <span class="operator">=</span> <span class="number">1</span>)); </span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> Product (ProductID <span class="type">INT</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> dbo.Product </span><br><span class="line"><span class="keyword">SELECT</span> <span class="number">2</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>下面我們在sql-server有包Transation,因為<code>ProductTest</code>資料表有一個CONSTRAINT <code>ProductID</code>必須等於1,但目前<code>Product</code>表有1筆不符合此資料表有一個<code>CONSTRAINT</code>資料(ProductId=2)</p>
+
+<p>下面我們在sql-server有包Transation,因為<code>ProductTest</code>資料表有一個CONSTRAINT <code>ProductID</code>必須等於1,但目前<code>Product</code>表有1筆不符合此資料表有一個<code>CONSTRAINT</code>資料(ProductId&#x3D;2)</p>
 <p>如果按照(原子性)說法下面語法有包Tran應該會被RollBack,但事實上….</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第一句語法</span></span><br><span class="line">	<span class="keyword">INSERT  INTO</span> dbo.ProductTest        </span><br><span class="line">	<span class="keyword">SELECT</span>  p.ProductID        </span><br><span class="line">	<span class="keyword">FROM</span>    dbo.Product <span class="keyword">AS</span> p</span><br><span class="line"></span><br><span class="line">    <span class="comment">--第二句語法</span></span><br><span class="line">	<span class="keyword">INSERT  INTO</span> dbo.ProductTest <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">COMMIT</span></span><br></pre></td></tr></table></figure>
+
 <p>我們在執行上面語法時會有一個<code>Error</code>，但第二句語法卻會成功新增資料.</p>
 <p>此時各位會覺得很奇怪,這個語法並不符合原子性.</p>
 <blockquote>
@@ -289,7 +291,7 @@
 <blockquote>
 <p><code>Atomicity</code>(原子性)可以確保我們在交易過程中失敗,不會有部分成功,部分失敗,造成系統不穩定.</p>
 </blockquote>
-<h2 id="Consistency-一致性"><a href="#Consistency-一致性" class="headerlink" title="Consistency(一致性)　"></a>Consistency(一致性)　</h2><p>在Logical unit完成時不會破壞資料表制訂constraint,關聯性規則.</p>
+<h2 id="Consistency-一致性"><a href="#Consistency-一致性" class="headerlink" title="Consistency(一致性)"></a>Consistency(一致性)</h2><p>在Logical unit完成時不會破壞資料表制訂constraint,關聯性規則.</p>
 <p>交易過程中並不會有任何一筆資料違反,我們制定的Check constraint的資料，PK及FK的關係也同樣不會被破壞，確保不會違反Business規則。</p>
 <blockquote>
 <p>sql-server因為要檢查constraint,所以會導致些許Blocking.</p>
@@ -316,7 +318,9 @@
 <h2 id="Durability"><a href="#Durability" class="headerlink" title="Durability"></a>Durability</h2><p>當你完成<code>Transaction</code>後,不管發生什麼事情資料都會完整保留在DB中，一般來說<code>Transaction</code>完成前後都會寫<code>Transaction log</code></p>
 <p>假如DB遇到非預期錯誤(ex:停電),在DB Server重啟後，DB會依照之前紀錄嘗試Recovery.</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> INDEX IX_PeriodDate_T99 <span class="keyword">ON</span> dbo.T99(</span><br><span class="line">	PeriodDate</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER TABLE</span> dbo.T99 <span class="keyword">ADD</span> PeriodDate <span class="keyword">AS</span> DATEADD(<span class="keyword">MINUTE</span>,DATEPART(<span class="keyword">MINUTE</span>,CreateDate) <span class="operator">%</span><span class="number">5</span> <span class="operator">*</span> <span class="number">-1</span>,</span><br><span class="line">	DATETIMEFROMPARTS(</span><br><span class="line">	DATEPART(<span class="keyword">YEAR</span>,CreateDate),</span><br><span class="line">	DATEPART(<span class="keyword">MONTH</span>,CreateDate),</span><br><span class="line">	DATEPART(<span class="keyword">DAY</span>,CreateDate),</span><br><span class="line">	DATEPART(<span class="keyword">HOUR</span>,CreateDate),</span><br><span class="line">	DATEPART(<span class="keyword">MINUTE</span>,CreateDate),<span class="number">0</span>,<span class="number">0</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> p.<span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T99 t </span><br><span class="line"><span class="keyword">JOIN</span> [dbo].[ReportPeriod] p <span class="keyword">ON</span> p.StartDate <span class="operator">=</span> t.PeriodDate</span><br><span class="line"><span class="keyword">JOIN</span> <span class="variable">@Transaction</span> t1 <span class="keyword">ON</span> t.TransactionId <span class="operator">=</span> t1.TransactionId <span class="keyword">AND</span>  p.ProductId <span class="operator">=</span> t1.ProductId</span><br></pre></td></tr></table></figure>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ACID/">https://isdaniel.github.io/ACID/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ACID/">https://isdaniel.github.io/ACID/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -436,7 +440,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Atomicity-%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">Atomicity(原子性)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Consistency-%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">3.</span> <span class="nav-text">Consistency(一致性)　</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Isolation"><span class="nav-number">4.</span> <span class="nav-text">Isolation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Isolation-Level"><span class="nav-number">5.</span> <span class="nav-text">Isolation Level</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Durability"><span class="nav-number">6.</span> <span class="nav-text">Durability</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Atomicity-%E5%8E%9F%E5%AD%90%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">Atomicity(原子性)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Consistency-%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">3.</span> <span class="nav-text">Consistency(一致性)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Isolation"><span class="nav-number">4.</span> <span class="nav-text">Isolation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Isolation-Level"><span class="nav-number">5.</span> <span class="nav-text">Isolation Level</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Durability"><span class="nav-number">6.</span> <span class="nav-text">Durability</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -523,12 +527,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

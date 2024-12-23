@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/13/IOC_Asp.netMVC.png">
 <meta property="article:published_time" content="2019-10-08T10:00:00.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Asp.net">
@@ -207,7 +207,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -239,7 +239,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>4.6k</span>
+              <span>4.7k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -259,16 +259,16 @@
 
       
         <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
-<li><a href="#aufofac%e4%be%9d%e8%b3%b4%e6%b3%a8%e5%85%a5%e5%ae%b9%e5%99%a8">Aufofac依賴注入容器</a></li>
-<li><a href="#idependencyresolver%e4%bb%8b%e9%9d%a2">IDependencyResolver介面</a><ul>
-<li><a href="#%e5%bb%ba%e7%ab%8bcustomerdependencyresolveridependencyresolver">建立CustomerDependencyResolver(IDependencyResolver)</a></li>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#aufofac%E4%BE%9D%E8%B3%B4%E6%B3%A8%E5%85%A5%E5%AE%B9%E5%99%A8">Aufofac依賴注入容器</a></li>
+<li><a href="#idependencyresolver%E4%BB%8B%E9%9D%A2">IDependencyResolver介面</a><ul>
+<li><a href="#%E5%BB%BA%E7%AB%8Bcustomerdependencyresolveridependencyresolver">建立CustomerDependencyResolver(IDependencyResolver)</a></li>
 <li><a href="#customercontrolleractivatoricontrolleractivator">CustomerControllerActivator(IControllerActivator)</a></li>
 </ul>
 </li>
-<li><a href="#%e5%9c%a8applicationstart%e4%b8%admvc%e6%9b%bf%e6%8f%9b%e6%88%90%e8%87%aa%e5%b7%b1%e7%9a%84%e8%a7%a3%e6%9e%90%e5%99%a8">在Application_Start中MVC替換成自己的解析器</a></li>
-<li><a href="#%e5%9c%a8controller%e4%bd%bf%e7%94%a8%e6%b3%a8%e5%85%a5">在Controller使用注入</a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+<li><a href="#%E5%9C%A8applicationstart%E4%B8%ADmvc%E6%9B%BF%E6%8F%9B%E6%88%90%E8%87%AA%E5%B7%B1%E7%9A%84%E8%A7%A3%E6%9E%90%E5%99%A8">在Application_Start中MVC替換成自己的解析器</a></li>
+<li><a href="#%E5%9C%A8controller%E4%BD%BF%E7%94%A8%E6%B3%A8%E5%85%A5">在Controller使用注入</a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
 </ul>
 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>產生<code>Controller</code>物件相關物件關係如下面<strong>UML圖</strong></p>
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/13/IOC_Asp.netMVC.png" alt="relationship_pic.PNG"></p>
@@ -276,7 +276,7 @@
 <p>上面<code>IControllerActivator</code>可以透過建立使用我們的依賴注入容器來替換原本反射產生物件.</p>
 <p><code>DependencyResolver</code>是<strong>MVC</strong>提供的一個可替換物注入點,今天我們會藉由他來我們實現注入<strong>MVC</strong>方式.</p>
 <h2 id="Aufofac依賴注入容器"><a href="#Aufofac依賴注入容器" class="headerlink" title="Aufofac依賴注入容器"></a>Aufofac依賴注入容器</h2><p>在實現自己的<code>DependencyResolver</code>前先談談Autofac容器做甚麼用的?</p>
-<p>我之前有寫一篇<a href="https://isdaniel.github.io/ioc-di.html">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a>,講述<strong>IOC(控制反轉)，DI(依賴注入)</strong>這兩個設計技巧的理念核心.</p>
+<p>我之前有寫一篇<a href="https://isdaniel.github.io/ioc-di.html">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a>,講述**IOC(控制反轉)，DI(依賴注入)**這兩個設計技巧的理念核心.</p>
 <blockquote>
 <p>言簡意賅可以統一交由容器來幫忙管理物件生命週期和建立方式,也管理物件相依性,兩個重點我們使得只需要提供使用類別的特徵(型別或其他可辨別特徵),容器就提供給我們相對應的物件.</p>
 </blockquote>
@@ -284,15 +284,19 @@
 <h2 id="IDependencyResolver介面"><a href="#IDependencyResolver介面" class="headerlink" title="IDependencyResolver介面"></a>IDependencyResolver介面</h2><p><code>DependencyResolver</code>是一個靜態物件,<strong>MVC application</strong>使用同一個解析器(<code>DefaultDependencyResolver</code>)而他有一個<code>SetResolver</code>方法可以替換成其他<code>DependencyResolver</code></p>
 <p><code>IDependencyResolver</code>有兩個方法需要實現.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IDependencyResolver</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="built_in">object</span> <span class="title">GetService</span>(<span class="params">Type serviceType</span>)</span>;</span><br><span class="line">    <span class="function">IEnumerable&lt;<span class="built_in">object</span>&gt; <span class="title">GetServices</span>(<span class="params">Type serviceType</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p><strong>MVC</strong>依賴於<code>GetService</code>和<code>GetServices</code>,取得物件實例並提供一個抽象提供外部提供修改或擴充.</p>
 <p>預設使用(<code>DefaultDependencyResolver</code>)這個解析器來取得我們物件(<code>DefaultDependencyResolver</code>解析器使用<code>Activator.CreateInstance(serviceType);</code>建立物件)</p>
 <h3 id="建立CustomerDependencyResolver-IDependencyResolver"><a href="#建立CustomerDependencyResolver-IDependencyResolver" class="headerlink" title="建立CustomerDependencyResolver(IDependencyResolver)"></a>建立CustomerDependencyResolver(IDependencyResolver)</h3><p>這邊我們利用<code>autofac</code>來完成建立物件動作,先建立一個<code>ILifetimeScope _container</code>由建構子注入此物件.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CustomerDependencyResolver</span> : <span class="title">IDependencyResolver</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> ILifetimeScope _container;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CustomerDependencyResolver</span>(<span class="params">ILifetimeScope container</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (container == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="keyword">nameof</span> (container));</span><br><span class="line"></span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">object</span> <span class="title">GetService</span>(<span class="params">Type serviceType</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> _container.ResolveOptional(serviceType);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> IEnumerable&lt;<span class="built_in">object</span>&gt; <span class="title">GetServices</span>(<span class="params">Type serviceType</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> (IEnumerable&lt;<span class="built_in">object</span>&gt;) _container.ResolveOptional(<span class="keyword">typeof</span> (IEnumerable&lt;&gt;).MakeGenericType(serviceType));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>在<code>GetService</code>呼叫<code>ResolveOptional</code>方法透過<code>Type</code>到容器中搜尋匹配的物件並返回.</p>
 <h3 id="CustomerControllerActivator-IControllerActivator"><a href="#CustomerControllerActivator-IControllerActivator" class="headerlink" title="CustomerControllerActivator(IControllerActivator)"></a>CustomerControllerActivator(IControllerActivator)</h3><p><code>IControllerActivator</code>有一個<code>Create</code>方法,<code>ControllerFacotry</code>靠它來幫我們產生使用<code>Controller</code>物件,而我們在這邊建立自己<code>IControllerActivator</code>並在<code>Create</code>方法中實現自己得邏輯.透過<code>DependencyResolver</code>來產生物件(替換成<code>CustomerDependencyResolver</code>)</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CustomerControllerActivator</span> : <span class="title">IControllerActivator</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> IController <span class="title">Create</span>(<span class="params">RequestContext requestContext, Type controllerType</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> (IController) DependencyResolver.Current.GetService(controllerType);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>我們會在<code>Autofac</code>容器註冊目前<code>Assembly</code>所有繼承<code>IController</code>物件.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//注入typeof(MvcApplication).Assembly 中所有繼承IController物件.</span></span><br><span class="line">builder.RegisterControllers(<span class="keyword">typeof</span>(MvcApplication).Assembly);</span><br></pre></td></tr></table></figure>
+
 <p>在上面<code>CustomerControllerActivator.Create</code>會透<code>Autofac</code>解析器幫我們建立<code>Controller</code></p>
 <h2 id="在Application-Start中MVC替換成自己的解析器"><a href="#在Application-Start中MVC替換成自己的解析器" class="headerlink" title="在Application_Start中MVC替換成自己的解析器"></a>在Application_Start中MVC替換成自己的解析器</h2><ol>
 <li><p>首先利用<code>ControllerBuilder</code>的<code>SetControllerFactory</code>方法,重新替換使用<code>ControllerFacotry</code>.</p>
@@ -308,14 +312,16 @@
 <p>因為<code>ControllerFacotry</code>預設使用<code>DefaultControllerActivator</code>,而我們需要替換成自己建立得<code>CustomerControllerActivator</code>並利用容器來幫我們注入.</p>
 </blockquote>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MvcApplication</span> : <span class="title">HttpApplication</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">Application_Start</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        RouteConfig.RegisterRoutes(RouteTable.Routes);</span><br><span class="line">        BundleConfig.RegisterBundles(BundleTable.Bundles);</span><br><span class="line">        <span class="comment">//把DefaultControllerFactory 中的IControllerActivator替換成我們自己寫的CustomerControllerActivator</span></span><br><span class="line">        ControllerBuilder.Current.SetControllerFactory(</span><br><span class="line">            <span class="keyword">new</span> DefaultControllerFactory(<span class="keyword">new</span> CustomerControllerActivator()));</span><br><span class="line">        AutofacRegister();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">AutofacRegister</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line">        <span class="comment">//注入typeof(MvcApplication).Assembly 中所有繼承IController物件.</span></span><br><span class="line">        builder.RegisterControllers(<span class="keyword">typeof</span>(MvcApplication).Assembly);</span><br><span class="line">        builder.RegisterType&lt;MemberService&gt;().As&lt;IMemberService&gt;();</span><br><span class="line">        <span class="comment">//替換成自己的DependencyResolver</span></span><br><span class="line">        DependencyResolver.SetResolver(<span class="keyword">new</span> CustomerDependencyResolver(builder.Build()));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h2 id="在Controller使用注入"><a href="#在Controller使用注入" class="headerlink" title="在Controller使用注入"></a>在Controller使用注入</h2><p><code>HomeController</code>控制器中在建構子注入,並呼叫<code>IMemberService.GetMemberBalance</code>方法</p>
 <p>執行專案請求<code>Home/About</code>頁面可以看到<code>ViewBag.Message</code>已經成功顯示一個<strong>HardCode</strong>餘額了.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">HomeController</span> : <span class="title">Controller</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">readonly</span> IMemberService _service;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">HomeController</span>(<span class="params">IMemberService service</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _service = service;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ActionResult <span class="title">About</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        ViewBag.Message = <span class="string">$&quot;Member Balance <span class="subst">&#123; _service.GetMemberBalance(<span class="number">123</span>)&#125;</span>&quot;</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> View();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>DefaultControllerActivator</code>使用反射建立一個<code>Controller</code>物件</p>
 <p>然而<code>IControllerActivator</code>提供一個產生<code>Controller</code>接口,而我們可以藉由實現此介面並使用<code>DependencyResolver</code>靜態物件產生<code>Controller</code>物件(藉由容器框架產生).</p>
 <p>最後會把<code>Controller</code>依賴物件藉由<strong>依賴注入容器</strong>注入進去.</p>
 <p><a href="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerContainer">Github範例程式原始碼</a> <code>CustomerContainer</code>分支上</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day27/">https://isdaniel.github.io/ithelp-day27/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day27/">https://isdaniel.github.io/ithelp-day27/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -523,12 +529,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

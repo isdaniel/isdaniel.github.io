@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://1.bp.blogspot.com/--nEyvA5pGLk/WXn6YudHYzI/AAAAAAACWLg/7N81JLv5SfYPMvYmGdUnNHg4_p3Shb5DACLcBGAs/s1600/overview.jpg">
 <meta property="article:published_time" content="2019-06-11T19:16:37.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.851Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.756Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Asp.net">
@@ -206,7 +206,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -313,11 +313,13 @@
 <p><code>IHttpHandler</code>是一個可以讓我們實現的介面<br>裡面包含：</p>
 <p><strong>屬性:</strong></p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="built_in">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>取得值，指出另一個要求是否可以使用 <code>IHttpHandler</code> 執行個體。</p>
 </blockquote>
 <p><strong>方法:</strong></p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>以實作 IHttpHandler 介面的自訂 HttpHandler 來啟用 HTTP Web 要求的處理。</p>
 </blockquote>
@@ -358,9 +360,11 @@
 <li><code>bool IsReusable &#123; get; &#125;</code> 是否要將此次請求加入快取中重用.</li>
 </ol>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpHandler</span> : <span class="title">IHttpHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        context.Response.ContentType = <span class="string">&quot;text/html&quot;</span>;</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;Hello World&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h4 id="Web-Config註冊上面撰寫的IHttpHandler"><a href="#Web-Config註冊上面撰寫的IHttpHandler" class="headerlink" title="Web.Config註冊上面撰寫的IHttpHandler"></a><code>Web.Config</code>註冊上面撰寫的<code>IHttpHandler</code></h4><p>我們要在<code>Web.Config</code>中設定我們撰寫的<code>HttpHandler</code></p>
 <p>這是一個範例:</p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">system.webServer</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">handlers</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">add</span> <span class="attr">verb</span>=<span class="string">&quot;*&quot;</span> <span class="attr">name</span>=<span class="string">&quot;MyHttpHandler&quot;</span> <span class="attr">path</span>=<span class="string">&quot;*.cspx&quot;</span>  <span class="attr">type</span>=<span class="string">&quot;HttpHandler_HttpModule.MyHttpHandler&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">handlers</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">system.webServer</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
 <p>把<code>handlers</code>加入在<code>system.webServer</code>結點中.</p>
 <p>裡面有幾個<code>Attribute</code></p>
 <ul>
@@ -370,6 +374,7 @@
 </ul>
 <p>其中最要注意的是type Attribute.</p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">add</span> <span class="attr">verb</span>=<span class="string">&quot;*&quot;</span> <span class="attr">name</span>=<span class="string">&quot;MyHttpHandler&quot;</span> <span class="attr">path</span>=<span class="string">&quot;*.cspx&quot;</span>  <span class="attr">type</span>=<span class="string">&quot;(namespace).(classname)&quot;</span>/&gt;</span></span><br></pre></td></tr></table></figure>
+
 <p>最後我們就可以請求 <code>http://xxxx/Mypage.cspx</code> 來試試看我們的結果.</p>
 <h2 id="自己建立一個-IHttpModule"><a href="#自己建立一個-IHttpModule" class="headerlink" title="自己建立一個 IHttpModule"></a>自己建立一個 IHttpModule</h2><p>每個被註冊的<code>HttpModule</code>是Http請求必經之路.</p>
 <ul>
@@ -385,8 +390,10 @@
 <li><code>public void Init(HttpApplication context)</code> 把 <code>HttpApplication</code> 中的event做擴充.</li>
 </ol>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpModule</span>:<span class="title">IHttpModule</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Init</span>(<span class="params">HttpApplication context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        context.BeginRequest += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;BeginRequest&quot;</span>);</span><br><span class="line"></span><br><span class="line">        context.AuthorizeRequest += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;AuthorizeRequest&quot;</span>);</span><br><span class="line"></span><br><span class="line">        context.PostResolveRequestCache += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;PostResolveRequestCache&quot;</span>);</span><br><span class="line"></span><br><span class="line">        context.MapRequestHandler += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;MapRequestHandler&quot;</span>);</span><br><span class="line"></span><br><span class="line">        context.AcquireRequestState += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;AcquireRequestState&quot;</span>);</span><br><span class="line"></span><br><span class="line">        context.PreRequestHandlerExecute += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;PreRequestHandlerExecute&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">//這中間執行IHttpHandler.</span></span><br><span class="line"></span><br><span class="line">        context.PostRequestHandlerExecute += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;PostRequestHandlerExecute&quot;</span>);</span><br><span class="line"></span><br><span class="line">        context.EndRequest += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;EndRequest&quot;</span>);</span><br><span class="line"></span><br><span class="line">        context.PreSendRequestHeaders += (sender, <span class="keyword">args</span>) =&gt; ShowStep(sender, <span class="string">&quot;PreSendRequestHeaders&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ShowStep</span>(<span class="params"><span class="built_in">object</span> app,<span class="built_in">string</span> eventName</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> http = (HttpApplication)app;</span><br><span class="line">        http.Response.Write(<span class="string">$&quot;Step <span class="subst">&#123;eventName&#125;</span>&lt;br/&gt;&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Dispose</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h4 id="Web-Config註冊上面撰寫的IHttpModule"><a href="#Web-Config註冊上面撰寫的IHttpModule" class="headerlink" title="Web.Config註冊上面撰寫的IHttpModule"></a><code>Web.Config</code>註冊上面撰寫的<code>IHttpModule</code></h4><p>註冊方法和<code>IHttpHander</code>很類似,一樣在<code>system.webServer</code>節點下加入<code>modules</code></p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">configuration</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">system.webServer</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">modules</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">add</span> <span class="attr">name</span>=<span class="string">&quot;MyHttpModule&quot;</span> <span class="attr">type</span>=<span class="string">&quot;HttpHandler_HttpModule.MyHttpModule&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">modules</span>&gt;</span>  </span><br><span class="line">    <span class="tag">&lt;/<span class="name">system.webServer</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">configuration</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
 <hr>
 <p><a href="https://github.com/isdaniel/HttpHanlder_Vs_HttpModule">範例原始碼下載</a></p>
 <h2 id="參考資料："><a href="#參考資料：" class="headerlink" title="參考資料："></a>參考資料：</h2><ul>
@@ -394,7 +401,7 @@
 <li><a href="https://support.microsoft.com/zh-tw/help/307985/info-asp-net-http-modules-and-http-handlers-overview">https://support.microsoft.com/zh-tw/help/307985/info-asp-net-http-modules-and-http-handlers-overview</a></li>
 <li><a href="https://www.codeproject.com/Articles/335968/Implementing-HTTPHandler-and-HTTPModule-in-ASP-NET">https://www.codeproject.com/Articles/335968/Implementing-HTTPHandler-and-HTTPModule-in-ASP-NET</a></li>
 </ul>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/HttpHandler-HttpModule/">https://isdaniel.github.io/HttpHandler-HttpModule/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/HttpHandler-HttpModule/">https://isdaniel.github.io/HttpHandler-HttpModule/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -601,12 +608,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

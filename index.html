@@ -200,7 +200,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -259,7 +259,7 @@
 <p>After TCP handshake, it will execute TLS handshake if client require.</p>
 <p>Below image is my experiment TLS (TLS 1.2) workflow from PostgreSQL server, Red-frame represent TCP 3 handshake, and yellow-frame represent TLS handshake.</p>
 <p><img src="/images/tls-ssl/2024-11-11_15h17_11.png" alt="img"></p>
-<p>In the beginning, client will send a request to require sslmode connection (SSL/TLS), if server support it will reply (‘S’).</p>
+<p>In the beginning, client will send a request to require sslmode connection (SSL&#x2F;TLS), if server support it will reply (‘S’).</p>
 <p><img src="/images/tls-ssl/2024-11-11_17h48_32.png" alt="img"></p>
 <p>Eventually, processing below steps to do TLS handshake.</p>
 <ol>
@@ -323,7 +323,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -397,6 +397,7 @@
 </li>
 </ol>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> lfirst(lc)				((lc)-&gt;ptr_value)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> lfirst_node(type,lc)	castNode(type, lfirst(lc))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> castNode(_type_, nodeptr) ((_type_ *) (nodeptr))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> true	1</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> false	0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> foreach(cell, lst)	\</span></span><br><span class="line"><span class="meta">	for (ForEachState cell##__state = &#123;(lst), 0&#125;; \</span></span><br><span class="line"><span class="meta">		 (cell##__state.l != NIL &amp;&amp; \</span></span><br><span class="line"><span class="meta">		  cell##__state.i <span class="string">&lt; cell##__state.l-&gt;</span>length) ? \</span></span><br><span class="line"><span class="meta">		 (cell = &amp;cell##__state.l-&gt;elements[cell##__state.i], true) : \</span></span><br><span class="line"><span class="meta">		 (cell = NULL, false); \</span></span><br><span class="line"><span class="meta">		 cell##__state.i++)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NIL						((List *) NULL)</span></span><br></pre></td></tr></table></figure>
+
 <p>The <code>ListCell</code> union consists of a single member, <code>ptr_value</code>, which is a generic pointer <code>(void *)</code>.</p>
 <p>This pointer can hold a reference to any type of data, allowing for flexibility in what kind of data the list can contain.<br>This structure is useful for managing lists of generic data types.</p>
 <p>The List structure represents a dynamic list in PostgreSQL.<br>It contains:</p>
@@ -463,7 +464,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -527,12 +528,15 @@
 
       
           <h2 id="Foreword"><a href="#Foreword" class="headerlink" title="Foreword"></a>Foreword</h2><p>Using gdb for command-line debugging still feels inconvenient. I initially wanted to find a simpler way to directly debug the PostgreSQL source code under Windows. After searching for a while, I found that Visual Studio (VS) was the only option available, but it is heavy and the steps are quite complex. Since most real environments run on Linux, it is better to debug the PostgreSQL source code under Linux.</p>
-<h2 id="How-to-build-amp-install-PostgreSQL-from-source-code"><a href="#How-to-build-amp-install-PostgreSQL-from-source-code" class="headerlink" title="How to build &amp; install PostgreSQL from source code."></a>How to build &amp; install PostgreSQL from source code.</h2><p>I used Ubuntu Linux environment, the first step we might need to install pre-requirement tool for PostgreSQL build.</p>
+<h2 id="How-to-build-install-PostgreSQL-from-source-code"><a href="#How-to-build-install-PostgreSQL-from-source-code" class="headerlink" title="How to build &amp; install PostgreSQL from source code."></a>How to build &amp; install PostgreSQL from source code.</h2><p>I used Ubuntu Linux environment, the first step we might need to install pre-requirement tool for PostgreSQL build.</p>
 <figure class="highlight q"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-<span class="built_in">get</span> <span class="keyword">update</span></span><br><span class="line">sudo apt-<span class="built_in">get</span> install build-essential libreadline-<span class="built_in">dev</span> zlib1g-<span class="built_in">dev</span> flex bison libxml2-<span class="built_in">dev</span> libxslt-<span class="built_in">dev</span> libssl-<span class="built_in">dev</span> libxml2-utils xsltproc ccache libsystemd-<span class="built_in">dev</span> -y</span><br></pre></td></tr></table></figure>
+
 <p>download PostgreSQL source code.</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">wget</span> https://ftp.postgresql.org/pub/source/v14.<span class="number">8</span>/postgresql-<span class="number">14</span>.<span class="number">8</span>.tar.gz</span><br><span class="line"><span class="attribute">tar</span> xvfz postgresql-<span class="number">14</span>.<span class="number">8</span>.tar.gz</span><br><span class="line"><span class="attribute">cd</span> postgresql-<span class="number">14</span>.<span class="number">8</span></span><br></pre></td></tr></table></figure>
+
 <p>we would need to make sure the path (<code>--prefix</code>) exist in your system.  </p>
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">./configure</span> <span class="params">--prefix=/home/daniel/postgresql-14</span>.8/pgsql <span class="params">--with-icu</span> <span class="params">--with-openssl</span> <span class="params">--with-systemd</span> <span class="params">--with-libxml</span> <span class="params">--enable-debug</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#or debug -g3 mode</span></span><br><span class="line"></span><br><span class="line"><span class="string">./configure</span> <span class="params">--prefix=/home/daniel/postgresql-14</span>.8/pgsql <span class="params">--with-icu</span> <span class="params">--with-openssl</span> <span class="params">--with-systemd</span> <span class="params">--with-libxml</span> <span class="params">--enable-debug</span> CFLAGS=<span class="string">&quot;-DGCC_HASCLASSVISIBILITY -O0 -Wall -W -g3 -gdwarf-2&quot;</span></span><br><span class="line"></span><br><span class="line">make -j 8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>we must build with <code>--enable-debug</code> parameter, otherwise we can’t debug with our source code.</p>
 </blockquote>
@@ -593,7 +597,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -660,8 +664,9 @@
 </ul>
 <p>Here is the sample code of Azure PostgreSQL Flexible long term backup with Managed Identity.</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start program&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;=====================&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start installing postgresql client suit&#x27;</span></span><br><span class="line"><span class="built_in">sudo</span> apt update</span><br><span class="line"><span class="built_in">sudo</span> apt -y install postgresql-client</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;======================&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;postgresql client install ends&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start mount storage&#x27;</span></span><br><span class="line"></span><br><span class="line">wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb</span><br><span class="line"><span class="built_in">sudo</span> dpkg -i packages-microsoft-prod.deb</span><br><span class="line"><span class="built_in">sudo</span> apt-get update</span><br><span class="line"><span class="built_in">sudo</span> apt-get install blobfuse -y</span><br><span class="line"><span class="built_in">sudo</span> apt-get install jq -y</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ ! -f blob.conf  ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&#x27;accountName &lt;&lt;Your blob accountName&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;authType MSI&#x27;</span> &gt;&gt; fuse_connection.cfg</span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;identityObjectId &lt;&lt;Your blob accountKey&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;containerName &lt;&lt;Your blob Container Name&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="comment">#create a folder which can mount to blob</span></span><br><span class="line"><span class="built_in">mkdir</span> ~/data</span><br><span class="line"><span class="built_in">sudo</span> blobfuse ~/data --tmp-path=/mnt/resource/mycontainer  --config-file=./blob.conf -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;======= starting backup============&#x27;</span></span><br><span class="line">DNAME=`<span class="built_in">date</span> +%Y%m%d%H%M%S`</span><br><span class="line"><span class="built_in">export</span> PGPASSWORD=`curl -s <span class="string">&#x27;http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&amp;resource=https%3A%2F%2Fossrdbms-aad.database.windows.net&amp;client_id=&lt;&lt;MI client ID&gt;&gt;&#x27;</span> -H Metadata:<span class="literal">true</span> | jq -r .access_token`</span><br><span class="line">pg_dump --host=test-conn.postgres.database.azure.com --username=<span class="string">&#x27;MI-Demo&#x27;</span> -Fc -c  testdb &gt; ~/data/dump<span class="variable">$DNAME</span>.sql</span><br></pre></td></tr></table></figure>
+
 <h2 id="Experiments"><a href="#Experiments" class="headerlink" title="Experiments:"></a>Experiments:</h2><h3 id="Here-is-the-guideline-for-using-managed-identity-to-connect-to-your-DB-server-in-VM"><a href="#Here-is-the-guideline-for-using-managed-identity-to-connect-to-your-DB-server-in-VM" class="headerlink" title="Here is the guideline for using managed identity to connect to your DB server in VM."></a>Here is the guideline for using managed identity to connect to your DB server in VM.</h3><p>We would make sure the Authentication setting that was PostgreSQL and Azure Active Directory authentication.</p>
-<p><img src="https://i.imgur.com/BVNlWCx.png" alt></p>
+<p><img src="https://i.imgur.com/BVNlWCx.png"></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/azure-flexible-longterm-backup/#more" rel="contents">
@@ -719,7 +724,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -751,7 +756,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>5.2k</span>
+              <span>5.3k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -773,10 +778,12 @@
           <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>因為工作需要最近在研究 postgresql DB，postgresql DB 是一個 Open Source RDBMS，所以有任何問題疑問都可以把 source code 下載並 debug 了解原因，本篇希望可以快速幫助想要透過 source code 安裝 postgresql DB 的人</p>
 <h3 id="Install-Postgresl"><a href="#Install-Postgresl" class="headerlink" title="Install Postgresl"></a>Install Postgresl</h3><p>假如你跟我一樣是 Ubuntu 在安裝前需要先把開發環境設定完畢，詳細資訊可參考 <a href="https://wiki.postgresql.org/wiki/Compile_and_Install_from_source_code">Postgresql Compile_and_Install_from_source_code</a></p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update</span><br><span class="line"></span><br><span class="line">sudo apt-get install build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt-dev libssl-dev libxml2-utils xsltproc ccache</span><br></pre></td></tr></table></figure>
+
 <p>我們可以透過 <a href="https://www.postgresql.org/ftp/source/">FTP Source Code</a> 要安裝 postgres source code 版本</p>
 <p>假如我是要安裝 v12.9 的 postgres 版本，我會跑下面命令下載 source code &amp; 解壓縮</p>
 <p>解壓縮完畢後，應該會在該目錄看到一個該版號資料夾裡面存放的就是該版本使用 Postgresql source code.</p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">wget https://ftp.postgresql.org/pub/source/v12.<span class="number">9</span>/postgresql-<span class="number">12</span>.<span class="number">9</span>.tar.gz</span><br><span class="line">tar xvfz postgresql-<span class="number">12</span>.<span class="number">9</span>.tar.gz</span><br><span class="line"></span><br><span class="line"><span class="built_in">cd</span> postgresql-<span class="number">12</span>.<span class="number">9</span> </span><br></pre></td></tr></table></figure>
+
 <p>利用 source code 安裝 postgres</p>
           <!--noindex-->
             <div class="post-button">
@@ -835,7 +842,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -898,7 +905,7 @@
 <li>驗收自己目前對於雲端相關知識</li>
 <li>目前在架構 Team 擔任工程師，希望規劃出好的系統架構</li>
 </ol>
-<p><img src="../images/aws/2022-06-26_20h25_16.png" alt="img"></p>
+<p><img src="/../images/aws/2022-06-26_20h25_16.png" alt="img"></p>
 <h2 id="考試重點"><a href="#考試重點" class="headerlink" title="考試重點"></a>考試重點</h2><h3 id="S3-考試必考"><a href="#S3-考試必考" class="headerlink" title="S3 (考試必考)"></a>S3 (考試必考)</h3><ul>
 <li>S3 Standard</li>
 <li>S3 IA (Infrequent Access)</li>
@@ -978,7 +985,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1014,7 +1021,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>2.3k</span>
+              <span>2.4k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -1040,8 +1047,10 @@
 </blockquote>
 <h2 id="建立第一個-serverless"><a href="#建立第一個-serverless" class="headerlink" title="建立第一個 serverless"></a>建立第一個 serverless</h2><p>本次案例我們利用 <a href="https://github.com/serverless/serverless#install-via-npm">serverless cli</a> 建立 dotnet template，利用 nqm 安裝 </p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g serverless</span><br></pre></td></tr></table></figure>
+
 <p>安裝完後建立一個 dotnet core serverless project</p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">serverless create -t aws-csharp -n dotnetServerless</span><br></pre></td></tr></table></figure>
+
 <p>本次使用參數說明</p>
           <!--noindex-->
             <div class="post-button">
@@ -1100,7 +1109,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1159,12 +1168,15 @@
             <img src="https://i.imgur.com/U1iC4ez.png" itemprop="contentUrl">
         </div>
           <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探</p>
-<h2 id="資料-amp-測試資料資訊"><a href="#資料-amp-測試資料資訊" class="headerlink" title="資料 &amp; 測試資料資訊"></a>資料 &amp; 測試資料資訊</h2><p>本次執行 Sample Data</p>
+<h2 id="資料-測試資料資訊"><a href="#資料-測試資料資訊" class="headerlink" title="資料 &amp; 測試資料資訊"></a>資料 &amp; 測試資料資訊</h2><p>本次執行 Sample Data</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T1 (</span><br><span class="line">    ID <span class="type">INT</span> <span class="keyword">NOT NULL</span> <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">	val <span class="type">INT</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col1 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col2 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col3 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col4 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col5 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col6 UUID <span class="keyword">NOT NULL</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T1</span><br><span class="line"><span class="keyword">SELECT</span> i,</span><br><span class="line">       RANDOM() <span class="operator">*</span> <span class="number">1000000</span>,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid</span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">20000000</span>) i;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> T2 (</span><br><span class="line">    ID <span class="type">INT</span> <span class="keyword">NOT NULL</span> <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">	val <span class="type">INT</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col1 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col2 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col3 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col4 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col5 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col6 UUID <span class="keyword">NOT NULL</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T2</span><br><span class="line"><span class="keyword">SELECT</span> i,</span><br><span class="line">       RANDOM() <span class="operator">*</span> <span class="number">1000000</span>,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid</span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">1000000</span>) i;</span><br><span class="line"></span><br><span class="line">vacuum ANALYZE T1;</span><br><span class="line">vacuum ANALYZE T2;</span><br></pre></td></tr></table></figure>
+
 <p>查詢 sample code</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN (ANALYZE,TIMING <span class="keyword">ON</span>,BUFFERS <span class="keyword">ON</span>)</span><br><span class="line"><span class="keyword">SELECT</span> t1.<span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> T1 </span><br><span class="line"><span class="keyword">INNER</span> <span class="keyword">JOIN</span> T2 <span class="keyword">ON</span> t1.id <span class="operator">=</span> t2.id </span><br><span class="line"><span class="keyword">WHERE</span> t1.id <span class="operator">&lt;</span> <span class="number">1000000</span> </span><br></pre></td></tr></table></figure>
+
 <p>此次查詢如期走 <code>Merge Join</code></p>
 <figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&quot;Gather  (cost=1016.37..30569.85 rows=53968 width=104) (actual time=0.278..837.297 rows=999999 loops=1)&quot;</span><br><span class="line">&quot;  Workers Planned: 2&quot;</span><br><span class="line">&quot;  Workers Launched: 2&quot;</span><br><span class="line">&quot;  Buffers: shared hit=38273 read=21841&quot;</span><br><span class="line">&quot;  -&gt;  <span class="keyword">Merge</span> <span class="keyword">Join</span>  (cost=<span class="number">16.37</span>.<span class="number">.24173</span><span class="number">.05</span> rows=<span class="number">22487</span> width=<span class="number">104</span>) (actual time=<span class="number">11.993</span>.<span class="number">.662</span><span class="number">.770</span> rows=<span class="number">333333</span> loops=<span class="number">3</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        <span class="keyword">Merge</span> Cond: (t2.id = t1.id)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        Buffers: shared hit=<span class="number">38273</span> read=<span class="number">21841</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        -&gt;  Parallel <span class="keyword">Index</span> Only Scan <span class="keyword">using</span> t2_pkey <span class="keyword">on</span> t2  (cost=<span class="number">0.42</span>.<span class="number">.20147</span><span class="number">.09</span> rows=<span class="number">416667</span> width=<span class="number">4</span>) (actual time=<span class="number">0.041</span>.<span class="number">.69</span><span class="number">.947</span> rows=<span class="number">333333</span> loops=<span class="number">3</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              Heap Fetches: <span class="number">0</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              Buffers: shared hit=<span class="number">6</span> read=<span class="number">2732</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        -&gt;  <span class="keyword">Index</span> Scan <span class="keyword">using</span> t1_pkey <span class="keyword">on</span> t1  (cost=<span class="number">0.44</span>.<span class="number">.48427</span><span class="number">.24</span> rows=<span class="number">1079360</span> width=<span class="number">104</span>) (actual time=<span class="number">0.041</span>.<span class="number">.329</span><span class="number">.874</span> rows=<span class="number">999819</span> loops=<span class="number">3</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              <span class="keyword">Index</span> Cond: (id &lt; <span class="number">1000000</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              Buffers: shared hit=<span class="number">38267</span> read=<span class="number">19109</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>Planning:<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>  Buffers: shared hit=<span class="number">4</span> read=<span class="number">8</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>Planning Time: <span class="number">0.228</span> ms<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>Execution Time: <span class="number">906.760</span> ms<span class="string">&quot;</span></span><br></pre></td></tr></table></figure>
+
 <p>假如更新如多資料，但未觸發臨界值</p>
           <!--noindex-->
             <div class="post-button">
@@ -1223,7 +1235,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1286,6 +1298,7 @@
 <p>我使用是 <a href="https://hub.docker.com/r/bitnami/redis-cluster/">bitnami redis-cluster</a> 這個 Image 來做這次 Poc</p>
 <p>此案例是 3 master - 3 slave Redis server 範例</p>
 <h2 id="建立-Redis-Cluster"><a href="#建立-Redis-Cluster" class="headerlink" title="建立 Redis Cluster"></a>建立 Redis Cluster</h2><h3 id="How-to-Use"><a href="#How-to-Use" class="headerlink" title="How to Use"></a>How to Use</h3><figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">docker-compose up -d</span></span><br></pre></td></tr></table></figure>
+
 <p>跑完之後就會出現 6 台 Redis Container，如下表</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ docker ps</span><br><span class="line">CONTAINER ID   IMAGE                       COMMAND                  CREATED          STATUS          PORTS                                       NAMES</span><br><span class="line">1a0c740cbb96   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   31 seconds ago   Up 27 seconds   0.0.0.0:8105-&gt;6379/tcp, :::8105-&gt;6379/tcp   rediscluster_redis-node-5_1</span><br><span class="line">1651a81a286f   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 30 seconds   0.0.0.0:8102-&gt;6379/tcp, :::8102-&gt;6379/tcp   rediscluster_redis-node-2_1</span><br><span class="line">5d93edfc55e6   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 31 seconds   0.0.0.0:8104-&gt;6379/tcp, :::8104-&gt;6379/tcp   rediscluster_redis-node-4_1</span><br><span class="line">8ab5bbbb7364   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 29 seconds   0.0.0.0:8103-&gt;6379/tcp, :::8103-&gt;6379/tcp   rediscluster_redis-node-3_1</span><br><span class="line">8edf90bed3fb   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 29 seconds   0.0.0.0:8101-&gt;6379/tcp, :::8101-&gt;6379/tcp   rediscluster_redis-node-1_1</span><br><span class="line">e11ac0ec56aa   bitnami/redis-cluster:6.2   <span class="string">&quot;/opt/bitnami/script…&quot;</span>   37 seconds ago   Up 30 seconds   0.0.0.0:8100-&gt;6379/tcp, :::8100-&gt;6379/tcp   rediscluster_redis-node-0_1</span><br></pre></td></tr></table></figure>
           <!--noindex-->
@@ -1345,7 +1358,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1381,7 +1394,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>2.9k</span>
+              <span>3k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -1402,10 +1415,10 @@
       
           <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>當一個專案越來越大，在開發新產品時同時要兼顧程式碼品質會越來越困難，今天要介紹的　<a href="https://www.ndepend.com/">Ndepend</a> 是一個很優秀靜態分析 .Net 專案好物</p>
 <p>會幫我們產生一個 DashBoard 來了解目前專案大致上分析後的問題，並提供建議解法和處理方向，讓我們提前更快速抓出未來或目前存在 bug，減少發生需要晚上起來 support 機率，讓客戶，老闆，工程師都開心的三大歡喜</p>
-<p>另外我們也可以透過 <a href="https://www.ndepend.com/">Ndepend</a> 來撰寫我們自己 Code Rule 並在 CI/CD 流程中進行靜態掃描，讓我們出產軟體更有品質</p>
+<p>另外我們也可以透過 <a href="https://www.ndepend.com/">Ndepend</a> 來撰寫我們自己 Code Rule 並在 CI&#x2F;CD 流程中進行靜態掃描，讓我們出產軟體更有品質</p>
 <p>本文我使用我自己的開源專案 <a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a> 來當作分析案例</p>
 <h2 id="建立-Ndepend-開始分析"><a href="#建立-Ndepend-開始分析" class="headerlink" title="建立 Ndepend 開始分析"></a>建立 Ndepend 開始分析</h2><p>安裝完 <code>Ndepend</code> 後我們可以在 virtual studio 上面的[延伸模組] 出現建立 <code>Ndepend</code> 項目，一開始我們利用 Attach New Ndepend Project to Current VS Solution ，來建立分析項目</p>
-<p><img src="https://i.imgur.com/flzNRXR.png" alt></p>
+<p><img src="https://i.imgur.com/flzNRXR.png"></p>
 <p><code>NDepend</code> 分析完程式後我們會在 sln 檔同級目錄下看到一個 <code>NDependOut</code> 資料夾跟 <code>.ndproj</code> 檔案</p>
 <ul>
 <li><code>.ndproj</code> 是 XML 格式儲存的專案檔，內容包含 <code>NDepend</code> 專案資訊及分析設定資訊</li>
@@ -1577,12 +1590,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/493ce9d9-64bd-4343-a145-16ab21f3c695/1555312814_72597.png">
 <meta property="article:published_time" content="2019-05-26T22:31:09.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="IOC">
@@ -206,7 +206,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -321,14 +321,18 @@
 <p>下面範例來說明上面的例子</p>
 <p>小明自己依賴於掃地阿姨<br>依賴程式碼寫在小明類別內部日後要更改只能動內部程式碼。</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 小明直接依賴 Aunt 不是依賴抽象</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 日後要改必須動內部</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Mine</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> Aunt aunt = <span class="keyword">new</span> Aunt();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">Room</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        aunt.Swapping();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>呼叫使用時</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Mine mine = <span class="keyword">new</span> Mine();</span><br><span class="line">mine.Room();</span><br></pre></td></tr></table></figure>
+
 <p>小明找仲介公司</p>
 <p><strong>仲介公司(Ioc容器)</strong></p>
 <p>在仲介公司內註冊需求，讓仲介公司日後幫你找人（註冊的類別）</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 仲介公司</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;returns&gt;</span><span class="doctag">&lt;/returns&gt;</span></span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> IContainer <span class="title">MiddleCompany</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    ContainerBuilder builder = <span class="keyword">new</span> ContainerBuilder();</span><br><span class="line"></span><br><span class="line">    <span class="comment">//在仲介公司裡寫需求人申請單</span></span><br><span class="line">    builder.RegisterType&lt;MineWithMiddle&gt;();</span><br><span class="line">    <span class="comment">//小明所需打掃阿姨需求</span></span><br><span class="line">    builder.RegisterType&lt;Aunt&gt;().As&lt;ISwapable&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> builder.Build();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>使用起來</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">IContainer middleCompany = MiddleCompany();</span><br><span class="line"><span class="comment">//仲介公司(IOC AutoFac)自動幫小明注入一個打掃阿姨</span></span><br><span class="line">MineWithMiddle mineWithMiddle = middleCompany.Resolve&lt;MineWithMiddle&gt;();</span><br><span class="line"></span><br><span class="line">mineWithMiddle.Room();</span><br></pre></td></tr></table></figure>
+
 <p>總結：</p>
 <p>雖然上面程式碼執行結果一樣，但內部結構和日後擴展性卻截然不同</p>
 <blockquote>
@@ -337,7 +341,7 @@
 <p>像網頁瀏覽器和伺服器是依賴<strong>Http</strong>協議，用戶端不管是手機.電腦,平板，伺服器端php,asp.net,java都可互相交信，依賴<strong>Http</strong>協議共用的合約</p>
 <p><a href="https://github.com/isdaniel/IOC_Sample">範例原始碼</a></p>
 <p><a href="http://www.cnblogs.com/xdp-gacl/p/4249939.html">參考連結</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ioc-di/">https://isdaniel.github.io/ioc-di/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ioc-di/">https://isdaniel.github.io/ioc-di/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -544,12 +548,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/ROkC1Q2.png">
 <meta property="article:published_time" content="2021-08-29T22:06:40.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="CICD">
 <meta property="article:tag" content="k8s">
@@ -205,7 +205,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -281,13 +281,13 @@
 </blockquote>
 <p>我們練習會使用<a href="https://github.com/rancher/k3d">k3d</a>使用Docker建議k8s來練習</p>
 <h2 id="k8s-主要組件介紹"><a href="#k8s-主要組件介紹" class="headerlink" title="k8s 主要組件介紹"></a>k8s 主要組件介紹</h2><p>先來張圖(此圖來自wiki)wiki畫的很棒，我拿來借用一下XDD</p>
-<p><img src="https://i.imgur.com/r6gcJ8U.png" alt=""></p>
+<p><img src="https://i.imgur.com/r6gcJ8U.png"></p>
 <p>developer 用 kubectl 利用（http restful API） 打到master node 中的 API Server (綠色區塊)，進而控制 node 群體(藍色區塊)</p>
 <p>透過<code>kubectl api-resources -o wide</code>可以查看目前所有Api Server提供的服務</p>
 <h3 id="master-node"><a href="#master-node" class="headerlink" title="master node"></a>master node</h3><p>master node 又可以稱 control plan，存儲跟掌控Node就像是人類的大腦，所以裡面有些重要成員要跟大家介紹</p>
 <ul>
 <li>kube-apiserver：接收使用者指令來操作Node or Pod.(唯一接受命令的服務)</li>
-<li>etcd：可信賴的分布式key/value存儲服務，保存k8s需要持久化的配置資訊</li>
+<li>etcd：可信賴的分布式key&#x2F;value存儲服務，保存k8s需要持久化的配置資訊</li>
 <li>kube-scheduler：負責調度Pod至Node並監控</li>
 <li>kube-controller-manager：<ul>
 <li>透過control loop監控cluster狀態並嘗試維持預期狀態，內建由多個controller集合體組成</li>
@@ -301,7 +301,7 @@
 </blockquote>
 <h3 id="Pods"><a href="#Pods" class="headerlink" title="Pods"></a>Pods</h3><p>Pod是存放container程式(可以多個Container)，是k8s調度中最小單位</p>
 <p>一開始準備建立一個Pod會依序執行下面Container，在所有Init Container沒有執行成功前，Pod不會變成Ready狀態，Pod會處於Pedding狀態.</p>
-<p>Pod執行Container順序為Pause Container =&gt; Init Containers =&gt; Main Container</p>
+<p>Pod執行Container順序為Pause Container &#x3D;&gt; Init Containers &#x3D;&gt; Main Container</p>
 <blockquote>
 <p>Main Container為我們主要運作Container，如果Pod重啟，所有Init Container必須可重新執行.</p>
 </blockquote>
@@ -310,7 +310,7 @@
 <li>一般不建議直接建立 Pod，而是由更高階 controller 負責控制(ex：Deployment)，達到更方便的控管</li>
 <li>一個 Pod 內的容器共享同一個網路</li>
 </ul>
-<p><img src="https://i.imgur.com/A8YNvJV.png" alt=""></p>
+<p><img src="https://i.imgur.com/A8YNvJV.png"></p>
 <h3 id="WorkNode"><a href="#WorkNode" class="headerlink" title="WorkNode"></a>WorkNode</h3><p>WorkNode 裡面存放許多 Pod 來執行 Container，提供資源來執行我們Pod</p>
 <p>每個WorkNode都有下面兩個重要組件</p>
 <ul>
@@ -347,15 +347,17 @@
 <p><code>choco install k3d</code></p>
 <p>下載完後可以利用<code>k3d --version</code>查看安裝版本資訊如下</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">k3d</span> version v4.<span class="number">0</span>.<span class="number">0</span></span><br><span class="line"><span class="attribute">k3s</span> version v1.<span class="number">20</span>.<span class="number">0</span>-k3s2 (default)</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/KBM6n39.png" alt=""></p>
+
+<p><img src="https://i.imgur.com/KBM6n39.png"></p>
 <p>透過<code>k3d cluster create mycluster</code>建立k8s</p>
 <p>建立完畢後使用<code>docker ps</code>可以看到我們k3d會跑在Docker中代表我們已經建立好k8s環境了</p>
-<p><img src="https://i.imgur.com/x9qzDfn.png" alt=""></p>
+<p><img src="https://i.imgur.com/x9qzDfn.png"></p>
 <h2 id="建立第一個Pod"><a href="#建立第一個Pod" class="headerlink" title="建立第一個Pod"></a>建立第一個Pod</h2><p>環境建立好了，現在我們就來建立一個Pod來試試看</p>
 <blockquote>
 <p>因為是為了讓大家快速感受 <code>kubectl</code> 命令一般我們在管理 k8s 不會直接管理 pod 而是會透過 controller 來管理，就像你是將軍你不會想直接管理小兵，你會對於軍官下達命令由他們去管理小兵</p>
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Pod</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">labels:</span></span><br><span class="line">    <span class="attr">run:</span> <span class="string">my-nginx</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">nginx</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">containers:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">image:</span> <span class="string">nginx:alpine</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">my-nginx</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">containerPort:</span> <span class="number">80</span></span><br><span class="line">    <span class="attr">resources:</span></span><br><span class="line">      <span class="attr">limits:</span></span><br><span class="line">        <span class="attr">cpu:</span> <span class="string">50m</span></span><br><span class="line">        <span class="attr">memory:</span> <span class="string">100Mi</span></span><br><span class="line">      <span class="attr">requests:</span></span><br><span class="line">        <span class="attr">cpu:</span> <span class="string">30m</span></span><br><span class="line">        <span class="attr">memory:</span> <span class="string">50Mi</span></span><br></pre></td></tr></table></figure>
+
 <p>我對於上面yaml設定檔大概說明一下</p>
 <ul>
 <li><code>kind</code>：代表要建立資源類型(此次範例是pod)</li>
@@ -364,20 +366,22 @@
 </ul>
 <p>在當前目錄存上面的yaml檔案叫做<code>pods.yaml</code>並執行讓k8s編排出我們要的資源</p>
 <figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl <span class="built_in">apply</span> -f .\pods.yaml</span><br></pre></td></tr></table></figure>
+
 <p>執行完後我們可以利用<code>kubectl get pods</code>查看 pod 建立狀態</p>
-<h3 id="請求我們-pod-服務"><a href="#請求我們-pod-服務" class="headerlink" title="請求我們 pod 服務"></a>請求我們 pod 服務</h3><p>我們利用 <a href="http://127.0.0.1">http://127.0.0.1</a> 請求不到 nginx 是為什麼?</p>
+<h3 id="請求我們-pod-服務"><a href="#請求我們-pod-服務" class="headerlink" title="請求我們 pod 服務"></a>請求我們 pod 服務</h3><p>我們利用 <a href="http://127.0.0.1/">http://127.0.0.1</a> 請求不到 nginx 是為什麼?</p>
 <blockquote>
 <p>因為80 port是pod中Container使用的Port我們需要使用一些方式讓他可以給外面請求</p>
 </blockquote>
 <p>所以我們可以利用，我們使用<code>port-forward</code>把pod container中的port暴露出來請求 <a href="http://127.0.0.1:8888/">http://127.0.0.1:8888/</a></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl port-forward nginx 8888:80</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>一般我們會透過 Service 資源來管理port 相關事情，日後有機會再跟大家說</p>
 </blockquote>
-<p><img src="https://i.imgur.com/2Ktnj3a.png" alt=""></p>
+<p><img src="https://i.imgur.com/2Ktnj3a.png"></p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天對於k8s簡單介紹幾個重要成員還有使用，希望對於想要入門k8s的人會有幫助.</p>
 <p>日後有機會在寫其他k8s相關的文章.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/kubernetes-first/">https://isdaniel.github.io/kubernetes-first/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/kubernetes-first/">https://isdaniel.github.io/kubernetes-first/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -583,12 +587,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

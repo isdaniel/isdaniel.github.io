@@ -28,7 +28,7 @@
 <meta property="og:description" content="前文：這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt; 最後帶著大家來實現自己的Linq Where 先來看 Func&lt;&gt; ，Action&lt;&gt;原始定義 我們發現Func&lt;&gt; ，Action&lt;&gt; 其實本質就是委託 ，雖然有十幾個重載 但大同小異 public delegate TResult Func&lt;out TRe">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2019-06-02T11:06:40.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Func">
@@ -203,7 +203,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -265,9 +265,11 @@
 <pre><code>public delegate TResult Func&lt;out TResult&gt;();
 
 public delegate void Action&lt;in T&gt;(T obj);
-</code></pre><p><code>Func</code>固定最後一個泛型參數為方法回傳值，其餘是傳入參數</p>
+</code></pre>
+<p><code>Func</code>固定最後一個泛型參數為方法回傳值，其餘是傳入參數</p>
 <pre><code>public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
-</code></pre><h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
+</code></pre>
+<h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
 <pre><code>public class Person
 &#123;
     public int Age &#123; get; set; &#125;
@@ -312,9 +314,11 @@ static void Main(string[] args)
     #endregion
     Console.ReadKey();
 &#125;
-</code></pre><h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
+</code></pre>
+<h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
 <pre><code>public delegate void Action&lt;in T&gt;(T obj);
-</code></pre><p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
+</code></pre>
+<p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
 <pre><code>public class Person
 &#123;
     public int Age &#123; get; set; &#125;
@@ -343,7 +347,8 @@ public static void CallPersonInfo(Person person)
 &#123;
     Console.WriteLine($&quot;Age:&#123;person.Age&#125; Name:&#123;person.Name&#125;&quot;);
 &#125;
-</code></pre><h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action<code></code>和<code>Func</code>差別是</p>
+</code></pre>
+<h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action&#96;&#96;和<code>Func</code>差別是</p>
 <ul>
 <li><code>Action</code>是<code>void</code>不回傳值得委託</li>
 <li><code>Func</code>是有回傳值得委託</li>
@@ -351,8 +356,9 @@ public static void CallPersonInfo(Person person)
 <p>有了以上的基礎，我們就來實現我們自己的<code>Linq Where</code> 和 <code>Linq Select</code></p>
 <p>先來分析 <code>Where</code> 方法簽章</p>
 <pre><code>public static IEnumerable&lt;TSource&gt; Where&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source, Func&lt;TSource, bool&gt; predicate)
-</code></pre><h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
-<p>重點在於<strong>[執行塞選條件]</strong>這個動作</p>
+</code></pre>
+<h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
+<p>重點在於**[執行塞選條件]**這個動作</p>
 <pre><code>List&lt;Person&gt; pList = new List&lt;Person&gt;()
 &#123;
     new Person() &#123; Age=100,Name=&quot;daniel&quot;&#125;,
@@ -361,7 +367,8 @@ public static void CallPersonInfo(Person person)
     new Person() &#123; Age=5,Name = &quot;rjo&quot;&#125;
 &#125;;
 pList.Where(per =&gt; per.Age &gt; 10);
-</code></pre><p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
+</code></pre>
+<p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
 <p>重點在<code>if(where(item))</code> 判斷物件是否符合條件，如符合就回傳此物件</p>
 <pre><code>public static class LinqExtension
 &#123;
@@ -384,13 +391,14 @@ pList.Where(per =&gt; per.Age &gt; 10);
         &#125;
     &#125;
 &#125;
-</code></pre><hr>
+</code></pre>
+<hr>
 <h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p>委託把不確定的動作，轉移給呼叫端來撰寫。  </p>
 <p>而不是寫死在程式中</p>
 <p>上面的<code>MyWhere</code>挖了一個洞，關於判斷是否符合條件，給呼叫端實現</p>
 <p>雖然在裡面一樣是一個一個判斷是否符合條件，符合再返回，但利用委託和泛型就可以對於任何條件和任何型別來做比較　大大提升了程式效率</p>
 <p><a href="https://github.com/isdaniel/DelegateSimple">原始碼範例</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-func-2/">https://isdaniel.github.io/c-func-2/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/c-func-2/">https://isdaniel.github.io/c-func-2/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -596,12 +604,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

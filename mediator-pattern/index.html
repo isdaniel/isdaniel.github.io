@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549790493_52417.png">
 <meta property="og:image" content="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549792143_37531.png">
 <meta property="article:published_time" content="2019-06-03T22:30:12.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="DesignPattern">
@@ -207,7 +207,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -264,10 +264,10 @@
       
         <h2 id="說明"><a href="#說明" class="headerlink" title="說明"></a>說明</h2><p>系統模塊存在很多複雜的耦合問題，很適合使用中介者模式來解耦合</p>
 <p>在現實中如果組織有一定規模可能構通如下圖那般複雜</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549790323_53498.png" alt=""></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549790323_53498.png"></p>
 <p>如果有一個人或組織負責幫大家協助溝通，就可解決上面複雜問題</p>
 <p>這就是我們這次的核心中介者</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549790493_52417.png" alt=""></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549790493_52417.png"></p>
 <h3 id="中介者模式有幾個角色"><a href="#中介者模式有幾個角色" class="headerlink" title="中介者模式有幾個角色"></a>中介者模式有幾個角色</h3><ul>
 <li>AbstractMediator (抽像中介者)：定義中介者和各個同事者之間的通信的介面</li>
 <li>ConcreteMediator (中介者)：知道每個同事物件，實現抽像中介者，負責協調和各個具體的同事的交互關係</li>
@@ -280,23 +280,27 @@
 </ul>
 <p>在裡面第二點是很重要的目標，把傳遞訊息的邏輯封裝在中介者裡面</p>
 <h3 id="程式碼"><a href="#程式碼" class="headerlink" title="程式碼"></a>程式碼</h3><figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ProductManager</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> DBAdmin DbAdmin &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> Programer Programer &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">internal</span> <span class="keyword">void</span> <span class="title">Send</span>(<span class="params"><span class="built_in">string</span> message, OriginReqBase req</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">    　　　　　　 <span class="comment">//如果是DBAdmin傳遞訊息由Programer執行,反之</span></span><br><span class="line">            <span class="keyword">if</span> (req.GetType() == <span class="keyword">typeof</span>(DBAdmin))</span><br><span class="line">                Programer.DoProcess(message);</span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span>(req.GetType() == <span class="keyword">typeof</span>(Programer))</span><br><span class="line">                DbAdmin.DoProcess(message);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>傳遞通知或訊息邏輯寫在<code>Send</code>方法裡面.</p>
 <p>本次範例依照傳入的型別,如果是<code>DBAdmin</code>傳遞訊息由<code>Programer</code>執行,反之</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">OriginReqBase</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">protected</span> ProductManager _productManager;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="title">OriginReqBase</span>(<span class="params">ProductManager productManager</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _productManager = productManager;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">Requirement</span>(<span class="params"><span class="built_in">string</span> message</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _productManager.Send(message, <span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p><code>OriginReqBase</code>(抽象同事者) 因為每個角色 (<code>ConcreteColleague</code>) 都需要知道中介者存在，所以把參數設定在建構子上。</p>
-<p><code>Requirement</code>方法通知 PM 中介者將資料傳遞出去</p>
+<p><code>Requirement </code>方法通知 PM 中介者將資料傳遞出去</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Programer</span> : <span class="title">OriginReqBase</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">DoProcess</span>(<span class="params"><span class="built_in">string</span> message</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;Programer: <span class="subst">&#123;message&#125;</span>&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Programer</span>(<span class="params">ProductManager productManager</span>) : <span class="title">base</span>(<span class="params">productManager</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">DBAdmin</span> : <span class="title">OriginReqBase</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">DoProcess</span>(<span class="params"><span class="built_in">string</span> message</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;DBA:<span class="subst">&#123;message&#125;</span>&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">DBAdmin</span>(<span class="params">ProductManager productManager</span>) : <span class="title">base</span>(<span class="params">productManager</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>DoProcess</code> 方法 PM 中介者呼叫使用</p>
+
+<p><code>DoProcess</code> 方法 PM 中介者呼叫使用</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">ProductManager pm = <span class="keyword">new</span> ProductManager();</span><br><span class="line"></span><br><span class="line">DBAdmin DBA1 = <span class="keyword">new</span> DBAdmin(pm);　<span class="comment">//DBA知道PM存在</span></span><br><span class="line">Programer RD1 = <span class="keyword">new</span> Programer(pm);　<span class="comment">//RD知道PM存在</span></span><br><span class="line"></span><br><span class="line">pm.Programer = RD1; <span class="comment">//PM知道DBA</span></span><br><span class="line">pm.DbAdmin = DBA1;  <span class="comment">//PM知道RD</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//現在DBA和RD只需要傳訊息就可將訊息轉到需要知道的人</span></span><br><span class="line">RD1.Requirement(<span class="string">&quot;DB modify Requestment.&quot;</span>);</span><br><span class="line">DBA1.Requirement(<span class="string">&quot;DB Process doing.&quot;</span>);</span><br></pre></td></tr></table></figure>
+
 <h3 id="有三大重點"><a href="#有三大重點" class="headerlink" title="有三大重點"></a>有三大重點</h3><ol>
 <li>DBA和RD(同事者) 知道PM(中介者)存在</li>
 <li>PM(中介者)知道DBA和RD(同事者)存在</li>
 <li>ㄋDBA和RD不用知道對方存在但卻可以互相傳遞訊息(因為PM已經幫助我們解耦合了)</li>
 </ol>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/九桃/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549792143_37531.png" alt=""></p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/f718d961-2f8b-46ac-a2f7-b95af802f23a/1549792143_37531.png"></p>
 <p>UML圖 (有標示相對應的角色關係)</p>
 <p>我看來這個解耦合核心思想跟容器有點像，因為需要做溝通或通知時我們統一只需要轉交給<span style="color:#FFD700;"><strong>中介者</strong></span>會幫助我們處理溝通事宜</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/mediator-pattern/">https://isdaniel.github.io/mediator-pattern/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/mediator-pattern/">https://isdaniel.github.io/mediator-pattern/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -502,12 +506,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

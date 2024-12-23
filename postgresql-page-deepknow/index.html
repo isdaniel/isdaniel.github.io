@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/mYYjXFg.jpg">
 <meta property="article:published_time" content="2021-09-28T00:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.863Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="DataBase">
 <meta property="article:tag" content="Turning">
@@ -205,7 +205,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -269,82 +269,95 @@
 <p>如果要了解存儲怎麼辦呢?</p>
 <h2 id="關於-page-存儲"><a href="#關於-page-存儲" class="headerlink" title="關於 page 存儲"></a>關於 page 存儲</h2><p>使用sample data</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> t1 (id <span class="type">int</span> <span class="keyword">PRIMARY KEY</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert into</span> t1 <span class="keyword">select</span> generate_series(<span class="number">1</span>,<span class="number">2000</span>);</span><br><span class="line"><span class="keyword">insert into</span> t1 <span class="keyword">select</span> generate_series(<span class="number">2001</span>,<span class="number">4000</span>);</span><br></pre></td></tr></table></figure>
+
 <p>建立完表後我們透過 <code>\d+ t1</code> 指令查看資料表訊息，可以看到PK成功被建立</p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">postgres=# \d+ t1</span><br><span class="line">                                    Table &quot;public.t1&quot;</span><br><span class="line"> Column |  <span class="built_in">Type</span>   | Collation | Nullable | Default | Storage | Stats target | Description</span><br><span class="line">--------+---------+-----------+----------+---------+---------+--------------+-------------</span><br><span class="line"> id     | integer |           | <span class="keyword">not</span> null |         | plain   |              |</span><br><span class="line"><span class="function">Indexes:</span></span><br><span class="line"><span class="function">    &quot;<span class="title">t1_pkey</span>&quot; <span class="title">PRIMARY</span> <span class="title">KEY</span>, <span class="title">btree</span> (<span class="title">id</span>)</span></span><br></pre></td></tr></table></figure>
+
 <p>查看 <code>pg_class</code> 儲存訊息發現，我明明是儲存 4000 筆 int 資料，理論上會存放 2 左右的Page number (int 4 byte)</p>
-<p>4 byte * 4000 ~= 16kB</p>
-<p>為什麼數量分別是 table page = 18,index page = 13</p>
+<p>4 byte * 4000 ~&#x3D; 16kB</p>
+<p>為什麼數量分別是 table page &#x3D; 18,index page &#x3D; 13</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> reltuples,relpages,relname</span><br><span class="line"><span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">WHERE</span>  relname <span class="keyword">IN</span> (<span class="string">&#x27;t1&#x27;</span>,<span class="string">&#x27;t1_pkey&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
 <p>查詢結果如下圖</p>
-<p><img src="https://i.imgur.com/BG5gFsL.png" alt=""></p>
+<p><img src="https://i.imgur.com/BG5gFsL.png"></p>
 <h3 id="pageinspect-extension"><a href="#pageinspect-extension" class="headerlink" title="pageinspect extension"></a>pageinspect extension</h3><p>想要查看 postgresql DB 底層 Page <a href="https://www.postgresql.org/docs/12/pageinspect.html">pageinspect</a> extension.</p>
 <p>如下語法</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> extension pageinspect <span class="comment">-- 打開可以查看底層 Page 功能，需要有 admin 權限</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> bt_page_stats(<span class="string">&#x27;ix_t2&#x27;</span>, <span class="number">1</span>); <span class="comment">--查看 Index 統計資訊分佈</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> bt_page_items(<span class="string">&#x27;ix_t2&#x27;</span>, <span class="number">1</span>); <span class="comment">--查看 Index 儲存 Data &amp; Refer to Heap Data Address Info</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;t2&#x27;</span>, <span class="number">0</span>)); <span class="comment">--查看Heap Table 資料</span></span><br></pre></td></tr></table></figure>
+
 <p>pageinspect extension 說明如下，可以查看底層 page 資料</p>
 <blockquote>
 <p>　The pageinspect module provides functions that allow you to inspect the contents of database pages at a low level, which is useful for debugging purposes. All of these functions may be used only by superusers.</p>
 </blockquote>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;t1&#x27;</span>, <span class="number">0</span>));</span><br></pre></td></tr></table></figure>
+
 <p>我們使用 <code>heap_page_items</code> function就可以查看底層heap page 資訊.</p>
 <p>能發現每一個 Page 都只存 226 個 int，但226 * 4 只等於 904</p>
-<p><img src="https://user-images.githubusercontent.com/9159452/134297549-de401b2f-3099-45ed-8520-18c50ff0a115.png" alt=""></p>
+<p><img src="https://user-images.githubusercontent.com/9159452/134297549-de401b2f-3099-45ed-8520-18c50ff0a115.png"></p>
 <p>接著我們利用 <code>bt_page_items</code> 查看 b+tree Page 內部儲存資料</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> bt_page_items(<span class="string">&#x27;t1_pkey&#x27;</span>, <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
 <p>b+tree 有幾個重要欄位</p>
 <ul>
 <li>t_data：欄位是存放 Index key 資料</li>
 <li>t_ctid：欄位是存放 lookup 回 heap table 位置</li>
 </ul>
-<p><img src="https://user-images.githubusercontent.com/9159452/134297563-dfebcaf3-1bd4-4a4c-8766-8636fce4e80b.png" alt=""></p>
-<p><img src="https://i.imgur.com/yX4Uzty.png" alt=""></p>
+<p><img src="https://user-images.githubusercontent.com/9159452/134297563-dfebcaf3-1bd4-4a4c-8766-8636fce4e80b.png"></p>
+<p><img src="https://i.imgur.com/yX4Uzty.png"></p>
 <p>我們可以利用 postgresql DB table 的 CTID 欄位來查詢.</p>
 <p>發現 <code>CTID = &#39;(1,1)&#39;</code> 的確是 227 證實我上面說的</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> CTID,<span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> t1 </span><br><span class="line"><span class="keyword">WHERE</span> CTID <span class="operator">=</span> <span class="string">&#x27;(1,1)&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
 <p>這邊介紹 Page 存放資訊原理想要知道 為什麼 Page 明明是8KB但存的資料卻不到，這邊就要來說明 postgresql 對於 tuple 儲存方式</p>
 <h3 id="Database-Page-Layout"><a href="#Database-Page-Layout" class="headerlink" title="Database Page Layout"></a>Database Page Layout</h3><p>這邊我們要介紹 Page 中兩種重要的 metadata</p>
 <ul>
-<li>PageHeaderData Layout：每張 page 都有一份資料<br><img src="https://i.imgur.com/CXzHfHU.png" alt=""><br>8 + 12 <code>(2*6)</code> + 4 = 24 bytes</li>
-<li>HeapTupleHeaderData Layout：每個 tuple row 都有自己的 Header metadata<br><img src="https://i.imgur.com/bdl4SrM.png" alt=""><br>16 <code>(4*4)</code> + 6 + 4 + 1 + 1 <code>(NullBitMap)</code> = 28</li>
+<li>PageHeaderData Layout：每張 page 都有一份資料<br> <img src="https://i.imgur.com/CXzHfHU.png"><br>8 + 12 <code>(2*6)</code> + 4 &#x3D; 24 bytes</li>
+<li>HeapTupleHeaderData Layout：每個 tuple row 都有自己的 Header metadata<br> <img src="https://i.imgur.com/bdl4SrM.png"><br>16 <code>(4*4)</code> + 6 + 4 + 1 + 1 <code>(NullBitMap)</code> &#x3D; 28</li>
 </ul>
-<p><img src="https://i.imgur.com/qPYa76M.png" alt=""></p>
+<p><img src="https://i.imgur.com/qPYa76M.png"></p>
 <blockquote>
 <p>ItemIdData : Array of item identifiers pointing to the actual items. Each entry is an (offset,length) pair. 4 bytes per item.</p>
 </blockquote>
 <p>tuple 除了有 TupleHeader + RealData + ItemIdData</p>
 <p>我們可以利用 <code>SELECT pg_column_size(row(1));</code> 查看</p>
-<p><img src="https://i.imgur.com/0FTwHHe.png" alt=""></p>
+<p><img src="https://i.imgur.com/0FTwHHe.png"></p>
 <blockquote>
 <p><code>ItemIdData (4) + TupleHeader (28) + RealData (4)</code></p>
 </blockquote>
 <p>經過上面資訊我們可以推導出 <code>36 * 226 + 24 = 8160</code></p>
 <p>證明226列tuple的原理</p>
-<h3 id="關於-lp-len"><a href="#關於-lp-len" class="headerlink" title="關於 lp_len"></a>關於 lp_len</h3><p>所以每個 tuple 會存放 16 <code>(4*4)</code> + 6 + 4 + 1 + 1 <code>(NullBitMap)</code> + 4 <code>(RealDat)</code> = 32</p>
+<h3 id="關於-lp-len"><a href="#關於-lp-len" class="headerlink" title="關於 lp_len"></a>關於 lp_len</h3><p>所以每個 tuple 會存放 16 <code>(4*4)</code> + 6 + 4 + 1 + 1 <code>(NullBitMap)</code> + 4 <code>(RealDat)</code> &#x3D; 32</p>
 <blockquote>
 <p>此外 postgressql DB 用 t_bits 來儲存 null 數值，另外 tuple 大小會對於 8 bit 倍數進行對齊</p>
 </blockquote>
 <p>關鍵資訊我在這邊標註跟提供連結有興趣的在自己研究</p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> MAXALIGN(LEN) TYPEALIGN(MAXIMUM_ALIGNOF, (LEN))</span></span><br><span class="line"><span class="comment">//....</span></span><br><span class="line">MAXIMUM_ALIGNOF                          =&gt; <span class="number">8</span>,</span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p><a href="https://github.com/postgres/postgres/blob/e529b2dc37ac80ccebd76cdbb14966d3b40819c9/src/tools/msvc/Solution.pm#L457">https://github.com/postgres/postgres/blob/e529b2dc37ac80ccebd76cdbb14966d3b40819c9/src/tools/msvc/Solution.pm#L457</a><br><a href="https://github.com/postgres/postgres/blob/c30f54ad732ca5c8762bb68bbe0f51de9137dd72/src/include/c.h#L745-L757">https://github.com/postgres/postgres/blob/c30f54ad732ca5c8762bb68bbe0f51de9137dd72/src/include/c.h#L745-L757</a></p>
 </blockquote>
 <p>我們再使用一個例子來了解</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> tt1 (a <span class="type">char</span>(<span class="number">2</span>),b <span class="type">int</span>,c <span class="type">char</span>(<span class="number">1</span>));</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> tt1 (a,b,c) </span><br><span class="line"><span class="keyword">SELECT</span> <span class="string">&#x27;aa&#x27;</span>,id,<span class="string">&#x27;c&#x27;</span></span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">2000</span>) v(id);</span><br></pre></td></tr></table></figure>
+
 <p>使用 <code>heap_page_items</code> 查詢如下圖</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span>                                </span><br><span class="line"><span class="keyword">FROM</span> heap_page_items(get_raw_page(<span class="string">&#x27;tt1&#x27;</span>, <span class="number">0</span>));</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/corjLq6.png" alt=""></p>
-<p><code>lp_len</code> = 27 (tupleHeader) + 7 = 34 + 6 (NullBitMap) =&gt; 40</p>
+
+<p><img src="https://i.imgur.com/corjLq6.png"></p>
+<p><code>lp_len</code> &#x3D; 27 (tupleHeader) + 7 &#x3D; 34 + 6 (NullBitMap) &#x3D;&gt; 40</p>
 <blockquote>
-<p><code>lp_len</code> 下一個 8 倍數就是 40 byte，8152-8112 = 40 就能證明我上面說的</p>
+<p><code>lp_len</code> 下一個 8 倍數就是 40 byte，8152-8112 &#x3D; 40 就能證明我上面說的</p>
 </blockquote>
 <h2 id="TOAST"><a href="#TOAST" class="headerlink" title="TOAST"></a>TOAST</h2><p>下面有個案例關於 <code>text</code> 儲存 Pages 上</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> t8 (id <span class="type">char</span>(<span class="number">2100</span>) <span class="keyword">PRIMARY KEY</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">UNIQUE</span> INDEX  ix_t8 <span class="keyword">on</span> t8(id);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;A&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;B&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;C&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;D&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;E&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;F&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;G&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;H&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">--更新統計資訊</span></span><br><span class="line">analyze t8;</span><br></pre></td></tr></table></figure>
+
 <p>利用 <code>pg_class</code> 資料表查詢我們資料 Pages 分布，看到明明已經新增8筆 2100 bytes char資料</p>
 <p><code>8 * 2100 byte = 16.8 Kb ~= 3 page</code> 才對，但下圖顯示不管是 heap table 還是 b+tree 都不到3 pages.</p>
 <p>這是因為在</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> relname,relpages,reltuples,relkind,oid  </span><br><span class="line"><span class="keyword">from</span> pg_class </span><br><span class="line"><span class="keyword">where</span> relname <span class="keyword">in</span> (<span class="string">&#x27;t8&#x27;</span>,<span class="string">&#x27;t8_pkey&#x27;</span>);</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/3nvd96Y.png" alt=""></p>
-<p>我們利用<code>\d+</code>查詢一下，能發現資料表 <code>char(2100)</code> 使用 Storage = extended</p>
+
+<p><img src="https://i.imgur.com/3nvd96Y.png"></p>
+<p>我們利用<code>\d+</code>查詢一下，能發現資料表 <code>char(2100)</code> 使用 Storage &#x3D; extended</p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">postgres-# \d+ t8</span><br><span class="line">                                         Table &quot;public.t8&quot;</span><br><span class="line"> Column |      <span class="built_in">Type</span>       | Collation | Nullable | Default | Storage  | Stats target | Description</span><br><span class="line">--------+-----------------+-----------+----------+---------+----------+--------------+-------------</span><br><span class="line"> id     | character(<span class="number">2100</span>) |           | <span class="keyword">not</span> null |         | extended |              |</span><br><span class="line"><span class="function">Indexes:</span></span><br><span class="line"><span class="function">    &quot;<span class="title">t8_pkey</span>&quot; <span class="title">PRIMARY</span> <span class="title">KEY</span>, <span class="title">btree</span> (<span class="title">id</span>)</span></span><br><span class="line"><span class="function">    &quot;<span class="title">ix_t8</span>&quot; <span class="title">UNIQUE</span>, <span class="title">btree</span> (<span class="title">id</span>)</span></span><br></pre></td></tr></table></figure>
+
 <p>因為 postgresql DB 不支援跨表存放 tuple(不像是 sql-server 有 Forwarding Pointers )，所以對於大資料儲存衍伸出 <code>TOAST</code> 概念，<code>TOAST</code>壓縮資料的壓縮技術是 LZ 系列壓縮技術中相當簡單且非常快速的方法</p>
 <p>儲存 TOAST 欄位有四種不同策略：</p>
 <ul>
@@ -356,29 +369,33 @@
 <p>因為預設使用 extended 會幫我們壓縮並存放在 toast 資料表區段，不方便我們查看資料存儲原理</p>
 <p>我們可以透過下面語法查詢 t8 資料表上 toast 資訊</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> oid::regclass,</span><br><span class="line">       reltoastrelid::regclass,</span><br><span class="line">       pg_relation_size(reltoastrelid) <span class="keyword">AS</span> toast_size</span><br><span class="line"><span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">WHERE</span> relkind <span class="operator">=</span> <span class="string">&#x27;r&#x27;</span></span><br><span class="line">  <span class="keyword">AND</span> reltoastrelid <span class="operator">&lt;&gt;</span> <span class="number">0</span></span><br><span class="line">  <span class="keyword">AND</span> oid::regclass <span class="operator">=</span> <span class="string">&#x27;t8&#x27;</span>::regclass;</span><br></pre></td></tr></table></figure>
+
 <p>所以這邊我會建議大家改成使用 external 儲存 id 欄位，因為這個模式會把資料存在 toast 且不會壓縮資料.</p>
 <blockquote>
 <p>修改 column 儲存模式不會回朔修改之前的資料，所以在下面範例中我把資料清除改完模式再重新塞入</p>
 </blockquote>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter table</span> t8 <span class="keyword">alter</span> id <span class="keyword">set</span> storage <span class="keyword">external</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">truncate</span> t8;</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;A&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;B&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;C&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;D&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;E&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;F&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;G&#x27;</span>,<span class="number">2100</span>));</span><br><span class="line"><span class="keyword">insert into</span> t8 (id) <span class="keyword">values</span> (repeat(<span class="string">&#x27;H&#x27;</span>,<span class="number">2100</span>));</span><br></pre></td></tr></table></figure>
+
 <p>一樣透過下面語法查詢</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> oid::regclass,</span><br><span class="line">       reltoastrelid::regclass,</span><br><span class="line">       pg_relation_size(reltoastrelid) <span class="keyword">AS</span> toast_size</span><br><span class="line"><span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">WHERE</span> relkind <span class="operator">=</span> <span class="string">&#x27;r&#x27;</span></span><br><span class="line">  <span class="keyword">AND</span> reltoastrelid <span class="operator">&lt;&gt;</span> <span class="number">0</span></span><br><span class="line">  <span class="keyword">AND</span> oid::regclass <span class="operator">=</span> <span class="string">&#x27;t8&#x27;</span>::regclass;</span><br></pre></td></tr></table></figure>
+
 <p>利用完語法查完，在我電腦上儲存 t8的toast 是 <code>pg_toast_34504</code> 資料表</p>
-<p><img src="https://i.imgur.com/FKDZFFz.png" alt=""></p>
+<p><img src="https://i.imgur.com/FKDZFFz.png"></p>
 <p>所以我們可以利用下面語法查詢 toast 資料表資訊</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> chunk_id,chunk_seq,length(chunk_data)</span><br><span class="line"><span class="keyword">from</span> pg_toast.pg_toast_34504</span><br></pre></td></tr></table></figure>
+
 <p>我們會發現在 <code>pg_toast</code> 中的資料只要超過 2KB 就會自動幫我們切割，切割完的資料會規在同一個 <code>chunk_id</code> 中並利用 <code>chunk_seq</code> 來還原原始資料.</p>
 <blockquote>
 <p>我們這邊新增8筆 2100 byte 的資料，因為 postgresql toast 預設使用 2KB 就會切片</p>
 </blockquote>
-<p><img src="https://i.imgur.com/r8lkQvi.png" alt=""></p>
+<p><img src="https://i.imgur.com/r8lkQvi.png"></p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>經過本篇文章希望可以幫助大家了解 postgresql DB block (Page) 儲存原理，沒想到 MVCC 會造成儲存上那麼大消耗.</p>
 <p>用開車來比較 sql-server 和 postgresql DB 我個人感覺 sql-server 像是自排車很多東西幫你封裝好不能動使用起來比較簡單，postgresql DB 像是手排車可以調整的地方必較多，效能就取決於操作者用的好效能可以很棒，用的不好會很慘…</p>
 <blockquote>
 <p>我上面說的是成本因子部分</p>
 </blockquote>
-<p>會有本篇文章是因為之前對於sql server page 有一定了解，但最近在使用 postgresql DB 的 Page 發現跟 sqlserver 有差異，所以在<a href="https://www.facebook.com/groups/pgsql.tw/posts/2648311168807477/?comment_id=2648357518802842&amp;reply_comment_id=2653135421658385&amp;notif_id=1631765518157440&amp;notif_t=group_comment&amp;ref=notif">網路上詢問</a>，感協 張友謙大大 熱心回答釐清整個脈絡.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-page-deepknow/">https://isdaniel.github.io/postgresql-page-deepknow/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>會有本篇文章是因為之前對於sql server page 有一定了解，但最近在使用 postgresql DB 的 Page 發現跟 sqlserver 有差異，所以在<a href="https://www.facebook.com/groups/pgsql.tw/posts/2648311168807477/?comment_id=2648357518802842&reply_comment_id=2653135421658385&notif_id=1631765518157440&notif_t=group_comment&ref=notif">網路上詢問</a>，感協 張友謙大大 熱心回答釐清整個脈絡.</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/postgresql-page-deepknow/">https://isdaniel.github.io/postgresql-page-deepknow/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -584,12 +601,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

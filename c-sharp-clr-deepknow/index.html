@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/vHPQhIl.png">
 <meta property="article:published_time" content="2021-08-25T22:06:40.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="CLR">
@@ -204,7 +204,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -266,7 +266,7 @@
 <p>本篇會跟大家介紹CLR基本且核心的物件</p>
 <h2 id="CLR-簡介"><a href="#CLR-簡介" class="headerlink" title="CLR 簡介"></a>CLR 簡介</h2><p>編譯器在編譯時把(C#，VB，F#….)進行編譯檢查跟把程式碼轉成MSIL中繼資料，在運行期間透過JIT(just in time)會在程式運行期間把MSIL轉成每個機器可以執行組合語言</p>
 <p>大概可以理解為下圖</p>
-<p><img src="https://i.imgur.com/Si8bQpA.png" alt=""></p>
+<p><img src="https://i.imgur.com/Si8bQpA.png"></p>
 <blockquote>
 <p>這邊我不探討Management和UnManagement物件<br>MSIL也算是微軟開發語言的一個抽象</p>
 </blockquote>
@@ -279,6 +279,7 @@
 <p>利用<code>.loadby sos clr</code>進入程式查看CLR狀態吧</p>
 <p>我使用下面的Sample Code</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        Person p = <span class="keyword">new</span> Person();</span><br><span class="line">        System.Console.WriteLine(p._age);</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Person</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">int</span> _age;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">AddAge</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        _age++;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h2 id="Application-Domain"><a href="#Application-Domain" class="headerlink" title="Application Domain"></a>Application Domain</h2><p>CLR在執行Manager程式碼時，會建立三個Application Domain，其中兩個AppDomain是Host在CLR主程式中(我們不可操作),只能透過CLR啟動Process(啟動的Process名叫shim操作mscoree.dll和mscorwks.dll)</p>
 <ul>
 <li><p>System Domain(Singleton):</p>
@@ -301,12 +302,13 @@
 <li>建立每個AppDomain都擁有自己<ul>
 <li>loader heaps(High-Frequency Heap, Low-Frequency Heap, and Stub Heap) </li>
 <li>Interface Vtable Map Manager  </li>
-<li>Assembly Cache.<br><img src="https://i.imgur.com/N3wWEoI.png" alt=""></li>
+<li>Assembly Cache.</li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
+<p><img src="https://i.imgur.com/N3wWEoI.png"></p>
 <blockquote>
 <p>System Domain，Shared Domain都是由CLR管理的Domain</p>
 </blockquote>
@@ -314,7 +316,7 @@
 <p>一般我們程式碼運作在Default AppDomain</p>
 </blockquote>
 <p>說明完後我們利用<code>!eeheap</code>指令來查看記憶體使用資訊</p>
-<p><img src="https://i.imgur.com/p2n0Dk7.png" alt=""></p>
+<p><img src="https://i.imgur.com/p2n0Dk7.png"></p>
 <p>能看到真的如我上面所說有三個區塊App Domain(紅色框框範圍).</p>
 <blockquote>
 <p>藍色框框是Heap記憶體區段 能看到有G0，G1，G2記憶體開始位置</p>
@@ -334,18 +336,20 @@
 </ul>
 <p>CLR透過這個EEClass建立的樹狀網路瀏覽使用類別，包含類別加載，方法表，類型驗證，類型轉換</p>
 <figure class="highlight oxygene"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Class</span> Name:      ASapmle.Person</span><br><span class="line">mdToken:         <span class="number">02000003</span></span><br><span class="line">File:            C:\Users\Daniel Shih\source\repos\ASapmle\ASapmle\bin\Debug\ASapmle.exe</span><br><span class="line">Parent <span class="keyword">Class</span>:    <span class="number">72</span>ff15c8</span><br><span class="line"><span class="keyword">Module</span>:          <span class="number">029</span>c4044</span><br><span class="line"><span class="keyword">Method</span> <span class="title function_">Table</span>:    <span class="number">029</span>c4dd8</span><br><span class="line">Vtable Slots:    <span class="number">4</span></span><br><span class="line">Total <span class="keyword">Method</span> <span class="title function_">Slots</span>:  <span class="number">5</span></span><br><span class="line"><span class="keyword">Class</span> Attributes:    <span class="number">100001</span>  </span><br><span class="line">Transparency:        Critical</span><br><span class="line">NumInstanceFields:   <span class="number">1</span></span><br><span class="line">NumStaticFields:     <span class="number">0</span></span><br><span class="line">      MT    Field   Offset                 <span class="keyword">Type</span> VT     Attr    Value Name</span><br><span class="line"><span class="number">730042</span>a8  <span class="number">4000001</span>        <span class="number">4</span>         System.Int32  <span class="number">1</span> instance           _age</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">Class</span> Name:      System.Object</span><br><span class="line">mdToken:         <span class="number">0200003</span>d</span><br><span class="line">File:            C:\WINDOWS\Microsoft.Net\<span class="keyword">assembly</span>\GAC_32\mscorlib\v4.<span class="number">0</span>_4.<span class="number">0.0</span>.<span class="number">0</span>__b77a5c561934e089\mscorlib.dll</span><br><span class="line">Parent <span class="keyword">Class</span>:    <span class="number">00000000</span></span><br><span class="line"><span class="keyword">Module</span>:          <span class="number">72</span>ff1000</span><br><span class="line"><span class="keyword">Method</span> <span class="title function_">Table</span>:    <span class="number">73002734</span></span><br><span class="line">Vtable Slots:    <span class="number">4</span></span><br><span class="line">Total <span class="keyword">Method</span> <span class="title function_">Slots</span>:  a</span><br><span class="line"><span class="keyword">Class</span> Attributes:    <span class="number">102001</span>  </span><br><span class="line">Transparency:        Transparent</span><br><span class="line">NumInstanceFields:   <span class="number">0</span></span><br><span class="line">NumStaticFields:     <span class="number">0</span></span><br></pre></td></tr></table></figure>
+
 <p>下面是EEClass加載進Memory時使用狀況</p>
-<p><img src="https://i.imgur.com/BUaTFeo.png" alt=""></p>
+<p><img src="https://i.imgur.com/BUaTFeo.png"></p>
 <blockquote>
 <p>在GC Heap建立一個物件時就會透過EEClass描述來建立物件</p>
 </blockquote>
 <p>我們可以利用</p>
 <p><code>!dumpheap -type Person</code>來查看<code>Person</code>類別metadata在記憶體中如何上面所說的存放</p>
-<p><img src="https://i.imgur.com/VHsY1qy.png" alt=""></p>
+<p><img src="https://i.imgur.com/VHsY1qy.png"></p>
 <h2 id="MethodTable"><a href="#MethodTable" class="headerlink" title="MethodTable"></a>MethodTable</h2><p>ObjectInstance的TypeHandle指向MethodTable，MethodTable的訊息可以透過<code>System.Type</code>訪問</p>
 <p>我們可以透過<code>!dumpmt -md &#123;method table address&#125;</code>來查看Method Table資訊</p>
 <figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">MethodDesc <span class="keyword">Table</span></span><br><span class="line">   Entry MethodDe    JIT <span class="type">Name</span></span><br><span class="line"><span class="number">733</span>f97b8 <span class="number">72</span>ffc838 PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.ToString()</span><br><span class="line"><span class="number">733</span>f96a0 <span class="number">73138978</span> PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.Equals(<span class="keyword">System</span>.<span class="keyword">Object</span>)</span><br><span class="line"><span class="number">734021</span>f0 <span class="number">73138998</span> PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.GetHashCode()</span><br><span class="line"><span class="number">733</span>b4f2c <span class="number">731389</span>a0 PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.Finalize()</span><br><span class="line"><span class="number">02</span>b408b0 <span class="number">029</span>c4dd0    JIT ASapmle.Person..ctor()</span><br><span class="line"><span class="number">02</span>b40450 <span class="number">029</span>c4dc4   <span class="keyword">NONE</span> ASapmle.Person.AddAge()</span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/UMhIr2r.png" alt=""></p>
+
+<p><img src="https://i.imgur.com/UMhIr2r.png"></p>
 <h2 id="MethodDesc"><a href="#MethodDesc" class="headerlink" title="MethodDesc"></a>MethodDesc</h2><p>MethodDesc在CLR運行時作為最基礎的服務，方法實現封裝</p>
 <blockquote>
 <p>簡單來說會存放此方法的描述</p>
@@ -363,14 +367,14 @@
 <li>MethodDesc</li>
 <li>MethodTable</li>
 </ul>
-<p><img src="https://docs.microsoft.com/en-us/archive/msdn-magazine/2005/may/images/cc163791.fig09.gif" alt=""></p>
+<p><img src="https://docs.microsoft.com/en-us/archive/msdn-magazine/2005/may/images/cc163791.fig09.gif"></p>
 <p>每個Object Instance都有的底層資訊</p>
 <ul>
 <li>Syncblk:掌管指向Syncblk Entry Index和HashCode資料</li>
 <li>TypeHandle:存放對應Method Table資訊</li>
 </ul>
 <p>每個Object都有Object Header (syncblk + TypeHandle) 8 bytes</p>
-<p><img src="https://i.imgur.com/3zWbVCg.png" alt=""></p>
+<p><img src="https://i.imgur.com/3zWbVCg.png"></p>
 <h2 id="WinDbg-clr-指令筆記"><a href="#WinDbg-clr-指令筆記" class="headerlink" title="WinDbg clr 指令筆記"></a>WinDbg clr 指令筆記</h2><ul>
 <li><code>.loadby sos clr</code>:進入CLR Debug查看</li>
 <li><code>!eeheap</code>:查看目前Heap使用情況</li>
@@ -379,7 +383,7 @@
 </ul>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>越是原理的知識越不會改變且在緊要關頭有時候還可以救你一命（可以更快定位出問題）</p>
 <p>本篇介紹了幾個CLR底層重要的物件希望對讀者們對於CLR可以有更深入的了解</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/c-sharp-clr-deepknow/">https://isdaniel.github.io/c-sharp-clr-deepknow/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/c-sharp-clr-deepknow/">https://isdaniel.github.io/c-sharp-clr-deepknow/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -584,12 +588,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

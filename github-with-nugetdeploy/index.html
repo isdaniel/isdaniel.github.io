@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://i.imgur.com/vA6DIjh.png">
 <meta property="og:image" content="https://i.imgur.com/VRbUO5i.png">
 <meta property="article:published_time" content="2020-01-27T23:10:43.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="CICD">
@@ -209,7 +209,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -267,11 +267,11 @@
 <p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
 </blockquote>
 <p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
-<p><img src="https://i.imgur.com/YPKBuFQ.png" alt=""></p>
+<p><img src="https://i.imgur.com/YPKBuFQ.png"></p>
 <p>選擇我們要建立CICD專案.</p>
-<p><img src="https://i.imgur.com/FW4Pd0j.png" alt=""></p>
+<p><img src="https://i.imgur.com/FW4Pd0j.png"></p>
 <p>最後會在Project頁看到你剛剛新建立Project.</p>
-<p><img src="https://i.imgur.com/vA6DIjh.png" alt=""></p>
+<p><img src="https://i.imgur.com/vA6DIjh.png"></p>
 <h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
 <ul>
 <li>透過UI來操作設定</li>
@@ -290,6 +290,7 @@
 <li>environment：設定環境變數</li>
 </ul>
 <figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">&#x27;&#123;build&#125;&#x27;</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.nupkg&#x27;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.snupkg&#x27;</span></span><br></pre></td></tr></table></figure>
+
 <p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
 <ul>
 <li>provider：NuGet(Bj4)</li>
@@ -311,12 +312,12 @@
 <p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
 </blockquote>
 <h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
-<p><img src="https://i.imgur.com/VRbUO5i.png" alt=""></p>
+<p><img src="https://i.imgur.com/VRbUO5i.png"></p>
 <p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
 <p>這是之前跑ElectronicInvoice_TW專案<a href="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄</a>歷程</p>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
 <p>參考連結：<a href="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -523,12 +524,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/TRP3aX4.png">
 <meta property="article:published_time" content="2022-05-16T22:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="AWS">
 <meta property="article:tag" content="Lambda">
@@ -205,7 +205,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -241,7 +241,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>2.3k</span>
+              <span>2.4k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -267,12 +267,14 @@
 </blockquote>
 <h2 id="建立第一個-serverless"><a href="#建立第一個-serverless" class="headerlink" title="建立第一個 serverless"></a>建立第一個 serverless</h2><p>本次案例我們利用 <a href="https://github.com/serverless/serverless#install-via-npm">serverless cli</a> 建立 dotnet template，利用 nqm 安裝 </p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g serverless</span><br></pre></td></tr></table></figure>
+
 <p>安裝完後建立一個 dotnet core serverless project</p>
 <figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">serverless create -t aws-csharp -n dotnetServerless</span><br></pre></td></tr></table></figure>
+
 <p>本次使用參數說明</p>
 <ul>
-<li>–template / -t ：Template for the service</li>
-<li>–name / -n： Name for the service. Overwrites the default name of the created service</li>
+<li>–template &#x2F; -t ：Template for the service</li>
+<li>–name &#x2F; -n： Name for the service. Overwrites the default name of the created service</li>
 </ul>
 <p>跑完命令後會出現下圖專案結構</p>
 <ul>
@@ -296,12 +298,14 @@
 </ul>
 <p>長出來的 <code>serverless.yml</code> 會如下</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">service:</span> <span class="string">dotnetServerless</span></span><br><span class="line"></span><br><span class="line"><span class="attr">frameworkVersion:</span> <span class="string">&#x27;3&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">provider:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">aws</span></span><br><span class="line">  <span class="attr">runtime:</span> <span class="string">dotnet6</span></span><br><span class="line"></span><br><span class="line"><span class="attr">package:</span></span><br><span class="line">  <span class="attr">individually:</span> <span class="literal">true</span></span><br><span class="line"></span><br><span class="line"><span class="attr">functions:</span></span><br><span class="line">  <span class="attr">hello:</span></span><br><span class="line">    <span class="attr">handler:</span> <span class="string">CsharpHandlers::AwsDotnetCsharp.Handler::Hello</span></span><br><span class="line"></span><br><span class="line">    <span class="attr">package:</span></span><br><span class="line">      <span class="attr">artifact:</span> <span class="string">bin/Release/net6.0/hello.zip</span></span><br><span class="line">  </span><br></pre></td></tr></table></figure>
-<p><img src="https://i.imgur.com/TRP3aX4.png" alt=""></p>
+
+<p><img src="https://i.imgur.com/TRP3aX4.png"></p>
 <h3 id="Deploy-serverless-package"><a href="#Deploy-serverless-package" class="headerlink" title="Deploy serverless package"></a>Deploy serverless package</h3><p>執行 <code>serverless deploy</code> 命令我們會將</p>
 <blockquote>
 <p>預設 Deploy Region : <code>us-east-1</code> 或是使用參數 <code>--region / -r</code> 指定上傳 Region</p>
 </blockquote>
 <figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Deploying dotnetServerless <span class="keyword">to</span> stage dev (us<span class="params">-east</span><span class="number">-1</span>)</span><br><span class="line"></span><br><span class="line">✔ Service deployed <span class="keyword">to</span> <span class="built_in">stack</span> dotnetServerless<span class="params">-dev</span> (<span class="number">113</span>s)</span><br></pre></td></tr></table></figure>
+
 <p>上傳完畢後在 <code>CloudFormation</code> 應該可以看到我們建立資源如下</p>
 <ul>
 <li>AWS::Lambda::Function</li>
@@ -314,13 +318,16 @@
 <p>在 lambda 會自動建立 <code>dotnetServerless-dev-hello</code></p>
 <p>我們利用 UI 測試 lambda 會得到如下資訊</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;Message&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Go Serverless v1.0! Your function executed successfully!&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Request&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;Key1&quot;</span><span class="punctuation">:</span> <span class="string">&quot;value1&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Key2&quot;</span><span class="punctuation">:</span> <span class="string">&quot;value2&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Key3&quot;</span><span class="punctuation">:</span> <span class="string">&quot;value3&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
 <h3 id="lambda-ReDeploy"><a href="#lambda-ReDeploy" class="headerlink" title="lambda ReDeploy"></a>lambda ReDeploy</h3><p>我們稍微更新 lambda 回應資訊</p>
 <figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Response <span class="title">Hello</span>(<span class="params">Request request</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Response(<span class="string">&quot;Lambda Upgrade !!&quot;</span>, request);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>再次執行 <code>.\build.cmd &amp; serverless deploy</code> 後並測試 lambda 會得到更新後資訊，讓我們更新 lambda 變得很簡單，是不是很猛</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;Message&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Lambda Upgrade !!&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Request&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;Key1&quot;</span><span class="punctuation">:</span> <span class="string">&quot;value1&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Key2&quot;</span><span class="punctuation">:</span> <span class="string">&quot;value2&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Key3&quot;</span><span class="punctuation">:</span> <span class="string">&quot;value3&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Serverless 框架搭配 <code>CloudFormation</code> 幫助我們把許多自動化細節封裝起來讓我們只需要關注開發，利用 Serverless cli 我們可以快速把一個 CI/CD lambda 流程建立起來</p>
+
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>Serverless 框架搭配 <code>CloudFormation</code> 幫助我們把許多自動化細節封裝起來讓我們只需要關注開發，利用 Serverless cli 我們可以快速把一個 CI&#x2F;CD lambda 流程建立起來</p>
 <p>本次 Sample code 連結 <a href="https://github.com/isdaniel/BlogSample/tree/master/src/AWS_Sample/DotNetServerless">DotNetServerless</a></p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/aws-serverless/">https://isdaniel.github.io/aws-serverless/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/aws-serverless/">https://isdaniel.github.io/aws-serverless/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -520,12 +527,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

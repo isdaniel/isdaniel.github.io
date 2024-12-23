@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-LvLdlWILWa_WXgBI_eY%2F-LvLdmMmmDnQXr_Axo0l%2F-LvLdnbuSZ5KOT0JxN9C%2Fcmd_logic.png?alt=media">
 <meta property="article:published_time" content="2021-03-26T05:30:11.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.855Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.760Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="Docker">
 <meta property="article:tag" content="Container">
@@ -204,7 +204,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -236,7 +236,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3k</span>
+              <span>3.1k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -270,23 +270,23 @@
 <blockquote>
 <p>Docker需要在Linux中執行,Docker Daemon幫助Client透過命令來操作Docker,如果沒有Docker Daemon我們就無法執行Docker搂.</p>
 </blockquote>
-<h2 id="Image-amp-amp-Container"><a href="#Image-amp-amp-Container" class="headerlink" title="Image &amp;&amp; Container"></a>Image &amp;&amp; Container</h2><p>Image有點類似程式語言中的類別,Docker透過Image建立Container物件</p>
+<h2 id="Image-Container"><a href="#Image-Container" class="headerlink" title="Image &amp;&amp; Container"></a>Image &amp;&amp; Container</h2><p>Image有點類似程式語言中的類別,Docker透過Image建立Container物件</p>
 <p>Container類似程式語言中物件,透過Image(類別)建立出許多不同物件.</p>
 <blockquote>
 <p>可以透過<code>docker inspect &#123;Container Id or name&#125;</code>查看Container資訊</p>
 </blockquote>
 <ul>
 <li>-f:此參數可以透過go template查看設定值</li>
-<li>–link:此參數會在/etc/hosts 下加入網路資訊</li>
+<li>–link:此參數會在&#x2F;etc&#x2F;hosts 下加入網路資訊</li>
 </ul>
 <h2 id="UnionFS"><a href="#UnionFS" class="headerlink" title="UnionFS"></a>UnionFS</h2><p>Docker有一個<a href="https://en.wikipedia.org/wiki/UnionFS">UnionFS</a>概念共享Host Linux核心資源,不在建立新的OS層,docker會使用到bootfs和rootfs</p>
 <ul>
 <li>bootfs:包含了bootloader和Linux core。使用者是不能對這層作任何修改。</li>
-<li>rootfs:包含了一般系统上的常見目錄結構，類似/dev, /proc, /bin等等以及一些基本的文件和命令。</li>
+<li>rootfs:包含了一般系统上的常見目錄結構，類似&#x2F;dev, &#x2F;proc, &#x2F;bin等等以及一些基本的文件和命令。</li>
 </ul>
 <p>Image就像一個雞蛋核心是蛋黃，蛋白包覆蛋黃，最外層是蛋殼，雖然我們<code>docker pull redis</code>，但這個redis Image可能包含其他Image資訊(因為這樣才可以正常運行)</p>
 <p><code>UnionFS</code>設計可以很好的讓我們來重複利用不同Image往上搭建出我們想要的環境.</p>
-<p><img src="https://i.imgur.com/J8wyEQV.png" alt=""></p>
+<p><img src="https://i.imgur.com/J8wyEQV.png"></p>
 <blockquote>
 <p>上圖來自網路上</p>
 </blockquote>
@@ -316,8 +316,9 @@
 <p>另外Dockerfile指令每執行一次都會在docker上新建一層。所以多過無意義層數，會造成Image膨脹過大。</p>
 <h3 id="Dockerfile-Demo"><a href="#Dockerfile-Demo" class="headerlink" title="Dockerfile Demo"></a>Dockerfile Demo</h3><p>這是我的一個<a href="https://github.com/isdaniel/DockerDemo/blob/master/SqlServer/Dockerfile">SqlServer</a> Demo Image</p>
 <figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#this image create from mssql-server-linux:latest</span></span><br><span class="line"><span class="keyword">FROM</span> microsoft/mssql-server-linux:latest</span><br><span class="line"><span class="comment">#who maintance this file.</span></span><br><span class="line">MAINTANER dog830228@gmail.com</span><br><span class="line"><span class="comment">#execute command in Linux</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apt-get update  \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; apt-get install -y curl \</span></span><br><span class="line"><span class="language-bash">	apt-transport-https</span></span><br><span class="line"><span class="comment">#set environment variable.</span></span><br><span class="line"><span class="keyword">ENV</span> BakDir=<span class="string">&quot;/var/opt/mssql/backup&quot;</span></span><br><span class="line"><span class="keyword">ENV</span> PATH=<span class="string">&quot;/opt/mssql-tools/bin:$&#123;PATH&#125;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \</span></span><br><span class="line"><span class="language-bash">    &amp;&amp; curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list &gt; /etc/apt/sources.list.d/mssql-release.list</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apt-get install -y locales \</span></span><br><span class="line"><span class="language-bash">    &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;en_US.UTF-8 UTF-8&quot;</span> &gt; /etc/locale.gen \</span></span><br><span class="line"><span class="language-bash">    &amp;&amp; locale-gen \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; apt-get -y install vim</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## copy host file ./script/ to image /var/opt/mssql/backup</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> ./script/ <span class="variable">$BakDir</span></span></span><br><span class="line"><span class="comment">## set default path /var/opt/mssql/backup when client into container</span></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> <span class="variable">$BakDir</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">## downland bak file from internet.</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">mkdir</span> -p <span class="variable">$BakDir</span> \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; curl -L -o AdventureWorksDW2017.bak https://github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorksDW2017.bak</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## execute command after running.</span></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> /bin/bash <span class="string">&quot;<span class="variable">$BakDir</span>/EntryPoint.sh&quot;</span></span></span><br></pre></td></tr></table></figure>
+
 <p>Dockerfile寫下註解，我們能了解到Dockerfile就一個描述Image的檔案.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/docker-deepknow-1/">https://isdaniel.github.io/docker-deepknow-1/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/docker-deepknow-1/">https://isdaniel.github.io/docker-deepknow-1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -423,7 +424,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%9C%E6%96%BCWindow%E4%B8%AD%E7%9A%84Docker"><span class="nav-number">2.</span> <span class="nav-text">關於Window中的Docker</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Image-amp-amp-Container"><span class="nav-number">3.</span> <span class="nav-text">Image &amp;&amp; Container</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UnionFS"><span class="nav-number">4.</span> <span class="nav-text">UnionFS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#scratch-Image"><span class="nav-number">4.1.</span> <span class="nav-text">scratch Image</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dockerfile"><span class="nav-number">5.</span> <span class="nav-text">Dockerfile</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Dockerfile-Demo"><span class="nav-number">5.1.</span> <span class="nav-text">Dockerfile Demo</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%9C%E6%96%BCWindow%E4%B8%AD%E7%9A%84Docker"><span class="nav-number">2.</span> <span class="nav-text">關於Window中的Docker</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Image-Container"><span class="nav-number">3.</span> <span class="nav-text">Image &amp;&amp; Container</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UnionFS"><span class="nav-number">4.</span> <span class="nav-text">UnionFS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#scratch-Image"><span class="nav-number">4.1.</span> <span class="nav-text">scratch Image</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dockerfile"><span class="nav-number">5.</span> <span class="nav-text">Dockerfile</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Dockerfile-Demo"><span class="nav-number">5.1.</span> <span class="nav-text">Dockerfile Demo</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -510,12 +511,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

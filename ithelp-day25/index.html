@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_UML.png">
 <meta property="og:image" content="https://docs.microsoft.com/zh-tw/aspnet/web-pages/overview/ui-layouts-and-themes/18-customizing-site-wide-behavior/_static/image1.jpg">
 <meta property="article:published_time" content="2019-10-06T10:00:00.000Z">
-<meta property="article:modified_time" content="2024-12-23T00:11:54.859Z">
+<meta property="article:modified_time" content="2024-12-23T00:13:37.764Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
 <meta property="article:tag" content="Asp.net">
@@ -209,7 +209,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2024-12-23 00:11:54" itemprop="dateModified" datetime="2024-12-23T00:11:54+00:00">2024-12-23</time>
+                <time title="Modified: 2024-12-23 00:13:37" itemprop="dateModified" datetime="2024-12-23T00:13:37+00:00">2024-12-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -261,14 +261,14 @@
 
       
         <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e8%a8%80">前言</a></li>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
 <li><a href="#webviewpage">WebViewPage</a><ul>
-<li><a href="#%e5%91%bc%e5%8f%abwebviewpageexecutepagehierarchy%e6%96%b9%e6%b3%95%e6%99%82%e6%a9%9f">呼叫WebViewPage.ExecutePageHierarchy方法時機</a></li>
+<li><a href="#%E5%91%BC%E5%8F%ABwebviewpageexecutepagehierarchy%E6%96%B9%E6%B3%95%E6%99%82%E6%A9%9F">呼叫WebViewPage.ExecutePageHierarchy方法時機</a></li>
 <li><a href="#applicationstartpage-and-webpagerenderingbase">ApplicationStartPage and WebPageRenderingBase</a></li>
 </ul>
 </li>
 <li><a href="#webviewpage-vs-webviewpagetmodel">WebViewPage vs WebViewPage<TModel></a></li>
-<li><a href="#%e5%b0%8f%e7%b5%90">小結：</a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
 </ul>
 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇說到最終會透過一個實現<code>IView</code>物件(Razor是透過<code>RazorView</code>)來完成,<code>RenderView</code>方法將<code>BuildManagerCompiledView</code>方法取得物件轉換型別成<code>WebViewPage</code>.</p>
 <p><code>.cshtml</code>最終會編譯成一個繼承<code>WebViewPage</code>檔案.</p>
@@ -278,11 +278,13 @@
 </blockquote>
 <h2 id="WebViewPage"><a href="#WebViewPage" class="headerlink" title="WebViewPage"></a>WebViewPage</h2><p><code>WebViewPage</code>繼承樹最頂層有個<code>WebPageExecutingBase</code>抽象類別,他擁有一個抽象方法<code>Execute</code>,<code>View</code>轉成<code>c#</code>程式會建立一個類別就會繼承於<code>WebViewPage</code>並把使用者頁面程式碼實現在<code>Execute</code>方法.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">Execute</span>()</span>;</span><br></pre></td></tr></table></figure>
+
 <p>先來看一下<code>View</code>產生的DLL檔案會放在哪裡</p>
 <p>透過在<code>View</code>檔案上寫<code>@GetType().Assembly.Location</code>.</p>
 <p>在頁面上顯示<code>DLL</code>存放位置,一般會放在<code>Temp</code>資料夾區中</p>
 <p>可以根據顯示路徑找到<code>View</code>編譯成<code>DLL</code></p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> _<span class="title">Page_Views_Shared__Layout_cshtml</span> : <span class="title">WebViewPage</span>&lt;<span class="title">object</span>&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">protected</span> global_asax ApplicationInstance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> (global_asax)<span class="keyword">this</span>.get_Context().ApplicationInstance;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">Execute</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//... user print logic</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>我使用<code>JustDecomplie</code>反編譯工具,查看原始碼.</p>
 <p>下圖對於<code>View</code>檔案產生<code>DLL</code>反編譯</p>
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_decompile.PNG" alt="WebViewPage_decompile.PNG"></p>
@@ -293,9 +295,11 @@
 <p>我目前看到的是一個<code>About</code>的<code>cshtml</code>檔案(<code>About.cshtml</code>).</p>
 <p>看到<code>override void Execute()</code>將我們頁面上的邏輯透過<code>WriteLiteral</code>將資料寫到<code>Output</code>上,在<code>ApplicationStartPage</code>有<code>WriteLiteral</code>實作方式.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteLiteral</span>(<span class="params"><span class="built_in">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    Output.Write(<span class="keyword">value</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h3 id="呼叫WebViewPage-ExecutePageHierarchy方法時機"><a href="#呼叫WebViewPage-ExecutePageHierarchy方法時機" class="headerlink" title="呼叫WebViewPage.ExecutePageHierarchy方法時機"></a>呼叫WebViewPage.ExecutePageHierarchy方法時機</h3><p>在<code>RazorView</code>類別中的<code>RenderView</code>方法最下面有一段程式碼.</p>
 <p>先判斷是否取得<code>StartPage</code>在呼叫<code>ExecutePageHierarchy</code>方法進行頁面的渲染.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">WebPageRenderingBase startPage = <span class="literal">null</span>;</span><br><span class="line"><span class="keyword">if</span> (RunViewStartPages)</span><br><span class="line">&#123;</span><br><span class="line">    startPage = StartPageLookup(webViewPage, RazorViewEngine.ViewStartFileName, ViewStartFileExtensions);</span><br><span class="line">&#125;</span><br><span class="line">webViewPage.ExecutePageHierarchy(<span class="keyword">new</span> WebPageContext(context: viewContext.HttpContext, page: <span class="literal">null</span>, model: <span class="literal">null</span>), writer, startPage);</span><br></pre></td></tr></table></figure>
+
 <h3 id="ApplicationStartPage-and-WebPageRenderingBase"><a href="#ApplicationStartPage-and-WebPageRenderingBase" class="headerlink" title="ApplicationStartPage and WebPageRenderingBase"></a>ApplicationStartPage and WebPageRenderingBase</h3><p><code>WebViewPage</code>類別關係圖如下,<code>WebViewPage</code>擁有個複雜繼承樹.</p>
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_UML.png" alt="WebViewPage_UML.png"></p>
 <p>主要分為兩派,在微軟官網有張圖來表示上面兩個比較</p>
@@ -311,6 +315,7 @@
 </ul>
 <p><code>WebPageBase</code>類別中<code>ExecutePageHierarchy</code>重載實作,透過<code>ExecutePageHierarchy</code>呼叫開發者實現<code>Execute</code>方法(<code>Page_Views_Home_About_cshtml.Execute</code>方法).</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecutePageHierarchy</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span> (WebPageHttpHandler.ShouldGenerateSourceHeader(Context))</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">try</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="built_in">string</span> vp = VirtualPath;</span><br><span class="line">			<span class="keyword">if</span> (vp != <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="built_in">string</span> path = Context.Request.MapPath(vp);</span><br><span class="line">				<span class="keyword">if</span> (!path.IsEmpty())</span><br><span class="line">				&#123;</span><br><span class="line">					PageContext.SourceFiles.Add(path);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">catch</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// we really don&#x27;t care if this ever fails, so we swallow all exceptions</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	TemplateStack.Push(Context, <span class="keyword">this</span>);</span><br><span class="line">	<span class="keyword">try</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">// Execute the developer-written code of the WebPage</span></span><br><span class="line">		Execute();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">finally</span></span><br><span class="line">	&#123;</span><br><span class="line">		TemplateStack.Pop(Context);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <h2 id="WebViewPage-vs-WebViewPage"><a href="#WebViewPage-vs-WebViewPage" class="headerlink" title="WebViewPage vs WebViewPage"></a>WebViewPage vs WebViewPage<TModel></h2><p><code>c#</code> 有一個關鍵字<code>new</code>對於類別成員修飾詞</p>
 <blockquote>
 <p><code>new</code>關鍵字做為宣告修飾詞使用時，會明確隱藏繼承自基底類別的成員。當您隱藏繼承的成員時，該成員的衍生版本就會取代基底類別版本</p>
@@ -320,13 +325,14 @@
 <p>但我看到<code>WebViewPage&lt;TModel&gt;</code>實作時覺得<code>new</code>原來可以這麼好用</p>
 <p><code>WebViewPage&lt;TModel&gt;</code>很巧妙使用<code>new</code>把<code>View</code>重點成員物件轉成泛型.可以讓我們在<code>Razor</code>或<code>aspx</code>可以更方便使用.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">WebViewPage</span>&lt;<span class="title">TModel</span>&gt; : <span class="title">WebViewPage</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> ViewDataDictionary&lt;TModel&gt; _viewData;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> AjaxHelper&lt;TModel&gt; Ajax &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> HtmlHelper&lt;TModel&gt; Html &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> TModel Model</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span> &#123; <span class="keyword">return</span> ViewData.Model; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	[<span class="meta">SuppressMessage(<span class="string">&quot;Microsoft.Usage&quot;</span>, <span class="string">&quot;CA2227:CollectionPropertiesShouldBeReadOnly&quot;</span>, Justification = <span class="string">&quot;This is the mechanism by which the ViewPage gets its ViewDataDictionary object.&quot;</span>)</span>]</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">new</span> ViewDataDictionary&lt;TModel&gt; ViewData</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_viewData == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				SetViewData(<span class="keyword">new</span> ViewDataDictionary&lt;TModel&gt;());</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _viewData;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">set</span> &#123; SetViewData(<span class="keyword">value</span>); &#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
 <p>所以之後如果有遇到類似情況(需要使用泛型替代父類別<code>object</code>類型成員可以考慮使用<code>new</code>)</p>
 <h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p><code>View</code>頁面程式會轉成一個類別繼承於<code>WebViewPage</code>抽象類別,並把我們撰寫邏輯填充在<code>Execute</code>方法中.讓<strong>Asp.net MVC</strong>來呼叫.</p>
 <p>這裡設計非常巧妙透過一個抽象類別和一個動態編譯程式,讓<code>View</code>更有彈性可以透過<code>Razor</code>語法實現<code>View</code>邏輯(更人性化).</p>
 <p><code>WebViewPage&lt;TModel&gt;</code>很巧妙使用<code>new</code>把<code>View</code>重點成員物件轉成泛型.可以讓我們在<code>Razor</code>或<code>aspx</code>可以更方便使用.</p>
 <p>最後透過呼叫<code>ActionResult.ExecuteResult</code>方法將資料塞到<code>Response</code>物件中,提供回傳給<code>Client</code>端,最後執行資源<code>Release</code>動作.</p>
 <p>後面幾篇會利用前面所學來改寫<strong>MVC</strong>框架.</p>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/ithelp-day25/">https://isdaniel.github.io/ithelp-day25/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day25/">https://isdaniel.github.io/ithelp-day25/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -534,12 +540,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">869k</span>
+    <span title="Symbols count total">872k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:10</span>
+    <span title="Reading time total">13:12</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
