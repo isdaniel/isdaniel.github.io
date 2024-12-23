@@ -8445,6 +8445,66 @@ class Program
       </tags>
   </entry>
   <entry>
+    <title>撰寫SQL的建議</title>
+    <url>/dbnote/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%e5%89%8d%e6%96%87">前文</a></li>
+</ul>
+<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會分享在撰寫SQL時建議和比較分享</p>
+<blockquote>
+<p>永遠先考慮T-SQL改寫</p>
+</blockquote>
+<ol>
+<li>符合SARG Statement進行撰寫<ul>
+<li>&lt;、&gt;、=、&lt;=、&gt;=、LIKE(視%所在位置，前面有%讓DB engine選擇不走INDEX) </li>
+</ul>
+</li>
+<li>不要在<code>Where</code>欄位做運算 </li>
+<li>使用<code>ANSI 92</code>相容的Join方式連接資料庫(避免使用舊式<code>Join</code>)</li>
+<li>避免row by row操作</li>
+</ol>
+<blockquote>
+<p>符合SARG格式的撰寫 + 適當Index設計可以解決大部分的效能問題</p>
+</blockquote>
+<h2 id="使用Like查詢建議"><a href="#使用Like查詢建議" class="headerlink" title="使用Like查詢建議"></a>使用Like查詢建議</h2><ul>
+<li>盡量別把<code>%</code>放在前面</li>
+<li>如果查詢條件是<code>CNAME LIKE &#39;%范&#39;</code>想讓讓查詢走索引(seek 查詢),在後面加一個條件<code>AND CNAME &gt; &#39;&#39;</code>讓查詢走Seek.</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> [MID]</span><br><span class="line">      ,[NickName]</span><br><span class="line">      ,[CName]</span><br><span class="line"><span class="keyword">FROM</span> [Member_Basic] <span class="keyword">WITH</span> (NOLOCK)</span><br><span class="line"><span class="keyword">WHERE</span> CNAME <span class="keyword">LIKE</span> <span class="string">&#x27;%范&#x27;</span> <span class="keyword">AND</span> CNAME <span class="operator">&gt;</span> <span class="string">&#x27;&#x27;</span></span><br></pre></td></tr></table></figure>
+<h2 id="使用Count函數建議"><a href="#使用Count函數建議" class="headerlink" title="使用Count函數建議"></a>使用Count函數建議</h2><p>如果要取得筆數數量使用<code>COUNT(*)</code>比<code>Count(c1)</code>效能好.</p>
+<blockquote>
+<p><code>Count(c1)</code>會忽略<code>c1 IS NULL</code>數量.</p>
+</blockquote>
+<blockquote>
+<p>另外如果[資料筆數]&gt;2^15-1(大於INT最大值)筆數量可使用<code>count_big(*)</code>方法</p>
+</blockquote>
+<p>如果需要<code>COUNT</code>資料很大造成效能影響可以透過<code>DMV</code>取得當前資料表數量(資料會不準確,因為並非及時更新)</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">SUM</span>(p.rows)</span><br><span class="line"><span class="keyword">FROM</span> sys.partitions p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] <span class="operator">=</span> object_id(<span class="string">&#x27;dbo.Person&#x27;</span>) <span class="keyword">AND</span> p.index_id <span class="operator">&lt;</span> <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">SUM</span>(p.row_count)</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_db_partition_stats p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] <span class="operator">=</span> object_id(<span class="string">&#x27;dbo.Person&#x27;</span>)  <span class="keyword">AND</span> p.index_id <span class="operator">&lt;</span> <span class="number">2</span></span><br></pre></td></tr></table></figure>
+<p>使用<code>if exists (select 1 from dbo.table)</code>取代<code>count</code>函式判斷資料是否存在</p>
+<h2 id="NOT-IN-vs-NOT-EXISTS"><a href="#NOT-IN-vs-NOT-EXISTS" class="headerlink" title="NOT IN vs NOT EXISTS"></a>NOT IN vs NOT EXISTS</h2><p>在查詢時避免使用<code>NOT IN</code>，因為會被QO改寫成 <code>&lt;&gt; NULL</code>，在SQL中<code>NULL</code>代表不知道(Unknow)，所以會什麼都查不到</p>
+<ul>
+<li>因為此欄位是可空(<code>NULL</code>)時會造成非預期結果(因為<code>NULL</code>會造成判斷失誤<code>NULL</code>不是一個值他代表<strong>未知</strong>)</li>
+<li>使用<code>NOT EXISTS</code>替代<code>NOT IN</code></li>
+<li><code>NOT EXISTS</code>在<strong>可空欄位</strong>效能比<code>NOT IN</code>還要好(如果有建立<code>Index</code>兩個產生執行計畫理論上是一樣)</li>
+</ul>
+<p>下面有一個範例來解說為什麼避免在可空欄位使用<code>NOT IN</code></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T(</span><br><span class="line">    ID <span class="type">INT</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> ID <span class="keyword">NOT</span> <span class="keyword">IN</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> ID</span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="keyword">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> ID</span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="keyword">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">    <span class="keyword">WHERE</span> ID <span class="operator">=</span> v</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure>
+<p>上圖可以看到在<code>T</code>資料表中有兩筆資料，如果我們使用<code>NOT IN</code>和<code>NOT EXISTS</code>結果會不一樣，原因是使用<code>NOT IN</code>在判斷<code>NULL</code>時會造成<code>NULL&lt;&gt;</code>任何值,所以就撈不出任何資料，相反使用<code>NOT EXISTS</code>取得的結果就符合我們預期.</p>
+<h2 id="避免在Where條件中對欄位進行操作運算"><a href="#避免在Where條件中對欄位進行操作運算" class="headerlink" title="避免在Where條件中對欄位進行操作運算"></a>避免在Where條件中對欄位進行操作運算</h2><h3 id="col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’"><a href="#col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’" class="headerlink" title="@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’"></a>@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’</h3><p>我們會有一種需求須要判斷此</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T(</span><br><span class="line">    Col <span class="type">VARCHAR</span>(<span class="number">50</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T</span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">100000</span> <span class="keyword">NULL</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns c1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">JOIN</span> sys.all_columns c2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;DANIEL&#x27;</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;DANIEL2&#x27;</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;&#x27;</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">--CREATE INDEX</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX IX_Col <span class="keyword">on</span> dbo.T(</span><br><span class="line">    Col</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> col <span class="operator">&gt;</span> <span class="string">&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> col <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AND</span> col <span class="operator">&lt;&gt;</span> <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbnote/">https://isdaniel.github.io/dbnote/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DataBase</category>
+        <category>Turning</category>
+      </categories>
+      <tags>
+        <tag>DataBase</tag>
+        <tag>Turning</tag>
+        <tag>sql-server</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>SqlServer資料表深入淺出</title>
     <url>/dbtable/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會跟大家對於<code>SQL-Server</code>資料表深入淺出的介紹.</p>
@@ -8540,66 +8600,6 @@ class Program
       <categories>
         <category>Turning</category>
         <category>sql-server</category>
-      </categories>
-      <tags>
-        <tag>DataBase</tag>
-        <tag>Turning</tag>
-        <tag>sql-server</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>撰寫SQL的建議</title>
-    <url>/dbnote/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%e5%89%8d%e6%96%87">前文</a></li>
-</ul>
-<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會分享在撰寫SQL時建議和比較分享</p>
-<blockquote>
-<p>永遠先考慮T-SQL改寫</p>
-</blockquote>
-<ol>
-<li>符合SARG Statement進行撰寫<ul>
-<li>&lt;、&gt;、=、&lt;=、&gt;=、LIKE(視%所在位置，前面有%讓DB engine選擇不走INDEX) </li>
-</ul>
-</li>
-<li>不要在<code>Where</code>欄位做運算 </li>
-<li>使用<code>ANSI 92</code>相容的Join方式連接資料庫(避免使用舊式<code>Join</code>)</li>
-<li>避免row by row操作</li>
-</ol>
-<blockquote>
-<p>符合SARG格式的撰寫 + 適當Index設計可以解決大部分的效能問題</p>
-</blockquote>
-<h2 id="使用Like查詢建議"><a href="#使用Like查詢建議" class="headerlink" title="使用Like查詢建議"></a>使用Like查詢建議</h2><ul>
-<li>盡量別把<code>%</code>放在前面</li>
-<li>如果查詢條件是<code>CNAME LIKE &#39;%范&#39;</code>想讓讓查詢走索引(seek 查詢),在後面加一個條件<code>AND CNAME &gt; &#39;&#39;</code>讓查詢走Seek.</li>
-</ul>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> [MID]</span><br><span class="line">      ,[NickName]</span><br><span class="line">      ,[CName]</span><br><span class="line"><span class="keyword">FROM</span> [Member_Basic] <span class="keyword">WITH</span> (NOLOCK)</span><br><span class="line"><span class="keyword">WHERE</span> CNAME <span class="keyword">LIKE</span> <span class="string">&#x27;%范&#x27;</span> <span class="keyword">AND</span> CNAME <span class="operator">&gt;</span> <span class="string">&#x27;&#x27;</span></span><br></pre></td></tr></table></figure>
-<h2 id="使用Count函數建議"><a href="#使用Count函數建議" class="headerlink" title="使用Count函數建議"></a>使用Count函數建議</h2><p>如果要取得筆數數量使用<code>COUNT(*)</code>比<code>Count(c1)</code>效能好.</p>
-<blockquote>
-<p><code>Count(c1)</code>會忽略<code>c1 IS NULL</code>數量.</p>
-</blockquote>
-<blockquote>
-<p>另外如果[資料筆數]&gt;2^15-1(大於INT最大值)筆數量可使用<code>count_big(*)</code>方法</p>
-</blockquote>
-<p>如果需要<code>COUNT</code>資料很大造成效能影響可以透過<code>DMV</code>取得當前資料表數量(資料會不準確,因為並非及時更新)</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">SUM</span>(p.rows)</span><br><span class="line"><span class="keyword">FROM</span> sys.partitions p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] <span class="operator">=</span> object_id(<span class="string">&#x27;dbo.Person&#x27;</span>) <span class="keyword">AND</span> p.index_id <span class="operator">&lt;</span> <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">SUM</span>(p.row_count)</span><br><span class="line"><span class="keyword">FROM</span> sys.dm_db_partition_stats p </span><br><span class="line"><span class="keyword">WHERE</span> p.[object_id] <span class="operator">=</span> object_id(<span class="string">&#x27;dbo.Person&#x27;</span>)  <span class="keyword">AND</span> p.index_id <span class="operator">&lt;</span> <span class="number">2</span></span><br></pre></td></tr></table></figure>
-<p>使用<code>if exists (select 1 from dbo.table)</code>取代<code>count</code>函式判斷資料是否存在</p>
-<h2 id="NOT-IN-vs-NOT-EXISTS"><a href="#NOT-IN-vs-NOT-EXISTS" class="headerlink" title="NOT IN vs NOT EXISTS"></a>NOT IN vs NOT EXISTS</h2><p>在查詢時避免使用<code>NOT IN</code>，因為會被QO改寫成 <code>&lt;&gt; NULL</code>，在SQL中<code>NULL</code>代表不知道(Unknow)，所以會什麼都查不到</p>
-<ul>
-<li>因為此欄位是可空(<code>NULL</code>)時會造成非預期結果(因為<code>NULL</code>會造成判斷失誤<code>NULL</code>不是一個值他代表<strong>未知</strong>)</li>
-<li>使用<code>NOT EXISTS</code>替代<code>NOT IN</code></li>
-<li><code>NOT EXISTS</code>在<strong>可空欄位</strong>效能比<code>NOT IN</code>還要好(如果有建立<code>Index</code>兩個產生執行計畫理論上是一樣)</li>
-</ul>
-<p>下面有一個範例來解說為什麼避免在可空欄位使用<code>NOT IN</code></p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T(</span><br><span class="line">    ID <span class="type">INT</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> ID <span class="keyword">NOT</span> <span class="keyword">IN</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> ID</span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="keyword">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T </span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> (</span><br><span class="line">    <span class="keyword">SELECT</span> ID</span><br><span class="line">    <span class="keyword">FROM</span> (<span class="keyword">SELECT</span> <span class="keyword">NULL</span> v <span class="keyword">UNION</span> <span class="keyword">ALL</span> <span class="keyword">SELECT</span> <span class="number">1</span>) t1</span><br><span class="line">    <span class="keyword">WHERE</span> ID <span class="operator">=</span> v</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure>
-<p>上圖可以看到在<code>T</code>資料表中有兩筆資料，如果我們使用<code>NOT IN</code>和<code>NOT EXISTS</code>結果會不一樣，原因是使用<code>NOT IN</code>在判斷<code>NULL</code>時會造成<code>NULL&lt;&gt;</code>任何值,所以就撈不出任何資料，相反使用<code>NOT EXISTS</code>取得的結果就符合我們預期.</p>
-<h2 id="避免在Where條件中對欄位進行操作運算"><a href="#避免在Where條件中對欄位進行操作運算" class="headerlink" title="避免在Where條件中對欄位進行操作運算"></a>避免在Where條件中對欄位進行操作運算</h2><h3 id="col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’"><a href="#col-gt-‘’-替代-col-NOT-NULL-AND-lt-gt-‘’" class="headerlink" title="@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’"></a>@col &gt; ‘’ 替代 @col NOT NULL AND &lt;&gt; ‘’</h3><p>我們會有一種需求須要判斷此</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T(</span><br><span class="line">    Col <span class="type">VARCHAR</span>(<span class="number">50</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T</span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">100000</span> <span class="keyword">NULL</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns c1</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">JOIN</span> sys.all_columns c2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;DANIEL&#x27;</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;DANIEL2&#x27;</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;&#x27;</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T <span class="keyword">VALUES</span> (<span class="string">&#x27;&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">--CREATE INDEX</span></span><br><span class="line"><span class="keyword">CREATE</span> INDEX IX_Col <span class="keyword">on</span> dbo.T(</span><br><span class="line">    Col</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> col <span class="operator">&gt;</span> <span class="string">&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> col <span class="keyword">IS</span> <span class="keyword">NOT NULL</span> <span class="keyword">AND</span> col <span class="operator">&lt;&gt;</span> <span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="comment">--DROP TABLE T</span></span><br></pre></td></tr></table></figure>
-<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbnote/">https://isdaniel.github.io/dbnote/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>DataBase</category>
-        <category>Turning</category>
       </categories>
       <tags>
         <tag>DataBase</tag>
