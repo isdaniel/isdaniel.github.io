@@ -1024,6 +1024,146 @@ public abstract class MoveBase
       </tags>
   </entry>
   <entry>
+    <title>資料庫索引深入淺出(二)</title>
+    <url>/DBIndex-2/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E6%96%87">前文</a></li>
+<li><a href="#covering-index">Covering Index</a><ul>
+<li><a href="#%E5%8A%A0%E5%85%A5include%E6%AC%84%E4%BD%8D%E5%90%AB%E6%84%8F">加入INCLUDE欄位含意</a></li>
+<li><a href="#%E6%A1%88%E4%BE%8B%E8%A7%A3%E8%AA%AA">案例解說</a></li>
+</ul>
+</li>
+<li><a href="#filter-index">Filter Index</a></li>
+<li><a href="#filter-index%E7%9A%84%E9%99%90%E5%88%B6">filter index的限制</a></li>
+<li><a href="#index-intersection">Index Intersection</a></li>
+<li><a href="#primary-key">Primary Key</a></li>
+<li><a href="#%E9%81%B8%E6%93%87clustered-index%E8%A6%81%E8%A8%A3">選擇Clustered Index要訣</a></li>
+</ul>
+<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本系列文章</p>
+<ul>
+<li><a href="https://isdaniel.github.io/dbindex-1/">資料庫索引深入淺出(一)</a></li>
+<li><a href="https://isdaniel.github.io/dbindex-2/">資料庫索引深入淺出(二)</a></li>
+</ul>
+<p>兩種基本索引</p>
+<ul>
+<li>Clustered Index(叢集索引)</li>
+<li>NonClustered Index(非叢集索引)</li>
+</ul>
+<p>兩種<code>Lookup</code>(如果<code>NonClustered Index</code>無法滿足查詢結果執行)</p>
+<ul>
+<li>RID Lookup</li>
+<li>Key Lookup</li>
+</ul>
+<p>本篇會介紹其他種類<code>Index</code></p>
+<h2 id="Covering-Index"><a href="#Covering-Index" class="headerlink" title="Covering Index"></a>Covering Index</h2><p>我們先來看看<code>Covering Index</code>語法.</p>
+<p>最主要使在<code>NONCLUSTERED INDEX</code>後面加上<code>INCLUDE</code>欄位.</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> NONCLUSTERED INDEX IX_T_Id_Convering <span class="keyword">on</span> dbo.T(</span><br><span class="line">	id</span><br><span class="line">) INCLUDE (</span><br><span class="line">	UserId,</span><br><span class="line">	UserGroup</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="加入INCLUDE欄位含意"><a href="#加入INCLUDE欄位含意" class="headerlink" title="加入INCLUDE欄位含意"></a>加入INCLUDE欄位含意</h3><p>在<code>NONCLUSTERED INDEX</code>把<code>Column</code>加入<code>INCLUDE</code>區域後此<code>NONCLUSTERED INDEX</code>會把此欄位資料加入至子頁層.之後如果要查找資料時就不用在<code>Lookup</code>回去</p>
+<blockquote>
+<p>所以我們可以把<code>Covering Index</code>當作是偽<code>CLUSTERED INDEX</code>.<br>如果每次只需要<code>SELECT</code>少部分欄位且範圍較大又須排序，<code>Covering Index</code>執行效率會比<code>CLUSTERED INDEX</code>來的快.</p>
+</blockquote>
+<p><code>Covering</code>欄位只會在子頁層儲存資料，並不會在中葉層儲存相關資訊。</p>
+<p>儲存方式如下圖會把資料存在子頁層中，並不會把Include資料存在中葉層</p>
+<p><img src="https://i.imgur.com/8TvUoRY.png"></p>
+<p>適合<code>Covering Index</code>很適合用在查出來<code>Column</code>不需要當作<code>Key</code></p>
+<h3 id="案例解說"><a href="#案例解說" class="headerlink" title="案例解說"></a>案例解說</h3><p>樣本資料一樣使用上一篇的資料</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">10000</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T <span class="keyword">with</span>(index(IX_T_Id))</span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">10000</span></span><br></pre></td></tr></table></figure>
+
+<p>有兩段語法一段是有使用<code>Hint</code>，執行出來後會有兩個執行計畫.</p>
+<blockquote>
+<p>第一個執行計畫是上面的語法,第二個執行計畫是下面的語法</p>
+</blockquote>
+<p><img src="https://i.imgur.com/ivgZPGm.png"></p>
+<p>建立完<code>Convering Index</code>後我們使用的查詢就會變成只使用<code>Seek</code>，而且在執行成本也大幅降低.</p>
+<p>Convering Index有幾個缺點</p>
+<ol>
+<li>假如在此次update有包含index include columns時,此次修改也會對於Index子頁層進行資料更新，這會增加I&#x2F;O和Transaction log.</li>
+<li>因為會把include columns增加在NonClustered Index子頁層這會增加硬碟儲存Index的額外空間.</li>
+</ol>
+<p>所以建議只新增有用到的include columns.</p>
+<p><code>Covering</code>欄位只會在子頁層儲存資料，並不會在中葉層儲存相關資訊。</p>
+<p>儲存方式如下圖會把資料存在子頁層中，並不會把Include資料存在中葉層</p>
+<p><img src="https://i.imgur.com/8TvUoRY.png"></p>
+<h2 id="Filter-Index"><a href="#Filter-Index" class="headerlink" title="Filter Index"></a>Filter Index</h2><p>在SQL-Server 2008之後,支援使用filter index.他可以節省index大小和維護成本</p>
+<p><code>Filter Index</code>語法就是在最後寫<code>where</code>條件</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> NONCLUSTERED INDEX FIX_T_Id_UserGroup <span class="keyword">on</span>  dbo.T(</span><br><span class="line">	id</span><br><span class="line">) INCLUDE (</span><br><span class="line">	UserId,</span><br><span class="line">	UserGroup</span><br><span class="line">)</span><br><span class="line"><span class="keyword">where</span> UserGroup <span class="operator">=</span> <span class="number">8</span></span><br></pre></td></tr></table></figure>
+
+<p>上面語法意思是只針對於<code>UserGroup = 8</code>的<code>Row</code>建立資料在子頁層，<code>Filter Index</code>主要是提升維護性和降低<code>Index</code>大小.</p>
+<h2 id="filter-index的限制"><a href="#filter-index的限制" class="headerlink" title="filter index的限制"></a>filter index的限制</h2><ol>
+<li>filter index只支援<strong>簡單過濾條件</strong>，在<code>where</code>查詢如果有使用到<code>OR</code>、function、計算欄位,可能會讓filter index失效</li>
+<li>因為sql-server會cache執行計畫,所以filter index無法在參數化查詢發揮作用</li>
+</ol>
+<p>關於第二點我們可以看下面查詢,假如我們建立一個fitler index(<code>IDX_Data_Unprocessed_Filtered</code>)因為我們使用參數化查詢所以導致此index無法正常發揮</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> nonclustered index IDX_Data_Unprocessed_Filtered</span><br><span class="line"><span class="keyword">on</span> dbo.Data(RecId)</span><br><span class="line">include(Processed)</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> top <span class="number">1000</span> RecId</span><br><span class="line"><span class="keyword">from</span> dbo.Data</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="variable">@Processed</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> RecId; </span><br></pre></td></tr></table></figure>
+
+<p>所以假如此查詢有使用到filter index請在查詢使用硬變數或是可以使用<code>option(recompile)</code>不讓執行計畫被cache.</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> top <span class="number">1000</span> RecId</span><br><span class="line"><span class="keyword">from</span> dbo.Data</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> RecId; </span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> top <span class="number">1000</span> RecId</span><br><span class="line"><span class="keyword">from</span> dbo.Data</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="variable">@Processed</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> RecId; </span><br><span class="line">option(recompile)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意:如果有使用到<code>Filter Index</code>的<code>SP</code>或<code>Script</code>，如果沒有加上<code>SET QUOTED_IDENTIFIER ON</code>就會造成錯誤，所以在撰寫<code>Script</code>時要養成加上面語法的好習慣.</p>
+</blockquote>
+<h2 id="Index-Intersection"><a href="#Index-Intersection" class="headerlink" title="Index Intersection"></a>Index Intersection</h2><p><code>SQL-Server</code>可透過多個<code>Index</code>完成一段查詢(通常選擇子集合較小)在透過<code>JOIN</code>完成查詢</p>
+<p>假如我們有兩個一個查詢會用到<code>UserId</code>和<code>Id</code> Column當作條件我們可能會建立下面這個索引.</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED INDEX IX_T_UserId_Id <span class="keyword">on</span> dbo.T(</span><br><span class="line">	UserId,</span><br><span class="line">	Id</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>但除了同時利用<code>UserId</code>和<code>Id</code> Column當作條件外還可能個別當作查詢條件.</p>
+<p>我們就可以考慮把這個<code>Index</code>拆開成兩個，這樣可以提高索引使用率（因為執行計畫透過統計值來產生，而<code>Index</code>統計值計算是由<code>Index</code>第一個Column來當計算）</p>
+<blockquote>
+<p>注意:把<code>Index</code>拆成兩個或許可以增加查詢效率，但每個<code>Index</code>就是一個<code>B+ Tree</code>,這會造成維護上成本</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED INDEX IX_T_UserId <span class="keyword">on</span> dbo.T(</span><br><span class="line">	UserId</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> CLUSTERED INDEX IX_T_Id <span class="keyword">on</span>  dbo.T(</span><br><span class="line">	Id</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="Primary-Key"><a href="#Primary-Key" class="headerlink" title="Primary Key"></a>Primary Key</h2><p>在<code>SQL-Server</code>很常使用PRIMARY KEY但你知道他代表甚麼含意嗎?</p>
+<p>PRIMARY KEY是也是一個<code>Index</code>，他可以設定<code>NonClustered Index</code>或是<code>Clustered Index</code></p>
+<p>PRIMARY KEY有幾個特徵</p>
+<ol>
+<li>資料不能重複(Unique)</li>
+<li>Columns都必須定義成<code>NOT NULL</code></li>
+<li>PRIMARY KEY是一個<code>Index</code></li>
+</ol>
+<blockquote>
+<p>預設建立的PRIMARY KEY是<code>Clustered Index</code>，但我們使用語法自行建立為<code>NonClustered Index</code>的PRIMARY KEY</p>
+</blockquote>
+<p>如下範例我們可以建立一個<code>NONCLUSTERED</code>的PRIMARY KEY</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T(</span><br><span class="line">    ID <span class="type">INT</span> <span class="keyword">NOT NULL</span>,  </span><br><span class="line">    <span class="keyword">CONSTRAINT</span> [PK_T] <span class="keyword">PRIMARY KEY</span> NONCLUSTERED (</span><br><span class="line">        ID</span><br><span class="line">    )</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="選擇Clustered-Index要訣"><a href="#選擇Clustered-Index要訣" class="headerlink" title="選擇Clustered Index要訣"></a>選擇Clustered Index要訣</h2><p>在 SQL-Server 每張資料表只有一個 Clustered Index，每個資料表只能有一個<code>Cluster index</code>，資料表會依照<code>cluster index</code>方式排列，<code>Clustered Index</code>跟資料一起放置在<code>left pag</code>子頁層，<code>Cluster index</code>好比書籍目錄。每本書只能有一個目錄</p>
+<p>所以選擇合適 Clustered Index 就尤為重要</p>
+<p>建立<code>Clustered Index</code>欄位有幾個重點</p>
+<ol>
+<li>常用於查詢欄位</li>
+<li>可識別度高(唯一性較高 or 密度高)</li>
+<li>避免過多欄位在Clustered Index中(因為NonClustered會包含Clustered Index Key)</li>
+</ol>
+<p>我個人建議選擇 Clustered Index 可以依照下面幾個準則</p>
+<ul>
+<li>最好是唯一性：提高查詢效率</li>
+<li>寬度窄或窄複合組成：因為NonClustered Index中頁層會包含Clustered Index資訊，如果Clustered Index太肥會造成NonClustered Index page變多.</li>
+<li>靜態性：Clustered Index盡量少被Update(更新時需要一併更新NonClustered Index中Clustered Key資料,會造成I&#x2F;O效能消耗)</li>
+<li>連續性佳：避免索引破碎(能避免就避免使用GUID當Clustered Index)</li>
+</ul>
+<p>假如確定建立的Clustered index資料是唯一的,請加上<code>Unique</code>,因為沒加上<code>Unique</code>的<code>Clustered index</code>會在Page中的每列資料加上一個<code>uniquifiers</code> 2 bytes的Column</p>
+<p>下圖是我使用<code>DBCC PAGE</code>查看三種不一樣的<code>Clustered Index</code>結果</p>
+<p>其中第一,第二個結果集顯示就算<code>Clustered Index</code>資料不重複沒加上<code>Unique</code>對於儲存上會有差異</p>
+<p><img src="https://i.imgur.com/6y3XwDz.png"></p>
+<blockquote>
+<p>所以確定建立的Clustered index資料是唯一的,請加上<code>Unique</code></p>
+</blockquote>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/DBIndex-2/">https://isdaniel.github.io/DBIndex-2/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>DataBase</category>
+        <category>Turning</category>
+      </categories>
+      <tags>
+        <tag>DataBase</tag>
+        <tag>Turning</tag>
+        <tag>sql-server</tag>
+        <tag>Index</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>淺談SqlServer Lock(一)</title>
     <url>/DBLock-1/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -1185,146 +1325,6 @@ public abstract class MoveBase
         <tag>DataBase</tag>
         <tag>Turning</tag>
         <tag>Sql-server</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>資料庫索引深入淺出(二)</title>
-    <url>/DBIndex-2/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E6%96%87">前文</a></li>
-<li><a href="#covering-index">Covering Index</a><ul>
-<li><a href="#%E5%8A%A0%E5%85%A5include%E6%AC%84%E4%BD%8D%E5%90%AB%E6%84%8F">加入INCLUDE欄位含意</a></li>
-<li><a href="#%E6%A1%88%E4%BE%8B%E8%A7%A3%E8%AA%AA">案例解說</a></li>
-</ul>
-</li>
-<li><a href="#filter-index">Filter Index</a></li>
-<li><a href="#filter-index%E7%9A%84%E9%99%90%E5%88%B6">filter index的限制</a></li>
-<li><a href="#index-intersection">Index Intersection</a></li>
-<li><a href="#primary-key">Primary Key</a></li>
-<li><a href="#%E9%81%B8%E6%93%87clustered-index%E8%A6%81%E8%A8%A3">選擇Clustered Index要訣</a></li>
-</ul>
-<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本系列文章</p>
-<ul>
-<li><a href="https://isdaniel.github.io/dbindex-1/">資料庫索引深入淺出(一)</a></li>
-<li><a href="https://isdaniel.github.io/dbindex-2/">資料庫索引深入淺出(二)</a></li>
-</ul>
-<p>兩種基本索引</p>
-<ul>
-<li>Clustered Index(叢集索引)</li>
-<li>NonClustered Index(非叢集索引)</li>
-</ul>
-<p>兩種<code>Lookup</code>(如果<code>NonClustered Index</code>無法滿足查詢結果執行)</p>
-<ul>
-<li>RID Lookup</li>
-<li>Key Lookup</li>
-</ul>
-<p>本篇會介紹其他種類<code>Index</code></p>
-<h2 id="Covering-Index"><a href="#Covering-Index" class="headerlink" title="Covering Index"></a>Covering Index</h2><p>我們先來看看<code>Covering Index</code>語法.</p>
-<p>最主要使在<code>NONCLUSTERED INDEX</code>後面加上<code>INCLUDE</code>欄位.</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> NONCLUSTERED INDEX IX_T_Id_Convering <span class="keyword">on</span> dbo.T(</span><br><span class="line">	id</span><br><span class="line">) INCLUDE (</span><br><span class="line">	UserId,</span><br><span class="line">	UserGroup</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<h3 id="加入INCLUDE欄位含意"><a href="#加入INCLUDE欄位含意" class="headerlink" title="加入INCLUDE欄位含意"></a>加入INCLUDE欄位含意</h3><p>在<code>NONCLUSTERED INDEX</code>把<code>Column</code>加入<code>INCLUDE</code>區域後此<code>NONCLUSTERED INDEX</code>會把此欄位資料加入至子頁層.之後如果要查找資料時就不用在<code>Lookup</code>回去</p>
-<blockquote>
-<p>所以我們可以把<code>Covering Index</code>當作是偽<code>CLUSTERED INDEX</code>.<br>如果每次只需要<code>SELECT</code>少部分欄位且範圍較大又須排序，<code>Covering Index</code>執行效率會比<code>CLUSTERED INDEX</code>來的快.</p>
-</blockquote>
-<p><code>Covering</code>欄位只會在子頁層儲存資料，並不會在中葉層儲存相關資訊。</p>
-<p>儲存方式如下圖會把資料存在子頁層中，並不會把Include資料存在中葉層</p>
-<p><img src="https://i.imgur.com/8TvUoRY.png"></p>
-<p>適合<code>Covering Index</code>很適合用在查出來<code>Column</code>不需要當作<code>Key</code></p>
-<h3 id="案例解說"><a href="#案例解說" class="headerlink" title="案例解說"></a>案例解說</h3><p>樣本資料一樣使用上一篇的資料</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">10000</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T <span class="keyword">with</span>(index(IX_T_Id))</span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">10000</span></span><br></pre></td></tr></table></figure>
-
-<p>有兩段語法一段是有使用<code>Hint</code>，執行出來後會有兩個執行計畫.</p>
-<blockquote>
-<p>第一個執行計畫是上面的語法,第二個執行計畫是下面的語法</p>
-</blockquote>
-<p><img src="https://i.imgur.com/ivgZPGm.png"></p>
-<p>建立完<code>Convering Index</code>後我們使用的查詢就會變成只使用<code>Seek</code>，而且在執行成本也大幅降低.</p>
-<p>Convering Index有幾個缺點</p>
-<ol>
-<li>假如在此次update有包含index include columns時,此次修改也會對於Index子頁層進行資料更新，這會增加I&#x2F;O和Transaction log.</li>
-<li>因為會把include columns增加在NonClustered Index子頁層這會增加硬碟儲存Index的額外空間.</li>
-</ol>
-<p>所以建議只新增有用到的include columns.</p>
-<p><code>Covering</code>欄位只會在子頁層儲存資料，並不會在中葉層儲存相關資訊。</p>
-<p>儲存方式如下圖會把資料存在子頁層中，並不會把Include資料存在中葉層</p>
-<p><img src="https://i.imgur.com/8TvUoRY.png"></p>
-<h2 id="Filter-Index"><a href="#Filter-Index" class="headerlink" title="Filter Index"></a>Filter Index</h2><p>在SQL-Server 2008之後,支援使用filter index.他可以節省index大小和維護成本</p>
-<p><code>Filter Index</code>語法就是在最後寫<code>where</code>條件</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> NONCLUSTERED INDEX FIX_T_Id_UserGroup <span class="keyword">on</span>  dbo.T(</span><br><span class="line">	id</span><br><span class="line">) INCLUDE (</span><br><span class="line">	UserId,</span><br><span class="line">	UserGroup</span><br><span class="line">)</span><br><span class="line"><span class="keyword">where</span> UserGroup <span class="operator">=</span> <span class="number">8</span></span><br></pre></td></tr></table></figure>
-
-<p>上面語法意思是只針對於<code>UserGroup = 8</code>的<code>Row</code>建立資料在子頁層，<code>Filter Index</code>主要是提升維護性和降低<code>Index</code>大小.</p>
-<h2 id="filter-index的限制"><a href="#filter-index的限制" class="headerlink" title="filter index的限制"></a>filter index的限制</h2><ol>
-<li>filter index只支援<strong>簡單過濾條件</strong>，在<code>where</code>查詢如果有使用到<code>OR</code>、function、計算欄位,可能會讓filter index失效</li>
-<li>因為sql-server會cache執行計畫,所以filter index無法在參數化查詢發揮作用</li>
-</ol>
-<p>關於第二點我們可以看下面查詢,假如我們建立一個fitler index(<code>IDX_Data_Unprocessed_Filtered</code>)因為我們使用參數化查詢所以導致此index無法正常發揮</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">create</span> nonclustered index IDX_Data_Unprocessed_Filtered</span><br><span class="line"><span class="keyword">on</span> dbo.Data(RecId)</span><br><span class="line">include(Processed)</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> top <span class="number">1000</span> RecId</span><br><span class="line"><span class="keyword">from</span> dbo.Data</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="variable">@Processed</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> RecId; </span><br></pre></td></tr></table></figure>
-
-<p>所以假如此查詢有使用到filter index請在查詢使用硬變數或是可以使用<code>option(recompile)</code>不讓執行計畫被cache.</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> top <span class="number">1000</span> RecId</span><br><span class="line"><span class="keyword">from</span> dbo.Data</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> RecId; </span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> top <span class="number">1000</span> RecId</span><br><span class="line"><span class="keyword">from</span> dbo.Data</span><br><span class="line"><span class="keyword">where</span> Processed <span class="operator">=</span> <span class="variable">@Processed</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> RecId; </span><br><span class="line">option(recompile)</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>注意:如果有使用到<code>Filter Index</code>的<code>SP</code>或<code>Script</code>，如果沒有加上<code>SET QUOTED_IDENTIFIER ON</code>就會造成錯誤，所以在撰寫<code>Script</code>時要養成加上面語法的好習慣.</p>
-</blockquote>
-<h2 id="Index-Intersection"><a href="#Index-Intersection" class="headerlink" title="Index Intersection"></a>Index Intersection</h2><p><code>SQL-Server</code>可透過多個<code>Index</code>完成一段查詢(通常選擇子集合較小)在透過<code>JOIN</code>完成查詢</p>
-<p>假如我們有兩個一個查詢會用到<code>UserId</code>和<code>Id</code> Column當作條件我們可能會建立下面這個索引.</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED INDEX IX_T_UserId_Id <span class="keyword">on</span> dbo.T(</span><br><span class="line">	UserId,</span><br><span class="line">	Id</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<p>但除了同時利用<code>UserId</code>和<code>Id</code> Column當作條件外還可能個別當作查詢條件.</p>
-<p>我們就可以考慮把這個<code>Index</code>拆開成兩個，這樣可以提高索引使用率（因為執行計畫透過統計值來產生，而<code>Index</code>統計值計算是由<code>Index</code>第一個Column來當計算）</p>
-<blockquote>
-<p>注意:把<code>Index</code>拆成兩個或許可以增加查詢效率，但每個<code>Index</code>就是一個<code>B+ Tree</code>,這會造成維護上成本</p>
-</blockquote>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED INDEX IX_T_UserId <span class="keyword">on</span> dbo.T(</span><br><span class="line">	UserId</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> CLUSTERED INDEX IX_T_Id <span class="keyword">on</span>  dbo.T(</span><br><span class="line">	Id</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<h2 id="Primary-Key"><a href="#Primary-Key" class="headerlink" title="Primary Key"></a>Primary Key</h2><p>在<code>SQL-Server</code>很常使用PRIMARY KEY但你知道他代表甚麼含意嗎?</p>
-<p>PRIMARY KEY是也是一個<code>Index</code>，他可以設定<code>NonClustered Index</code>或是<code>Clustered Index</code></p>
-<p>PRIMARY KEY有幾個特徵</p>
-<ol>
-<li>資料不能重複(Unique)</li>
-<li>Columns都必須定義成<code>NOT NULL</code></li>
-<li>PRIMARY KEY是一個<code>Index</code></li>
-</ol>
-<blockquote>
-<p>預設建立的PRIMARY KEY是<code>Clustered Index</code>，但我們使用語法自行建立為<code>NonClustered Index</code>的PRIMARY KEY</p>
-</blockquote>
-<p>如下範例我們可以建立一個<code>NONCLUSTERED</code>的PRIMARY KEY</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T(</span><br><span class="line">    ID <span class="type">INT</span> <span class="keyword">NOT NULL</span>,  </span><br><span class="line">    <span class="keyword">CONSTRAINT</span> [PK_T] <span class="keyword">PRIMARY KEY</span> NONCLUSTERED (</span><br><span class="line">        ID</span><br><span class="line">    )</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<h2 id="選擇Clustered-Index要訣"><a href="#選擇Clustered-Index要訣" class="headerlink" title="選擇Clustered Index要訣"></a>選擇Clustered Index要訣</h2><p>在 SQL-Server 每張資料表只有一個 Clustered Index，每個資料表只能有一個<code>Cluster index</code>，資料表會依照<code>cluster index</code>方式排列，<code>Clustered Index</code>跟資料一起放置在<code>left pag</code>子頁層，<code>Cluster index</code>好比書籍目錄。每本書只能有一個目錄</p>
-<p>所以選擇合適 Clustered Index 就尤為重要</p>
-<p>建立<code>Clustered Index</code>欄位有幾個重點</p>
-<ol>
-<li>常用於查詢欄位</li>
-<li>可識別度高(唯一性較高 or 密度高)</li>
-<li>避免過多欄位在Clustered Index中(因為NonClustered會包含Clustered Index Key)</li>
-</ol>
-<p>我個人建議選擇 Clustered Index 可以依照下面幾個準則</p>
-<ul>
-<li>最好是唯一性：提高查詢效率</li>
-<li>寬度窄或窄複合組成：因為NonClustered Index中頁層會包含Clustered Index資訊，如果Clustered Index太肥會造成NonClustered Index page變多.</li>
-<li>靜態性：Clustered Index盡量少被Update(更新時需要一併更新NonClustered Index中Clustered Key資料,會造成I&#x2F;O效能消耗)</li>
-<li>連續性佳：避免索引破碎(能避免就避免使用GUID當Clustered Index)</li>
-</ul>
-<p>假如確定建立的Clustered index資料是唯一的,請加上<code>Unique</code>,因為沒加上<code>Unique</code>的<code>Clustered index</code>會在Page中的每列資料加上一個<code>uniquifiers</code> 2 bytes的Column</p>
-<p>下圖是我使用<code>DBCC PAGE</code>查看三種不一樣的<code>Clustered Index</code>結果</p>
-<p>其中第一,第二個結果集顯示就算<code>Clustered Index</code>資料不重複沒加上<code>Unique</code>對於儲存上會有差異</p>
-<p><img src="https://i.imgur.com/6y3XwDz.png"></p>
-<blockquote>
-<p>所以確定建立的Clustered index資料是唯一的,請加上<code>Unique</code></p>
-</blockquote>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/DBIndex-2/">https://isdaniel.github.io/DBIndex-2/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>DataBase</category>
-        <category>Turning</category>
-      </categories>
-      <tags>
-        <tag>DataBase</tag>
-        <tag>Turning</tag>
-        <tag>sql-server</tag>
-        <tag>Index</tag>
       </tags>
   </entry>
   <entry>
@@ -2032,6 +2032,58 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
+    <title>透過MvcRouteHandler取得呼叫IHttphandler (第10天)</title>
+    <url>/Ithelp-day10/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#mvc%E5%8F%96%E5%BE%97%E4%BD%BF%E7%94%A8httphandler-ihttphandler">MVC取得使用HttpHandler (IHttpHandler)</a></li>
+<li><a href="#mvc%E5%91%BC%E5%8F%AB%E7%9A%84httphandler-mvchandler">MVC呼叫的HttpHandler (MvcHandler)</a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前一篇介紹路由封裝了Http請求路徑資訊可以讓我們找到相對應的<code>Action</code>和<code>Controller</code>並呼叫執行外，也可透過<code>MapPageRoute</code>來將請求教給<code>.aspx</code>實體檔案來處理請求.</p>
+<p><code>Route</code>甚至可以讓我們自己客製化處理<code>HttpHandler</code> 在Route中建立處理客製化HttpHandler可謂很有彈性</p>
+<p>本篇介紹<code>Route</code>物件建立<code>MvcRouteHandler</code>物件且如何取到<code>IHttpHandler</code>.</p>
+<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+<h2 id="MVC取得使用HttpHandler-IHttpHandler"><a href="#MVC取得使用HttpHandler-IHttpHandler" class="headerlink" title="MVC取得使用HttpHandler (IHttpHandler)"></a>MVC取得使用HttpHandler (IHttpHandler)</h2><p>之前說到我們透過<code>MapRoute</code>擴展方法加入一個<code>Route</code>物件給<code>RouteCollection</code><strong>全域路由集合</strong>.</p>
+<p>在<code>Route</code>使用的<code>IRouteHandler</code>介面是由<code>MvcRouteHandler</code>來實現</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">Route route = <span class="keyword">new</span> Route(url, <span class="keyword">new</span> MvcRouteHandler())</span><br><span class="line">&#123;</span><br><span class="line">    Defaults = CreateRouteValueDictionaryUncached(defaults),</span><br><span class="line">    Constraints = CreateRouteValueDictionaryUncached(constraints),</span><br><span class="line">    DataTokens = <span class="keyword">new</span> RouteValueDictionary()</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>IRouteHandler</code>最重要的是<code>IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</code>會取得一個<code>IHttpHandler</code>物件.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MvcRouteHandler</span> : <span class="title">IRouteHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IControllerFactory _controllerFactory;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>(<span class="params">IControllerFactory controllerFactory</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _controllerFactory = controllerFactory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> IHttpHandler <span class="title">GetHttpHandler</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//設置Session使用</span></span><br><span class="line">        requestContext.HttpContext.SetSessionStateBehavior(GetSessionStateBehavior(requestContext));</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> MvcHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> SessionStateBehavior <span class="title">GetSessionStateBehavior</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">string</span> controllerName = (<span class="built_in">string</span>)requestContext.RouteData.Values[<span class="string">&quot;controller&quot;</span>];</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrWhiteSpace(controllerName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.MvcRouteHandler_RouteValuesHasNoController);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        IControllerFactory controllerFactory = _controllerFactory ?? ControllerBuilder.Current.GetControllerFactory();</span><br><span class="line">        <span class="keyword">return</span> controllerFactory.GetControllerSessionBehavior(requestContext, controllerName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="keyword">region</span> IRouteHandler Members</span></span><br><span class="line"></span><br><span class="line">    IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetHttpHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="keyword">endregion</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面程式碼可以看到<strong>Mvc</strong>使用<code>IHttpHandler</code>是<code>MvcHandler</code></p>
+<h2 id="MVC呼叫的HttpHandler-MvcHandler"><a href="#MVC呼叫的HttpHandler-MvcHandler" class="headerlink" title="MVC呼叫的HttpHandler (MvcHandler)"></a>MVC呼叫的HttpHandler (MvcHandler)</h2><p><code>MvcHandler</code>類別中主要核心的程式碼做了幾件事情.</p>
+<ol>
+<li>使用一個<code>Adapter</code>對於<code>HttpContext</code>物件把他轉成可以繼承於<code>HttpContextBase</code>的<code>HttpContextWrapper</code>類別.</li>
+<li>透過<code>ProcessRequestInit</code>取得執行<code>controller</code>物件並且呼叫執行方法.</li>
+<li>最後透過<code>ReleaseController</code>釋放之前使用過資源</li>
+</ol>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext httpContext</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    HttpContextBase httpContextBase = <span class="keyword">new</span> HttpContextWrapper(httpContext);</span><br><span class="line">    ProcessRequest(httpContextBase);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">internal</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    IController controller;</span><br><span class="line">    IControllerFactory factory;</span><br><span class="line">    <span class="comment">//取得 控制器工廠(預設DefaultControllerFactory) 和 要執行的Controller</span></span><br><span class="line">    ProcessRequestInit(httpContext, <span class="keyword">out</span> controller, <span class="keyword">out</span> factory);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        controller.Execute(RequestContext);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        factory.ReleaseController(controller);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們知道MVC使用<code>HttpHandler</code>是<code>MvcHandler</code>透過並<code>MvcRouteHandler</code>物件來返回.</p>
+<p>下圖簡單展現MVC使用的<code>HttpModule</code>和<code>HttpHandler</code>關係</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/10/relationship_pic.PNG" alt="relationship_pic.PNG"></p>
+<ol>
+<li>在<code>UrlRoutingMoudule</code>註冊事件.</li>
+<li>取得符合Http請求<code>Route</code>物件</li>
+<li>呼叫<code>MvcRouteHandler</code>取得<code>MvcHandler</code>物件</li>
+<li>執行<code>MvcHandler</code>的<code>ProcessReqeust</code>方法</li>
+</ol>
+<p>下面會陸續介紹<strong>MVC</strong>是如何取得<code>Controller</code>物件</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Ithelp-day10/">https://isdaniel.github.io/Ithelp-day10/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)</title>
     <url>/Ithelp-day1/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -2124,58 +2176,6 @@ GROUP BY userName
 <p>瀏覽器發出<strong>Http</strong>請求給IIS,IIS透過<code>Http.sys</code>來監聽請求並交給<code>w3wp.exe</code>這個應用程式來判斷是否要交由<code>.net</code>託管處理此次請求.</p>
 <p>下篇我們會來詳細講述<code>Httpmodule &amp; Httphandler</code></p>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Ithelp-day1/">https://isdaniel.github.io/Ithelp-day1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>透過MvcRouteHandler取得呼叫IHttphandler (第10天)</title>
-    <url>/Ithelp-day10/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#mvc%E5%8F%96%E5%BE%97%E4%BD%BF%E7%94%A8httphandler-ihttphandler">MVC取得使用HttpHandler (IHttpHandler)</a></li>
-<li><a href="#mvc%E5%91%BC%E5%8F%AB%E7%9A%84httphandler-mvchandler">MVC呼叫的HttpHandler (MvcHandler)</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前一篇介紹路由封裝了Http請求路徑資訊可以讓我們找到相對應的<code>Action</code>和<code>Controller</code>並呼叫執行外，也可透過<code>MapPageRoute</code>來將請求教給<code>.aspx</code>實體檔案來處理請求.</p>
-<p><code>Route</code>甚至可以讓我們自己客製化處理<code>HttpHandler</code> 在Route中建立處理客製化HttpHandler可謂很有彈性</p>
-<p>本篇介紹<code>Route</code>物件建立<code>MvcRouteHandler</code>物件且如何取到<code>IHttpHandler</code>.</p>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-<h2 id="MVC取得使用HttpHandler-IHttpHandler"><a href="#MVC取得使用HttpHandler-IHttpHandler" class="headerlink" title="MVC取得使用HttpHandler (IHttpHandler)"></a>MVC取得使用HttpHandler (IHttpHandler)</h2><p>之前說到我們透過<code>MapRoute</code>擴展方法加入一個<code>Route</code>物件給<code>RouteCollection</code><strong>全域路由集合</strong>.</p>
-<p>在<code>Route</code>使用的<code>IRouteHandler</code>介面是由<code>MvcRouteHandler</code>來實現</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">Route route = <span class="keyword">new</span> Route(url, <span class="keyword">new</span> MvcRouteHandler())</span><br><span class="line">&#123;</span><br><span class="line">    Defaults = CreateRouteValueDictionaryUncached(defaults),</span><br><span class="line">    Constraints = CreateRouteValueDictionaryUncached(constraints),</span><br><span class="line">    DataTokens = <span class="keyword">new</span> RouteValueDictionary()</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p><code>IRouteHandler</code>最重要的是<code>IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</code>會取得一個<code>IHttpHandler</code>物件.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MvcRouteHandler</span> : <span class="title">IRouteHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> IControllerFactory _controllerFactory;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">MvcRouteHandler</span>(<span class="params">IControllerFactory controllerFactory</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _controllerFactory = controllerFactory;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> IHttpHandler <span class="title">GetHttpHandler</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//設置Session使用</span></span><br><span class="line">        requestContext.HttpContext.SetSessionStateBehavior(GetSessionStateBehavior(requestContext));</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> MvcHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> SessionStateBehavior <span class="title">GetSessionStateBehavior</span>(<span class="params">RequestContext requestContext</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">string</span> controllerName = (<span class="built_in">string</span>)requestContext.RouteData.Values[<span class="string">&quot;controller&quot;</span>];</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrWhiteSpace(controllerName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.MvcRouteHandler_RouteValuesHasNoController);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        IControllerFactory controllerFactory = _controllerFactory ?? ControllerBuilder.Current.GetControllerFactory();</span><br><span class="line">        <span class="keyword">return</span> controllerFactory.GetControllerSessionBehavior(requestContext, controllerName);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="keyword">region</span> IRouteHandler Members</span></span><br><span class="line"></span><br><span class="line">    IHttpHandler IRouteHandler.GetHttpHandler(RequestContext requestContext)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> GetHttpHandler(requestContext);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">#<span class="keyword">endregion</span></span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面程式碼可以看到<strong>Mvc</strong>使用<code>IHttpHandler</code>是<code>MvcHandler</code></p>
-<h2 id="MVC呼叫的HttpHandler-MvcHandler"><a href="#MVC呼叫的HttpHandler-MvcHandler" class="headerlink" title="MVC呼叫的HttpHandler (MvcHandler)"></a>MVC呼叫的HttpHandler (MvcHandler)</h2><p><code>MvcHandler</code>類別中主要核心的程式碼做了幾件事情.</p>
-<ol>
-<li>使用一個<code>Adapter</code>對於<code>HttpContext</code>物件把他轉成可以繼承於<code>HttpContextBase</code>的<code>HttpContextWrapper</code>類別.</li>
-<li>透過<code>ProcessRequestInit</code>取得執行<code>controller</code>物件並且呼叫執行方法.</li>
-<li>最後透過<code>ReleaseController</code>釋放之前使用過資源</li>
-</ol>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext httpContext</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    HttpContextBase httpContextBase = <span class="keyword">new</span> HttpContextWrapper(httpContext);</span><br><span class="line">    ProcessRequest(httpContextBase);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">internal</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContextBase httpContext</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    IController controller;</span><br><span class="line">    IControllerFactory factory;</span><br><span class="line">    <span class="comment">//取得 控制器工廠(預設DefaultControllerFactory) 和 要執行的Controller</span></span><br><span class="line">    ProcessRequestInit(httpContext, <span class="keyword">out</span> controller, <span class="keyword">out</span> factory);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span></span><br><span class="line">    &#123;</span><br><span class="line">        controller.Execute(RequestContext);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">finally</span></span><br><span class="line">    &#123;</span><br><span class="line">        factory.ReleaseController(controller);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們知道MVC使用<code>HttpHandler</code>是<code>MvcHandler</code>透過並<code>MvcRouteHandler</code>物件來返回.</p>
-<p>下圖簡單展現MVC使用的<code>HttpModule</code>和<code>HttpHandler</code>關係</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/10/relationship_pic.PNG" alt="relationship_pic.PNG"></p>
-<ol>
-<li>在<code>UrlRoutingMoudule</code>註冊事件.</li>
-<li>取得符合Http請求<code>Route</code>物件</li>
-<li>呼叫<code>MvcRouteHandler</code>取得<code>MvcHandler</code>物件</li>
-<li>執行<code>MvcHandler</code>的<code>ProcessReqeust</code>方法</li>
-</ol>
-<p>下面會陸續介紹<strong>MVC</strong>是如何取得<code>Controller</code>物件</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Ithelp-day10/">https://isdaniel.github.io/Ithelp-day10/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -14684,6 +14684,130 @@ email_url: dog830228@gmail.com
         <tag>RabbitMq</tag>
         <tag>ThreadPool</tag>
         <tag>SystemDesign</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MessageWorkerPool framework introduction</title>
+    <url>/mq-workerpool-introduction/</url>
+    <content><![CDATA[<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Recently, I developed the <code>MessageWorkerPool</code> project. The main concept is to provide a platform framework that enables users to implement logic quickly and easily within workers. The design is highly flexible, allowing workers to be implemented in multiple languages based on a worker protocol I created. Currently, I’ve provided examples for workers written in C#, Rust, and Python.</p>
+<p>This library excels in handling tasks within multi-process environments, especially for applications demanding high throughput and low latency. It also supports graceful shutdown, ensuring a smooth process termination without disrupting ongoing tasks.</p>
+<p><a href="https://github.com/isdaniel/MessageWorkerPool">MessageWorkerPool Github URL</a></p>
+<h2 id="Why-Process-Pool-rather-than-Thread-Pool"><a href="#Why-Process-Pool-rather-than-Thread-Pool" class="headerlink" title="Why Process Pool rather than Thread Pool?"></a>Why Process Pool rather than Thread Pool?</h2><p>Use a process pool when you need robust isolation to prevent issues in one task from affecting others, especially for critical or crash-prone operations,although thread pool would be more lightweight (as threads share memory and require less context-switching overhead), however Process Pool would provide more flexibility solution by implement different program language.</p>
+<h2 id="Installation"><a href="#Installation" class="headerlink" title="Installation"></a>Installation</h2><p>To install the <code>MessageWorkerPool</code> package, use the following NuGet command:</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">PM &gt; Install-Package MessageWorkerPool</span><br></pre></td></tr></table></figure>
+
+<p>To install the library, clone the repository and build the project:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/MessageWorkerPool.git</span><br><span class="line"><span class="built_in">cd</span> MessageWorkerPool</span><br><span class="line">dotnet build</span><br></pre></td></tr></table></figure>
+
+<h2 id="Architecture-overview"><a href="#Architecture-overview" class="headerlink" title="Architecture overview"></a>Architecture overview</h2><p><img src="/./images/arhc-overview.png"></p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><p>Here’s a quick start guide for deploying your RabbitMQ and related services using the provided <code>docker-compose.yml</code> file and environment variables from <code>.env</code>.</p>
+<figure class="highlight mel"><table><tr><td class="code"><pre><span class="line">docker-compose --<span class="keyword">env</span>-<span class="keyword">file</span> .\<span class="keyword">env</span>\.<span class="keyword">env</span> up --build -d</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>Check RabbitMQ health status: Open <code>http://localhost:8888</code> in your browser to access the RabbitMQ Management Dashboard.</li>
+</ol>
+<ul>
+<li>Username: guest</li>
+<li>Password: guest</li>
+</ul>
+<ol start="2">
+<li>Check OrleansDashboard <code>http://localhost:8899</code></li>
+</ol>
+<ul>
+<li>Username: admin</li>
+<li>Password: test.123</li>
+</ul>
+<h2 id="Program-Structure"><a href="#Program-Structure" class="headerlink" title="Program Structure"></a>Program Structure</h2><p>Here is the sample code for creating and configuring a worker pool that interacts with RabbitMQ. Below is a breakdown of its functionality; The worker pool will fetch message from RabbitMQ server depended on your <code>RabbitMqSetting</code> setting and sending the message via <code>Process.StandardInput</code> to real worker node that created by users.</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">async</span> Task <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        CreateHostBuilder(<span class="keyword">args</span>).Build().Run();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IHostBuilder <span class="title">CreateHostBuilder</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span> =&gt;</span><br><span class="line">        Host.CreateDefaultBuilder(<span class="keyword">args</span>)</span><br><span class="line">            .ConfigureLogging(logging =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                logging.ClearProviders();</span><br><span class="line">                logging.AddConsole(options =&gt; &#123;</span><br><span class="line">                    options.FormatterName = ConsoleFormatterNames.Simple;</span><br><span class="line">                &#125;);</span><br><span class="line">                logging.Services.Configure&lt;SimpleConsoleFormatterOptions&gt;(options =&gt; &#123;</span><br><span class="line">                    options.IncludeScopes = <span class="literal">true</span>;</span><br><span class="line">                    options.TimestampFormat = <span class="string">&quot; yyyy-MM-dd HH:mm:ss &quot;</span>;</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;).AddRabbitMqWorkerPool(<span class="keyword">new</span> RabbitMqSetting</span><br><span class="line">            &#123;</span><br><span class="line">                UserName = Environment.GetEnvironmentVariable(<span class="string">&quot;USERNAME&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                Password = Environment.GetEnvironmentVariable(<span class="string">&quot;PASSWORD&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                HostName = Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_HOSTNAME&quot;</span>),</span><br><span class="line">                Port = <span class="built_in">ushort</span>.TryParse(Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_PORT&quot;</span>), <span class="keyword">out</span> <span class="built_in">ushort</span> p) ? p : (<span class="built_in">ushort</span>) <span class="number">5672</span>,</span><br><span class="line">                PrefetchTaskCount = <span class="number">3</span></span><br><span class="line">            &#125;, <span class="keyword">new</span> WorkerPoolSetting() &#123; WorkerUnitCount = <span class="number">9</span>, CommandLine = <span class="string">&quot;dotnet&quot;</span>, Arguments = <span class="string">@&quot;./ProcessBin/WorkerProcessSample.dll&quot;</span>, QueueName = Environment.GetEnvironmentVariable(<span class="string">&quot;QUEUENAME&quot;</span>), &#125;</span><br><span class="line">            );</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p><strong>Scalability</strong></p>
+<ul>
+<li>Scaling is achieved by increasing the <code>WorkerUnitCount</code> &amp; <code>PrefetchTaskCount</code> determined how many amount of fetching message from rabbitMQ at same time.</li>
+</ul>
+</li>
+<li><p><strong>Decoupling</strong></p>
+<ul>
+<li>RabbitMQ acts as a message broker, decoupling the producers of messages from the consumers (workers). This makes it easier to manage workloads independently.</li>
+</ul>
+</li>
+<li><p><strong>Configurable</strong></p>
+<ul>
+<li>The <code>RabbitMqSetting</code> object provides flexibility to modify connection settings, queue names, and worker pool details without changing the code.</li>
+</ul>
+</li>
+<li><p><strong>Reusable Workers</strong></p>
+<ul>
+<li>Worker processes are defined by the <code>CommandLine</code> and <code>Arguments</code>, making it easy to reuse or swap out the tasks performed by the workers.</li>
+</ul>
+</li>
+</ol>
+<h2 id="Protocol-between-worker-and-task-process"><a href="#Protocol-between-worker-and-task-process" class="headerlink" title="Protocol between worker and task process"></a>Protocol between worker and task process</h2><p>The Protocol between worker and task process are use MessagePack binary format with faster and smaller data transfer, standardInput will send signal control worker process.</p>
+<p>In the beginning, worker pool will pass NamedPipe name through standardInput, therefore worker program would need to receive that name and establish NamedPipe between worker process and worker pool.</p>
+<h3 id="Operation-command-from-worker-pool"><a href="#Operation-command-from-worker-pool" class="headerlink" title="Operation command from worker pool"></a>Operation command from worker pool</h3><p>Currently, worker pool will send operations signal or command to worker process via standardInput.</p>
+<ul>
+<li>CLOSED_SIGNAL (<code>__quit__</code>): that represent worker pool sent a close or shutdown signal to worker process, that worker process should perform graceful shutdown as soon as possible.</li>
+</ul>
+<h3 id="Data-transfer-via-Data-Named-Pipe-Stream"><a href="#Data-transfer-via-Data-Named-Pipe-Stream" class="headerlink" title="Data transfer via (Data Named Pipe Stream)"></a>Data transfer via (Data Named Pipe Stream)</h3><p>Named pipes are a powerful interprocess communication (IPC) mechanism that allows two or more processes to communicate with each other, even if they are running on different machines in a network (on platforms that support it, like Windows), our workers used to this for trasfering data between worker process and worker pool</p>
+<p><a href="https://msgpack.org/">msgpack</a> protocols data type support as below class &amp; <code>byte[]</code> format.</p>
+<p>The corresponding <code>byte[]</code> data is:</p>
+<figure class="highlight dns"><table><tr><td class="code"><pre><span class="line">[<span class="number">132,161,48,179</span>,<span class="number">78,101,119,32</span>,<span class="number">79,117,116,80</span>,<span class="number">117,116,32,77</span>,<span class="number">101,115,115,97</span>,<span class="number">103,101,33,161</span>,<span class="number">49,204,200,161</span>,<span class="number">50,129,164,116</span>,<span class="number">101,115,116,167</span>,<span class="number">116,101,115,116</span>,<span class="number">118,97,108,161</span>,<span class="number">51,169,116,101</span>,<span class="number">115,116,81,117</span>,<span class="number">101,117,101</span>]</span><br></pre></td></tr></table></figure>
+
+<p>To represent the provided pseudo-JSON structure using the <code>MsgPack</code> format (byte[]), we can break down the process as follows:</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;2&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;test&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testval&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;3&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testQueue&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>More information you can use <a href="https://ref45638.github.io/msgpack-converter/">msgpack-converter</a> to decode and encode.</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"> <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Encapsulate message from MQ service</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageOutputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Output message from process</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> MessageStatus Status &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Reply information that we want to store for continue execution message.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Default use BasicProperties.Reply To queue name, task processor can overwrite reply queue name.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;value&gt;</span>Default use BasicProperties.Reply<span class="doctag">&lt;/value&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> ReplyQueueName &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Encapsulate message from MQ service</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageInputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Task body</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Message CorrelationId for debugging issue between, producer and consumer</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> CorrelationId &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Original sending Queue Name</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> OriginalQueueName &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> TimeoutMilliseconds : The time span to wait before canceling this (milliseconds),</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> default: -1, if value smaller than 0 represent InfiniteTimeSpan, otherwise use the setting positive value.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>I would introduce <code>MessageStatus</code> meaning here.</p>
+<ul>
+<li><p>IGNORE_MESSAGE (-1) : Append the message to data steaming pipeline without further processing.</p>
+<ul>
+<li><code>Status = -1</code>: task process tell worker this isn’t a response nor ack message, only feedback to data steaming pipeline.</li>
+</ul>
+</li>
+<li><p>MESSAGE_DONE (200) : Notify the worker that this case can be acknowledged by the message queue service.</p>
+<ul>
+<li><code>Status = 200</code> task process tell worker the task can be acked that mean it was finished.</li>
+</ul>
+</li>
+<li><p>MESSAGE_DONE_WITH_REPLY (201) : Please ensure we satisfied below steps for supporting RPC.</p>
+<ol>
+<li>The client side cdoe must provide <code>ReplyTo</code> information.</li>
+<li>task process will use the <code>Message</code> column in the JSON payload to reply with the queue information.</li>
+<li>Here is an example: When <code>Status = 201</code> is sent via data steaming pipeline, the task process instructs the worker to output, such as <code>1010</code>, which must then be sent to the reply queue.</li>
+</ol>
+</li>
+</ul>
+<p>Example <code>byte[]</code> data</p>
+<figure class="highlight accesslog"><table><tr><td class="code"><pre><span class="line"><span class="string">[130, 161, 48, 179, 78, 101, 119, 32, 79, 117, 116, 80, 117, 116, 32, 77, 101, 115, 115, 97, 103, 101, 33, 161, 49, 204, 200]</span></span><br></pre></td></tr></table></figure>
+
+<p>Correspondence JSON from <code>byte[]</code></p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>We can write our own worker by different program language (I have provided python and .net sample in this repository).</p>
+<h3 id="How-do-we-handle-long-running-task-or-the-task-involves-processing-a-lot-of-data-rows"><a href="#How-do-we-handle-long-running-task-or-the-task-involves-processing-a-lot-of-data-rows" class="headerlink" title="How do we handle long-running task or the task involves processing a lot of data rows?"></a>How do we handle long-running task or the task involves processing a lot of data rows?</h3><p>the concept like OS processing thread occurs a context switch (interrupt ..etc).</p>
+<p>Client can send a value <code>TimeoutMilliseconds</code> via Header: The time span to wait before canceling this (milliseconds), if the task execute exceed the value work process could use that value for setting<br>interrupt like <code>Cancellationtoken</code>.</p>
+<p>For example the <code>MessageOutputTask</code> JSON could look like below, <code>status=201</code> represents that this message will be re-queued for processing next time, the message will bring the <code>Headers</code> information when requeue again.</p>
+<figure class="highlight smalltalk"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="comment">&quot;Message&quot;</span>: <span class="comment">&quot;This is Mock Json Data&quot;</span>,</span><br><span class="line">  <span class="comment">&quot;Status&quot;</span>: <span class="number">201</span>,</span><br><span class="line">  <span class="comment">&quot;Headers&quot;</span>: &#123;</span><br><span class="line">    <span class="comment">&quot;CreateTimestamp&quot;</span>: <span class="comment">&quot;2025-01-01T14:35:00Z&quot;</span>,</span><br><span class="line">    <span class="comment">&quot;PreviousProcessingTimestamp&quot;</span>: <span class="comment">&quot;2025-01-01T14:40:00Z&quot;</span>,</span><br><span class="line">	<span class="comment">&quot;Source&quot;</span>: <span class="comment">&quot;OrderProcessingService&quot;</span>,</span><br><span class="line">    <span class="comment">&quot;PreviousExecutedRows&quot;</span>: <span class="number">123</span>,</span><br><span class="line">    <span class="comment">&quot;RequeueTimes&quot;</span>: <span class="number">3</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This project also includes integration tests, unit tests, and an automation pipeline. While the API documentation and related materials are not yet completed (the project is still in beta), I plan to gradually add these in the future. If you have any thoughts or suggestions about this project, please feel free to create issue or send a PR.</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/mq-workerpool-introduction/">https://isdaniel.github.io/mq-workerpool-introduction/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>OOP</category>
+        <category>framework</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>OOP</tag>
+        <tag>Process</tag>
+        <tag>workerpool</tag>
+        <tag>message-queue</tag>
+        <tag>open-source</tag>
       </tags>
   </entry>
   <entry>

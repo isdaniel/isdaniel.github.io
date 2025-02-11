@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="IntroductionRecently, I developed the MessageWorkerPool project. The main concept is to provide a platform framework that enables users to implement logic quickly and easily within workers. The design">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MessageWorkerPool framework introduction">
+<meta property="og:url" content="https://isdaniel.github.io/mq-workerpool-introduction/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="IntroductionRecently, I developed the MessageWorkerPool project. The main concept is to provide a platform framework that enables users to implement logic quickly and easily within workers. The design">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/arhc-overview.png">
+<meta property="article:published_time" content="2025-02-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2025-02-11T07:08:03.482Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="C#">
+<meta property="article:tag" content="OOP">
+<meta property="article:tag" content="Process">
+<meta property="article:tag" content="workerpool">
+<meta property="article:tag" content="message-queue">
+<meta property="article:tag" content="open-source">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/arhc-overview.png">
+
+<link rel="canonical" href="https://isdaniel.github.io/mq-workerpool-introduction/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>MessageWorkerPool framework introduction | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">Hello World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">125</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">54</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">180</span></a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/mq-workerpool-introduction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MessageWorkerPool framework introduction
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-02-01 16:00:00" itemprop="dateCreated datePublished" datetime="2025-02-01T16:00:00+00:00">2025-02-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/OOP/" itemprop="url" rel="index"><span itemprop="name">OOP</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/OOP/framework/" itemprop="url" rel="index"><span itemprop="name">framework</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/mq-workerpool-introduction/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="mq-workerpool-introduction/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Recently, I developed the <code>MessageWorkerPool</code> project. The main concept is to provide a platform framework that enables users to implement logic quickly and easily within workers. The design is highly flexible, allowing workers to be implemented in multiple languages based on a worker protocol I created. Currently, I’ve provided examples for workers written in C#, Rust, and Python.</p>
+<p>This library excels in handling tasks within multi-process environments, especially for applications demanding high throughput and low latency. It also supports graceful shutdown, ensuring a smooth process termination without disrupting ongoing tasks.</p>
+<p><a href="https://github.com/isdaniel/MessageWorkerPool">MessageWorkerPool Github URL</a></p>
+<h2 id="Why-Process-Pool-rather-than-Thread-Pool"><a href="#Why-Process-Pool-rather-than-Thread-Pool" class="headerlink" title="Why Process Pool rather than Thread Pool?"></a>Why Process Pool rather than Thread Pool?</h2><p>Use a process pool when you need robust isolation to prevent issues in one task from affecting others, especially for critical or crash-prone operations,although thread pool would be more lightweight (as threads share memory and require less context-switching overhead), however Process Pool would provide more flexibility solution by implement different program language.</p>
+<h2 id="Installation"><a href="#Installation" class="headerlink" title="Installation"></a>Installation</h2><p>To install the <code>MessageWorkerPool</code> package, use the following NuGet command:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PM &gt; Install-Package MessageWorkerPool</span><br></pre></td></tr></table></figure>
+
+<p>To install the library, clone the repository and build the project:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/MessageWorkerPool.git</span><br><span class="line"><span class="built_in">cd</span> MessageWorkerPool</span><br><span class="line">dotnet build</span><br></pre></td></tr></table></figure>
+
+<h2 id="Architecture-overview"><a href="#Architecture-overview" class="headerlink" title="Architecture overview"></a>Architecture overview</h2><p><img src="/./images/arhc-overview.png"></p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><p>Here’s a quick start guide for deploying your RabbitMQ and related services using the provided <code>docker-compose.yml</code> file and environment variables from <code>.env</code>.</p>
+<figure class="highlight mel"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose --<span class="keyword">env</span>-<span class="keyword">file</span> .\<span class="keyword">env</span>\.<span class="keyword">env</span> up --build -d</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>Check RabbitMQ health status: Open <code>http://localhost:8888</code> in your browser to access the RabbitMQ Management Dashboard.</li>
+</ol>
+<ul>
+<li>Username: guest</li>
+<li>Password: guest</li>
+</ul>
+<ol start="2">
+<li>Check OrleansDashboard <code>http://localhost:8899</code></li>
+</ol>
+<ul>
+<li>Username: admin</li>
+<li>Password: test.123</li>
+</ul>
+<h2 id="Program-Structure"><a href="#Program-Structure" class="headerlink" title="Program Structure"></a>Program Structure</h2><p>Here is the sample code for creating and configuring a worker pool that interacts with RabbitMQ. Below is a breakdown of its functionality; The worker pool will fetch message from RabbitMQ server depended on your <code>RabbitMqSetting</code> setting and sending the message via <code>Process.StandardInput</code> to real worker node that created by users.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">async</span> Task <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        CreateHostBuilder(<span class="keyword">args</span>).Build().Run();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IHostBuilder <span class="title">CreateHostBuilder</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span> =&gt;</span><br><span class="line">        Host.CreateDefaultBuilder(<span class="keyword">args</span>)</span><br><span class="line">            .ConfigureLogging(logging =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                logging.ClearProviders();</span><br><span class="line">                logging.AddConsole(options =&gt; &#123;</span><br><span class="line">                    options.FormatterName = ConsoleFormatterNames.Simple;</span><br><span class="line">                &#125;);</span><br><span class="line">                logging.Services.Configure&lt;SimpleConsoleFormatterOptions&gt;(options =&gt; &#123;</span><br><span class="line">                    options.IncludeScopes = <span class="literal">true</span>;</span><br><span class="line">                    options.TimestampFormat = <span class="string">&quot; yyyy-MM-dd HH:mm:ss &quot;</span>;</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;).AddRabbitMqWorkerPool(<span class="keyword">new</span> RabbitMqSetting</span><br><span class="line">            &#123;</span><br><span class="line">                UserName = Environment.GetEnvironmentVariable(<span class="string">&quot;USERNAME&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                Password = Environment.GetEnvironmentVariable(<span class="string">&quot;PASSWORD&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                HostName = Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_HOSTNAME&quot;</span>),</span><br><span class="line">                Port = <span class="built_in">ushort</span>.TryParse(Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_PORT&quot;</span>), <span class="keyword">out</span> <span class="built_in">ushort</span> p) ? p : (<span class="built_in">ushort</span>) <span class="number">5672</span>,</span><br><span class="line">                PrefetchTaskCount = <span class="number">3</span></span><br><span class="line">            &#125;, <span class="keyword">new</span> WorkerPoolSetting() &#123; WorkerUnitCount = <span class="number">9</span>, CommandLine = <span class="string">&quot;dotnet&quot;</span>, Arguments = <span class="string">@&quot;./ProcessBin/WorkerProcessSample.dll&quot;</span>, QueueName = Environment.GetEnvironmentVariable(<span class="string">&quot;QUEUENAME&quot;</span>), &#125;</span><br><span class="line">            );</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p><strong>Scalability</strong></p>
+<ul>
+<li>Scaling is achieved by increasing the <code>WorkerUnitCount</code> &amp; <code>PrefetchTaskCount</code> determined how many amount of fetching message from rabbitMQ at same time.</li>
+</ul>
+</li>
+<li><p><strong>Decoupling</strong></p>
+<ul>
+<li>RabbitMQ acts as a message broker, decoupling the producers of messages from the consumers (workers). This makes it easier to manage workloads independently.</li>
+</ul>
+</li>
+<li><p><strong>Configurable</strong></p>
+<ul>
+<li>The <code>RabbitMqSetting</code> object provides flexibility to modify connection settings, queue names, and worker pool details without changing the code.</li>
+</ul>
+</li>
+<li><p><strong>Reusable Workers</strong></p>
+<ul>
+<li>Worker processes are defined by the <code>CommandLine</code> and <code>Arguments</code>, making it easy to reuse or swap out the tasks performed by the workers.</li>
+</ul>
+</li>
+</ol>
+<h2 id="Protocol-between-worker-and-task-process"><a href="#Protocol-between-worker-and-task-process" class="headerlink" title="Protocol between worker and task process"></a>Protocol between worker and task process</h2><p>The Protocol between worker and task process are use MessagePack binary format with faster and smaller data transfer, standardInput will send signal control worker process.</p>
+<p>In the beginning, worker pool will pass NamedPipe name through standardInput, therefore worker program would need to receive that name and establish NamedPipe between worker process and worker pool.</p>
+<h3 id="Operation-command-from-worker-pool"><a href="#Operation-command-from-worker-pool" class="headerlink" title="Operation command from worker pool"></a>Operation command from worker pool</h3><p>Currently, worker pool will send operations signal or command to worker process via standardInput.</p>
+<ul>
+<li>CLOSED_SIGNAL (<code>__quit__</code>): that represent worker pool sent a close or shutdown signal to worker process, that worker process should perform graceful shutdown as soon as possible.</li>
+</ul>
+<h3 id="Data-transfer-via-Data-Named-Pipe-Stream"><a href="#Data-transfer-via-Data-Named-Pipe-Stream" class="headerlink" title="Data transfer via (Data Named Pipe Stream)"></a>Data transfer via (Data Named Pipe Stream)</h3><p>Named pipes are a powerful interprocess communication (IPC) mechanism that allows two or more processes to communicate with each other, even if they are running on different machines in a network (on platforms that support it, like Windows), our workers used to this for trasfering data between worker process and worker pool</p>
+<p><a href="https://msgpack.org/">msgpack</a> protocols data type support as below class &amp; <code>byte[]</code> format.</p>
+<p>The corresponding <code>byte[]</code> data is:</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[<span class="number">132,161,48,179</span>,<span class="number">78,101,119,32</span>,<span class="number">79,117,116,80</span>,<span class="number">117,116,32,77</span>,<span class="number">101,115,115,97</span>,<span class="number">103,101,33,161</span>,<span class="number">49,204,200,161</span>,<span class="number">50,129,164,116</span>,<span class="number">101,115,116,167</span>,<span class="number">116,101,115,116</span>,<span class="number">118,97,108,161</span>,<span class="number">51,169,116,101</span>,<span class="number">115,116,81,117</span>,<span class="number">101,117,101</span>]</span><br></pre></td></tr></table></figure>
+
+<p>To represent the provided pseudo-JSON structure using the <code>MsgPack</code> format (byte[]), we can break down the process as follows:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;2&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;test&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testval&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;3&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testQueue&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>More information you can use <a href="https://ref45638.github.io/msgpack-converter/">msgpack-converter</a> to decode and encode.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"> <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Encapsulate message from MQ service</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageOutputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Output message from process</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> MessageStatus Status &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Reply information that we want to store for continue execution message.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Default use BasicProperties.Reply To queue name, task processor can overwrite reply queue name.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;value&gt;</span>Default use BasicProperties.Reply<span class="doctag">&lt;/value&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> ReplyQueueName &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Encapsulate message from MQ service</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageInputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Task body</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Message CorrelationId for debugging issue between, producer and consumer</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> CorrelationId &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Original sending Queue Name</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> OriginalQueueName &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> TimeoutMilliseconds : The time span to wait before canceling this (milliseconds),</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> default: -1, if value smaller than 0 represent InfiniteTimeSpan, otherwise use the setting positive value.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>I would introduce <code>MessageStatus</code> meaning here.</p>
+<ul>
+<li><p>IGNORE_MESSAGE (-1) : Append the message to data steaming pipeline without further processing.</p>
+<ul>
+<li><code>Status = -1</code>: task process tell worker this isn’t a response nor ack message, only feedback to data steaming pipeline.</li>
+</ul>
+</li>
+<li><p>MESSAGE_DONE (200) : Notify the worker that this case can be acknowledged by the message queue service.</p>
+<ul>
+<li><code>Status = 200</code> task process tell worker the task can be acked that mean it was finished.</li>
+</ul>
+</li>
+<li><p>MESSAGE_DONE_WITH_REPLY (201) : Please ensure we satisfied below steps for supporting RPC.</p>
+<ol>
+<li>The client side cdoe must provide <code>ReplyTo</code> information.</li>
+<li>task process will use the <code>Message</code> column in the JSON payload to reply with the queue information.</li>
+<li>Here is an example: When <code>Status = 201</code> is sent via data steaming pipeline, the task process instructs the worker to output, such as <code>1010</code>, which must then be sent to the reply queue.</li>
+</ol>
+</li>
+</ul>
+<p>Example <code>byte[]</code> data</p>
+<figure class="highlight accesslog"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">[130, 161, 48, 179, 78, 101, 119, 32, 79, 117, 116, 80, 117, 116, 32, 77, 101, 115, 115, 97, 103, 101, 33, 161, 49, 204, 200]</span></span><br></pre></td></tr></table></figure>
+
+<p>Correspondence JSON from <code>byte[]</code></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>We can write our own worker by different program language (I have provided python and .net sample in this repository).</p>
+<h3 id="How-do-we-handle-long-running-task-or-the-task-involves-processing-a-lot-of-data-rows"><a href="#How-do-we-handle-long-running-task-or-the-task-involves-processing-a-lot-of-data-rows" class="headerlink" title="How do we handle long-running task or the task involves processing a lot of data rows?"></a>How do we handle long-running task or the task involves processing a lot of data rows?</h3><p>the concept like OS processing thread occurs a context switch (interrupt ..etc).</p>
+<p>Client can send a value <code>TimeoutMilliseconds</code> via Header: The time span to wait before canceling this (milliseconds), if the task execute exceed the value work process could use that value for setting<br>interrupt like <code>Cancellationtoken</code>.</p>
+<p>For example the <code>MessageOutputTask</code> JSON could look like below, <code>status=201</code> represents that this message will be re-queued for processing next time, the message will bring the <code>Headers</code> information when requeue again.</p>
+<figure class="highlight smalltalk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="comment">&quot;Message&quot;</span>: <span class="comment">&quot;This is Mock Json Data&quot;</span>,</span><br><span class="line">  <span class="comment">&quot;Status&quot;</span>: <span class="number">201</span>,</span><br><span class="line">  <span class="comment">&quot;Headers&quot;</span>: &#123;</span><br><span class="line">    <span class="comment">&quot;CreateTimestamp&quot;</span>: <span class="comment">&quot;2025-01-01T14:35:00Z&quot;</span>,</span><br><span class="line">    <span class="comment">&quot;PreviousProcessingTimestamp&quot;</span>: <span class="comment">&quot;2025-01-01T14:40:00Z&quot;</span>,</span><br><span class="line">	<span class="comment">&quot;Source&quot;</span>: <span class="comment">&quot;OrderProcessingService&quot;</span>,</span><br><span class="line">    <span class="comment">&quot;PreviousExecutedRows&quot;</span>: <span class="number">123</span>,</span><br><span class="line">    <span class="comment">&quot;RequeueTimes&quot;</span>: <span class="number">3</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This project also includes integration tests, unit tests, and an automation pipeline. While the API documentation and related materials are not yet completed (the project is still in beta), I plan to gradually add these in the future. If you have any thoughts or suggestions about this project, please feel free to create issue or send a PR.</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/mq-workerpool-introduction/">https://isdaniel.github.io/mq-workerpool-introduction/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/InvoiceTW-Framework/" rel="bookmark">【財政部查詢類電子發票API】框架解說 C#</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/expression-vs-reflection/" rel="bookmark">Reflection在進化-淺談Expression表達式</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/invoicetw-framework/" rel="bookmark">【財政部查詢類電子發票API】框架解說 C#</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/ACID/" rel="bookmark">ACID</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/AOP-Lock-Mechanism/" rel="bookmark">AOP Lock Architecture</a></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C#</a>
+              <a href="/tags/OOP/" rel="tag"># OOP</a>
+              <a href="/tags/Process/" rel="tag"># Process</a>
+              <a href="/tags/workerpool/" rel="tag"># workerpool</a>
+              <a href="/tags/message-queue/" rel="tag"># message-queue</a>
+              <a href="/tags/open-source/" rel="tag"># open-source</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/tls-ssl/" rel="prev" title="Understand TLS/SSL networking flow">
+      <i class="fa fa-chevron-left"></i> Understand TLS/SSL networking flow
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Why-Process-Pool-rather-than-Thread-Pool"><span class="nav-number">2.</span> <span class="nav-text">Why Process Pool rather than Thread Pool?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Installation"><span class="nav-number">3.</span> <span class="nav-text">Installation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Architecture-overview"><span class="nav-number">4.</span> <span class="nav-text">Architecture overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Quick-Start"><span class="nav-number">5.</span> <span class="nav-text">Quick Start</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Program-Structure"><span class="nav-number">6.</span> <span class="nav-text">Program Structure</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Protocol-between-worker-and-task-process"><span class="nav-number">7.</span> <span class="nav-text">Protocol between worker and task process</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Operation-command-from-worker-pool"><span class="nav-number">7.1.</span> <span class="nav-text">Operation command from worker pool</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-transfer-via-Data-Named-Pipe-Stream"><span class="nav-number">7.2.</span> <span class="nav-text">Data transfer via (Data Named Pipe Stream)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#How-do-we-handle-long-running-task-or-the-task-involves-processing-a-lot-of-data-rows"><span class="nav-number">7.3.</span> <span class="nav-text">How do we handle long-running task or the task involves processing a lot of data rows?</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">180</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">54</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">125</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">881k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">13:21</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/mq-workerpool-introduction/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/mq-workerpool-introduction/";
+    this.page.identifier = "mq-workerpool-introduction/";
+    this.page.title = "MessageWorkerPool framework introduction";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

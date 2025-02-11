@@ -129,17 +129,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">121</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">125</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">52</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">54</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">179</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">180</span></a>
 
   </li>
   </ul>
@@ -165,6 +165,130 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/mq-workerpool-introduction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/mq-workerpool-introduction/" class="post-title-link" itemprop="url">MessageWorkerPool framework introduction</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-02-01 16:00:00" itemprop="dateCreated datePublished" datetime="2025-02-01T16:00:00+00:00">2025-02-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/OOP/" itemprop="url" rel="index"><span itemprop="name">OOP</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/OOP/framework/" itemprop="url" rel="index"><span itemprop="name">framework</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/mq-workerpool-introduction/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="mq-workerpool-introduction/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Recently, I developed the <code>MessageWorkerPool</code> project. The main concept is to provide a platform framework that enables users to implement logic quickly and easily within workers. The design is highly flexible, allowing workers to be implemented in multiple languages based on a worker protocol I created. Currently, I’ve provided examples for workers written in C#, Rust, and Python.</p>
+<p>This library excels in handling tasks within multi-process environments, especially for applications demanding high throughput and low latency. It also supports graceful shutdown, ensuring a smooth process termination without disrupting ongoing tasks.</p>
+<p><a href="https://github.com/isdaniel/MessageWorkerPool">MessageWorkerPool Github URL</a></p>
+<h2 id="Why-Process-Pool-rather-than-Thread-Pool"><a href="#Why-Process-Pool-rather-than-Thread-Pool" class="headerlink" title="Why Process Pool rather than Thread Pool?"></a>Why Process Pool rather than Thread Pool?</h2><p>Use a process pool when you need robust isolation to prevent issues in one task from affecting others, especially for critical or crash-prone operations,although thread pool would be more lightweight (as threads share memory and require less context-switching overhead), however Process Pool would provide more flexibility solution by implement different program language.</p>
+<h2 id="Installation"><a href="#Installation" class="headerlink" title="Installation"></a>Installation</h2><p>To install the <code>MessageWorkerPool</code> package, use the following NuGet command:</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PM &gt; Install-Package MessageWorkerPool</span><br></pre></td></tr></table></figure>
+
+<p>To install the library, clone the repository and build the project:</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/mq-workerpool-introduction/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -200,7 +324,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -323,7 +447,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -464,7 +588,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -597,7 +721,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -724,7 +848,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -842,7 +966,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -985,7 +1109,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1109,7 +1233,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1235,7 +1359,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
+                <time title="Modified: 2025-02-11 07:08:03" itemprop="dateModified" datetime="2025-02-11T07:08:03+00:00">2025-02-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1304,130 +1428,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/redis-cluster-introduce-01/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ndepend-code-quality/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/ndepend-code-quality/" class="post-title-link" itemprop="url">Ndepend 靜態分析 .Net 專案好物</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-12-04 00:00:00" itemprop="dateCreated datePublished" datetime="2021-12-04T00:00:00+00:00">2021-12-04</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-01-23 06:20:55" itemprop="dateModified" datetime="2025-01-23T06:20:55+00:00">2025-01-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/Ndepend/" itemprop="url" rel="index"><span itemprop="name">Ndepend</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/ndepend-code-quality/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ndepend-code-quality/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>3 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>當一個專案越來越大，在開發新產品時同時要兼顧程式碼品質會越來越困難，今天要介紹的　<a href="https://www.ndepend.com/">Ndepend</a> 是一個很優秀靜態分析 .Net 專案好物</p>
-<p>會幫我們產生一個 DashBoard 來了解目前專案大致上分析後的問題，並提供建議解法和處理方向，讓我們提前更快速抓出未來或目前存在 bug，減少發生需要晚上起來 support 機率，讓客戶，老闆，工程師都開心的三大歡喜</p>
-<p>另外我們也可以透過 <a href="https://www.ndepend.com/">Ndepend</a> 來撰寫我們自己 Code Rule 並在 CI&#x2F;CD 流程中進行靜態掃描，讓我們出產軟體更有品質</p>
-<p>本文我使用我自己的開源專案 <a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a> 來當作分析案例</p>
-<h2 id="建立-Ndepend-開始分析"><a href="#建立-Ndepend-開始分析" class="headerlink" title="建立 Ndepend 開始分析"></a>建立 Ndepend 開始分析</h2><p>安裝完 <code>Ndepend</code> 後我們可以在 virtual studio 上面的[延伸模組] 出現建立 <code>Ndepend</code> 項目，一開始我們利用 Attach New Ndepend Project to Current VS Solution ，來建立分析項目</p>
-<p><img src="https://i.imgur.com/flzNRXR.png"></p>
-<p><code>NDepend</code> 分析完程式後我們會在 sln 檔同級目錄下看到一個 <code>NDependOut</code> 資料夾跟 <code>.ndproj</code> 檔案</p>
-<ul>
-<li><code>.ndproj</code> 是 XML 格式儲存的專案檔，內容包含 <code>NDepend</code> 專案資訊及分析設定資訊</li>
-<li><code>NDependOut</code> 資料夾中會有一個 <code>.ndar</code> 檔案這次一個二進制格式儲存的分析後結果</li>
-<li><code>NDependOut</code> 中有一個 <code>NDependReport.html</code> 是一個分析後 Html 報表</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/ndepend-code-quality/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1519,20 +1519,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">179</span>
+          <span class="site-state-item-count">180</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-count">54</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">121</span>
+        <span class="site-state-item-count">125</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1590,12 +1590,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">872k</span>
+    <span title="Symbols count total">881k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:12</span>
+    <span title="Reading time total">13:21</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
