@@ -139,17 +139,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">125</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">128</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">54</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">55</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">180</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">181</span></a>
 
   </li>
   </ul>
@@ -175,6 +175,132 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/aop-lock-mechanism/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/aop-lock-mechanism/" class="post-title-link" itemprop="url">AOP Lock Architecture</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-11-10 16:00:00" itemprop="dateCreated datePublished" datetime="2020-11-10T16:00:00+00:00">2020-11-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/Lock/" itemprop="url" rel="index"><span itemprop="name">Lock</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/aop-lock-mechanism/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="aop-lock-mechanism/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>在系統中多少會遇到某些交易間需要互斥(不然容易造成<code>DeadLock</code>).</p>
+<p>在我們當前系統中有許多動作間需要互斥,不然會有DeadLock問題</p>
+<p>藉由已經分析DeadLock Report後,我開始構思如何讓建立Lock可以變得更容易且好理解.</p>
+<p>所以就建構出此Lock架構.</p>
+<h2 id="如何在此框架使用Lock機制"><a href="#如何在此框架使用Lock機制" class="headerlink" title="如何在此框架使用Lock機制"></a>如何在此框架使用Lock機制</h2><p>我們只需要做幾個步驟:</p>
+<ol>
+<li>在使用Lock類別上掛<code>LockerInterceptor</code>攔截器標籤.  </li>
+<li>使用Lock方法上使用<code>LockAttribute</code>標籤<code>[Lock(LockKey = &quot;Your lock Key&quot;)]</code>(<code>Key</code>屬性是必填的)</li>
+<li>設定Lock屬性.</li>
+</ol>
+<blockquote>
+<p>目前寫法是針對單一Server Mutiple Thread來建立互斥Lock. 假如有遇到多台Servers需要建立互斥模式可以,參考Redis的<code>Redlock.Net</code>.</p>
+</blockquote>
+<p>使用方法如下,這樣在多執行緒系統中<code>MethodA1</code>跟<code>MethodB_A</code>就不會有同時執行問題,這樣就可以造成這兩個動作互斥.</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/aop-lock-mechanism/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -210,7 +336,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -340,7 +466,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -484,7 +610,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -628,7 +754,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -757,7 +883,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -886,7 +1012,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1008,7 +1134,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1130,7 +1256,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1257,7 +1383,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1349,135 +1475,11 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/stringformat-compare/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/stringformat-compare/" class="post-title-link" itemprop="url">那些年String.Format中的Boxing和UnBoxing</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-05-10 22:30:11" itemprop="dateCreated datePublished" datetime="2020-05-10T22:30:11+00:00">2020-05-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/Boxing-UnBoxing/" itemprop="url" rel="index"><span itemprop="name">Boxing-UnBoxing</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/stringformat-compare/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="stringformat-compare/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>2k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>2 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>下面有兩個虛擬程式碼</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">int</span> times = <span class="number">30000000</span>;</span><br><span class="line"><span class="built_in">string</span> s = <span class="built_in">string</span>.Empty;</span><br><span class="line"></span><br><span class="line">s = <span class="string">$&quot;<span class="subst">&#123;times&#125;</span>&quot;</span>;</span><br><span class="line">s = <span class="string">$&quot;<span class="subst">&#123;times.ToString()&#125;</span>&quot;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>請問下面這兩段程式碼有沒有差別?</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">s = <span class="string">$&quot;<span class="subst">&#123;times&#125;</span>&quot;</span>;</span><br><span class="line">s = <span class="string">$&quot;<span class="subst">&#123;times.ToString()&#125;</span>&quot;</span>;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p><code>$&quot;&quot;</code>這個程式碼是<code>string.Format()</code>語法糖</p>
-</blockquote>
-<p>如果知道差別的同學,恭喜你已經可以下課了</p>
-<p>如果不知道差別也沒關係,讓我細細講述.</p>
-<h2 id="String-Format方法簽章"><a href="#String-Format方法簽章" class="headerlink" title="String.Format方法簽章"></a>String.Format方法簽章</h2><p>在<code>String.Format</code>方法有一個重載方法,可以看到裡面吃參數是<code>params object[]</code>這可以讓我們傳進東西當作參數(他會在方法中呼叫<code>ToString</code>方法).</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/stringformat-compare/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/">19</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1545,20 +1547,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">180</span>
+          <span class="site-state-item-count">181</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">54</span>
+        <span class="site-state-item-count">55</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">125</span>
+        <span class="site-state-item-count">128</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1616,12 +1618,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">881k</span>
+    <span title="Symbols count total">883k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:21</span>
+    <span title="Reading time total">13:23</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

@@ -139,17 +139,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">125</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">128</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">54</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">55</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">180</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">181</span></a>
 
   </li>
   </ul>
@@ -175,6 +175,130 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-page-deepknow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/postgresql-page-deepknow/" class="post-title-link" itemprop="url">postgresql Page 深入淺出</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-09-28 00:30:11" itemprop="dateCreated datePublished" datetime="2021-09-28T00:30:11+00:00">2021-09-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/postgresql-page-deepknow/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-page-deepknow/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div itemscope itemtype="http://schema.org/ImageGallery">
+            <img src="https://i.imgur.com/mYYjXFg.jpg" itemprop="contentUrl">
+        </div>
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異</p>
+<p>在postgresql DB Page size 預設是 8KB</p>
+<p>我們想要看page使用大小在 Sql-Server 可以用 <code>DBCC</code>命令在 postgresql DB 沒有 <code>DBCC</code> 還好有其他方式可以查看 Page 儲存原理</p>
+<p>如果要了解存儲怎麼辦呢?</p>
+<h2 id="關於-page-存儲"><a href="#關於-page-存儲" class="headerlink" title="關於 page 存儲"></a>關於 page 存儲</h2><p>使用sample data</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> t1 (id <span class="type">int</span> <span class="keyword">PRIMARY KEY</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert into</span> t1 <span class="keyword">select</span> generate_series(<span class="number">1</span>,<span class="number">2000</span>);</span><br><span class="line"><span class="keyword">insert into</span> t1 <span class="keyword">select</span> generate_series(<span class="number">2001</span>,<span class="number">4000</span>);</span><br></pre></td></tr></table></figure>
+
+<p>建立完表後我們透過 <code>\d+ t1</code> 指令查看資料表訊息，可以看到PK成功被建立</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">postgres=# \d+ t1</span><br><span class="line">                                    Table &quot;public.t1&quot;</span><br><span class="line"> Column |  <span class="built_in">Type</span>   | Collation | Nullable | Default | Storage | Stats target | Description</span><br><span class="line">--------+---------+-----------+----------+---------+---------+--------------+-------------</span><br><span class="line"> id     | integer |           | <span class="keyword">not</span> null |         | plain   |              |</span><br><span class="line"><span class="function">Indexes:</span></span><br><span class="line"><span class="function">    &quot;<span class="title">t1_pkey</span>&quot; <span class="title">PRIMARY</span> <span class="title">KEY</span>, <span class="title">btree</span> (<span class="title">id</span>)</span></span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/postgresql-page-deepknow/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -210,7 +334,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -331,7 +455,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -457,7 +581,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -591,7 +715,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -717,7 +841,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -841,7 +965,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -969,7 +1093,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1097,7 +1221,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1217,7 +1341,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1307,140 +1431,11 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/easy-net-mq-introduce/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/easy-net-mq-introduce/" class="post-title-link" itemprop="url">.Net使用RabbitMq EasyNetQ介紹</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-06-27 22:30:52" itemprop="dateCreated datePublished" datetime="2021-06-27T22:30:52+00:00">2021-06-27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:05:30" itemprop="dateModified" datetime="2025-06-22T10:05:30+00:00">2025-06-22</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/javascript/" itemprop="url" rel="index"><span itemprop="name">javascript</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/javascript/vue-js/" itemprop="url" rel="index"><span itemprop="name">vue.js</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/easy-net-mq-introduce/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="easy-net-mq-introduce/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>4.5k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>4 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <div itemscope itemtype="http://schema.org/ImageGallery">
-            <img src="https://i.imgur.com/YEzuPKY.png" itemprop="contentUrl">
-        </div>
-          <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現今越來越多系統使用MQ來達成非同步並來提升系統吞吐量，我今天想要介紹的是<a href="https://easynetq.com/">EasyNetQ</a>一個封裝RabbitMq Client .net框架</p>
-<ul>
-<li>小型DI容器</li>
-<li>對於RabbitMq封裝</li>
-<li>對於連接使用lazy connection連接RabbitMq</li>
-</ul>
-<blockquote>
-<p>If the server disconnects for any reason (maybe a network fault, maybe the RabbitMQ server itself has been bounced), EasyNetQ will revert to polling the endpoint until it can reconnect.</p>
-</blockquote>
-<p>使用EasyNetQ來操作RabbitMq簡單很多，但在使用上有些地方需要注意</p>
-<p>本篇會再跟大家分享</p>
-<h2 id="RabbitMq-Client-vs-EasyNetQ程式碼比較"><a href="#RabbitMq-Client-vs-EasyNetQ程式碼比較" class="headerlink" title="RabbitMq Client vs EasyNetQ程式碼比較"></a>RabbitMq Client vs EasyNetQ程式碼比較</h2><p>我會使用之前使用RabbitMq Client寫的範例利用EasyNetQ來改寫一次.</p>
-<p>程式原始碼 <a href="https://github.com/isdaniel/BlogSample/tree/master/src/Samples">Sample Code</a></p>
-<h3 id="Publisher程式碼"><a href="#Publisher程式碼" class="headerlink" title="Publisher程式碼"></a>Publisher程式碼</h3>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/easy-net-mq-introduce/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/18/">18</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/">19</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1508,20 +1503,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">180</span>
+          <span class="site-state-item-count">181</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">54</span>
+        <span class="site-state-item-count">55</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">125</span>
+        <span class="site-state-item-count">128</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1579,12 +1574,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">881k</span>
+    <span title="Symbols count total">883k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:21</span>
+    <span title="Reading time total">13:23</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
