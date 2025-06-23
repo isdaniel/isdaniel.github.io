@@ -140,17 +140,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">130</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">132</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">58</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">59</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">182</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">183</span></a>
 
   </li>
   </ul>
@@ -176,6 +176,133 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-wal-introduce/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/postgresql-wal-introduce/" class="post-title-link" itemprop="url">postgresql WAL (Write-Ahead Logging) 機制</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-10-07 20:30:11" itemprop="dateCreated datePublished" datetime="2021-10-07T20:30:11+00:00">2021-10-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/postgresql-wal-introduce/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-wal-introduce/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>8 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>WAL 是一種 Tx Log實踐機制</p>
+<p>WAL 核心概念是先寫 tx log，在把資料寫資料，資料的修改必须發生在<strong>寫入</strong> Tx Log之後，使用 WAL 紀錄資料庫系統在commit transaction</p>
+<p>使用 WAL 機制後我們不需要在每次 Commit Transaction 後就把資料 flush 到 Disk 上(提高IO效率)， WAL 需要保證 Dirty Block flush 到 Disk 之前，該 Block 對應 Tx log 紀錄已經 flush 到 Disk 中</p>
+<blockquote>
+<p>因為假如系統突然崩潰我們可以藉由 WAL 寫入 Tx Log 來 roll-forward recovery (REDO)</p>
+</blockquote>
+<h2 id="WAL-寫入時機簡介"><a href="#WAL-寫入時機簡介" class="headerlink" title="WAL 寫入時機簡介"></a>WAL 寫入時機簡介</h2><p><code>LSN</code>序號是一個 globale 變數(透過 <code>info_lck</code> 輕量鎖設計避免同一時間取得同一個 LSN )</p>
+<p>寫入資料會經由下面幾個步驟</p>
+<ol>
+<li>Log (LSN–Log) 是一個有順序性標誌的紀錄 (可以想像是一個 sequence ) ，一開始存在 RAM 中，在 RAM 中有一個 flushLSN 位置會記錄 log LSN 寫入 Disk 最後位置.</li>
+<li>每個 block 在 pageheader 會有一個欄位 <code>PageXLogRecPtr pd_lsn;</code> 指到 log 紀錄位置，此位置在 Dirty Block 存在 buffer Pool 時就會決定</li>
+<li>最後把　Dirty Block flush 到 Disk 之前 postgresSQL 會檢查是否滿足此條件 <code>pd_lsn &lt;= flushLSN</code> ，確保 Log 已經寫入 Disk 上才會把資料 flush 到資料庫中</li>
+<li>如果是 <code>synchronous_commit = ON</code> 代表同步提交，在 Transaction commit 時會把對應的 Tx Log 馬上 flush 進 Disk中才能返回成功</li>
+</ol>
+<p>經過上面步驟我們就可以確保 先寫 Tx Log 歷程，後寫 Dirty Block</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/postgresql-wal-introduce/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -211,7 +338,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -336,7 +463,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -460,7 +587,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -581,7 +708,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -707,7 +834,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -841,7 +968,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -967,7 +1094,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1091,7 +1218,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1219,7 +1346,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
+                <time title="Modified: 2025-06-23 11:48:57" itemprop="dateModified" datetime="2025-06-23T11:48:57+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1312,126 +1439,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/high-concurrency-atomic-cas-algorithm/" class="post-title-link" itemprop="url">高併發系統系列-使用lock & Interlocked CAS(compare and swap)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-07-14 22:30:11" itemprop="dateCreated datePublished" datetime="2021-07-14T22:30:11+00:00">2021-07-14</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-23 11:42:24" itemprop="dateModified" datetime="2025-06-23T11:42:24+00:00">2025-06-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/atomic/" itemprop="url" rel="index"><span itemprop="name">atomic</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/high-concurrency-atomic-cas-algorithm/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="high-concurrency-atomic-cas-algorithm/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>5.3k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>5 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
-<p>假如我們系統是一個多執行續高併發系統也要注意Atomic不然會造成資料會有Data Racing導致bug產生..</p>
-<p>本文使用範例在我github上<a href="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/CAS_Lock">CAS_Lock</a>有興趣的人可以參考.</p>
-<h2 id="沒有注意Atomic會導致的問題"><a href="#沒有注意Atomic會導致的問題" class="headerlink" title="沒有注意Atomic會導致的問題"></a>沒有注意Atomic會導致的問題</h2><p>我是我們公司擔任技術面試官之一，假如面試者說他實作過<strong>高併發系統</strong>。</p>
-<p>我就會先問以下問題來辨別是否要更深入面試<strong>高併發系統</strong>相關問題.</p>
-<p>下面Sample Code是這樣.</p>
-<p>我用<code>Task</code>假裝高併發，下面有一個<code>Member</code>類別預設給100000元的Balance</p>
-<p>有一個<code>UpdateBalance</code>每呼叫一次就扣10元，我透過<code>For</code>跑10000次</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/high-concurrency-atomic-cas-algorithm/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -1504,20 +1511,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">182</span>
+          <span class="site-state-item-count">183</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">58</span>
+        <span class="site-state-item-count">59</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">130</span>
+        <span class="site-state-item-count">132</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1575,12 +1582,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">890k</span>
+    <span title="Symbols count total">894k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:29</span>
+    <span title="Reading time total">13:32</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

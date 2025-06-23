@@ -16883,6 +16883,111 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
+    <title>&lt;RustBox&gt; Docker-Lite Sandbox for Hackers and Learners</title>
+    <url>/rustbox-introduce/</url>
+    <content><![CDATA[<p>Thank you for the clarification! Based on the actual purpose of your project — a <strong>Linux sandboxing tool using OverlayFS, cgroups, and namespaces</strong> — here’s a corrected and well-structured <strong>Markdown tech blog post</strong> introducing <strong>RustBox</strong>:</p>
+<h1 id="🧪-Introducing-RustBox-Lightweight-Linux-Sandboxing-in-Pure-Rust"><a href="#🧪-Introducing-RustBox-Lightweight-Linux-Sandboxing-in-Pure-Rust" class="headerlink" title="🧪 Introducing RustBox: Lightweight Linux Sandboxing in Pure Rust"></a>🧪 Introducing <strong>RustBox</strong>: Lightweight Linux Sandboxing in Pure Rust</h1><p>Are you looking for a secure way to run untrusted programs on Linux, or want to learn how containers isolate processes using kernel features?</p>
+<p>Meet <strong><a href="https://github.com/isdaniel/RustBox">RustBox</a></strong> — a minimal, educational, and practical sandboxing tool built entirely in Rust. Powered by <strong>OverlayFS</strong>, <strong>cgroups v2</strong>, and <strong>Linux namespaces</strong>, it lets you isolate processes with fine-grained control — just like Docker, but lightweight and hackable.</p>
+<h2 id="🚀-What-Is-RustBox"><a href="#🚀-What-Is-RustBox" class="headerlink" title="🚀 What Is RustBox?"></a>🚀 What Is RustBox?</h2><p><strong>RustBox</strong> is a lightweight sandboxing utility that isolates and constrains programs in a secure environment using:</p>
+<ul>
+<li>🗂 <strong>OverlayFS</strong> for ephemeral and isolated filesystems</li>
+<li>🧠 <strong>cgroups v2</strong> for memory limits</li>
+<li>🔐 <strong>Linux namespaces</strong> for process, network, user, and IPC isolation</li>
+<li>🦀 Written in Rust (safe and unsafe), with <code>nix</code> and <code>std</code> — no external runtimes or daemons</li>
+</ul>
+<p>This project is ideal for:</p>
+<ul>
+<li>Running untrusted or potentially harmful code</li>
+<li>Educational use to learn Linux sandbox internals</li>
+<li>Building lightweight, Docker-like containers without the overhead</li>
+</ul>
+<h2 id="🧰-Features"><a href="#🧰-Features" class="headerlink" title="🧰 Features"></a>🧰 Features</h2><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>🧾 Filesystem isolation</td>
+<td>Uses <code>OverlayFS</code> for a copy-on-write file system</td>
+</tr>
+<tr>
+<td>💾 Memory limits</td>
+<td>Enforced via <code>cgroups v2</code></td>
+</tr>
+<tr>
+<td>🧍 Namespace separation</td>
+<td>Full separation of PID, UTS, NET, USER, IPC</td>
+</tr>
+<tr>
+<td>⚙️ Custom shell or program execution</td>
+<td>You define what runs in the sandbox</td>
+</tr>
+<tr>
+<td>🦀 Built in Rust</td>
+<td>Safe and unsafe Rust for low-level systems control</td>
+</tr>
+</tbody></table>
+<h2 id="📦-Requirements"><a href="#📦-Requirements" class="headerlink" title="📦 Requirements"></a>📦 Requirements</h2><p>To use RustBox, you’ll need:</p>
+<ul>
+<li>✅ <strong>Linux kernel 5.x+</strong></li>
+<li>✅ <strong>Cgroups v2</strong> and <code>overlayfs</code> support enabled</li>
+<li>✅ <strong>Rust 1.70+</strong></li>
+<li>✅ <strong>Root privileges</strong> (for mounting and namespace operations)</li>
+</ul>
+<h2 id="🔧-Configuration"><a href="#🔧-Configuration" class="headerlink" title="🔧 Configuration"></a>🔧 Configuration</h2><p>RustBox is configured through a simple Rust struct:</p>
+<figure class="highlight rust"><table><tr><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">SandboxConfig</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> base_dir: <span class="type">String</span>,     <span class="comment">// Base directory for OverlayFS, e.g. /tmp/sandbox</span></span><br><span class="line">    <span class="keyword">pub</span> memory_limit: <span class="type">String</span>, <span class="comment">// Memory limit, e.g., &quot;100M&quot;</span></span><br><span class="line">    <span class="keyword">pub</span> shell_path: <span class="type">String</span>,   <span class="comment">// Path to shell or binary inside sandbox</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can pass this struct to the sandbox engine to configure the runtime environment.</p>
+<h2 id="🛠️-How-It-Works"><a href="#🛠️-How-It-Works" class="headerlink" title="🛠️ How It Works"></a>🛠️ How It Works</h2><p>Here’s what happens under the hood when you launch a sandbox:</p>
+<ol>
+<li><p><strong>OverlayFS Mounting</strong><br>A new filesystem layer is created using OverlayFS, giving the process an isolated view of <code>/</code>.</p>
+</li>
+<li><p><strong>Namespace Cloning</strong><br>Using <code>clone()</code> and <code>unshare()</code>, the process is moved into its own PID, UTS, NET, USER, and IPC namespaces.</p>
+</li>
+<li><p><strong>Memory Confinement</strong><br>Cgroup v2 memory limits are applied by writing to <code>/sys/fs/cgroup</code>.</p>
+</li>
+<li><p><strong>Execution</strong><br>The target binary (e.g., bash or your script) is launched inside this isolated, resource-restricted world.</p>
+</li>
+</ol>
+<h2 id="▶️-Example-Usage"><a href="#▶️-Example-Usage" class="headerlink" title="▶️ Example Usage"></a>▶️ Example Usage</h2><p>Let’s say you want to sandbox <code>/bin/bash</code> with 100MB memory and a custom filesystem:</p>
+<figure class="highlight rust"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="variable">config</span> = SandboxConfig &#123;</span><br><span class="line">    base_dir: <span class="string">&quot;/tmp/sandbox&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">    memory_limit: <span class="string">&quot;100M&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">    shell_path: <span class="string">&quot;/bin/bash&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">rustbox::<span class="title function_ invoke__">run_sandbox</span>(config)?;</span><br></pre></td></tr></table></figure>
+
+<p>Then run it with:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> ./target/debug/rustbox</span><br></pre></td></tr></table></figure>
+
+<p>And you’ll drop into a secure, limited environment.</p>
+<h2 id="🐞-Remote-Debugging-Support"><a href="#🐞-Remote-Debugging-Support" class="headerlink" title="🐞 Remote Debugging Support"></a>🐞 Remote Debugging Support</h2><p>RustBox can be remotely debugged using <code>lldb-server</code>:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> lldb-server platform --server --listen 127.0.0.1:12345 ./target/debug/rustbox</span><br></pre></td></tr></table></figure>
+
+<p>You can then connect from your IDE (e.g., VSCode with CodeLLDB) for deep debugging sessions inside the sandboxed environment. <a href="https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#connecting-to-lldb-server-agent">Reference</a></p>
+<h2 id="📚-Learn-More"><a href="#📚-Learn-More" class="headerlink" title="📚 Learn More"></a>📚 Learn More</h2><p>If you’re curious about the internals of Linux isolation mechanisms and want to build your own container-like system from scratch, here are some great follow-up resources:</p>
+<ul>
+<li>🔗 <a href="https://man7.org/linux/man-pages/man7/namespaces.7.html">Linux namespaces man pages</a></li>
+<li>🔗 <a href="https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt">OverlayFS documentation</a></li>
+<li>🔗 <a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html">Cgroups v2 guide</a></li>
+<li>🔗 <a href="https://docs.rs/nix/latest/nix/">nix crate docs</a></li>
+</ul>
+<h2 id="💬-Final-Thoughts"><a href="#💬-Final-Thoughts" class="headerlink" title="💬 Final Thoughts"></a>💬 Final Thoughts</h2><p><strong>RustBox</strong> is not a full container system, and that’s by design — it’s <strong>transparent</strong>, <strong>hackable</strong>, and <strong>educational</strong>. Whether you’re looking to secure untrusted code, explore low-level Linux features, or just love writing systems code in Rust, RustBox is a fantastic playground.</p>
+<blockquote>
+<p>💫 Give it a ⭐ on <a href="https://github.com/isdaniel/RustBox">GitHub</a> and explore the source!</p>
+</blockquote>
+<p>Would you like help turning this into a GitHub Pages site, Dev.to article, or adding diagrams for the sandbox architecture?</p>
+<p>&lt;! Above information summaries from AI. &#x2F;&gt;</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/rustbox-introduce/">https://isdaniel.github.io/rustbox-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Rust</category>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Rust</tag>
+        <tag>Linux</tag>
+        <tag>docker</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Gaps and Islands problem (SQL) 連續範圍</title>
     <url>/sql-gaps-and-islands-problem/</url>
     <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>SO 發現蠻多人有遇到 <code>Gaps and Islands problem</code></p>
