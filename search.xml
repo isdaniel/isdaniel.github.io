@@ -12462,6 +12462,102 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>6個基本(ActionResult) View是如何被建立(二) (第23天)</title>
+    <url>/ithelp-day23/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#6%E7%A8%AE%E5%9F%BA%E6%9C%AC%E7%9A%84actionresult">6種基本的ActionResult</a></li>
+<li><a href="#contentresult">ContentResult</a></li>
+<li><a href="#redirectresult--redirecttorouteresult">RedirectResult &amp; RedirectToRouteResult</a></li>
+<li><a href="#emptyresult">EmptyResult</a></li>
+<li><a href="#fileresult">FileResult</a><ul>
+<li><a href="#filecontentresult">FileContentResult</a></li>
+<li><a href="#filepathresult">FilePathResult</a></li>
+</ul>
+</li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇介紹到<code>CreateActionResult</code>方法會產生一個<code>ActionResult</code>物件利用<code>MethodInfo</code>資訊.</p>
+<p>最後透過<code>InvokeActionResult</code>來呼叫<code>ExecuteResult</code>方法來執行<code>ActionResult</code>的<code>ExecuteResult</code>方法,基本上<strong>MVC</strong>找到且執行<strong>Action</strong>方法後面就沒再做甚麼特別的事情了(後面做資源釋放…)</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">InvokeActionResult</span>(<span class="params">ControllerContext controllerContext, ActionResult actionResult</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">	actionResult.ExecuteResult(controllerContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>本篇來介紹常用的<code>ActionResult</code>其內部運作程式碼</p>
+<blockquote>
+<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="6種基本的ActionResult"><a href="#6種基本的ActionResult" class="headerlink" title="6種基本的ActionResult"></a>6種基本的ActionResult</h2><p>下面這六個類別是直接繼承於<code>ActionResult</code>的類別(其中有標註<strong>Base class</strong>代表這是抽象類別另外有類別繼承它)</p>
+<ul>
+<li><code>ContentResult</code>:回傳一組字串,利用<code>response.Write</code>方法</li>
+<li><code>EmptyResult</code>:什麼都不動作(當<code>Action</code>回傳<code>void</code>使用)</li>
+<li><code>FileResult(Base class)</code>:把檔案當作回傳</li>
+<li><code>HttpStatusCodeResult</code>:回傳<strong>HTTP</strong>狀態碼</li>
+<li><code>RedirectResult &amp; RedirectToRouteResult</code>:使用<code>Response.Redirect</code>轉導到其他頁面</li>
+<li><code>ViewResultBase(Base class)</code>:會找尋相對應<code>View</code>檔案(<code>cshtml</code>會編譯成一個<code>DLL</code>)來執行</li>
+</ul>
+<blockquote>
+<p><code>ViewResultBase</code>會在另一篇介紹(因為機制比較複雜)</p>
+</blockquote>
+<h2 id="ContentResult"><a href="#ContentResult" class="headerlink" title="ContentResult"></a>ContentResult</h2><p>在<code>ContentResult</code>有三個屬性</p>
+<ul>
+<li><code>Content</code>:響應內容.</li>
+<li><code>ContentType</code>:設置Http <code>Header</code>攔位<code>ContentType</code></li>
+<li><code>ContentEncoding</code>:設置<code>Encoding</code>方式</li>
+</ul>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ContentResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> Content &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Encoding ContentEncoding &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!String.IsNullOrEmpty(ContentType))</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ContentEncoding != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentEncoding = ContentEncoding;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (Content != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.Write(Content);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ContentResult</code>操作很簡單透過<code>response.Write</code>把內容<code>Print</code>出來</p>
+<h2 id="RedirectResult-RedirectToRouteResult"><a href="#RedirectResult-RedirectToRouteResult" class="headerlink" title="RedirectResult &amp; RedirectToRouteResult"></a>RedirectResult &amp; RedirectToRouteResult</h2><p><code>RedirectResult</code>這個<code>ActionResult</code>如其名就是導轉頁面.</p>
+<ul>
+<li><code>Permanent</code>:屬性判斷是否需要<code>Permanently</code>導轉頁面(<strong>Http-Code</strong>:<code>RedirectPermanent=301</code>,<code>Redirect=302</code>)</li>
+<li><code>Url</code>:轉導的<code>URL</code>透過<code>UrlHelper.GenerateContentUrl</code>產生<code>URL</code>.(在<code>GenerateContentUrl</code>會判斷第一個字元是否是<code>~</code>波浪號,如果是代表站內導轉.)</li>
+</ul>
+<p>最後利用<code>Permanent</code>布林判斷使用<code>RedirectPermanent</code>還是<code>Redirect</code>方法.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedirectResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">bool</span> Permanent &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (context.IsChildAction)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.RedirectAction_CannotRedirectInChildAction);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="built_in">string</span> destinationUrl = UrlHelper.GenerateContentUrl(Url, context.HttpContext);</span><br><span class="line">		context.Controller.TempData.Keep();</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (Permanent)</span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.RedirectPermanent(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.Redirect(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>RedirectToRouteResult</code>基本流程跟上面一樣只是透過<code>UrlHelper.GenerateUrl</code>產生要導轉URL</p>
+</blockquote>
+<h2 id="EmptyResult"><a href="#EmptyResult" class="headerlink" title="EmptyResult"></a>EmptyResult</h2><p><code>EmptyResult</code>這個類別很有趣,只有override <code>ExecuteResult</code>方法但沒有實做,上篇小結有提到這裡使用一個設計模式<a href="https://en.wikipedia.org/wiki/Null_object_pattern">null object pattern</a>.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">EmptyResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> EmptyResult _singleton = <span class="keyword">new</span> EmptyResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">internal</span> <span class="keyword">static</span> EmptyResult Instance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _singleton; &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="FileResult"><a href="#FileResult" class="headerlink" title="FileResult"></a>FileResult</h2><p><code>FileResult</code>是一個抽象類別,提供一個抽象方法給<code>abstract void WriteFile(HttpResponseBase response)</code>子類提供覆寫.</p>
+<p>有兩個類別繼承於<code>FileResult</code>抽象類別</p>
+<ul>
+<li><code>FilePathResult</code></li>
+<li><code>FileContentResult</code></li>
+</ul>
+<p><code>FileResult</code>抽象類別在<code>ExecuteResult</code>設置傳輸檔案需要的前置作業(設置<code>Content-Type</code>…),最後的資料傳輸透過各個子類別去實現.</p>
+<blockquote>
+<p>其中<code>headerValue</code>實做Http回應擋頭對於<code>RFC</code>規範.</p>
+</blockquote>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// From RFC 2183, Sec. 2.3:</span></span><br><span class="line"><span class="comment">// The sender may want to suggest a filename to be used if the entity is</span></span><br><span class="line"><span class="comment">// detached and stored in a separate file. If the receiving MUA writes</span></span><br><span class="line"><span class="comment">// the entity to a file, the suggested filename should be used as a</span></span><br><span class="line"><span class="comment">// basis for the actual filename, where possible.</span></span><br><span class="line"><span class="built_in">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">FileResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="built_in">string</span> _fileDownloadName;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">FileResult</span>(<span class="params"><span class="built_in">string</span> contentType</span>)</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (String.IsNullOrEmpty(contentType))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">&quot;contentType&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ContentType = contentType;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="built_in">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="built_in">string</span> FileDownloadName</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">get</span> &#123; <span class="keyword">return</span> _fileDownloadName ?? String.Empty; &#125;</span><br><span class="line">            <span class="keyword">set</span> &#123; _fileDownloadName = <span class="keyword">value</span>; &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!String.IsNullOrEmpty(FileDownloadName))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br><span class="line">                context.HttpContext.Response.AddHeader(<span class="string">&quot;Content-Disposition&quot;</span>, headerValue);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            WriteFile(response);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="FileContentResult"><a href="#FileContentResult" class="headerlink" title="FileContentResult"></a>FileContentResult</h3><p><code>FileContentResult</code>將檔案已位元組方式轉存給<code>Client</code>端.</p>
+<p>透過<code>HttpResponseBase.OutputStream.Write</code>方法.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FileContentResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FileContentResult</span>(<span class="params"><span class="built_in">byte</span>[] fileContents, <span class="built_in">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (fileContents == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;fileContents&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileContents = fileContents;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">byte</span>[] FileContents &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        response.OutputStream.Write(FileContents, <span class="number">0</span>, FileContents.Length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="FilePathResult"><a href="#FilePathResult" class="headerlink" title="FilePathResult"></a>FilePathResult</h3><p><code>FilePathResult</code>透過檔案名稱<code>FileName</code>將檔案提供給<code>Client</code></p>
+<p>藉由<code>HttpResponseBase.TransmitFile</code>方法.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FilePathResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FilePathResult</span>(<span class="params"><span class="built_in">string</span> fileName, <span class="built_in">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrEmpty(fileName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">&quot;fileName&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileName = fileName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> FileName &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        response.TransmitFile(FileName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>本篇介紹了幾個實現<code>ActionResult</code>類別,跟其內部程式碼,這裡能了解到<strong>MVC</strong>返回結果機於<code>ActionResult</code>方法.(這個概念我運用在<code>Web Api</code>服務,建立<code>ResponseBase</code>共同簽章,因為在做服務串接每個服務都有自己的加解密,回傳格式攔位.我可以統一透過一個<code>ResponseBase</code>類別裝載資料再藉由過濾器來幫忙組成相對應的資料回傳….)</p>
+<p>下篇會來介紹繼承<code>ActionResult</code>最複雜的<code>ViewResultBase</code>相關程式碼.</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day23/">https://isdaniel.github.io/ithelp-day23/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>探討ViewEngine機制 View是如何被建立(三) (第24天)</title>
     <url>/ithelp-day24/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -12584,102 +12680,6 @@ email_url: dog830228@gmail.com
 <li><code>IViewEngine</code>:透過虛擬路徑找到要執行頁面(透過一些機制).</li>
 </ul>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day24/">https://isdaniel.github.io/ithelp-day24/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>6個基本(ActionResult) View是如何被建立(二) (第23天)</title>
-    <url>/ithelp-day23/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#6%E7%A8%AE%E5%9F%BA%E6%9C%AC%E7%9A%84actionresult">6種基本的ActionResult</a></li>
-<li><a href="#contentresult">ContentResult</a></li>
-<li><a href="#redirectresult--redirecttorouteresult">RedirectResult &amp; RedirectToRouteResult</a></li>
-<li><a href="#emptyresult">EmptyResult</a></li>
-<li><a href="#fileresult">FileResult</a><ul>
-<li><a href="#filecontentresult">FileContentResult</a></li>
-<li><a href="#filepathresult">FilePathResult</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇介紹到<code>CreateActionResult</code>方法會產生一個<code>ActionResult</code>物件利用<code>MethodInfo</code>資訊.</p>
-<p>最後透過<code>InvokeActionResult</code>來呼叫<code>ExecuteResult</code>方法來執行<code>ActionResult</code>的<code>ExecuteResult</code>方法,基本上<strong>MVC</strong>找到且執行<strong>Action</strong>方法後面就沒再做甚麼特別的事情了(後面做資源釋放…)</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">InvokeActionResult</span>(<span class="params">ControllerContext controllerContext, ActionResult actionResult</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">	actionResult.ExecuteResult(controllerContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>本篇來介紹常用的<code>ActionResult</code>其內部運作程式碼</p>
-<blockquote>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="6種基本的ActionResult"><a href="#6種基本的ActionResult" class="headerlink" title="6種基本的ActionResult"></a>6種基本的ActionResult</h2><p>下面這六個類別是直接繼承於<code>ActionResult</code>的類別(其中有標註<strong>Base class</strong>代表這是抽象類別另外有類別繼承它)</p>
-<ul>
-<li><code>ContentResult</code>:回傳一組字串,利用<code>response.Write</code>方法</li>
-<li><code>EmptyResult</code>:什麼都不動作(當<code>Action</code>回傳<code>void</code>使用)</li>
-<li><code>FileResult(Base class)</code>:把檔案當作回傳</li>
-<li><code>HttpStatusCodeResult</code>:回傳<strong>HTTP</strong>狀態碼</li>
-<li><code>RedirectResult &amp; RedirectToRouteResult</code>:使用<code>Response.Redirect</code>轉導到其他頁面</li>
-<li><code>ViewResultBase(Base class)</code>:會找尋相對應<code>View</code>檔案(<code>cshtml</code>會編譯成一個<code>DLL</code>)來執行</li>
-</ul>
-<blockquote>
-<p><code>ViewResultBase</code>會在另一篇介紹(因為機制比較複雜)</p>
-</blockquote>
-<h2 id="ContentResult"><a href="#ContentResult" class="headerlink" title="ContentResult"></a>ContentResult</h2><p>在<code>ContentResult</code>有三個屬性</p>
-<ul>
-<li><code>Content</code>:響應內容.</li>
-<li><code>ContentType</code>:設置Http <code>Header</code>攔位<code>ContentType</code></li>
-<li><code>ContentEncoding</code>:設置<code>Encoding</code>方式</li>
-</ul>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ContentResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> Content &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Encoding ContentEncoding &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!String.IsNullOrEmpty(ContentType))</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ContentEncoding != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.ContentEncoding = ContentEncoding;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (Content != <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            response.Write(Content);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>ContentResult</code>操作很簡單透過<code>response.Write</code>把內容<code>Print</code>出來</p>
-<h2 id="RedirectResult-RedirectToRouteResult"><a href="#RedirectResult-RedirectToRouteResult" class="headerlink" title="RedirectResult &amp; RedirectToRouteResult"></a>RedirectResult &amp; RedirectToRouteResult</h2><p><code>RedirectResult</code>這個<code>ActionResult</code>如其名就是導轉頁面.</p>
-<ul>
-<li><code>Permanent</code>:屬性判斷是否需要<code>Permanently</code>導轉頁面(<strong>Http-Code</strong>:<code>RedirectPermanent=301</code>,<code>Redirect=302</code>)</li>
-<li><code>Url</code>:轉導的<code>URL</code>透過<code>UrlHelper.GenerateContentUrl</code>產生<code>URL</code>.(在<code>GenerateContentUrl</code>會判斷第一個字元是否是<code>~</code>波浪號,如果是代表站內導轉.)</li>
-</ul>
-<p>最後利用<code>Permanent</code>布林判斷使用<code>RedirectPermanent</code>還是<code>Redirect</code>方法.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">RedirectResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">bool</span> Permanent &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">string</span> Url &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (context.IsChildAction)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(MvcResources.RedirectAction_CannotRedirectInChildAction);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="built_in">string</span> destinationUrl = UrlHelper.GenerateContentUrl(Url, context.HttpContext);</span><br><span class="line">		context.Controller.TempData.Keep();</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (Permanent)</span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.RedirectPermanent(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">			context.HttpContext.Response.Redirect(destinationUrl, endResponse: <span class="literal">false</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p><code>RedirectToRouteResult</code>基本流程跟上面一樣只是透過<code>UrlHelper.GenerateUrl</code>產生要導轉URL</p>
-</blockquote>
-<h2 id="EmptyResult"><a href="#EmptyResult" class="headerlink" title="EmptyResult"></a>EmptyResult</h2><p><code>EmptyResult</code>這個類別很有趣,只有override <code>ExecuteResult</code>方法但沒有實做,上篇小結有提到這裡使用一個設計模式<a href="https://en.wikipedia.org/wiki/Null_object_pattern">null object pattern</a>.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">EmptyResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> EmptyResult _singleton = <span class="keyword">new</span> EmptyResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">internal</span> <span class="keyword">static</span> EmptyResult Instance</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _singleton; &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="FileResult"><a href="#FileResult" class="headerlink" title="FileResult"></a>FileResult</h2><p><code>FileResult</code>是一個抽象類別,提供一個抽象方法給<code>abstract void WriteFile(HttpResponseBase response)</code>子類提供覆寫.</p>
-<p>有兩個類別繼承於<code>FileResult</code>抽象類別</p>
-<ul>
-<li><code>FilePathResult</code></li>
-<li><code>FileContentResult</code></li>
-</ul>
-<p><code>FileResult</code>抽象類別在<code>ExecuteResult</code>設置傳輸檔案需要的前置作業(設置<code>Content-Type</code>…),最後的資料傳輸透過各個子類別去實現.</p>
-<blockquote>
-<p>其中<code>headerValue</code>實做Http回應擋頭對於<code>RFC</code>規範.</p>
-</blockquote>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="comment">// From RFC 2183, Sec. 2.3:</span></span><br><span class="line"><span class="comment">// The sender may want to suggest a filename to be used if the entity is</span></span><br><span class="line"><span class="comment">// detached and stored in a separate file. If the receiving MUA writes</span></span><br><span class="line"><span class="comment">// the entity to a file, the suggested filename should be used as a</span></span><br><span class="line"><span class="comment">// basis for the actual filename, where possible.</span></span><br><span class="line"><span class="built_in">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">FileResult</span> : <span class="title">ActionResult</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="built_in">string</span> _fileDownloadName;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="title">FileResult</span>(<span class="params"><span class="built_in">string</span> contentType</span>)</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (String.IsNullOrEmpty(contentType))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">&quot;contentType&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ContentType = contentType;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="built_in">string</span> ContentType &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="built_in">string</span> FileDownloadName</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">get</span> &#123; <span class="keyword">return</span> _fileDownloadName ?? String.Empty; &#125;</span><br><span class="line">            <span class="keyword">set</span> &#123; _fileDownloadName = <span class="keyword">value</span>; &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">ExecuteResult</span>(<span class="params">ControllerContext context</span>)</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (context == <span class="literal">null</span>)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            HttpResponseBase response = context.HttpContext.Response;</span><br><span class="line">            response.ContentType = ContentType;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!String.IsNullOrEmpty(FileDownloadName))</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="built_in">string</span> headerValue = ContentDispositionUtil.GetHeaderValue(FileDownloadName);</span><br><span class="line">                context.HttpContext.Response.AddHeader(<span class="string">&quot;Content-Disposition&quot;</span>, headerValue);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            WriteFile(response);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">protected</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="FileContentResult"><a href="#FileContentResult" class="headerlink" title="FileContentResult"></a>FileContentResult</h3><p><code>FileContentResult</code>將檔案已位元組方式轉存給<code>Client</code>端.</p>
-<p>透過<code>HttpResponseBase.OutputStream.Write</code>方法.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FileContentResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FileContentResult</span>(<span class="params"><span class="built_in">byte</span>[] fileContents, <span class="built_in">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (fileContents == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;fileContents&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileContents = fileContents;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">byte</span>[] FileContents &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        response.OutputStream.Write(FileContents, <span class="number">0</span>, FileContents.Length);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="FilePathResult"><a href="#FilePathResult" class="headerlink" title="FilePathResult"></a>FilePathResult</h3><p><code>FilePathResult</code>透過檔案名稱<code>FileName</code>將檔案提供給<code>Client</code></p>
-<p>藉由<code>HttpResponseBase.TransmitFile</code>方法.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">FilePathResult</span> : <span class="title">FileResult</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">FilePathResult</span>(<span class="params"><span class="built_in">string</span> fileName, <span class="built_in">string</span> contentType</span>)</span></span><br><span class="line"><span class="function">        : <span class="title">base</span>(<span class="params">contentType</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (String.IsNullOrEmpty(fileName))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentException(MvcResources.Common_NullOrEmpty, <span class="string">&quot;fileName&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        FileName = fileName;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> FileName &#123; <span class="keyword">get</span>; <span class="keyword">private</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">override</span> <span class="keyword">void</span> <span class="title">WriteFile</span>(<span class="params">HttpResponseBase response</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        response.TransmitFile(FileName);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>本篇介紹了幾個實現<code>ActionResult</code>類別,跟其內部程式碼,這裡能了解到<strong>MVC</strong>返回結果機於<code>ActionResult</code>方法.(這個概念我運用在<code>Web Api</code>服務,建立<code>ResponseBase</code>共同簽章,因為在做服務串接每個服務都有自己的加解密,回傳格式攔位.我可以統一透過一個<code>ResponseBase</code>類別裝載資料再藉由過濾器來幫忙組成相對應的資料回傳….)</p>
-<p>下篇會來介紹繼承<code>ActionResult</code>最複雜的<code>ViewResultBase</code>相關程式碼.</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day23/">https://isdaniel.github.io/ithelp-day23/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -14418,7 +14418,7 @@ email_url: dog830228@gmail.com
   <entry>
     <title>使用 Model Context Protocol 以 Weather MCP Server 為例</title>
     <url>/mcp-server-weather/</url>
-    <content><![CDATA[<h2 id="什麼是-MCP？"><a href="#什麼是-MCP？" class="headerlink" title="什麼是 MCP？"></a>什麼是 MCP？</h2><p>MCP（Model Context Protocol）是一種協定，用於在工具之間進行通訊與協作。透過 MCP，可以讓各種獨立的工具（如模型、插件、服務）以一致的格式互相交換資料與指令。MCP Server 是提供特定功能的伺服器端程式，能與支援 MCP 的前端進行互動。</p>
+    <content><![CDATA[<h2 id="什麼是-MCP"><a href="#什麼是-MCP" class="headerlink" title="什麼是 MCP?"></a>什麼是 MCP?</h2><p>MCP(Model Context Protocol)是一種協定，用於在工具之間進行通訊與協作。透過 MCP，可以讓各種獨立的工具(如模型、插件、服務)以一致的格式互相交換資料與指令。MCP Server 是提供特定功能的伺服器端程式，能與支援 MCP 的前端進行互動。</p>
 <h2 id="Weather-MCP-Server-是什麼？"><a href="#Weather-MCP-Server-是什麼？" class="headerlink" title="Weather MCP Server 是什麼？"></a>Weather MCP Server 是什麼？</h2><p>Weather MCP Server 是一個基於 MCP 協定開發的天氣資訊伺服器，利用 <a href="https://open-meteo.com/">Open-Meteo API</a> 提供免費的天氣資料。透過這個伺服器，你可以查詢：</p>
 <ul>
 <li>某城市的即時天氣資訊</li>
@@ -14427,13 +14427,12 @@ email_url: dog830228@gmail.com
 </ul>
 <p><a href="https://github.com/isdaniel/mcp_weather_server">mcp_weather_server source code</a><br><a href="https://smithery.ai/server/@isdaniel/mcp_weather_server">smithery AI</a></p>
 <p>使用此 MCP Server 搭配 AI Model 可以輕易搭建出即時天氣小助手, 如下我的 AI Bot</p>
-<p><img src="/../images/20096630aZiRf1dO1g.png"></p>
-<h2 id=""><a href="#" class="headerlink" title=""></a><img src="/../images/20096630ecDVbg8JZL.png"></h2><h2 id="功能特色"><a href="#功能特色" class="headerlink" title="功能特色"></a>功能特色</h2><ul>
+<p><img src="/../images/20096630aZiRf1dO1g.png"><br><img src="/../images/20096630ecDVbg8JZL.png"></p>
+<h2 id="功能特色"><a href="#功能特色" class="headerlink" title="功能特色"></a>功能特色</h2><ul>
 <li>查詢指定城市的即時天氣</li>
 <li>查詢指定日期區間的天氣預測</li>
-<li>查詢目前時間（支援指定時區）</li>
+<li>查詢目前時間(支援指定時區)</li>
 </ul>
-<hr>
 <h2 id="安裝方式"><a href="#安裝方式" class="headerlink" title="安裝方式"></a>安裝方式</h2><p>使用 pip 安裝：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pip install mcp_weather_server</span><br></pre></td></tr></table></figure>
 
@@ -14442,38 +14441,36 @@ email_url: dog830228@gmail.com
 <figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;weather&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;python&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;-m&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;mcp_weather_server&quot;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;disabled&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;autoApprove&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
 
 <p>儲存後，即可在 MCP 架構中啟動並使用 Weather Server。</p>
-<hr>
 <h2 id="使用方式"><a href="#使用方式" class="headerlink" title="使用方式"></a>使用方式</h2><p>Weather MCP Server 提供以下三個工具：</p>
 <h3 id="1-get-weather：查詢指定城市目前天氣"><a href="#1-get-weather：查詢指定城市目前天氣" class="headerlink" title="1. get_weather：查詢指定城市目前天氣"></a>1. <code>get_weather</code>：查詢指定城市目前天氣</h3><p><strong>參數說明：</strong></p>
 <ul>
-<li><code>city</code>（字串，必填）：城市名稱，例如 “Taipei”</li>
+<li><code>city</code>(字串，必填)：城市名稱，例如 “Taipei”</li>
 </ul>
 <p><strong>範例：</strong></p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_weather<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;city&quot;: &quot;Taipei&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
-<hr>
+
+
 <h3 id="2-get-weather-by-datetime-range：查詢日期區間的天氣預報"><a href="#2-get-weather-by-datetime-range：查詢日期區間的天氣預報" class="headerlink" title="2. get_weather_by_datetime_range：查詢日期區間的天氣預報"></a>2. <code>get_weather_by_datetime_range</code>：查詢日期區間的天氣預報</h3><p><strong>參數說明：</strong></p>
 <ul>
-<li><code>city</code>（字串，必填）：城市名稱</li>
-<li><code>start_date</code>（字串，必填）：開始日期，格式為 YYYY-MM-DD</li>
-<li><code>end_date</code>（字串，必填）：結束日期，格式為 YYYY-MM-DD</li>
+<li><code>city</code>(字串，必填)：城市名稱</li>
+<li><code>start_date</code>(字串，必填)：開始日期，格式為 YYYY-MM-DD</li>
+<li><code>end_date</code>(字串，必填)：結束日期，格式為 YYYY-MM-DD</li>
 </ul>
 <p><strong>範例：</strong></p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_weather_by_datetime_range<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;city&quot;: &quot;London&quot;,</span><br><span class="line">  &quot;start_date&quot;: &quot;2024-01-01&quot;,</span><br><span class="line">  &quot;end_date&quot;: &quot;2024-01-07&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
-<hr>
+
 <h3 id="3-get-current-datetime：查詢指定時區目前時間"><a href="#3-get-current-datetime：查詢指定時區目前時間" class="headerlink" title="3. get_current_datetime：查詢指定時區目前時間"></a>3. <code>get_current_datetime</code>：查詢指定時區目前時間</h3><p><strong>參數說明：</strong></p>
 <ul>
-<li><code>timezone_name</code>（字串，必填）：IANA 時區名稱，例如 “America&#x2F;New_York”、”Europe&#x2F;London”。若未指定，預設為 UTC。</li>
+<li><code>timezone_name</code>(字串，必填)：IANA 時區名稱，例如 “America&#x2F;New_York”、”Europe&#x2F;London”。若未指定，預設為 UTC。</li>
 </ul>
 <p><strong>範例：</strong></p>
 <figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_current_datetime<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;timezone_name&quot;: &quot;America/New_York&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
-<hr>
 <h2 id="開發者注意事項"><a href="#開發者注意事項" class="headerlink" title="開發者注意事項"></a>開發者注意事項</h2><p>如需在開發或除錯時手動執行 Weather MCP Server，可以直接執行：</p>
 <figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">python -m mcp_weather_server</span><br></pre></td></tr></table></figure>
 
-<hr>
 <h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>Weather MCP Server 是一個輕量、無需 API 金鑰的天氣資訊服務，適合用於教育、研究或原型開發。透過 MCP 的整合能力，可以輕鬆地將天氣查詢功能加入到各種自動化或智慧應用中。</p>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/mcp-server-weather/">https://isdaniel.github.io/mcp-server-weather/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
@@ -15165,8 +15162,10 @@ email_url: dog830228@gmail.com
 <ul>
 <li><strong>.NET Web Application</strong>: A simple web service with custom metrics and tracing- <strong>OpenTelemetry Collector</strong>: Receives telemetry data and exports it to backends</li>
 <li><strong>Prometheus</strong>: Time-series database for storing and querying metrics- <strong>Jaeger</strong>: Distributed tracing system for monitoring and troubleshooting</li>
-<li><strong>Grafana</strong>: Visualization and dashboarding platform<figure class="highlight stata"><table><tr><td class="code"><pre><span class="line">┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐</span><br><span class="line">│  Rust We        │     │                 │     │                 │</span><br><span class="line">│  .<span class="keyword">NET</span> <span class="keyword">App</span>       │────▶│  OTel Collector │────▶│  Prometheus     │</span><br><span class="line">│                 │     │                 │     │                 │</span><br><span class="line">└─────────────────┘     └────────┬────────┘     └─────────────────┘</span><br><span class="line">                                 │                        ▲</span><br><span class="line">                                 │                        │</span><br><span class="line">                                 ▼                        │</span><br><span class="line">                        ┌─────────────────┐      ┌────────┴────────┐</span><br><span class="line">                        │                 │      │                 │</span><br><span class="line">                        │  Jaeger         │      │  Grafana        │</span><br><span class="line">                        │                 │      │                 │</span><br><span class="line">                        └─────────────────┘      └─────────────────┘</span><br></pre></td></tr></table></figure></li>
+<li><strong>Grafana</strong>: Visualization and dashboarding platform</li>
 </ul>
+<figure class="highlight stata"><table><tr><td class="code"><pre><span class="line">┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐</span><br><span class="line">│  Rust We        │     │                 │     │                 │</span><br><span class="line">│  .<span class="keyword">NET</span> <span class="keyword">App</span>       │────▶│  OTel Collector │────▶│  Prometheus     │</span><br><span class="line">│                 │     │                 │     │                 │</span><br><span class="line">└─────────────────┘     └────────┬────────┘     └─────────────────┘</span><br><span class="line">                                 │                        ▲</span><br><span class="line">                                 │                        │</span><br><span class="line">                                 ▼                        │</span><br><span class="line">                        ┌─────────────────┐      ┌────────┴────────┐</span><br><span class="line">                        │                 │      │                 │</span><br><span class="line">                        │  Jaeger         │      │  Grafana        │</span><br><span class="line">                        │                 │      │                 │</span><br><span class="line">                        └─────────────────┘      └─────────────────┘</span><br></pre></td></tr></table></figure>
+
 <h2 id="Features"><a href="#Features" class="headerlink" title="Features"></a>Features</h2><ul>
 <li>Custom metrics using OpenTelemetry Metrics API- Distributed tracing with OpenTelemetry Tracing API</li>
 <li>Nested HTTP calls with context propagation- Prometheus metrics collection</li>
@@ -15176,13 +15175,56 @@ email_url: dog830228@gmail.com
 <li>Docker and Docker Compose</li>
 <li>.NET 9.0 SDK (for local development)</li>
 </ul>
-<h2 id="Getting-Started"><a href="#Getting-Started" class="headerlink" title="Getting Started"></a>Getting Started</h2><h3 id="Running-the-Application"><a href="#Running-the-Application" class="headerlink" title="Running the Application"></a>Running the Application</h3><ol>
-<li>Clone the repository:</li>
-<li><pre><code>git clone https://github.com/yourusername/OpenTelemetry_SideCar.git
-cd OpenTelemetry_SideCar
-<figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line"><span class="bullet">3.</span> Start the services using Docker Compose:   <span class="code">```</span></span><br><span class="line"><span class="code">   docker-compose up -d   ```</span></span><br><span class="line"><span class="bullet">4.</span> Access the application:</span><br><span class="line"><span class="bullet">   -</span> Web Application: http://localhost:8080   - Nested Greeting: http://localhost:8080/NestedGreeting?nestlevel=3</span><br><span class="line"><span class="section">### Accessing Observability Tools</span></span><br><span class="line"><span class="bullet">-</span> <span class="strong">**Prometheus**</span>: http://localhost:9090</span><br><span class="line"><span class="bullet">  -</span> Query metrics with PromQL  - Example: <span class="code">`greetings_count_total`</span></span><br><span class="line"><span class="bullet">-</span> <span class="strong">**Jaeger UI**</span>: http://localhost:16686</span><br><span class="line"><span class="bullet">  -</span> View distributed traces  - Filter by service: <span class="code">`telemetry_example`</span></span><br><span class="line"><span class="bullet">-</span> <span class="strong">**Grafana**</span>: http://localhost:3000</span><br><span class="line"><span class="bullet">  -</span> Default credentials: admin/admin  - Pre-configured dashboards for application metrics</span><br><span class="line"><span class="section">## Application Endpoints</span></span><br><span class="line"><span class="bullet">-</span> <span class="strong">**/**</span> - Returns a simple greeting and increments the greeting counter</span><br><span class="line"><span class="bullet">-</span> <span class="strong">**/NestedGreeting?nestlevel=N**</span> - Creates a chain of N nested HTTP calls, demonstrating trace context propagation</span><br><span class="line"><span class="section">## Configuration Files</span></span><br><span class="line"><span class="bullet">-</span> <span class="strong">**docker-compose.yml**</span>: Defines all services and their connections- <span class="strong">**otel-collector-config.yaml**</span>: Configures the OpenTelemetry Collector</span><br><span class="line"><span class="bullet">-</span> <span class="strong">**prometheus.yml**</span>: Prometheus scraping configuration- <span class="strong">**Dockerfile**</span>: Builds the .NET application</span><br><span class="line"><span class="section">## Troubleshooting</span></span><br><span class="line"><span class="section">### Common Issues</span></span><br><span class="line"><span class="bullet">1.</span> <span class="strong">**No metrics in Prometheus**</span>:</span><br><span class="line"><span class="bullet">   -</span> Verify the OpenTelemetry Collector is running: <span class="code">`docker-compose ps`</span>   - Check collector logs: <span class="code">`docker-compose logs otel-collector`</span></span><br><span class="line"><span class="bullet">   -</span> Ensure Prometheus is scraping the collector: http://localhost:9090/targets</span><br><span class="line"><span class="bullet">2.</span> <span class="strong">**No traces in Jaeger**</span>:   - Verify Jaeger is running: <span class="code">`docker-compose ps jaeger`</span></span><br><span class="line"><span class="bullet">   -</span> Check that OTLP is enabled in Jaeger   - Generate some traces by accessing the application endpoints</span><br><span class="line"><span class="bullet">3.</span> <span class="strong">**Application errors**</span>:</span><br><span class="line"><span class="bullet">   -</span> Check application logs: <span class="code">`docker-compose logs app`</span></span><br><span class="line"><span class="section">## Development</span></span><br><span class="line"><span class="section">### Local Development</span></span><br><span class="line">To run the application locally:</span><br><span class="line"><span class="bullet">1.</span> Navigate to the src directory2. Run <span class="code">`dotnet run`</span></span><br><span class="line">Note: When running locally, you&#x27;ll need to update the OTLP endpoint in Program.cs to point to your local OpenTelemetry Collector.</span><br><span class="line"><span class="section">### Adding Custom Metrics</span></span><br><span class="line"><span class="bullet">1.</span> Create a new meter:</span><br><span class="line">   <span class="code">```csharp</span></span><br><span class="line"><span class="code">   var myMeter = new Meter(&quot;MyApp.Metrics&quot;, &quot;1.0.0&quot;);</span></span><br></pre></td></tr></table></figure>
-</code></pre>
+<h2 id="Getting-Started"><a href="#Getting-Started" class="headerlink" title="Getting Started"></a>Getting Started</h2><h3 id="Running-the-Application"><a href="#Running-the-Application" class="headerlink" title="Running the Application"></a>Running the Application</h3><p>Clone the repository:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/yourusername/OpenTelemetry_SideCar.git</span><br><span class="line"><span class="built_in">cd</span> OpenTelemetry_SideCar</span><br></pre></td></tr></table></figure>
+
+<p>Start the services using Docker Compose:<br> <figure class="highlight ebnf"><table><tr><td class="code"><pre><span class="line"><span class="attribute">docker-compose up -d</span></span><br></pre></td></tr></table></figure></p>
+<ol>
+<li>Access the application: Web Application: <a href="http://localhost:8080/">http://localhost:8080</a>   - Nested Greeting: <a href="http://localhost:8080/NestedGreeting?nestlevel=3">http://localhost:8080/NestedGreeting?nestlevel=3</a></li>
+</ol>
+<h3 id="Accessing-Observability-Tools"><a href="#Accessing-Observability-Tools" class="headerlink" title="Accessing Observability Tools"></a>Accessing Observability Tools</h3><ul>
+<li><strong>Prometheus</strong>: <a href="http://localhost:9090/">http://localhost:9090</a><ul>
+<li>Query metrics with PromQL  - Example: <code>greetings_count_total</code></li>
+</ul>
 </li>
+<li><strong>Jaeger UI</strong>: <a href="http://localhost:16686/">http://localhost:16686</a><ul>
+<li>View distributed traces  - Filter by service: <code>telemetry_example</code></li>
+</ul>
+</li>
+<li><strong>Grafana</strong>: <a href="http://localhost:3000/">http://localhost:3000</a><ul>
+<li>Default credentials: admin&#x2F;admin  - Pre-configured dashboards for application metrics</li>
+</ul>
+</li>
+</ul>
+<h2 id="Application-Endpoints"><a href="#Application-Endpoints" class="headerlink" title="Application Endpoints"></a>Application Endpoints</h2><ul>
+<li><strong>&#x2F;</strong> - Returns a simple greeting and increments the greeting counter</li>
+<li><strong>&#x2F;NestedGreeting?nestlevel&#x3D;N</strong> - Creates a chain of N nested HTTP calls, demonstrating trace context propagation</li>
+</ul>
+<h2 id="Configuration-Files"><a href="#Configuration-Files" class="headerlink" title="Configuration Files"></a>Configuration Files</h2><ul>
+<li><strong>docker-compose.yml</strong>: Defines all services and their connections- <strong>otel-collector-config.yaml</strong>: Configures the OpenTelemetry Collector</li>
+<li><strong>prometheus.yml</strong>: Prometheus scraping configuration- <strong>Dockerfile</strong>: Builds the .NET application</li>
+</ul>
+<h2 id="Troubleshooting"><a href="#Troubleshooting" class="headerlink" title="Troubleshooting"></a>Troubleshooting</h2><h3 id="Common-Issues"><a href="#Common-Issues" class="headerlink" title="Common Issues"></a>Common Issues</h3><ol>
+<li><strong>No metrics in Prometheus</strong>:<ul>
+<li>Verify the OpenTelemetry Collector is running: <code>docker-compose ps</code>   - Check collector logs: <code>docker-compose logs otel-collector</code></li>
+<li>Ensure Prometheus is scraping the collector: <a href="http://localhost:9090/targets">http://localhost:9090/targets</a></li>
+</ul>
+</li>
+<li><strong>No traces in Jaeger</strong>:   - Verify Jaeger is running: <code>docker-compose ps jaeger</code><ul>
+<li>Check that OTLP is enabled in Jaeger   - Generate some traces by accessing the application endpoints</li>
+</ul>
+</li>
+<li><strong>Application errors</strong>:<ul>
+<li>Check application logs: <code>docker-compose logs app</code></li>
+</ul>
+</li>
+</ol>
+<h2 id="Development"><a href="#Development" class="headerlink" title="Development"></a>Development</h2><h3 id="Local-Development"><a href="#Local-Development" class="headerlink" title="Local Development"></a>Local Development</h3><p>To run the application locally:</p>
+<ol>
+<li>Navigate to the src directory2. Run <code>dotnet run</code><br>Note: When running locally, you’ll need to update the OTLP endpoint in Program.cs to point to your local OpenTelemetry Collector.</li>
+</ol>
+<h3 id="Adding-Custom-Metrics"><a href="#Adding-Custom-Metrics" class="headerlink" title="Adding Custom Metrics"></a>Adding Custom Metrics</h3><ol>
+<li>Create a new meter:<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> myMeter = <span class="keyword">new</span> Meter(<span class="string">&quot;MyApp.Metrics&quot;</span>, <span class="string">&quot;1.0.0&quot;</span>);</span><br></pre></td></tr></table></figure></li>
 <li>Create metrics instruments:<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> myCounter = myMeter.CreateCounter&lt;<span class="built_in">int</span>&gt;(<span class="string">&quot;my.counter&quot;</span>, <span class="string">&quot;Count of operations&quot;</span>);</span><br></pre></td></tr></table></figure></li>
 <li>Record measurements:<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">myCounter.Add(<span class="number">1</span>);</span><br></pre></td></tr></table></figure></li>
 <li>Register the meter in the OpenTelemetry configuration:<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">metricsProviderBuilder.AddMeter(<span class="string">&quot;MyApp.Metrics&quot;</span>);</span><br></pre></td></tr></table></figure></li>
