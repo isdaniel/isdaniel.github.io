@@ -306,114 +306,6 @@ return builder.Build();
       </tags>
   </entry>
   <entry>
-    <title>Autofac (IOC)容器介紹</title>
-    <url>/Autofac-introduce/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>市面上有許多IoC容器 <a href="http://ninject.org/">Ninject</a>,<a href="https://github.com/unitycontainer/unity">Unity</a>….</p>
-<p>雖然容器眾多但要解決的問題和概念是一樣</p>
-<p>今天使用Autofac 介紹一下IoC容器</p>
-<p>不了解 IoC 概念可參考 我之前寫 <a href="/ioc-di/" title="IOC(控制反轉)，DI(依賴注入) 深入淺出~~">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
-<h2 id="Autofac是一個-Ioc-容器"><a href="#Autofac是一個-Ioc-容器" class="headerlink" title="Autofac是一個 Ioc 容器"></a>Autofac是一個 <span style="color:#FF8C00;">Ioc</span> <span style="color:#ADD8E6;">容器</span></h2><p>眼尖的讀者會發現我把Ioc跟容器這兩個字使用兩個不同顏色</p>
-<p>原因是Autofac這個框架其實做到兩個概念.</p>
-<ul>
-<li><span style="color:#FFA500;">IoC(Inversion of Control)</span></li>
-<li><span style="color:#FFA500;">管理物件的容器</span></li>
-</ul>
-<div class="note note--important">Autofac框架幫我們實現可以管理物件生命週期並提供依賴注入相對應的物件中</div>
-
-<hr>
-<h2 id="為何使用Autofac在我們專案中"><a href="#為何使用Autofac在我們專案中" class="headerlink" title="為何使用Autofac在我們專案中?"></a>為何使用Autofac在我們專案中?</h2><p>我們先來看看在專案中常使用的撰寫方式,我們需要讀取使用者資料 透過<code>UserDao</code>來幫我們完成.</p>
-<pre><code>public UserService &#123;
-    private UserDao _userDao = new UserDao();
-
-    public UserModel GetUserById(string Id)&#123;
-        return _userDao.GetUserById(Id);
-    &#125;
-&#125;
-</code></pre>
-<p><code>_userDao</code>物件跟依賴<code>UserService</code>，導致兩個狀況</p>
-<ol>
-<li><code>UserDao</code>物件掌控於 <code>UserService</code>,假如有其他類別也使用<code>UserDao</code>物件各自掌控<code>UserDao</code>物件,這導致許多不必要的資源浪費.</li>
-<li>日後要替換讀取 <code>GetUserById </code>方式(從db改讀成其他地方 如API) 需要異動全部有建立<code>UserDao</code>的類別</li>
-</ol>
-<p>我們可以使用IoC容器解決上面兩個問題</p>
-<hr>
-<h2 id="使用Autofac-容器"><a href="#使用Autofac-容器" class="headerlink" title="使用Autofac 容器"></a>使用Autofac 容器</h2><p>一般容器有多種注入方式：建構子注入，屬性注入，參數注入</p>
-<p>按照以下四個步驟 簡單使用Autofac</p>
-<ol>
-<li>建立<code>ContainerBuilder</code>物件</li>
-<li>註冊型別(可限制創建物件生命週期)</li>
-<li>建立<code>IContainer</code></li>
-<li>取得我們需要的物件.</li>
-</ol>
-<p>此範例使用建構子注入方式</p>
-<pre><code>//1.建立ContainerBuilder物件
-ContainerBuilder builder = new ContainerBuilder();
-
-//2.註冊型別(可限制創建物件生命週期)
-builder.RegisterType&lt;UserDao&gt;().As&lt;IUser&gt;();
-
-//3.建立IContainer
-IContainer container = builder.Build();
-
-//4.使用IContainer取得我們需要的物件.
-IUser user = container.Resolve&lt;IUser&gt;();
-</code></pre>
-<p>我們新建一個<code>IUser</code>來給<code>UserDao</code>繼承當作解耦合點(介面可利於日後替換使用)</p>
-<pre><code>public interface IUser&#123;
-    UserModel GetUserById(string Id);
-&#125;
-
-public UserService &#123;
-    private IUser _userDao;
-
-    public UserService(IUser userdao)&#123;
-        _userDao = userdao;
-    &#125;
-
-    public UserModel GetUserById(string Id)&#123;
-        return _userDao.GetUserById(Id);
-    &#125;
-&#125;
-</code></pre>
-<p>可能還感受不到IoC容器威力，因為目前依賴的複雜度還沒有太大</p>
-<p>目前模組依賴關係 如下UML圖</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555298305_13744.png"></p>
-<p>模組複雜程度像下圖 如果沒有容器幫我們做物件控制管理,想想就覺得可怕</p>
-<p><b id="docs-internal-guid-0b402e0a-7fff-daaa-ae1a-0fd681ce4177"><img src="https://lh3.googleusercontent.com/v8WHBoDPfaypFKDoEKPrnTgwQ6QRqnXvgz9QQamrSrzsC8BUOr5_WLXiIRH2YO4mRac8EG_BhyRhDoH41iiSX-Yn0I8oID7spXRXYnTCjh93Vh6CwbfUQt8Es_LRUzqcMdUL-o87_8E">**</p>
-<p>**上圖是我Inovce SDK框架的UML圖 **</p>
-<p>**其中我們可以發現 **<code>ApiBase </code>**這個抽象類別 依賴於 **<code>IConfig </code><strong>介面(日後可能依賴更多其他物件或介面)</strong></p>
-<pre><code>ContainerBuilder builder = new ContainerBuilder();
-builder.RegisterType&lt;AppsettingConfig&gt;().As&lt;IConfig&gt;().InstancePerRequest();
-builder.RegisterGeneric(typeof(ApiBase&lt;&gt;)).PropertiesAutowired();
-builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
-</code></pre>
-<p>如果使用Autofac我們可不用擔心這些 只需要將被依賴的物件,介面註冊到容器中，剩下配對注入動作容器都會幫我們達成</p>
-<p>已上面的例子來說：我只需要用 <code>InvoiceApiFactory </code>產生繼承<code>ApiBase&lt;&gt; </code>物件，使用<code>IConfig </code>將會被容器自動注入其中。</p>
-<hr>
-<h2 id="Autofac-常用三種注射方式"><a href="#Autofac-常用三種注射方式" class="headerlink" title="Autofac 常用三種注射方式."></a>Autofac 常用三種注射方式.</h2><ol>
-<li>Constructor injection</li>
-<li>Property injection</li>
-<li>Method injection</li>
-</ol>
-<h3 id="constructor-injection"><a href="#constructor-injection" class="headerlink" title="constructor injection"></a>constructor injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387105_48127.png"></p>
-<h3 id="Property-injection"><a href="#Property-injection" class="headerlink" title="Property injection"></a>Property injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387131_13945.png"></p>
-<h3 id="Method-injection"><a href="#Method-injection" class="headerlink" title="Method injection"></a>Method injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387134_01082.png"></p>
-<hr>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>系統越來越複雜越能表現IoC容器的優勢，如果系統沒那麼複雜其實也不一定要使用他﹐看情境如何</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Autofac-introduce/">https://isdaniel.github.io/Autofac-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>IOC</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>IOC</tag>
-        <tag>Autofac</tag>
-        <tag>AOP</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</title>
     <url>/AwesomeProxy-Net/</url>
     <content><![CDATA[<p>今天和大家分享<a href="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net</a>小弟開源AOP輕型框架</p>
@@ -2029,6 +1921,114 @@ GROUP BY userName
         <tag>Design-Pattern</tag>
         <tag>Open-Source</tag>
         <tag>OOP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Autofac (IOC)容器介紹</title>
+    <url>/Autofac-introduce/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>市面上有許多IoC容器 <a href="http://ninject.org/">Ninject</a>,<a href="https://github.com/unitycontainer/unity">Unity</a>….</p>
+<p>雖然容器眾多但要解決的問題和概念是一樣</p>
+<p>今天使用Autofac 介紹一下IoC容器</p>
+<p>不了解 IoC 概念可參考 我之前寫 <a href="/ioc-di/" title="IOC(控制反轉)，DI(依賴注入) 深入淺出~~">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
+<h2 id="Autofac是一個-Ioc-容器"><a href="#Autofac是一個-Ioc-容器" class="headerlink" title="Autofac是一個 Ioc 容器"></a>Autofac是一個 <span style="color:#FF8C00;">Ioc</span> <span style="color:#ADD8E6;">容器</span></h2><p>眼尖的讀者會發現我把Ioc跟容器這兩個字使用兩個不同顏色</p>
+<p>原因是Autofac這個框架其實做到兩個概念.</p>
+<ul>
+<li><span style="color:#FFA500;">IoC(Inversion of Control)</span></li>
+<li><span style="color:#FFA500;">管理物件的容器</span></li>
+</ul>
+<div class="note note--important">Autofac框架幫我們實現可以管理物件生命週期並提供依賴注入相對應的物件中</div>
+
+<hr>
+<h2 id="為何使用Autofac在我們專案中"><a href="#為何使用Autofac在我們專案中" class="headerlink" title="為何使用Autofac在我們專案中?"></a>為何使用Autofac在我們專案中?</h2><p>我們先來看看在專案中常使用的撰寫方式,我們需要讀取使用者資料 透過<code>UserDao</code>來幫我們完成.</p>
+<pre><code>public UserService &#123;
+    private UserDao _userDao = new UserDao();
+
+    public UserModel GetUserById(string Id)&#123;
+        return _userDao.GetUserById(Id);
+    &#125;
+&#125;
+</code></pre>
+<p><code>_userDao</code>物件跟依賴<code>UserService</code>，導致兩個狀況</p>
+<ol>
+<li><code>UserDao</code>物件掌控於 <code>UserService</code>,假如有其他類別也使用<code>UserDao</code>物件各自掌控<code>UserDao</code>物件,這導致許多不必要的資源浪費.</li>
+<li>日後要替換讀取 <code>GetUserById </code>方式(從db改讀成其他地方 如API) 需要異動全部有建立<code>UserDao</code>的類別</li>
+</ol>
+<p>我們可以使用IoC容器解決上面兩個問題</p>
+<hr>
+<h2 id="使用Autofac-容器"><a href="#使用Autofac-容器" class="headerlink" title="使用Autofac 容器"></a>使用Autofac 容器</h2><p>一般容器有多種注入方式：建構子注入，屬性注入，參數注入</p>
+<p>按照以下四個步驟 簡單使用Autofac</p>
+<ol>
+<li>建立<code>ContainerBuilder</code>物件</li>
+<li>註冊型別(可限制創建物件生命週期)</li>
+<li>建立<code>IContainer</code></li>
+<li>取得我們需要的物件.</li>
+</ol>
+<p>此範例使用建構子注入方式</p>
+<pre><code>//1.建立ContainerBuilder物件
+ContainerBuilder builder = new ContainerBuilder();
+
+//2.註冊型別(可限制創建物件生命週期)
+builder.RegisterType&lt;UserDao&gt;().As&lt;IUser&gt;();
+
+//3.建立IContainer
+IContainer container = builder.Build();
+
+//4.使用IContainer取得我們需要的物件.
+IUser user = container.Resolve&lt;IUser&gt;();
+</code></pre>
+<p>我們新建一個<code>IUser</code>來給<code>UserDao</code>繼承當作解耦合點(介面可利於日後替換使用)</p>
+<pre><code>public interface IUser&#123;
+    UserModel GetUserById(string Id);
+&#125;
+
+public UserService &#123;
+    private IUser _userDao;
+
+    public UserService(IUser userdao)&#123;
+        _userDao = userdao;
+    &#125;
+
+    public UserModel GetUserById(string Id)&#123;
+        return _userDao.GetUserById(Id);
+    &#125;
+&#125;
+</code></pre>
+<p>可能還感受不到IoC容器威力，因為目前依賴的複雜度還沒有太大</p>
+<p>目前模組依賴關係 如下UML圖</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555298305_13744.png"></p>
+<p>模組複雜程度像下圖 如果沒有容器幫我們做物件控制管理,想想就覺得可怕</p>
+<p><b id="docs-internal-guid-0b402e0a-7fff-daaa-ae1a-0fd681ce4177"><img src="https://lh3.googleusercontent.com/v8WHBoDPfaypFKDoEKPrnTgwQ6QRqnXvgz9QQamrSrzsC8BUOr5_WLXiIRH2YO4mRac8EG_BhyRhDoH41iiSX-Yn0I8oID7spXRXYnTCjh93Vh6CwbfUQt8Es_LRUzqcMdUL-o87_8E">**</p>
+<p>**上圖是我Inovce SDK框架的UML圖 **</p>
+<p>**其中我們可以發現 **<code>ApiBase </code>**這個抽象類別 依賴於 **<code>IConfig </code><strong>介面(日後可能依賴更多其他物件或介面)</strong></p>
+<pre><code>ContainerBuilder builder = new ContainerBuilder();
+builder.RegisterType&lt;AppsettingConfig&gt;().As&lt;IConfig&gt;().InstancePerRequest();
+builder.RegisterGeneric(typeof(ApiBase&lt;&gt;)).PropertiesAutowired();
+builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
+</code></pre>
+<p>如果使用Autofac我們可不用擔心這些 只需要將被依賴的物件,介面註冊到容器中，剩下配對注入動作容器都會幫我們達成</p>
+<p>已上面的例子來說：我只需要用 <code>InvoiceApiFactory </code>產生繼承<code>ApiBase&lt;&gt; </code>物件，使用<code>IConfig </code>將會被容器自動注入其中。</p>
+<hr>
+<h2 id="Autofac-常用三種注射方式"><a href="#Autofac-常用三種注射方式" class="headerlink" title="Autofac 常用三種注射方式."></a>Autofac 常用三種注射方式.</h2><ol>
+<li>Constructor injection</li>
+<li>Property injection</li>
+<li>Method injection</li>
+</ol>
+<h3 id="constructor-injection"><a href="#constructor-injection" class="headerlink" title="constructor injection"></a>constructor injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387105_48127.png"></p>
+<h3 id="Property-injection"><a href="#Property-injection" class="headerlink" title="Property injection"></a>Property injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387131_13945.png"></p>
+<h3 id="Method-injection"><a href="#Method-injection" class="headerlink" title="Method injection"></a>Method injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387134_01082.png"></p>
+<hr>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>系統越來越複雜越能表現IoC容器的優勢，如果系統沒那麼複雜其實也不一定要使用他﹐看情境如何</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Autofac-introduce/">https://isdaniel.github.io/Autofac-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>IOC</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>IOC</tag>
+        <tag>Autofac</tag>
+        <tag>AOP</tag>
       </tags>
   </entry>
   <entry>
@@ -7601,55 +7601,6 @@ public abstract class MoveBase
       </tags>
   </entry>
   <entry>
-    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
-    <url>/c-func-1/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
-<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
-<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
-<hr>
-<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>()</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>執行結果:Yes 委託是一個特別的類別</p>
-</blockquote>
-<p>但委託物件方式很特別 他在宣告時必須傳入**[建構子參數]**  而建構子參數是**[方法]**</p>
-<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
-<pre><code>public delegate int calcInt(int arg1,int arg2);
-</code></pre>
-<p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="built_in">int</span> <span class="title">add</span>(<span class="params"><span class="built_in">int</span> a, <span class="built_in">int</span> b</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>或是</p>
-<p>使用.net提供的 語法糖 如下</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;; </span><br></pre></td></tr></table></figure>
-
-<p>編譯器會動態幫我們產生一個方法。</p>
-<p>委託就這樣嗎?!</p>
-<hr>
-<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<T></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Calculator</span>&lt;<span class="title">T</span>&gt;</span><br><span class="line">    <span class="keyword">where</span> <span class="title">T</span> : <span class="title">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
-<p>重點:我們可以在Client端決定如何使用此方法</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="built_in">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="built_in">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="built_in">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="built_in">int</span>&gt;(i_List);</span><br><span class="line"><span class="built_in">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="built_in">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$&quot;add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>&quot;</span>);</span><br></pre></td></tr></table></figure>
-
-<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
-<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
-<p><a href="https://github.com/isdaniel/DelegateSimple">原始碼範例</a></p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Delegate</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Func</tag>
-        <tag>Delegate</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(二)</title>
     <url>/c-func-2/</url>
     <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
@@ -8807,6 +8758,55 @@ class Program
       </tags>
   </entry>
   <entry>
+    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
+    <url>/c-func-1/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
+<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
+<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
+<hr>
+<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>()</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>執行結果:Yes 委託是一個特別的類別</p>
+</blockquote>
+<p>但委託物件方式很特別 他在宣告時必須傳入**[建構子參數]**  而建構子參數是**[方法]**</p>
+<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
+<pre><code>public delegate int calcInt(int arg1,int arg2);
+</code></pre>
+<p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="built_in">int</span> <span class="title">add</span>(<span class="params"><span class="built_in">int</span> a, <span class="built_in">int</span> b</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>或是</p>
+<p>使用.net提供的 語法糖 如下</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;; </span><br></pre></td></tr></table></figure>
+
+<p>編譯器會動態幫我們產生一個方法。</p>
+<p>委託就這樣嗎?!</p>
+<hr>
+<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<T></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Calculator</span>&lt;<span class="title">T</span>&gt;</span><br><span class="line">    <span class="keyword">where</span> <span class="title">T</span> : <span class="title">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
+<p>重點:我們可以在Client端決定如何使用此方法</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="built_in">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="built_in">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="built_in">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="built_in">int</span>&gt;(i_List);</span><br><span class="line"><span class="built_in">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="built_in">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$&quot;add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
+<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
+<p><a href="https://github.com/isdaniel/DelegateSimple">原始碼範例</a></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Delegate</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Func</tag>
+        <tag>Delegate</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>淺談SqlServer Lock(一)</title>
     <url>/dblock-1/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -9848,78 +9848,6 @@ GROUP BY userName
         <tag>WebDesign</tag>
         <tag>Blog</tag>
         <tag>Github</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Appveyor搭配Github自動化上傳Nuget</title>
-    <url>/github-with-nugetdeploy/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
-<p>今天跟大家分享我開源專案<a href="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW</a>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
-<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><a href="https://www.appveyor.com/docs/">Appveyor</a>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
-<blockquote>
-<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
-</blockquote>
-<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
-<p><img src="https://i.imgur.com/YPKBuFQ.png"></p>
-<p>選擇我們要建立CICD專案.</p>
-<p><img src="https://i.imgur.com/FW4Pd0j.png"></p>
-<p>最後會在Project頁看到你剛剛新建立Project.</p>
-<p><img src="https://i.imgur.com/vA6DIjh.png"></p>
-<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
-<ul>
-<li>透過UI來操作設定</li>
-<li>透過appveyor.yml設定(專案root目錄)</li>
-</ul>
-<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
-<p>我使用我的開源專案<a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a>來當作這次範例.</p>
-<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
-<ul>
-<li>image：指定Build的IDE VS版本.</li>
-<li>before_build：建置專案前要執行步驟</li>
-<li>build_script：建置專案時要執行步驟</li>
-<li>after_build：建置專案完成執行步驟</li>
-<li>deploy：將你建置完artifact deploy到某個地方</li>
-<li>artifacts：存放artifact位置</li>
-<li>environment：設定環境變數</li>
-</ul>
-<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">&#x27;&#123;build&#125;&#x27;</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.nupkg&#x27;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.snupkg&#x27;</span></span><br></pre></td></tr></table></figure>
-
-<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
-<ul>
-<li>provider：NuGet(Bj4)</li>
-<li>api_key：<ul>
-<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
-</ul>
-</li>
-<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
-<li>artifact：查找需要上傳檔案資訊</li>
-</ul>
-<p>這個YML設定檔有下面流程</p>
-<ol>
-<li>nuget restore.</li>
-<li>build .net core專案</li>
-<li>執行unit test</li>
-<li>發布package到Nuget(只限於master)</li>
-</ol>
-<blockquote>
-<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
-</blockquote>
-<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
-<p><img src="https://i.imgur.com/VRbUO5i.png"></p>
-<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
-<p>這是之前跑ElectronicInvoice_TW專案<a href="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄</a>歷程</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
-<p>參考連結：<a href="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/</a></p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>CICD</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>CICD</tag>
-        <tag>Appveyor</tag>
-        <tag>netcore</tag>
       </tags>
   </entry>
   <entry>
@@ -14339,6 +14267,78 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Appveyor搭配Github自動化上傳Nuget</title>
+    <url>/github-with-nugetdeploy/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
+<p>今天跟大家分享我開源專案<a href="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW</a>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
+<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><a href="https://www.appveyor.com/docs/">Appveyor</a>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
+<blockquote>
+<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
+</blockquote>
+<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
+<p><img src="https://i.imgur.com/YPKBuFQ.png"></p>
+<p>選擇我們要建立CICD專案.</p>
+<p><img src="https://i.imgur.com/FW4Pd0j.png"></p>
+<p>最後會在Project頁看到你剛剛新建立Project.</p>
+<p><img src="https://i.imgur.com/vA6DIjh.png"></p>
+<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
+<ul>
+<li>透過UI來操作設定</li>
+<li>透過appveyor.yml設定(專案root目錄)</li>
+</ul>
+<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
+<p>我使用我的開源專案<a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a>來當作這次範例.</p>
+<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
+<ul>
+<li>image：指定Build的IDE VS版本.</li>
+<li>before_build：建置專案前要執行步驟</li>
+<li>build_script：建置專案時要執行步驟</li>
+<li>after_build：建置專案完成執行步驟</li>
+<li>deploy：將你建置完artifact deploy到某個地方</li>
+<li>artifacts：存放artifact位置</li>
+<li>environment：設定環境變數</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">&#x27;&#123;build&#125;&#x27;</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.nupkg&#x27;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.snupkg&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
+<ul>
+<li>provider：NuGet(Bj4)</li>
+<li>api_key：<ul>
+<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
+</ul>
+</li>
+<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
+<li>artifact：查找需要上傳檔案資訊</li>
+</ul>
+<p>這個YML設定檔有下面流程</p>
+<ol>
+<li>nuget restore.</li>
+<li>build .net core專案</li>
+<li>執行unit test</li>
+<li>發布package到Nuget(只限於master)</li>
+</ol>
+<blockquote>
+<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
+</blockquote>
+<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
+<p><img src="https://i.imgur.com/VRbUO5i.png"></p>
+<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
+<p>這是之前跑ElectronicInvoice_TW專案<a href="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄</a>歷程</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
+<p>參考連結：<a href="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/</a></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>CICD</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>CICD</tag>
+        <tag>Appveyor</tag>
+        <tag>netcore</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>資料庫查詢核心概念-地圖理論</title>
     <url>/map-theory/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>我認為 DB query optimizer (QO) 產生執行計畫並執行查詢和 使用地圖找尋最佳路徑很類似</p>
@@ -16883,7 +16883,7 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
-    <title>&lt;RustBox&gt; Docker-Lite Sandbox for Hackers and Learners</title>
+    <title>RustBox - Docker-Lite Sandbox for Hackers and Learners</title>
     <url>/rustbox-introduce/</url>
     <content><![CDATA[<p>Thank you for the clarification! Based on the actual purpose of your project — a <strong>Linux sandboxing tool using OverlayFS, cgroups, and namespaces</strong> — here’s a corrected and well-structured <strong>Markdown tech blog post</strong> introducing <strong>RustBox</strong>:</p>
 <h1 id="🧪-Introducing-RustBox-Lightweight-Linux-Sandboxing-in-Pure-Rust"><a href="#🧪-Introducing-RustBox-Lightweight-Linux-Sandboxing-in-Pure-Rust" class="headerlink" title="🧪 Introducing RustBox: Lightweight Linux Sandboxing in Pure Rust"></a>🧪 Introducing <strong>RustBox</strong>: Lightweight Linux Sandboxing in Pure Rust</h1><p>Are you looking for a secure way to run untrusted programs on Linux, or want to learn how containers isolate processes using kernel features?</p>
