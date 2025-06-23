@@ -306,6 +306,114 @@ return builder.Build();
       </tags>
   </entry>
   <entry>
+    <title>Autofac (IOC)容器介紹</title>
+    <url>/Autofac-introduce/</url>
+    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>市面上有許多IoC容器 <a href="http://ninject.org/">Ninject</a>,<a href="https://github.com/unitycontainer/unity">Unity</a>….</p>
+<p>雖然容器眾多但要解決的問題和概念是一樣</p>
+<p>今天使用Autofac 介紹一下IoC容器</p>
+<p>不了解 IoC 概念可參考 我之前寫 <a href="/ioc-di/" title="IOC(控制反轉)，DI(依賴注入) 深入淺出~~">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
+<h2 id="Autofac是一個-Ioc-容器"><a href="#Autofac是一個-Ioc-容器" class="headerlink" title="Autofac是一個 Ioc 容器"></a>Autofac是一個 <span style="color:#FF8C00;">Ioc</span> <span style="color:#ADD8E6;">容器</span></h2><p>眼尖的讀者會發現我把Ioc跟容器這兩個字使用兩個不同顏色</p>
+<p>原因是Autofac這個框架其實做到兩個概念.</p>
+<ul>
+<li><span style="color:#FFA500;">IoC(Inversion of Control)</span></li>
+<li><span style="color:#FFA500;">管理物件的容器</span></li>
+</ul>
+<div class="note note--important">Autofac框架幫我們實現可以管理物件生命週期並提供依賴注入相對應的物件中</div>
+
+<hr>
+<h2 id="為何使用Autofac在我們專案中"><a href="#為何使用Autofac在我們專案中" class="headerlink" title="為何使用Autofac在我們專案中?"></a>為何使用Autofac在我們專案中?</h2><p>我們先來看看在專案中常使用的撰寫方式,我們需要讀取使用者資料 透過<code>UserDao</code>來幫我們完成.</p>
+<pre><code>public UserService &#123;
+    private UserDao _userDao = new UserDao();
+
+    public UserModel GetUserById(string Id)&#123;
+        return _userDao.GetUserById(Id);
+    &#125;
+&#125;
+</code></pre>
+<p><code>_userDao</code>物件跟依賴<code>UserService</code>，導致兩個狀況</p>
+<ol>
+<li><code>UserDao</code>物件掌控於 <code>UserService</code>,假如有其他類別也使用<code>UserDao</code>物件各自掌控<code>UserDao</code>物件,這導致許多不必要的資源浪費.</li>
+<li>日後要替換讀取 <code>GetUserById </code>方式(從db改讀成其他地方 如API) 需要異動全部有建立<code>UserDao</code>的類別</li>
+</ol>
+<p>我們可以使用IoC容器解決上面兩個問題</p>
+<hr>
+<h2 id="使用Autofac-容器"><a href="#使用Autofac-容器" class="headerlink" title="使用Autofac 容器"></a>使用Autofac 容器</h2><p>一般容器有多種注入方式：建構子注入，屬性注入，參數注入</p>
+<p>按照以下四個步驟 簡單使用Autofac</p>
+<ol>
+<li>建立<code>ContainerBuilder</code>物件</li>
+<li>註冊型別(可限制創建物件生命週期)</li>
+<li>建立<code>IContainer</code></li>
+<li>取得我們需要的物件.</li>
+</ol>
+<p>此範例使用建構子注入方式</p>
+<pre><code>//1.建立ContainerBuilder物件
+ContainerBuilder builder = new ContainerBuilder();
+
+//2.註冊型別(可限制創建物件生命週期)
+builder.RegisterType&lt;UserDao&gt;().As&lt;IUser&gt;();
+
+//3.建立IContainer
+IContainer container = builder.Build();
+
+//4.使用IContainer取得我們需要的物件.
+IUser user = container.Resolve&lt;IUser&gt;();
+</code></pre>
+<p>我們新建一個<code>IUser</code>來給<code>UserDao</code>繼承當作解耦合點(介面可利於日後替換使用)</p>
+<pre><code>public interface IUser&#123;
+    UserModel GetUserById(string Id);
+&#125;
+
+public UserService &#123;
+    private IUser _userDao;
+
+    public UserService(IUser userdao)&#123;
+        _userDao = userdao;
+    &#125;
+
+    public UserModel GetUserById(string Id)&#123;
+        return _userDao.GetUserById(Id);
+    &#125;
+&#125;
+</code></pre>
+<p>可能還感受不到IoC容器威力，因為目前依賴的複雜度還沒有太大</p>
+<p>目前模組依賴關係 如下UML圖</p>
+<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555298305_13744.png"></p>
+<p>模組複雜程度像下圖 如果沒有容器幫我們做物件控制管理,想想就覺得可怕</p>
+<p><b id="docs-internal-guid-0b402e0a-7fff-daaa-ae1a-0fd681ce4177"><img src="https://lh3.googleusercontent.com/v8WHBoDPfaypFKDoEKPrnTgwQ6QRqnXvgz9QQamrSrzsC8BUOr5_WLXiIRH2YO4mRac8EG_BhyRhDoH41iiSX-Yn0I8oID7spXRXYnTCjh93Vh6CwbfUQt8Es_LRUzqcMdUL-o87_8E">**</p>
+<p>**上圖是我Inovce SDK框架的UML圖 **</p>
+<p>**其中我們可以發現 **<code>ApiBase </code>**這個抽象類別 依賴於 **<code>IConfig </code><strong>介面(日後可能依賴更多其他物件或介面)</strong></p>
+<pre><code>ContainerBuilder builder = new ContainerBuilder();
+builder.RegisterType&lt;AppsettingConfig&gt;().As&lt;IConfig&gt;().InstancePerRequest();
+builder.RegisterGeneric(typeof(ApiBase&lt;&gt;)).PropertiesAutowired();
+builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
+</code></pre>
+<p>如果使用Autofac我們可不用擔心這些 只需要將被依賴的物件,介面註冊到容器中，剩下配對注入動作容器都會幫我們達成</p>
+<p>已上面的例子來說：我只需要用 <code>InvoiceApiFactory </code>產生繼承<code>ApiBase&lt;&gt; </code>物件，使用<code>IConfig </code>將會被容器自動注入其中。</p>
+<hr>
+<h2 id="Autofac-常用三種注射方式"><a href="#Autofac-常用三種注射方式" class="headerlink" title="Autofac 常用三種注射方式."></a>Autofac 常用三種注射方式.</h2><ol>
+<li>Constructor injection</li>
+<li>Property injection</li>
+<li>Method injection</li>
+</ol>
+<h3 id="constructor-injection"><a href="#constructor-injection" class="headerlink" title="constructor injection"></a>constructor injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387105_48127.png"></p>
+<h3 id="Property-injection"><a href="#Property-injection" class="headerlink" title="Property injection"></a>Property injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387131_13945.png"></p>
+<h3 id="Method-injection"><a href="#Method-injection" class="headerlink" title="Method injection"></a>Method injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387134_01082.png"></p>
+<hr>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>系統越來越複雜越能表現IoC容器的優勢，如果系統沒那麼複雜其實也不一定要使用他﹐看情境如何</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Autofac-introduce/">https://isdaniel.github.io/Autofac-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>IOC</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>IOC</tag>
+        <tag>Autofac</tag>
+        <tag>AOP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</title>
     <url>/AwesomeProxy-Net/</url>
     <content><![CDATA[<p>今天和大家分享<a href="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net</a>小弟開源AOP輕型框架</p>
@@ -1921,114 +2029,6 @@ GROUP BY userName
         <tag>Design-Pattern</tag>
         <tag>Open-Source</tag>
         <tag>OOP</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Autofac (IOC)容器介紹</title>
-    <url>/Autofac-introduce/</url>
-    <content><![CDATA[<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>市面上有許多IoC容器 <a href="http://ninject.org/">Ninject</a>,<a href="https://github.com/unitycontainer/unity">Unity</a>….</p>
-<p>雖然容器眾多但要解決的問題和概念是一樣</p>
-<p>今天使用Autofac 介紹一下IoC容器</p>
-<p>不了解 IoC 概念可參考 我之前寫 <a href="/ioc-di/" title="IOC(控制反轉)，DI(依賴注入) 深入淺出~~">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
-<h2 id="Autofac是一個-Ioc-容器"><a href="#Autofac是一個-Ioc-容器" class="headerlink" title="Autofac是一個 Ioc 容器"></a>Autofac是一個 <span style="color:#FF8C00;">Ioc</span> <span style="color:#ADD8E6;">容器</span></h2><p>眼尖的讀者會發現我把Ioc跟容器這兩個字使用兩個不同顏色</p>
-<p>原因是Autofac這個框架其實做到兩個概念.</p>
-<ul>
-<li><span style="color:#FFA500;">IoC(Inversion of Control)</span></li>
-<li><span style="color:#FFA500;">管理物件的容器</span></li>
-</ul>
-<div class="note note--important">Autofac框架幫我們實現可以管理物件生命週期並提供依賴注入相對應的物件中</div>
-
-<hr>
-<h2 id="為何使用Autofac在我們專案中"><a href="#為何使用Autofac在我們專案中" class="headerlink" title="為何使用Autofac在我們專案中?"></a>為何使用Autofac在我們專案中?</h2><p>我們先來看看在專案中常使用的撰寫方式,我們需要讀取使用者資料 透過<code>UserDao</code>來幫我們完成.</p>
-<pre><code>public UserService &#123;
-    private UserDao _userDao = new UserDao();
-
-    public UserModel GetUserById(string Id)&#123;
-        return _userDao.GetUserById(Id);
-    &#125;
-&#125;
-</code></pre>
-<p><code>_userDao</code>物件跟依賴<code>UserService</code>，導致兩個狀況</p>
-<ol>
-<li><code>UserDao</code>物件掌控於 <code>UserService</code>,假如有其他類別也使用<code>UserDao</code>物件各自掌控<code>UserDao</code>物件,這導致許多不必要的資源浪費.</li>
-<li>日後要替換讀取 <code>GetUserById </code>方式(從db改讀成其他地方 如API) 需要異動全部有建立<code>UserDao</code>的類別</li>
-</ol>
-<p>我們可以使用IoC容器解決上面兩個問題</p>
-<hr>
-<h2 id="使用Autofac-容器"><a href="#使用Autofac-容器" class="headerlink" title="使用Autofac 容器"></a>使用Autofac 容器</h2><p>一般容器有多種注入方式：建構子注入，屬性注入，參數注入</p>
-<p>按照以下四個步驟 簡單使用Autofac</p>
-<ol>
-<li>建立<code>ContainerBuilder</code>物件</li>
-<li>註冊型別(可限制創建物件生命週期)</li>
-<li>建立<code>IContainer</code></li>
-<li>取得我們需要的物件.</li>
-</ol>
-<p>此範例使用建構子注入方式</p>
-<pre><code>//1.建立ContainerBuilder物件
-ContainerBuilder builder = new ContainerBuilder();
-
-//2.註冊型別(可限制創建物件生命週期)
-builder.RegisterType&lt;UserDao&gt;().As&lt;IUser&gt;();
-
-//3.建立IContainer
-IContainer container = builder.Build();
-
-//4.使用IContainer取得我們需要的物件.
-IUser user = container.Resolve&lt;IUser&gt;();
-</code></pre>
-<p>我們新建一個<code>IUser</code>來給<code>UserDao</code>繼承當作解耦合點(介面可利於日後替換使用)</p>
-<pre><code>public interface IUser&#123;
-    UserModel GetUserById(string Id);
-&#125;
-
-public UserService &#123;
-    private IUser _userDao;
-
-    public UserService(IUser userdao)&#123;
-        _userDao = userdao;
-    &#125;
-
-    public UserModel GetUserById(string Id)&#123;
-        return _userDao.GetUserById(Id);
-    &#125;
-&#125;
-</code></pre>
-<p>可能還感受不到IoC容器威力，因為目前依賴的複雜度還沒有太大</p>
-<p>目前模組依賴關係 如下UML圖</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555298305_13744.png"></p>
-<p>模組複雜程度像下圖 如果沒有容器幫我們做物件控制管理,想想就覺得可怕</p>
-<p><b id="docs-internal-guid-0b402e0a-7fff-daaa-ae1a-0fd681ce4177"><img src="https://lh3.googleusercontent.com/v8WHBoDPfaypFKDoEKPrnTgwQ6QRqnXvgz9QQamrSrzsC8BUOr5_WLXiIRH2YO4mRac8EG_BhyRhDoH41iiSX-Yn0I8oID7spXRXYnTCjh93Vh6CwbfUQt8Es_LRUzqcMdUL-o87_8E">**</p>
-<p>**上圖是我Inovce SDK框架的UML圖 **</p>
-<p>**其中我們可以發現 **<code>ApiBase </code>**這個抽象類別 依賴於 **<code>IConfig </code><strong>介面(日後可能依賴更多其他物件或介面)</strong></p>
-<pre><code>ContainerBuilder builder = new ContainerBuilder();
-builder.RegisterType&lt;AppsettingConfig&gt;().As&lt;IConfig&gt;().InstancePerRequest();
-builder.RegisterGeneric(typeof(ApiBase&lt;&gt;)).PropertiesAutowired();
-builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
-</code></pre>
-<p>如果使用Autofac我們可不用擔心這些 只需要將被依賴的物件,介面註冊到容器中，剩下配對注入動作容器都會幫我們達成</p>
-<p>已上面的例子來說：我只需要用 <code>InvoiceApiFactory </code>產生繼承<code>ApiBase&lt;&gt; </code>物件，使用<code>IConfig </code>將會被容器自動注入其中。</p>
-<hr>
-<h2 id="Autofac-常用三種注射方式"><a href="#Autofac-常用三種注射方式" class="headerlink" title="Autofac 常用三種注射方式."></a>Autofac 常用三種注射方式.</h2><ol>
-<li>Constructor injection</li>
-<li>Property injection</li>
-<li>Method injection</li>
-</ol>
-<h3 id="constructor-injection"><a href="#constructor-injection" class="headerlink" title="constructor injection"></a>constructor injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387105_48127.png"></p>
-<h3 id="Property-injection"><a href="#Property-injection" class="headerlink" title="Property injection"></a>Property injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387131_13945.png"></p>
-<h3 id="Method-injection"><a href="#Method-injection" class="headerlink" title="Method injection"></a>Method injection</h3><p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c59c2248-a535-431f-b1ca-a17372438940/1555387134_01082.png"></p>
-<hr>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>系統越來越複雜越能表現IoC容器的優勢，如果系統沒那麼複雜其實也不一定要使用他﹐看情境如何</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Autofac-introduce/">https://isdaniel.github.io/Autofac-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>IOC</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>IOC</tag>
-        <tag>Autofac</tag>
-        <tag>AOP</tag>
       </tags>
   </entry>
   <entry>
@@ -7601,6 +7601,55 @@ public abstract class MoveBase
       </tags>
   </entry>
   <entry>
+    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
+    <url>/c-func-1/</url>
+    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
+<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
+<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
+<hr>
+<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>()</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>執行結果:Yes 委託是一個特別的類別</p>
+</blockquote>
+<p>但委託物件方式很特別 他在宣告時必須傳入**[建構子參數]**  而建構子參數是**[方法]**</p>
+<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
+<pre><code>public delegate int calcInt(int arg1,int arg2);
+</code></pre>
+<p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="built_in">int</span> <span class="title">add</span>(<span class="params"><span class="built_in">int</span> a, <span class="built_in">int</span> b</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>或是</p>
+<p>使用.net提供的 語法糖 如下</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;; </span><br></pre></td></tr></table></figure>
+
+<p>編譯器會動態幫我們產生一個方法。</p>
+<p>委託就這樣嗎?!</p>
+<hr>
+<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<T></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Calculator</span>&lt;<span class="title">T</span>&gt;</span><br><span class="line">    <span class="keyword">where</span> <span class="title">T</span> : <span class="title">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
+<p>重點:我們可以在Client端決定如何使用此方法</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="built_in">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="built_in">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="built_in">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="built_in">int</span>&gt;(i_List);</span><br><span class="line"><span class="built_in">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="built_in">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$&quot;add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
+<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
+<p><a href="https://github.com/isdaniel/DelegateSimple">原始碼範例</a></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>Delegate</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Func</tag>
+        <tag>Delegate</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(二)</title>
     <url>/c-func-2/</url>
     <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
@@ -8758,55 +8807,6 @@ class Program
       </tags>
   </entry>
   <entry>
-    <title>(C#)委託delegate,Func&lt;&gt;,Action 解說系列(一)</title>
-    <url>/c-func-1/</url>
-    <content><![CDATA[<h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>成為.Net高手<code>Delegate</code> 是必備武器之一</p>
-<p>今天小弟和大家分享我所認知的<code>Delegate</code></p>
-<p>一開始我們先來看看<code>Delegate</code>到底是不是類別</p>
-<hr>
-<h3 id="範例解說："><a href="#範例解說：" class="headerlink" title="範例解說："></a>範例解說：</h3><p>宣告一個 <code>voidDelegate</code> 委託</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> <span class="keyword">void</span> <span class="title">voidDelegate</span>()</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;delegate is class? <span class="subst">&#123;<span class="keyword">typeof</span>(voidDelegate).IsClass&#125;</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line">    Console.ReadKey();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>執行結果:Yes 委託是一個特別的類別</p>
-</blockquote>
-<p>但委託物件方式很特別 他在宣告時必須傳入**[建構子參數]**  而建構子參數是**[方法]**</p>
-<p>我們宣告一個委託 傳入兩個Int參數 回傳Int</p>
-<pre><code>public delegate int calcInt(int arg1,int arg2);
-</code></pre>
-<p>使用如下 new 一個 <code>calcInt</code> 並傳入建構子參數  add方法 之後就可以把<code>calcint</code>當作方法來使用</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint = <span class="keyword">new</span> calcInt(<span class="keyword">add</span>);</span><br><span class="line"><span class="keyword">var</span> result1 = calcint(<span class="number">5</span>,<span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result1);</span><br><span class="line"></span><br><span class="line"><span class="comment">//方法</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="built_in">int</span> <span class="title">add</span>(<span class="params"><span class="built_in">int</span> a, <span class="built_in">int</span> b</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>或是</p>
-<p>使用.net提供的 語法糖 如下</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">calcInt calcint1 = (a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;;</span><br><span class="line"><span class="keyword">var</span> result2 = calcint1(<span class="number">5</span>, <span class="number">5</span>);</span><br><span class="line">Console.WriteLine(result2);</span><br><span class="line">(a,b) =&gt; &#123; <span class="keyword">return</span> a + b; &#125;; </span><br></pre></td></tr></table></figure>
-
-<p>編譯器會動態幫我們產生一個方法。</p>
-<p>委託就這樣嗎?!</p>
-<hr>
-<h2 id="進階的用法"><a href="#進階的用法" class="headerlink" title="進階的用法"></a>進階的用法</h2><h3 id="第一-宣告一個類別-計算者-，建構子參數是一個泛行List"><a href="#第一-宣告一個類別-計算者-，建構子參數是一個泛行List" class="headerlink" title="第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List"></a>第一 : 宣告一個類別[計算者]，建構子參數是一個泛行List<T></h3><p>在類別中宣告Calc委託，在Excute方法中我們直接回傳執行Calc結果</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Calculator</span>&lt;<span class="title">T</span>&gt;</span><br><span class="line">    <span class="keyword">where</span> <span class="title">T</span> : <span class="title">struct</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">delegate</span> T <span class="title">Calc</span>(<span class="params">IList&lt;T&gt; list</span>)</span>;</span><br><span class="line"></span><br><span class="line">    IList&lt;T&gt; _container;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Calculator</span>(<span class="params">IList&lt;T&gt; container</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        _container = container;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> T <span class="title">Excute</span>(<span class="params">Calc C</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> C(_container);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="使用方法如下："><a href="#使用方法如下：" class="headerlink" title="使用方法如下："></a>使用方法如下：</h2><p>宣告一個物件Calculator傳入建構子參數List</p>
-<p>重點:我們可以在Client端決定如何使用此方法</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">List&lt;<span class="built_in">int</span>&gt; i_List = <span class="keyword">new</span> List&lt;<span class="built_in">int</span>&gt;()</span><br><span class="line">&#123;</span><br><span class="line">    <span class="number">1</span>,<span class="number">3</span>,<span class="number">5</span>,<span class="number">7</span>,<span class="number">9</span></span><br><span class="line">&#125;;</span><br><span class="line">Calculator&lt;<span class="built_in">int</span>&gt; calculator = <span class="keyword">new</span> Calculator&lt;<span class="built_in">int</span>&gt;(i_List);</span><br><span class="line"><span class="built_in">int</span> i_add = calculator.Excute((list) =&gt; list.Sum());</span><br><span class="line"><span class="built_in">int</span> i_multi = calculator.Excute((list) =&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">int</span> totle = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">foreach</span> (<span class="keyword">var</span> i <span class="keyword">in</span> list)</span><br><span class="line">    &#123;</span><br><span class="line">        totle *= i;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> totle;</span><br><span class="line">&#125;);</span><br><span class="line">Console.WriteLine(<span class="string">$&quot;add:<span class="subst">&#123;i_add&#125;</span>  multi:<span class="subst">&#123;i_multi&#125;</span>&quot;</span>);</span><br></pre></td></tr></table></figure>
-
-<p>總結:如上面程式碼　我們可在<code>Client</code>中決定對<code>List</code>集合做操作(加,減,乘,除) ，而不是一開始就寫死在類別中，降低了類別方法和<code>Client</code>的耦合</p>
-<p><code>Delegate</code>可以把方法實作的權利移交給<code>Clinet</code>端</p>
-<p><a href="https://github.com/isdaniel/DelegateSimple">原始碼範例</a></p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/c-func-1/">https://isdaniel.github.io/c-func-1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>Delegate</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Func</tag>
-        <tag>Delegate</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>淺談SqlServer Lock(一)</title>
     <url>/dblock-1/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -9848,6 +9848,78 @@ GROUP BY userName
         <tag>WebDesign</tag>
         <tag>Blog</tag>
         <tag>Github</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Appveyor搭配Github自動化上傳Nuget</title>
+    <url>/github-with-nugetdeploy/</url>
+    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
+<p>今天跟大家分享我開源專案<a href="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW</a>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
+<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><a href="https://www.appveyor.com/docs/">Appveyor</a>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
+<blockquote>
+<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
+</blockquote>
+<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
+<p><img src="https://i.imgur.com/YPKBuFQ.png"></p>
+<p>選擇我們要建立CICD專案.</p>
+<p><img src="https://i.imgur.com/FW4Pd0j.png"></p>
+<p>最後會在Project頁看到你剛剛新建立Project.</p>
+<p><img src="https://i.imgur.com/vA6DIjh.png"></p>
+<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
+<ul>
+<li>透過UI來操作設定</li>
+<li>透過appveyor.yml設定(專案root目錄)</li>
+</ul>
+<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
+<p>我使用我的開源專案<a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a>來當作這次範例.</p>
+<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
+<ul>
+<li>image：指定Build的IDE VS版本.</li>
+<li>before_build：建置專案前要執行步驟</li>
+<li>build_script：建置專案時要執行步驟</li>
+<li>after_build：建置專案完成執行步驟</li>
+<li>deploy：將你建置完artifact deploy到某個地方</li>
+<li>artifacts：存放artifact位置</li>
+<li>environment：設定環境變數</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">&#x27;&#123;build&#125;&#x27;</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.nupkg&#x27;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.snupkg&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
+<ul>
+<li>provider：NuGet(Bj4)</li>
+<li>api_key：<ul>
+<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
+</ul>
+</li>
+<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
+<li>artifact：查找需要上傳檔案資訊</li>
+</ul>
+<p>這個YML設定檔有下面流程</p>
+<ol>
+<li>nuget restore.</li>
+<li>build .net core專案</li>
+<li>執行unit test</li>
+<li>發布package到Nuget(只限於master)</li>
+</ol>
+<blockquote>
+<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
+</blockquote>
+<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
+<p><img src="https://i.imgur.com/VRbUO5i.png"></p>
+<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
+<p>這是之前跑ElectronicInvoice_TW專案<a href="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄</a>歷程</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
+<p>參考連結：<a href="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/</a></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>CICD</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>CICD</tag>
+        <tag>Appveyor</tag>
+        <tag>netcore</tag>
       </tags>
   </entry>
   <entry>
@@ -14267,78 +14339,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>Appveyor搭配Github自動化上傳Nuget</title>
-    <url>/github-with-nugetdeploy/</url>
-    <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>現在CICD越來越普遍,如要提高開發效率和自動化部屬跟Deploy系統有密不可分關係.</p>
-<p>今天跟大家分享我開源專案<a href="https://www.nuget.org/packages/ElectronicInvoice_TW/">ElectronicInvoice_TW</a>如何利用<br>Github + Appveyor 來完成自動Deploy Package至Nuget上.</p>
-<h2 id="關於Appveyor"><a href="#關於Appveyor" class="headerlink" title="關於Appveyor"></a>關於Appveyor</h2><p><a href="https://www.appveyor.com/docs/">Appveyor</a>是一個CI平台,可以透過Github Webhock來觸發一列動作來完成自動化部屬和建置</p>
-<blockquote>
-<p>甚至Appveyor也有提供Nuget平台提供給開發人員.</p>
-</blockquote>
-<p>使用GitHub帳號登入後,我們透過<code>NEW PROJECT</code>建立一個CI Job.</p>
-<p><img src="https://i.imgur.com/YPKBuFQ.png"></p>
-<p>選擇我們要建立CICD專案.</p>
-<p><img src="https://i.imgur.com/FW4Pd0j.png"></p>
-<p>最後會在Project頁看到你剛剛新建立Project.</p>
-<p><img src="https://i.imgur.com/vA6DIjh.png"></p>
-<h2 id="建立Appveyor-pipline"><a href="#建立Appveyor-pipline" class="headerlink" title="建立Appveyor pipline"></a>建立Appveyor pipline</h2><p>在Appveyor有兩種方式可以來產生建置專案的pipline</p>
-<ul>
-<li>透過UI來操作設定</li>
-<li>透過appveyor.yml設定(專案root目錄)</li>
-</ul>
-<p>本文章我會介紹如何<strong>透過appveyor.yml設定</strong></p>
-<p>我使用我的開源專案<a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a>來當作這次範例.</p>
-<h3 id="appveyor-yml"><a href="#appveyor-yml" class="headerlink" title="appveyor.yml"></a>appveyor.yml</h3><p>這裡介紹幾個yml重要的屬性</p>
-<ul>
-<li>image：指定Build的IDE VS版本.</li>
-<li>before_build：建置專案前要執行步驟</li>
-<li>build_script：建置專案時要執行步驟</li>
-<li>after_build：建置專案完成執行步驟</li>
-<li>deploy：將你建置完artifact deploy到某個地方</li>
-<li>artifacts：存放artifact位置</li>
-<li>environment：設定環境變數</li>
-</ul>
-<figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">image:</span> <span class="string">Visual</span> <span class="string">Studio</span> <span class="number">2019</span></span><br><span class="line"><span class="attr">version:</span> <span class="string">build</span> <span class="string">&#x27;&#123;build&#125;&#x27;</span></span><br><span class="line"><span class="attr">configuration:</span> <span class="string">Release</span></span><br><span class="line"><span class="attr">platform:</span> <span class="string">Any</span> <span class="string">CPU</span></span><br><span class="line"><span class="attr">before_build:</span></span><br><span class="line"><span class="bullet">-</span> <span class="attr">cmd:</span> <span class="string">nuget</span> <span class="string">restore</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line"></span><br><span class="line"><span class="attr">environment:</span></span><br><span class="line">  <span class="attr">my_variable:</span></span><br><span class="line">    <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build:</span></span><br><span class="line">  <span class="attr">publish_nuget:</span> <span class="literal">true</span></span><br><span class="line">  </span><br><span class="line"><span class="attr">build_script:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">build</span> <span class="string">src\ElectronicInvoice.sln</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">test</span>  <span class="string">src\ElectronicInvoiceTests</span></span><br><span class="line"><span class="attr">after_build:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="string">dotnet</span> <span class="string">pack</span> <span class="string">src\ElectronicInvoice.Produce</span></span><br><span class="line"></span><br><span class="line"><span class="attr">deploy:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">provider:</span> <span class="string">NuGet</span></span><br><span class="line">    <span class="attr">api_key:</span></span><br><span class="line">      <span class="attr">secure:</span> <span class="string">GWztiV993airUIgYQa/8Yp0jZuZ9IWVjAJDxwBRTOvN2C5pBqlArgsUY4uqrGujp</span></span><br><span class="line">    <span class="attr">on:</span></span><br><span class="line">        <span class="attr">branch:</span> <span class="string">master</span></span><br><span class="line">    <span class="attr">artifact:</span> <span class="string">/.*(\.|\.s)nupkg/</span></span><br><span class="line"></span><br><span class="line"><span class="attr">nuget:</span></span><br><span class="line">  <span class="attr">project_feed:</span> <span class="literal">true</span></span><br><span class="line">        </span><br><span class="line"><span class="attr">artifacts:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.nupkg&#x27;</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">path:</span> <span class="string">&#x27;**\*.snupkg&#x27;</span></span><br></pre></td></tr></table></figure>
-
-<p><code>deploy</code> Propert決定建置完成後要如何發布artifacts<br>對於Nuget中有幾個重要成員屬性</p>
-<ul>
-<li>provider：NuGet(Bj4)</li>
-<li>api_key：<ul>
-<li><code>secure</code>是Deploy Nuget使用API Key(需要透過appveyor加密稍後會跟大家說如何完成)</li>
-</ul>
-</li>
-<li>branch：只有哪個Branch觸發Job才需要上傳檔案.</li>
-<li>artifact：查找需要上傳檔案資訊</li>
-</ul>
-<p>這個YML設定檔有下面流程</p>
-<ol>
-<li>nuget restore.</li>
-<li>build .net core專案</li>
-<li>執行unit test</li>
-<li>發布package到Nuget(只限於master)</li>
-</ol>
-<blockquote>
-<p>有沒有發現除了寫code和commit code剩下都是由自動化幫我們處理(目前merge request也可以跑自動化,但不會上傳nuget)</p>
-</blockquote>
-<h3 id="api-key的secure"><a href="#api-key的secure" class="headerlink" title="api_key的secure"></a>api_key的secure</h3><p>在Appveyor設定頁面有個Encrypt YAML頁面,這個頁面很重要可以幫你把重要資料加密起來,所以在Github上看到api_key的secure是我們加密過的.</p>
-<p><img src="https://i.imgur.com/VRbUO5i.png"></p>
-<p>最後就把我們寫好的YML檔案放到專案根目錄,Appveyor預設會在根目錄查找YML檔案並執行腳本.</p>
-<p>這是之前跑ElectronicInvoice_TW專案<a href="https://ci.appveyor.com/project/isdaniel/electronicinvoice-tw/builds/37118985">紀錄</a>歷程</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>透過Appveyor我們可以建立一套完整CICD開發上板流程,只要Commit Code並Merge進master就可以自動化發布程式碼跟Nuget.</p>
-<p>參考連結：<a href="https://www.appveyor.com/docs/nuget/">https://www.appveyor.com/docs/nuget/</a></p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/github-with-nugetdeploy/">https://isdaniel.github.io/github-with-nugetdeploy/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>CICD</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>CICD</tag>
-        <tag>Appveyor</tag>
-        <tag>netcore</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>資料庫查詢核心概念-地圖理論</title>
     <url>/map-theory/</url>
     <content><![CDATA[<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>我認為 DB query optimizer (QO) 產生執行計畫並執行查詢和 使用地圖找尋最佳路徑很類似</p>
@@ -14757,111 +14757,79 @@ email_url: dog830228@gmail.com
   <entry>
     <title>MessageWorkerPool framework introduction</title>
     <url>/mq-workerpool-introduction/</url>
-    <content><![CDATA[<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>Recently, I developed the <code>MessageWorkerPool</code> project. The main concept is to provide a platform framework that enables users to implement logic quickly and easily within workers. The design is highly flexible, allowing workers to be implemented in multiple languages based on a worker protocol I created. Currently, I’ve provided examples for workers written in C#, Rust, and Python.</p>
-<p>This library excels in handling tasks within multi-process environments, especially for applications demanding high throughput and low latency. It also supports graceful shutdown, ensuring a smooth process termination without disrupting ongoing tasks.</p>
-<p><a href="https://github.com/isdaniel/MessageWorkerPool">MessageWorkerPool Github URL</a></p>
-<h2 id="Why-Process-Pool-rather-than-Thread-Pool"><a href="#Why-Process-Pool-rather-than-Thread-Pool" class="headerlink" title="Why Process Pool rather than Thread Pool?"></a>Why Process Pool rather than Thread Pool?</h2><p>Use a process pool when you need robust isolation to prevent issues in one task from affecting others, especially for critical or crash-prone operations,although thread pool would be more lightweight (as threads share memory and require less context-switching overhead), however Process Pool would provide more flexibility solution by implement different program language.</p>
-<h2 id="Installation"><a href="#Installation" class="headerlink" title="Installation"></a>Installation</h2><p>To install the <code>MessageWorkerPool</code> package, use the following NuGet command:</p>
+    <content><![CDATA[<h2 id="簡介"><a href="#簡介" class="headerlink" title="簡介"></a>簡介</h2><p>最近我開發了 <code>MessageWorkerPool</code> 專案。其主要概念是提供一個平台框架，使使用者能夠快速且輕鬆地在 <code>Worker</code> 內實作邏輯。該設計高度靈活，允許基於我創建的 Worker 通訊協議，以多種程式語言實作 <code>Worker</code>。目前，我已提供使用 C#、Rust 和 Python 編寫的 Worker 範例。</p>
+<p>這個函式庫在多進程環境中處理任務表現優異。此外，它還支援優雅關閉 (graceful shutdown)，確保在隨時 consumer worker 能順利終止處理程序。</p>
+<p><a href="https://github.com/isdaniel/MessageWorkerPool">MessageWorkerPool GitHub</a></p>
+<h2 id="為什麼選擇-ProcessPool-而非-ThreadPool-？"><a href="#為什麼選擇-ProcessPool-而非-ThreadPool-？" class="headerlink" title="為什麼選擇 ProcessPool 而非 ThreadPool ？"></a>為什麼選擇 ProcessPool 而非 ThreadPool ？</h2><p>當你需要強大的隔離性，以防止某個任務影響其他任務時，應該選擇 ProcessPool，特別是針對關鍵操作或容易崩潰的任務。雖然 ThreadPool 較為輕量（因為執行緒共用記憶體並且具有較低的上下文切換開銷），但 ProcessPool 能夠提供更靈活的解決方案，允許使用不同的程式語言來實作 Worker。</p>
+<h2 id="安裝"><a href="#安裝" class="headerlink" title="安裝"></a>安裝</h2><p>要安裝 <code>MessageWorkerPool</code> 套件，請使用以下 NuGet 指令：</p>
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">PM &gt; Install-Package MessageWorkerPool</span><br></pre></td></tr></table></figure>
 
-<p>To install the library, clone the repository and build the project:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/MessageWorkerPool.git</span><br><span class="line"><span class="built_in">cd</span> MessageWorkerPool</span><br><span class="line">dotnet build</span><br></pre></td></tr></table></figure>
+<p>若要手動安裝此函式庫，可克隆儲存庫並建置專案：</p>
+<figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/MessageWorkerPool.git</span><br><span class="line"><span class="built_in">cd</span> MessageWorkerPool</span><br><span class="line">dotnet build</span><br></pre></td></tr></table></figure>
 
-<h2 id="Architecture-overview"><a href="#Architecture-overview" class="headerlink" title="Architecture overview"></a>Architecture overview</h2><p><img src="https://raw.githubusercontent.com/isdaniel/MessageWorkerPool/refs/heads/main/images/arhc-overview.png"></p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><p>Here’s a quick start guide for deploying your RabbitMQ and related services using the provided <code>docker-compose.yml</code> file and environment variables from <code>.env</code>.</p>
+<h2 id="架構概覽"><a href="#架構概覽" class="headerlink" title="架構概覽"></a>架構概覽</h2><p><img src="https://raw.githubusercontent.com/isdaniel/MessageWorkerPool/refs/heads/main/images/arhc-overview.png"></p>
+<h2 id="快速開始"><a href="#快速開始" class="headerlink" title="快速開始"></a>快速開始</h2><p>這是部署 RabbitMQ 和相關服務的快速開始指南，使用提供的 docker-compose.yml 檔案和 .env 中的環境變數。</p>
 <figure class="highlight mel"><table><tr><td class="code"><pre><span class="line">docker-compose --<span class="keyword">env</span>-<span class="keyword">file</span> .\<span class="keyword">env</span>\.<span class="keyword">env</span> up --build -d</span><br></pre></td></tr></table></figure>
 
 <ol>
-<li>Check RabbitMQ health status: Open <code>http://localhost:8888</code> in your browser to access the RabbitMQ Management Dashboard.</li>
+<li>檢查 RabbitMQ 健康狀態：在瀏覽器中開啟 <a href="http://localhost:8888/">http://localhost:8888</a> 以訪問 RabbitMQ 管理面板。</li>
 </ol>
 <ul>
-<li>Username: guest</li>
-<li>Password: guest</li>
+<li>使用者名稱: guest</li>
+<li>密碼: guest</li>
 </ul>
 <ol start="2">
-<li>Check OrleansDashboard <code>http://localhost:8899</code></li>
+<li>檢查 OrleansDashboard <a href="http://localhost:8899/">http://localhost:8899</a></li>
 </ol>
 <ul>
-<li>Username: admin</li>
-<li>Password: test.123</li>
+<li>使用者名稱: admin</li>
+<li>密碼: test.123</li>
 </ul>
-<h2 id="Program-Structure"><a href="#Program-Structure" class="headerlink" title="Program Structure"></a>Program Structure</h2><p>Here is the sample code for creating and configuring a worker pool that interacts with RabbitMQ. Below is a breakdown of its functionality; The worker pool will fetch message from RabbitMQ server depended on your <code>RabbitMqSetting</code> setting and sending the message via <code>Process.StandardInput</code> to real worker node that created by users.</p>
+<h2 id="程式結構"><a href="#程式結構" class="headerlink" title="程式結構"></a>程式結構</h2><p>以下是創建並配置與 RabbitMQ 互動的 workerpool 的範例程式碼。以下是其功能的解析：workerpool 將根據您的 RabbitMqSetting 設定從 RabbitMQ 伺服器獲取訊息，並通過 Process.StandardInput 將訊息傳遞給用戶創建的真實 worker node</p>
 <figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">async</span> Task <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        CreateHostBuilder(<span class="keyword">args</span>).Build().Run();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IHostBuilder <span class="title">CreateHostBuilder</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span> =&gt;</span><br><span class="line">        Host.CreateDefaultBuilder(<span class="keyword">args</span>)</span><br><span class="line">            .ConfigureLogging(logging =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                logging.ClearProviders();</span><br><span class="line">                logging.AddConsole(options =&gt; &#123;</span><br><span class="line">                    options.FormatterName = ConsoleFormatterNames.Simple;</span><br><span class="line">                &#125;);</span><br><span class="line">                logging.Services.Configure&lt;SimpleConsoleFormatterOptions&gt;(options =&gt; &#123;</span><br><span class="line">                    options.IncludeScopes = <span class="literal">true</span>;</span><br><span class="line">                    options.TimestampFormat = <span class="string">&quot; yyyy-MM-dd HH:mm:ss &quot;</span>;</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;).AddRabbitMqWorkerPool(<span class="keyword">new</span> RabbitMqSetting</span><br><span class="line">            &#123;</span><br><span class="line">                UserName = Environment.GetEnvironmentVariable(<span class="string">&quot;USERNAME&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                Password = Environment.GetEnvironmentVariable(<span class="string">&quot;PASSWORD&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                HostName = Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_HOSTNAME&quot;</span>),</span><br><span class="line">                Port = <span class="built_in">ushort</span>.TryParse(Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_PORT&quot;</span>), <span class="keyword">out</span> <span class="built_in">ushort</span> p) ? p : (<span class="built_in">ushort</span>) <span class="number">5672</span>,</span><br><span class="line">                PrefetchTaskCount = <span class="number">3</span></span><br><span class="line">            &#125;, <span class="keyword">new</span> WorkerPoolSetting() &#123; WorkerUnitCount = <span class="number">9</span>, CommandLine = <span class="string">&quot;dotnet&quot;</span>, Arguments = <span class="string">@&quot;./ProcessBin/WorkerProcessSample.dll&quot;</span>, QueueName = Environment.GetEnvironmentVariable(<span class="string">&quot;QUEUENAME&quot;</span>), &#125;</span><br><span class="line">            );</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<ol>
-<li><p><strong>Scalability</strong></p>
+
+<h2 id="worker-process-與-workerPool-之間的協議"><a href="#worker-process-與-workerPool-之間的協議" class="headerlink" title="worker process 與 workerPool 之間的協議"></a>worker process 與 workerPool 之間的協議</h2><p>worker node 與任務進程之間的協議使用 MessagePack 二進制格式來進行更快且更小的資料傳輸，標準輸入將發送信號來控制 worker process。</p>
+<p>一開始 workerPool 將通過標準輸入傳遞 NamedPipe 名稱，因此 worker node 需要接收該名稱並建立 worker process 和 workerPool 之間的 NamedPipe。</p>
+<h3 id="workerPool-發送的操作指令"><a href="#workerPool-發送的操作指令" class="headerlink" title="workerPool 發送的操作指令"></a>workerPool 發送的操作指令</h3><p>目前，workerPool將通過標準輸入向 worker process 發送操作信號或指令。</p>
 <ul>
-<li>Scaling is achieved by increasing the <code>WorkerUnitCount</code> &amp; <code>PrefetchTaskCount</code> determined how many amount of fetching message from rabbitMQ at same time.</li>
+<li>CLOSED_SIGNAL (<code>__quit__</code>): 代表 workerPool 發送關閉或關機信號給 worker node，worker process 應盡快執行優雅關機。<br>通過 (Data Named Pipe Stream) 進行資料傳輸<br>命名管道是一種強大的進程間通信 (IPC) 機制，它允許兩個或更多的進程之間進行通信，即使它們運行在不同的機器上（例如 Windows 等支持的平台）。我們的 worker 使用此方式在 worker node 與 workerPool 之間傳輸資料。</li>
+</ul>
+<p>msgpack 協議支持的資料類型如下類別與 byte[] 格式。</p>
+<p>對應的 byte[] 資料是：</p>
+<figure class="highlight dns"><table><tr><td class="code"><pre><span class="line">[<span class="number">132,161,48,179</span>,<span class="number">78,101,119,32</span>,<span class="number">79,117,116,80</span>,<span class="number">117,116,32,77</span>,<span class="number">101,115,115,97</span>,<span class="number">103,101,33,161</span>,<span class="number">49,204,200,161</span>,<span class="number">50,129,164,116</span>,<span class="number">101,115,116,167</span>,<span class="number">116,101,115,116</span>,<span class="number">118,97,108,161</span>,<span class="number">51,169,116,101</span>,<span class="number">115,116,81,117</span>,<span class="number">101,117,101</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>要將提供的偽 JSON 結構表示為 <code>MsgPack</code> 格式（byte[]），我們可以分解過程如下：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line">Edit</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;2&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;test&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testval&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;3&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testQueue&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>更多資訊，您可以使用 <a href="https://ref45638.github.io/msgpack-converter/">msgpack-converter</a> 來解碼和編碼。</p>
+<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"> <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 封裝來自 MQ 服務的訊息</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageOutputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> 來自進程的輸出訊息</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> MessageStatus Status &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> 我們希望儲存的回應資訊以便繼續執行訊息。</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> 預設使用 BasicProperties.Reply To 隊列名稱，任務處理器可以覆寫回應隊列名稱。</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;value&gt;</span>預設使用 BasicProperties.Reply<span class="doctag">&lt;/value&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> ReplyQueueName &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>我將在此介紹 MessageStatus 的含義。</p>
+<ul>
+<li>IGNORE_MESSAGE (-1) : 將訊息附加到資料流管道中，而不進行進一步處理。<ul>
+<li>Status &#x3D; -1: 任務處理告訴 worker process 這不是回應或確認訊息，只是回饋到資料流管道。</li>
 </ul>
 </li>
-<li><p><strong>Decoupling</strong></p>
-<ul>
-<li>RabbitMQ acts as a message broker, decoupling the producers of messages from the consumers (workers). This makes it easier to manage workloads independently.</li>
+<li>MESSAGE_DONE (200) : 通知 worker process 該案件可以由訊息隊列服務進行確認。<ul>
+<li>Status &#x3D; 200 任務處理告訴 worker process 該任務已完成並且可以確認。</li>
 </ul>
 </li>
-<li><p><strong>Configurable</strong></p>
-<ul>
-<li>The <code>RabbitMqSetting</code> object provides flexibility to modify connection settings, queue names, and worker pool details without changing the code.</li>
+<li>MESSAGE_DONE_WITH_REPLY (201) : 請確保我們滿足以下步驟以支援 RPC。<ul>
+<li>客戶端代碼必須提供 ReplyTo 資訊。</li>
+<li>任務處理將使用 JSON 負載中的 Message 欄位來回應隊列資訊。</li>
+<li>例如：當 Status &#x3D; 201 透過資料流管道發送時，任務處理指示 worker process 輸出，例如 1010，該數據必須然後發送到回應隊列。</li>
 </ul>
 </li>
-<li><p><strong>Reusable Workers</strong></p>
-<ul>
-<li>Worker processes are defined by the <code>CommandLine</code> and <code>Arguments</code>, making it easy to reuse or swap out the tasks performed by the workers.</li>
 </ul>
-</li>
-</ol>
-<h2 id="Protocol-between-worker-and-task-process"><a href="#Protocol-between-worker-and-task-process" class="headerlink" title="Protocol between worker and task process"></a>Protocol between worker and task process</h2><p>The Protocol between worker and task process are use MessagePack binary format with faster and smaller data transfer, standardInput will send signal control worker process.</p>
-<p>In the beginning, worker pool will pass NamedPipe name through standardInput, therefore worker program would need to receive that name and establish NamedPipe between worker process and worker pool.</p>
-<h3 id="Operation-command-from-worker-pool"><a href="#Operation-command-from-worker-pool" class="headerlink" title="Operation command from worker pool"></a>Operation command from worker pool</h3><p>Currently, worker pool will send operations signal or command to worker process via standardInput.</p>
-<ul>
-<li>CLOSED_SIGNAL (<code>__quit__</code>): that represent worker pool sent a close or shutdown signal to worker process, that worker process should perform graceful shutdown as soon as possible.</li>
-</ul>
-<h3 id="Data-transfer-via-Data-Named-Pipe-Stream"><a href="#Data-transfer-via-Data-Named-Pipe-Stream" class="headerlink" title="Data transfer via (Data Named Pipe Stream)"></a>Data transfer via (Data Named Pipe Stream)</h3><p>Named pipes are a powerful interprocess communication (IPC) mechanism that allows two or more processes to communicate with each other, even if they are running on different machines in a network (on platforms that support it, like Windows), our workers used to this for trasfering data between worker process and worker pool</p>
-<p><a href="https://msgpack.org/">msgpack</a> protocols data type support as below class &amp; <code>byte[]</code> format.</p>
-<p>The corresponding <code>byte[]</code> data is:</p>
-<figure class="highlight dns"><table><tr><td class="code"><pre><span class="line">[<span class="number">132,161,48,179</span>,<span class="number">78,101,119,32</span>,<span class="number">79,117,116,80</span>,<span class="number">117,116,32,77</span>,<span class="number">101,115,115,97</span>,<span class="number">103,101,33,161</span>,<span class="number">49,204,200,161</span>,<span class="number">50,129,164,116</span>,<span class="number">101,115,116,167</span>,<span class="number">116,101,115,116</span>,<span class="number">118,97,108,161</span>,<span class="number">51,169,116,101</span>,<span class="number">115,116,81,117</span>,<span class="number">101,117,101</span>]</span><br></pre></td></tr></table></figure>
+<p>我們可以通過不同的程式語言來編寫自己的 worker node （我已經在此 github 提供了 Python, .NET, rust example code）。</p>
+<h2 id="如何處理長時間運行的任務或涉及處理大量數據行的任務？"><a href="#如何處理長時間運行的任務或涉及處理大量數據行的任務？" class="headerlink" title="如何處理長時間運行的任務或涉及處理大量數據行的任務？"></a>如何處理長時間運行的任務或涉及處理大量數據行的任務？</h2><p>類似於操作系統中的進程，發生上下文切換（中斷等）。</p>
+<p>客戶端可以通過 Header 發送一個 <code>TimeoutMilliseconds</code> 值：在取消之前等待的時間（毫秒）。如果任務執行超過該值，worker process 可以使用該值來設置中斷，例如 CancellationToken。</p>
+<p>例如，<code>MessageOutputTask</code> 的 JSON 可以如下所示，<code>status=201</code> 代表此訊息將重新入隊以便下次處理，並且訊息將攜帶 <code>Headers</code> 資訊再次重新入隊。</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;Message&quot;</span><span class="punctuation">:</span> <span class="string">&quot;This is Mock Json Data&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Status&quot;</span><span class="punctuation">:</span> <span class="number">201</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Headers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;CreateTimestamp&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2025-01-01T14:35:00Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PreviousProcessingTimestamp&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2025-01-01T14:40:00Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;Source&quot;</span><span class="punctuation">:</span> <span class="string">&quot;OrderProcessingService&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PreviousExecutedRows&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;RequeueTimes&quot;</span><span class="punctuation">:</span> <span class="string">&quot;3&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
 
-<p>To represent the provided pseudo-JSON structure using the <code>MsgPack</code> format (byte[]), we can break down the process as follows:</p>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;2&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;test&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testval&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;3&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testQueue&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<p>More information you can use <a href="https://ref45638.github.io/msgpack-converter/">msgpack-converter</a> to decode and encode.</p>
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"> <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Encapsulate message from MQ service</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageOutputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Output message from process</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> MessageStatus Status &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Reply information that we want to store for continue execution message.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Default use BasicProperties.Reply To queue name, task processor can overwrite reply queue name.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;value&gt;</span>Default use BasicProperties.Reply<span class="doctag">&lt;/value&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> ReplyQueueName &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> Encapsulate message from MQ service</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageInputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Task body</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Message CorrelationId for debugging issue between, producer and consumer</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> CorrelationId &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> Original sending Queue Name</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> OriginalQueueName &#123; <span class="keyword">get</span>;  <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> TimeoutMilliseconds : The time span to wait before canceling this (milliseconds),</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> default: -1, if value smaller than 0 represent InfiniteTimeSpan, otherwise use the setting positive value.</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>I would introduce <code>MessageStatus</code> meaning here.</p>
-<ul>
-<li><p>IGNORE_MESSAGE (-1) : Append the message to data steaming pipeline without further processing.</p>
-<ul>
-<li><code>Status = -1</code>: task process tell worker this isn’t a response nor ack message, only feedback to data steaming pipeline.</li>
-</ul>
-</li>
-<li><p>MESSAGE_DONE (200) : Notify the worker that this case can be acknowledged by the message queue service.</p>
-<ul>
-<li><code>Status = 200</code> task process tell worker the task can be acked that mean it was finished.</li>
-</ul>
-</li>
-<li><p>MESSAGE_DONE_WITH_REPLY (201) : Please ensure we satisfied below steps for supporting RPC.</p>
-<ol>
-<li>The client side cdoe must provide <code>ReplyTo</code> information.</li>
-<li>task process will use the <code>Message</code> column in the JSON payload to reply with the queue information.</li>
-<li>Here is an example: When <code>Status = 201</code> is sent via data steaming pipeline, the task process instructs the worker to output, such as <code>1010</code>, which must then be sent to the reply queue.</li>
-</ol>
-</li>
-</ul>
-<p>Example <code>byte[]</code> data</p>
-<figure class="highlight accesslog"><table><tr><td class="code"><pre><span class="line"><span class="string">[130, 161, 48, 179, 78, 101, 119, 32, 79, 117, 116, 80, 117, 116, 32, 77, 101, 115, 115, 97, 103, 101, 33, 161, 49, 204, 200]</span></span><br></pre></td></tr></table></figure>
-
-<p>Correspondence JSON from <code>byte[]</code></p>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<p>We can write our own worker by different program language (I have provided python and .net sample in this repository).</p>
-<h3 id="How-do-we-handle-long-running-task-or-the-task-involves-processing-a-lot-of-data-rows"><a href="#How-do-we-handle-long-running-task-or-the-task-involves-processing-a-lot-of-data-rows" class="headerlink" title="How do we handle long-running task or the task involves processing a lot of data rows?"></a>How do we handle long-running task or the task involves processing a lot of data rows?</h3><p>the concept like OS processing thread occurs a context switch (interrupt ..etc).</p>
-<p>Client can send a value <code>TimeoutMilliseconds</code> via Header: The time span to wait before canceling this (milliseconds), if the task execute exceed the value work process could use that value for setting<br>interrupt like <code>Cancellationtoken</code>.</p>
-<p>For example the <code>MessageOutputTask</code> JSON could look like below, <code>status=201</code> represents that this message will be re-queued for processing next time, the message will bring the <code>Headers</code> information when requeue again.</p>
-<figure class="highlight smalltalk"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">  <span class="comment">&quot;Message&quot;</span>: <span class="comment">&quot;This is Mock Json Data&quot;</span>,</span><br><span class="line">  <span class="comment">&quot;Status&quot;</span>: <span class="number">201</span>,</span><br><span class="line">  <span class="comment">&quot;Headers&quot;</span>: &#123;</span><br><span class="line">    <span class="comment">&quot;CreateTimestamp&quot;</span>: <span class="comment">&quot;2025-01-01T14:35:00Z&quot;</span>,</span><br><span class="line">    <span class="comment">&quot;PreviousProcessingTimestamp&quot;</span>: <span class="comment">&quot;2025-01-01T14:40:00Z&quot;</span>,</span><br><span class="line">	<span class="comment">&quot;Source&quot;</span>: <span class="comment">&quot;OrderProcessingService&quot;</span>,</span><br><span class="line">    <span class="comment">&quot;PreviousExecutedRows&quot;</span>: <span class="number">123</span>,</span><br><span class="line">    <span class="comment">&quot;RequeueTimes&quot;</span>: <span class="number">3</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>This project also includes integration tests, unit tests, and an automation pipeline. While the API documentation and related materials are not yet completed (the project is still in beta), I plan to gradually add these in the future. If you have any thoughts or suggestions about this project, please feel free to create issue or send a PR.</p>
+<p>此專案還包括 integration、unit test 和 github action pipeline。雖然 API 文件（專案仍在 beta 階段），但我計劃在未來逐步添加。如果您對此專案有任何想法或建議，請隨時創建問題或發送 PR。</p>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/mq-workerpool-introduction/">https://isdaniel.github.io/mq-workerpool-introduction/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
