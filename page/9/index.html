@@ -84,6 +84,7 @@
 
     gtag('config', 'G-ZKF58CMZ8X');
   </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -139,17 +140,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">128</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">130</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">55</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">58</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">181</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">182</span></a>
 
   </li>
   </ul>
@@ -175,6 +176,146 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ithelp-day24/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/ithelp-day24/" class="post-title-link" itemprop="url">探討ViewEngine機制 View是如何被建立(三) (第24天)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-10-05 10:00:00" itemprop="dateCreated datePublished" datetime="2019-10-05T10:00:00+00:00">2019-10-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/11th%E9%90%B5%E4%BA%BA%E8%B3%BD/" itemprop="url" rel="index"><span itemprop="name">11th鐵人賽</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/ithelp-day24/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ithelp-day24/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#viewresultbaseexecuteresult">ViewResultBase.ExecuteResult</a></li>
+<li><a href="#iview">IView</a><ul>
+<li><a href="#buildmanagercompiledview">BuildManagerCompiledView</a></li>
+<li><a href="#razorview">RazorView</a></li>
+</ul>
+</li>
+<li><a href="#iviewengine">IViewEngine</a><ul>
+<li><a href="#virtualpathproviderviewengine">VirtualPathProviderViewEngine</a></li>
+<li><a href="#razorviewengine">RazorViewEngine</a></li>
+<li><a href="#viewengines-and-viewenginecollection">ViewEngines and ViewEngineCollection</a></li>
+</ul>
+</li>
+<li><a href="#%E6%8F%90%E5%8D%87%E5%9F%B7%E8%A1%8C%E6%95%88%E7%8E%87%E5%B0%8F%E6%8A%80%E5%B7%A7">提升執行效率小技巧</a><ul>
+<li><a href="#%E7%A7%BB%E9%99%A4%E4%B8%8D%E5%BF%85%E8%A6%81viewengine%E6%8F%90%E5%8D%87%E5%9F%B7%E8%A1%8C%E6%95%88%E7%8E%87">移除不必要ViewEngine提升執行效率</a></li>
+<li><a href="#%E5%8F%AA%E5%85%81%E8%A8%B1%E6%9F%90%E5%80%8Bview%E5%89%AF%E6%AA%94%E5%90%8D">只允許某個View副檔名</a></li>
+</ul>
+</li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>繼承<code>ActiontResult</code>類別中<code>ViewResultBase</code>最為複雜,因為<code>ViewResultBase</code>要找到實現<code>IViewEngine</code>物件取得取得<code>View</code>檔案,在透過實現<code>IView</code>物件把頁面渲染出來.</p>
+<p>這篇會跟大家分享值型上面動作核心類別.</p>
+<p>個人覺得<strong>MVC</strong>運用很多物件導向概念和用法,在讀程式時有件事情很重要是理解類別負責的工作和類別之間關係.就像現實生活中人與人的關係要了解清楚.</p>
+<blockquote>
+<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="ViewResultBase-ExecuteResult"><a href="#ViewResultBase-ExecuteResult" class="headerlink" title="ViewResultBase.ExecuteResult"></a>ViewResultBase.ExecuteResult</h2><p>因為<code>ExecuteResult</code>是最終被呼叫方法,我們來解析<code>ViewResultBase.ExecuteResult</code>方法邏輯.</p>
+<ol>
+<li>透過子類別實現<code>FindView</code>取得<code>View</code>相關資料.</li>
+<li>呼叫實現<code>IView</code>物件<code>Render</code>方法,並將渲染出來資料透過<code>Response.Output</code>輸出到<code>Client</code>端</li>
+</ol>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/ithelp-day24/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -210,7 +351,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -340,7 +481,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -470,7 +611,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -605,7 +746,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -740,7 +881,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -870,7 +1011,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1000,7 +1141,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1129,7 +1270,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1258,7 +1399,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
+                <time title="Modified: 2025-06-23 02:57:11" itemprop="dateModified" datetime="2025-06-23T02:57:11+00:00">2025-06-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1329,131 +1470,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Ithelp-day19/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ithelp-day19/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/ithelp-day19/" class="post-title-link" itemprop="url">Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-09-30 10:00:00" itemprop="dateCreated datePublished" datetime="2019-09-30T10:00:00+00:00">2019-09-30</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-22 10:17:50" itemprop="dateModified" datetime="2025-06-22T10:17:50+00:00">2025-06-22</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/11th%E9%90%B5%E4%BA%BA%E8%B3%BD/" itemprop="url" rel="index"><span itemprop="name">11th鐵人賽</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/ithelp-day19/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="ithelp-day19/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>10k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>9 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#modelmetadata-%E5%85%83%E6%95%B8%E6%93%9A%E5%84%B2%E5%AD%98%E5%8F%83%E6%95%B8%E8%B3%87%E6%96%99">ModelMetadata 元數據儲存參數資料</a></li>
-<li><a href="#bindsimplemodel-%E7%B0%A1%E5%96%AE%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A">BindSimpleModel 簡單模型綁定</a></li>
-<li><a href="#bindcomplexmodel-%E8%A4%87%E9%9B%9C%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A">BindComplexModel 複雜模型綁定</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a><ul>
-<li><a href="#%E7%B0%A1%E5%96%AE%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A-vs-%E8%A4%87%E9%9B%9C%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A">簡單模型綁定 vs 複雜模型綁定</a></li>
-</ul>
-</li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>IValueProvider</code>物件透過一個<code>ValueProviderFactory</code>工廠來產生</p>
-<p><code>Action</code>方法綁定<code>Model</code>参数由實現<code>IModelBinder</code>的介面<code>ModelBinder（DefaultModelBinder）</code>物件來實現</p>
-<p>在<code>IModelBinder</code>介面中有一個重要的方法<code>object BindModel</code>取得<code>Model</code>參數資料.</p>
-<p>但在<code>Http</code>請求傳送參數極為複雜是如何將參數動態綁定在<code>Action</code>參數上呢?</p>
-<p>最常見的<strong>Json</strong>參數透過<code>POST Body</code>傳到AP端,經由<strong>MVC</strong> <code>BindModel</code>來取得參數物件資料.</p>
-<p>如下方資料.</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">   <span class="attr">&quot;Key&quot;</span><span class="punctuation">:</span><span class="string">&quot;123&quot;</span><span class="punctuation">,</span></span><br><span class="line">   <span class="attr">&quot;value&quot;</span><span class="punctuation">:</span><span class="string">&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">   <span class="attr">&quot;Adress&quot;</span><span class="punctuation">:</span><span class="punctuation">[</span><span class="string">&quot;test133&quot;</span><span class="punctuation">,</span><span class="string">&quot;e2424&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/ithelp-day19/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1545,20 +1561,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">181</span>
+          <span class="site-state-item-count">182</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">55</span>
+        <span class="site-state-item-count">58</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">128</span>
+        <span class="site-state-item-count">130</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1616,12 +1632,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">883k</span>
+    <span title="Symbols count total">890k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:23</span>
+    <span title="Reading time total">13:30</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
