@@ -5486,44 +5486,6 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
-    <title>Null Object Pattern</title>
-    <url>/NullObjectPattern/</url>
-    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
-<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure>
-
-<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
-<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
-<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
-<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
-<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
-<blockquote>
-<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
-</blockquote>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="built_in">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
-<p><a href="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例</a></p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/NullObjectPattern/">https://isdaniel.github.io/NullObjectPattern/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>C#</category>
-        <category>DesignPattern</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>DesignPattern</tag>
-        <tag>NullObjectPattern</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Oracle [CONNECT BY]</title>
     <url>/Oracle-CONNECT-BY/</url>
     <content><![CDATA[<p>之前有介紹 <a href="/cte-recursive/" title="(SQL Server) CTE RECURSIVE (遞迴)製作月曆">(SQL Server) CTE RECURSIVE (遞迴)製作月曆</a> 在<code>Oracle</code> 有提供一個精簡的語法產生階層資料 <code>CONNECT BY</code></p>
@@ -10257,6 +10219,44 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Null Object Pattern</title>
+    <url>/NullObjectPattern/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>假如在系統中<code>null</code>散佈在有許多地方且<code>null</code>有相對應的邏輯或行為.這時候就很適合使用<code>NullObject Pattern</code>來解決，已Null Object取代<code>null</code>邏輯.</p>
+<h2 id="Null可能引申出來問題"><a href="#Null可能引申出來問題" class="headerlink" title="Null可能引申出來問題"></a>Null可能引申出來問題</h2><p>我們知道在.Net或Java中大部分都是參考類型,而null是參考類型的預設值，我們來看看以下程式.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">Person p = <span class="literal">null</span>;</span><br><span class="line">Console.WriteLine(p.Age);</span><br></pre></td></tr></table></figure>
+
+<p>如果物件<code>p</code>指向<code>null</code>且取得<code>p.Age</code>時就會<code>throw NullReferenceException</code>，所以我們在使用一些參考類型物件前都會先判斷此物件是否為null，在執行後續邏輯.</p>
+<p>在系統中某一兩個地方這樣判斷還好，但如果一直重複這樣的判斷會造成程式碼不必要的膨脹….</p>
+<p>相較於「不帶有null邏輯」的程式碼，面對null邏輯往往需要花費更多心力.</p>
+<h2 id="範例程式"><a href="#範例程式" class="headerlink" title="範例程式"></a>範例程式</h2><p>下面有段程式碼在<code>calculate</code>方法中會判斷<code>CartModel</code>物件是否為null並執行相對應邏輯</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentServiceNormal</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">decimal</span> result = <span class="number">0</span>m;</span><br><span class="line">        <span class="keyword">if</span> (model == <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line"></span><br><span class="line">        result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我們可以將<code>calculate</code>方法提取出一個介面並對於null部份提取成一個類別實現此介面</p>
+<p>能看到<code>NullPayment</code>這個類別已經被賦予相對應動作操作.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">PaymentService</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">decimal</span> result = model.Items.Sum(x =&gt; x.Price);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (result &gt; <span class="number">400</span>m)</span><br><span class="line">            result *= <span class="number">0.8</span>m;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">NullPayment</span> : <span class="title">IPaymentService</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">decimal</span> <span class="title">calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>m;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在使用時我們就可統一判斷是否為null來給予相對應物件</p>
+<blockquote>
+<p>這邊有點像是策略者模式(<code>Strategy pattern</code>)，判斷要使用哪個邏輯，邏輯統一封裝到類別中.</p>
+</blockquote>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        CartModel model = <span class="literal">null</span>;</span><br><span class="line">        Console.WriteLine(Calculate(model));</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="built_in">decimal</span> <span class="title">Calculate</span>(<span class="params">CartModel model</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">var</span> paymentService = model == <span class="literal">null</span></span><br><span class="line">            ? (IPaymentService)</span><br><span class="line">            <span class="keyword">new</span> NullPayment()</span><br><span class="line">            : <span class="keyword">new</span> PaymentService();</span><br><span class="line">        <span class="keyword">return</span> paymentService.calculate(model);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="NullObject-Pattern缺點"><a href="#NullObject-Pattern缺點" class="headerlink" title="NullObject Pattern缺點:"></a>NullObject Pattern缺點:</h2><p>如果團隊工程師不知道目前程式碼已經存在NullObject實作，會寫出多餘的null測試.<br>如果目前系統只是需要少量對於null做判斷，這時導入NullObject會導致程式碼變得複雜.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>假如系統中有許多地方需要判斷null並處理相對應的動作就很適合使用<code>NullObject</code> Pattern，但如果判斷null地方不是很多還是判斷就好了</p>
+<p><a href="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/NullObjectPattern">程式碼範例</a></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/NullObjectPattern/">https://isdaniel.github.io/NullObjectPattern/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>C#</category>
+        <category>DesignPattern</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>DesignPattern</tag>
+        <tag>NullObjectPattern</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>高併發系統系列-使用lock &amp; Interlocked CAS(compare and swap)</title>
     <url>/high-concurrency-atomic-cas-algorithm/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在之前我有寫一篇關於資料庫的<a href="https://isdaniel.github.io/acid/">ACID</a>分享RDBMS資料庫基本原則</p>
@@ -14427,8 +14427,8 @@ email_url: dog830228@gmail.com
 </ul>
 <p><a href="https://github.com/isdaniel/mcp_weather_server">mcp_weather_server source code</a><br><a href="https://smithery.ai/server/@isdaniel/mcp_weather_server">smithery AI</a></p>
 <p>使用此 MCP Server 搭配 AI Model 可以輕易搭建出即時天氣小助手, 如下我的 AI Bot</p>
-<p><img src="https://ithelp.ithome.com.tw/upload/images/20250507/20096630aZiRf1dO1g.png" alt="https://ithelp.ithome.com.tw/upload/images/20250507/20096630aZiRf1dO1g.png"></p>
-<h2 id=""><a href="#" class="headerlink" title=""></a><img src="https://ithelp.ithome.com.tw/upload/images/20250507/20096630ecDVbg8JZL.png" alt="https://ithelp.ithome.com.tw/upload/images/20250507/20096630ecDVbg8JZL.png"></h2><h2 id="功能特色"><a href="#功能特色" class="headerlink" title="功能特色"></a>功能特色</h2><ul>
+<p><img src="/../images/20096630aZiRf1dO1g.png"></p>
+<h2 id=""><a href="#" class="headerlink" title=""></a><img src="/../images/20096630ecDVbg8JZL.png"></h2><h2 id="功能特色"><a href="#功能特色" class="headerlink" title="功能特色"></a>功能特色</h2><ul>
 <li>查詢指定城市的即時天氣</li>
 <li>查詢指定日期區間的天氣預測</li>
 <li>查詢目前時間（支援指定時區）</li>
