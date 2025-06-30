@@ -193,17 +193,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">132</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">134</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">59</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">61</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">183</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">184</span></a>
 
   </li>
   </ul>
@@ -229,6 +229,134 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/rust-pgrx-extension-fdw/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/rust-pgrx-extension-fdw/" class="post-title-link" itemprop="url">Building a PostgreSQL Foreign Data Wrapper (FDW) in Rust with pgrx</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-06-30 22:30:11 / Modified: 14:13:44" itemprop="dateCreated datePublished" datetime="2025-06-30T22:30:11+00:00">2025-06-30</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Rust/" itemprop="url" rel="index"><span itemprop="name">Rust</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Rust/pgrx/" itemprop="url" rel="index"><span itemprop="name">pgrx</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Rust/pgrx/PostgreSQL/" itemprop="url" rel="index"><span itemprop="name">PostgreSQL</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/rust-pgrx-extension-fdw/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="rust-pgrx-extension-fdw/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Here’s a well-structured draft for your technical blog post based on the provided Rust + pgrx Foreign Data Wrapper (FDW) code.</p>
+<h1 id="🚀-Building-a-Simple-PostgreSQL-FDW-with-Rust-and-pgrx"><a href="#🚀-Building-a-Simple-PostgreSQL-FDW-with-Rust-and-pgrx" class="headerlink" title="🚀 Building a Simple PostgreSQL FDW with Rust and pgrx"></a>🚀 Building a Simple PostgreSQL FDW with Rust and pgrx</h1><p>PostgreSQL Foreign Data Wrappers (FDW) enable PostgreSQL to query external data sources as if they were regular tables. Traditionally, FDWs are written in C, but with <a href="https://github.com/pgcentralfoundation/pgrx"><code>pgrx</code></a>, we can now build PostgreSQL extensions — including FDWs — in <strong>Rust</strong>, unlocking safety and modern tooling.</p>
+<p>In this post, we’ll walk through creating a simple FDW using Rust and <code>pgrx</code> that simulates reading rows from an external source (e.g., Redis or API). While it’s a stub, it demonstrates how to implement the core FDW lifecycle.</p>
+<h2 id="🛠️-What-Can-You-Build-with-pgrx"><a href="#🛠️-What-Can-You-Build-with-pgrx" class="headerlink" title="🛠️ What Can You Build with pgrx?"></a>🛠️ What Can You Build with <code>pgrx</code>?</h2><ul>
+<li>✅ <strong>SQL Functions:</strong> Scalar, aggregate, and set-returning functions.</li>
+<li>✅ <strong>Custom Types:</strong> Define composite types or enums in Rust.</li>
+<li>✅ <strong>Foreign Data Wrappers (FDWs):</strong> Like the one in your example — connect PostgreSQL to external systems (Redis, APIs, file systems, etc.).</li>
+<li>✅ <strong>Index Access Methods:</strong> Implement new index types.</li>
+<li>✅ <strong>Background Workers:</strong> Run tasks in the background inside PostgreSQL.</li>
+<li>✅ <strong>Hooks:</strong> Intercept or modify PostgreSQL internal behavior (like planner or executor hooks).</li>
+</ul>
+<h3 id="🌐-Under-the-hood"><a href="#🌐-Under-the-hood" class="headerlink" title="🌐 Under the hood:"></a>🌐 Under the hood:</h3><ul>
+<li>PostgreSQL communicates via C APIs.</li>
+<li><code>pgrx</code> provides Rust-safe bindings to these APIs.</li>
+<li>Memory management is handled carefully via <code>PgMemoryContexts</code>, matching PostgreSQL’s memory context model.</li>
+<li>Rust functions are exposed to PostgreSQL as SQL-callable functions with the <code>#[pg_extern]</code> macro.</li>
+</ul>
+<h2 id="🏗️-Key-Components-of-an-default-fdw"><a href="#🏗️-Key-Components-of-an-default-fdw" class="headerlink" title="🏗️ Key Components of an default_fdw"></a>🏗️ Key Components of an default_fdw</h2><p>PostgreSQL FDWs consist of several callback functions that handle different phases of query planning and execution:</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/rust-pgrx-extension-fdw/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -264,7 +392,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -387,7 +515,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -511,7 +639,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -640,7 +768,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -767,7 +895,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -890,7 +1018,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1031,7 +1159,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1164,7 +1292,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1291,7 +1419,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1355,149 +1483,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/postgresql-debug-source-code/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/aws-certified-ssa-experience/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/aws-certified-ssa-experience/" class="post-title-link" itemprop="url">AWS Certified Solutions Architect - Associate (SAA-C02) 考試重點與心得</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2022-06-26 12:00:00" itemprop="dateCreated datePublished" datetime="2022-06-26T12:00:00+00:00">2022-06-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/AWS/" itemprop="url" rel="index"><span itemprop="name">AWS</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/AWS/Certified/" itemprop="url" rel="index"><span itemprop="name">Certified</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/aws-certified-ssa-experience/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="aws-certified-ssa-experience/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>4.8k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>4 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我算是一個雲端小白，自從進入目前公司後才開始接觸雲端相關概念並感受到雲端服務威力</p>
-<p>我會想參加 SSA 考試主要有下面幾個原因</p>
-<ol>
-<li>主要是想趕在 SAA-C02 (2022-08) 換考試範圍前來測驗</li>
-<li>感覺放在履歷上，增加職場競爭力</li>
-<li>驗收自己目前對於雲端相關知識</li>
-<li>目前在架構 Team 擔任工程師，希望規劃出好的系統架構</li>
-</ol>
-<p><img src="/../images/aws/2022-06-26_20h25_16.png" alt="img"></p>
-<h2 id="考試重點"><a href="#考試重點" class="headerlink" title="考試重點"></a>考試重點</h2><h3 id="S3-考試必考"><a href="#S3-考試必考" class="headerlink" title="S3 (考試必考)"></a>S3 (考試必考)</h3><ul>
-<li>S3 Standard</li>
-<li>S3 IA (Infrequent Access)</li>
-<li>Intelligent-Tiering：設計來優化成本，基於其自動移動 data 到相對便宜的 tier，不影響 performance，也不需提前處理。</li>
-<li>S3 One Zone-IA</li>
-<li>S3 Glacier：價格便宜，適合存放 Archive 檔案 (預設會加密)<ul>
-<li>Instant Retrieval：最少存放 90 天</li>
-<li>Flexible Retrieval (formerly S3 Glacier)：最少存放 90 天<ul>
-<li>Expedited：1~5 min</li>
-<li>Standard：3~5 hours</li>
-<li>Bulk：5~12 hours</li>
-</ul>
-</li>
-<li>Deep Archive - for long term storage: 最少存放 180 天  <ul>
-<li>Standard：12 hours</li>
-<li>Bulk：48 hours</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h4 id="重點功能"><a href="#重點功能" class="headerlink" title="重點功能"></a>重點功能</h4><p>S3 Lifecycle rule 控制 S3 存放物件存放規則 S3 Type，這樣可以讓S3使用費用更有效率</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/aws-certified-ssa-experience/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1589,20 +1574,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">183</span>
+          <span class="site-state-item-count">184</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-count">61</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">132</span>
+        <span class="site-state-item-count">134</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1663,12 +1648,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">890k</span>
+    <span title="Symbols count total">897k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:29</span>
+    <span title="Reading time total">13:35</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

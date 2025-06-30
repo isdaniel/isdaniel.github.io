@@ -193,17 +193,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">132</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">134</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">59</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">61</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">183</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">184</span></a>
 
   </li>
   </ul>
@@ -229,6 +229,128 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/sqlserver-merge-condition-problem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/sqlserver-merge-condition-problem/" class="post-title-link" itemprop="url">SQL Server Merge condition on declare value problem</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-21 22:30:11" itemprop="dateCreated datePublished" datetime="2020-06-21T22:30:11+00:00">2020-06-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/sql-server/" itemprop="url" rel="index"><span itemprop="name">sql-server</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/sqlserver-merge-condition-problem/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="sqlserver-merge-condition-problem/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>假如要判斷資料是否存在於資料表中,存在就更新,不存在就新增.</p>
+<p>這時我們可以使用<code>Merge</code>來幫助我們完成.</p>
+<blockquote>
+<p>當兩個資料表有複雜的比對的特性時，<code>MERGE</code>陳述式的條件式行為表現最佳。</p>
+</blockquote>
+<p>有了<code>Merge</code>我們就不用使用<code>IF EXISTS</code>.</p>
+<p>一切都是這麼完美…</p>
+<p>直到到有一天<code>Merge</code>在Prod撞到一個問題..</p>
+<h2 id="問題描述"><a href="#問題描述" class="headerlink" title="問題描述"></a>問題描述</h2><p>使用語法user defined table type &amp; Table如下</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> [dbo].[PriceLimitation](</span><br><span class="line">	[CategoryID] [<span class="type">int</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="type">smallint</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[UserID] [<span class="type">int</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="type">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[ProductID] [<span class="type">smallint</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line"> <span class="keyword">CONSTRAINT</span> [PK_PriceLimitation] <span class="keyword">PRIMARY KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">    [UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (PAD_INDEX <span class="operator">=</span> OFF, STATISTICS_NORECOMPUTE <span class="operator">=</span> OFF, IGNORE_DUP_KEY <span class="operator">=</span> OFF, ALLOW_ROW_LOCKS <span class="operator">=</span> <span class="keyword">ON</span>, ALLOW_PAGE_LOCKS <span class="operator">=</span> <span class="keyword">ON</span>) <span class="keyword">ON</span> [<span class="keyword">PRIMARY</span>]</span><br><span class="line">) <span class="keyword">ON</span> [<span class="keyword">PRIMARY</span>]</span><br><span class="line">GO</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> TYPE [dbo].[uftt_PriceLimit] <span class="keyword">AS</span> <span class="keyword">TABLE</span>(</span><br><span class="line">	[CategoryID] [<span class="type">int</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[ProdcutGroupID] [<span class="type">smallint</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[UserID] [<span class="type">int</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[StakeAmount] [<span class="type">numeric</span>](<span class="number">18</span>, <span class="number">4</span>) <span class="keyword">NOT NULL</span>,</span><br><span class="line">	[ProductID] [<span class="type">smallint</span>] <span class="keyword">NOT NULL</span>,</span><br><span class="line">	<span class="keyword">PRIMARY KEY</span> CLUSTERED </span><br><span class="line">(</span><br><span class="line">	[UserID] <span class="keyword">ASC</span>,</span><br><span class="line">	[CategoryID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProductID] <span class="keyword">ASC</span>,</span><br><span class="line">	[ProdcutGroupID] <span class="keyword">ASC</span></span><br><span class="line">)<span class="keyword">WITH</span> (IGNORE_DUP_KEY <span class="operator">=</span> OFF)</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/sqlserver-merge-condition-problem/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -264,7 +386,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -391,7 +513,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -518,7 +640,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -642,7 +764,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -768,7 +890,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -890,7 +1012,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1012,7 +1134,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1130,7 +1252,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1248,7 +1370,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
+                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1349,128 +1471,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/DBTable/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/DBTable/" class="post-title-link" itemprop="url">SqlServer資料表深入淺出</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-01-26 23:10:43" itemprop="dateCreated datePublished" datetime="2020-01-26T23:10:43+00:00">2020-01-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 09:37:13" itemprop="dateModified" datetime="2025-06-30T09:37:13+00:00">2025-06-30</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Turning/sql-server/" itemprop="url" rel="index"><span itemprop="name">sql-server</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/DBTable/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="DBTable/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.8k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>3 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>本篇會跟大家對於<code>SQL-Server</code>資料表深入淺出的介紹.</p>
-<h2 id="關於子頁層"><a href="#關於子頁層" class="headerlink" title="關於子頁層"></a>關於子頁層</h2><p>資料會存在子頁層中(page),一個<code>Page</code>大小為 8K&#x2F;Page &#x3D;&gt; 8092(8060 bytes)</p>
-<blockquote>
-<p>每個Page除了存取資料還會存放一些<code>MetaData</code>，我們可以先當作是每個Page大小是8K</p>
-</blockquote>
-<h2 id="Heap資料表"><a href="#Heap資料表" class="headerlink" title="Heap資料表"></a>Heap資料表</h2><p>如果一張資料表沒有<code>Clustered Index</code>就會為Heap資料表，這意味著<code>Heap</code>資料表的資料不會有排序一直把資料新增進資料表中，<code>Heap</code>資料表<code>Insert</code>資料快</p>
-<blockquote>
-<p>適合使用在Log資料表、Event資料表、稽核資料表….一直新增資料但比較少查詢表</p>
-</blockquote>
-<h3 id="IAM-index-allocation-map"><a href="#IAM-index-allocation-map" class="headerlink" title="IAM(index allocation map)"></a>IAM(index allocation map)</h3><p>當Heap資料表要搜尋資料<code>SQL-Server</code>透過IAM(index allocation map)去尋要掃描Page範圍，因為IAM會以範圍存在於檔案中的順序來表示它們，這代表循序的堆積掃描都將依檔案順序進行。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/DBTable/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -1543,20 +1543,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">183</span>
+          <span class="site-state-item-count">184</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-count">61</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">132</span>
+        <span class="site-state-item-count">134</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1617,12 +1617,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">890k</span>
+    <span title="Symbols count total">897k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:29</span>
+    <span title="Reading time total">13:35</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
