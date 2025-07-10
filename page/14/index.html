@@ -193,17 +193,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">134</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">135</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">61</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">63</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">184</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">185</span></a>
 
   </li>
   </ul>
@@ -229,6 +229,128 @@
             
 
   <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/HttpHandler-HttpModule/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/HttpHandler-HttpModule/" class="post-title-link" itemprop="url">Asp.net HttpHandler vs HttpModule 詳細解說.</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-11 19:16:37" itemprop="dateCreated datePublished" datetime="2019-06-11T19:16:37+00:00">2019-06-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/Asp-net/" itemprop="url" rel="index"><span itemprop="name">Asp.net</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/HttpHandler-HttpModule/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="HttpHandler-HttpModule/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p><code>Asp.net</code> 是一個<code>pipeline</code>的模型</p>
+<p>我覺得<code>.Net Web工程師</code>對於這個模型和<code>IHttpHanlder</code>,<code>IHttpModule</code> 要有基本的概念和理解.</p>
+<p>理解這些管道除了可以讓我們節省許多不必要的資源浪費也可讓我們程式架構更加有條理.</p>
+<p>就像我們在<code>Asp.net MVC</code>如果要寫權限驗證程式碼,雖然可以寫在<code>Controller</code>的<code>Action</code>中</p>
+<p>但更好做法是我可以寫一個類別繼承<code>AuthorizeAttribute</code>並<code>override</code> <code>OnAuthorization</code>方法並掛上此標籤.</p>
+<p>所以更了解這些原理可以讓我們寫程式事半功倍.</p>
+<h2 id="Asp-net-Application-Event-生命週期"><a href="#Asp-net-Application-Event-生命週期" class="headerlink" title="Asp.net Application Event 生命週期"></a>Asp.net Application Event 生命週期</h2><p>前面我們知道Asp.net是一個請求處理響應的管道而這個管道中微軟有提供許多點可以讓我們進行客製化的擴充程式撰寫</p>
+<blockquote>
+<p>事件可藉由<code>IHttpModule</code>來擴充註冊</p>
+</blockquote>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/HttpHandler-HttpModule/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
         
   
   
@@ -264,7 +386,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -386,7 +508,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -504,7 +626,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -620,7 +742,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -736,7 +858,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -856,7 +978,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -974,7 +1096,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1090,7 +1212,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1242,7 +1364,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
+                <time title="Modified: 2025-07-10 04:51:29" itemprop="dateModified" datetime="2025-07-10T04:51:29+00:00">2025-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1304,126 +1426,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/sql-gaps-and-islands-problem/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/statuspattern/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/statuspattern/" class="post-title-link" itemprop="url">State Pattern(狀態者模式)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-06-10 22:30:11" itemprop="dateCreated datePublished" datetime="2019-06-10T22:30:11+00:00">2019-06-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-06-30 14:13:44" itemprop="dateModified" datetime="2025-06-30T14:13:44+00:00">2025-06-30</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/statuspattern/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="statuspattern/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>4.6k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>4 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>狀態者模式</p>
-<p>優勢在可將複雜的物件狀態條件,以物件方式來減少條件式的判斷程式</p>
-<p>可由物件自身的狀態，決定之後的動作行為.</p>
-<h2 id="狀態者模式-說明："><a href="#狀態者模式-說明：" class="headerlink" title="狀態者模式 說明："></a>狀態者模式 說明：</h2><p>需求簡易流程如下</p>
-<p>這是一個簡單的訂單流程圖</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c83df7da-1425-4410-9df3-a45bf9e35c1a/1542429110_98117.png"></p>
-<p>我們可看到從建立訂單開始-&gt;最後判斷成功或取消訂單 看似簡單但需要寫一定程度的判斷條件式,而且也要做一定程度的逆向流程防呆.</p>
-<p>這裡先貼上 未使用狀態者模式的程式碼: <code>PaymentContext.cs</code></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/statuspattern/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1515,20 +1517,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">184</span>
+          <span class="site-state-item-count">185</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-count">63</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">134</span>
+        <span class="site-state-item-count">135</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1589,12 +1591,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">897k</span>
+    <span title="Symbols count total">899k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:35</span>
+    <span title="Reading time total">13:37</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
