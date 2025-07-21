@@ -14416,6 +14416,74 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>使用 Model Context Protocol 以 Weather MCP Server 為例</title>
+    <url>/mcp-server-weather/</url>
+    <content><![CDATA[<h2 id="什麼是-MCP"><a href="#什麼是-MCP" class="headerlink" title="什麼是 MCP?"></a>什麼是 MCP?</h2><p>MCP(Model Context Protocol)是一種協定，用於在工具之間進行通訊與協作。透過 MCP，可以讓各種獨立的工具(如模型、插件、服務)以一致的格式互相交換資料與指令。MCP Server 是提供特定功能的伺服器端程式，能與支援 MCP 的前端進行互動。</p>
+<h2 id="Weather-MCP-Server-是什麼？"><a href="#Weather-MCP-Server-是什麼？" class="headerlink" title="Weather MCP Server 是什麼？"></a>Weather MCP Server 是什麼？</h2><p>Weather MCP Server 是一個基於 MCP 協定開發的天氣資訊伺服器，利用 <a href="https://open-meteo.com/">Open-Meteo API</a> 提供免費的天氣資料。透過這個伺服器，你可以查詢：</p>
+<ul>
+<li>某城市的即時天氣資訊</li>
+<li>某城市在特定時間範圍內的天氣預報</li>
+<li>指定時區的目前時間</li>
+</ul>
+<p><a href="https://github.com/isdaniel/mcp_weather_server">mcp_weather_server source code</a><br><a href="https://smithery.ai/server/@isdaniel/mcp_weather_server">smithery AI</a></p>
+<p>使用此 MCP Server 搭配 AI Model 可以輕易搭建出即時天氣小助手, 如下我的 AI Bot</p>
+<p><img src="/../images/20096630aZiRf1dO1g.png"><br><img src="/../images/20096630ecDVbg8JZL.png"></p>
+<h2 id="功能特色"><a href="#功能特色" class="headerlink" title="功能特色"></a>功能特色</h2><ul>
+<li>查詢指定城市的即時天氣</li>
+<li>查詢指定日期區間的天氣預測</li>
+<li>查詢目前時間(支援指定時區)</li>
+</ul>
+<h2 id="安裝方式"><a href="#安裝方式" class="headerlink" title="安裝方式"></a>安裝方式</h2><p>使用 pip 安裝：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pip install mcp_weather_server</span><br></pre></td></tr></table></figure>
+
+<p>接著，需要在 MCP 設定檔中手動加入 Weather Server 的啟動設定。</p>
+<h3 id="設定-cline-mcp-settings-json"><a href="#設定-cline-mcp-settings-json" class="headerlink" title="設定 cline_mcp_settings.json"></a>設定 <code>cline_mcp_settings.json</code></h3><p>請將以下內容新增到 <code>cline_mcp_settings.json</code> 檔案中的 <code>mcpServers</code> 區塊：</p>
+<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;weather&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;python&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;-m&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;mcp_weather_server&quot;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;disabled&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;autoApprove&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>儲存後，即可在 MCP 架構中啟動並使用 Weather Server。</p>
+<h2 id="使用方式"><a href="#使用方式" class="headerlink" title="使用方式"></a>使用方式</h2><p>Weather MCP Server 提供以下三個工具：</p>
+<h3 id="1-get-weather：查詢指定城市目前天氣"><a href="#1-get-weather：查詢指定城市目前天氣" class="headerlink" title="1. get_weather：查詢指定城市目前天氣"></a>1. <code>get_weather</code>：查詢指定城市目前天氣</h3><p><strong>參數說明：</strong></p>
+<ul>
+<li><code>city</code>(字串，必填)：城市名稱，例如 “Taipei”</li>
+</ul>
+<p><strong>範例：</strong></p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_weather<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;city&quot;: &quot;Taipei&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="2-get-weather-by-datetime-range：查詢日期區間的天氣預報"><a href="#2-get-weather-by-datetime-range：查詢日期區間的天氣預報" class="headerlink" title="2. get_weather_by_datetime_range：查詢日期區間的天氣預報"></a>2. <code>get_weather_by_datetime_range</code>：查詢日期區間的天氣預報</h3><p><strong>參數說明：</strong></p>
+<ul>
+<li><code>city</code>(字串，必填)：城市名稱</li>
+<li><code>start_date</code>(字串，必填)：開始日期，格式為 YYYY-MM-DD</li>
+<li><code>end_date</code>(字串，必填)：結束日期，格式為 YYYY-MM-DD</li>
+</ul>
+<p><strong>範例：</strong></p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_weather_by_datetime_range<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;city&quot;: &quot;London&quot;,</span><br><span class="line">  &quot;start_date&quot;: &quot;2024-01-01&quot;,</span><br><span class="line">  &quot;end_date&quot;: &quot;2024-01-07&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+<h3 id="3-get-current-datetime：查詢指定時區目前時間"><a href="#3-get-current-datetime：查詢指定時區目前時間" class="headerlink" title="3. get_current_datetime：查詢指定時區目前時間"></a>3. <code>get_current_datetime</code>：查詢指定時區目前時間</h3><p><strong>參數說明：</strong></p>
+<ul>
+<li><code>timezone_name</code>(字串，必填)：IANA 時區名稱，例如 “America&#x2F;New_York”、”Europe&#x2F;London”。若未指定，預設為 UTC。</li>
+</ul>
+<p><strong>範例：</strong></p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_current_datetime<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;timezone_name&quot;: &quot;America/New_York&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="開發者注意事項"><a href="#開發者注意事項" class="headerlink" title="開發者注意事項"></a>開發者注意事項</h2><p>如需在開發或除錯時手動執行 Weather MCP Server，可以直接執行：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">python -m mcp_weather_server</span><br></pre></td></tr></table></figure>
+
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>Weather MCP Server 是一個輕量、無需 API 金鑰的天氣資訊服務，適合用於教育、研究或原型開發。透過 MCP 的整合能力，可以輕鬆地將天氣查詢功能加入到各種自動化或智慧應用中。</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/mcp-server-weather/">https://isdaniel.github.io/mcp-server-weather/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>AI</tag>
+        <tag>MCP</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>MediatorPattern(中介者模式)</title>
     <url>/mediator-pattern/</url>
     <content><![CDATA[<h2 id="說明"><a href="#說明" class="headerlink" title="說明"></a>說明</h2><p>系統模塊存在很多複雜的耦合問題，很適合使用中介者模式來解耦合</p>
@@ -14523,74 +14591,6 @@ email_url: dog830228@gmail.com
         <tag>C#</tag>
         <tag>Reflection</tag>
         <tag>Assembly</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>使用 Model Context Protocol 以 Weather MCP Server 為例</title>
-    <url>/mcp-server-weather/</url>
-    <content><![CDATA[<h2 id="什麼是-MCP"><a href="#什麼是-MCP" class="headerlink" title="什麼是 MCP?"></a>什麼是 MCP?</h2><p>MCP(Model Context Protocol)是一種協定，用於在工具之間進行通訊與協作。透過 MCP，可以讓各種獨立的工具(如模型、插件、服務)以一致的格式互相交換資料與指令。MCP Server 是提供特定功能的伺服器端程式，能與支援 MCP 的前端進行互動。</p>
-<h2 id="Weather-MCP-Server-是什麼？"><a href="#Weather-MCP-Server-是什麼？" class="headerlink" title="Weather MCP Server 是什麼？"></a>Weather MCP Server 是什麼？</h2><p>Weather MCP Server 是一個基於 MCP 協定開發的天氣資訊伺服器，利用 <a href="https://open-meteo.com/">Open-Meteo API</a> 提供免費的天氣資料。透過這個伺服器，你可以查詢：</p>
-<ul>
-<li>某城市的即時天氣資訊</li>
-<li>某城市在特定時間範圍內的天氣預報</li>
-<li>指定時區的目前時間</li>
-</ul>
-<p><a href="https://github.com/isdaniel/mcp_weather_server">mcp_weather_server source code</a><br><a href="https://smithery.ai/server/@isdaniel/mcp_weather_server">smithery AI</a></p>
-<p>使用此 MCP Server 搭配 AI Model 可以輕易搭建出即時天氣小助手, 如下我的 AI Bot</p>
-<p><img src="/../images/20096630aZiRf1dO1g.png"><br><img src="/../images/20096630ecDVbg8JZL.png"></p>
-<h2 id="功能特色"><a href="#功能特色" class="headerlink" title="功能特色"></a>功能特色</h2><ul>
-<li>查詢指定城市的即時天氣</li>
-<li>查詢指定日期區間的天氣預測</li>
-<li>查詢目前時間(支援指定時區)</li>
-</ul>
-<h2 id="安裝方式"><a href="#安裝方式" class="headerlink" title="安裝方式"></a>安裝方式</h2><p>使用 pip 安裝：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">pip install mcp_weather_server</span><br></pre></td></tr></table></figure>
-
-<p>接著，需要在 MCP 設定檔中手動加入 Weather Server 的啟動設定。</p>
-<h3 id="設定-cline-mcp-settings-json"><a href="#設定-cline-mcp-settings-json" class="headerlink" title="設定 cline_mcp_settings.json"></a>設定 <code>cline_mcp_settings.json</code></h3><p>請將以下內容新增到 <code>cline_mcp_settings.json</code> 檔案中的 <code>mcpServers</code> 區塊：</p>
-<figure class="highlight json"><table><tr><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;mcpServers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;weather&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;python&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;-m&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;mcp_weather_server&quot;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;disabled&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;autoApprove&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<p>儲存後，即可在 MCP 架構中啟動並使用 Weather Server。</p>
-<h2 id="使用方式"><a href="#使用方式" class="headerlink" title="使用方式"></a>使用方式</h2><p>Weather MCP Server 提供以下三個工具：</p>
-<h3 id="1-get-weather：查詢指定城市目前天氣"><a href="#1-get-weather：查詢指定城市目前天氣" class="headerlink" title="1. get_weather：查詢指定城市目前天氣"></a>1. <code>get_weather</code>：查詢指定城市目前天氣</h3><p><strong>參數說明：</strong></p>
-<ul>
-<li><code>city</code>(字串，必填)：城市名稱，例如 “Taipei”</li>
-</ul>
-<p><strong>範例：</strong></p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_weather<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;city&quot;: &quot;Taipei&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-
-
-<h3 id="2-get-weather-by-datetime-range：查詢日期區間的天氣預報"><a href="#2-get-weather-by-datetime-range：查詢日期區間的天氣預報" class="headerlink" title="2. get_weather_by_datetime_range：查詢日期區間的天氣預報"></a>2. <code>get_weather_by_datetime_range</code>：查詢日期區間的天氣預報</h3><p><strong>參數說明：</strong></p>
-<ul>
-<li><code>city</code>(字串，必填)：城市名稱</li>
-<li><code>start_date</code>(字串，必填)：開始日期，格式為 YYYY-MM-DD</li>
-<li><code>end_date</code>(字串，必填)：結束日期，格式為 YYYY-MM-DD</li>
-</ul>
-<p><strong>範例：</strong></p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_weather_by_datetime_range<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;city&quot;: &quot;London&quot;,</span><br><span class="line">  &quot;start_date&quot;: &quot;2024-01-01&quot;,</span><br><span class="line">  &quot;end_date&quot;: &quot;2024-01-07&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-
-<h3 id="3-get-current-datetime：查詢指定時區目前時間"><a href="#3-get-current-datetime：查詢指定時區目前時間" class="headerlink" title="3. get_current_datetime：查詢指定時區目前時間"></a>3. <code>get_current_datetime</code>：查詢指定時區目前時間</h3><p><strong>參數說明：</strong></p>
-<ul>
-<li><code>timezone_name</code>(字串，必填)：IANA 時區名稱，例如 “America&#x2F;New_York”、”Europe&#x2F;London”。若未指定，預設為 UTC。</li>
-</ul>
-<p><strong>範例：</strong></p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">use_mcp_tool</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">server_name</span>&gt;</span>weather<span class="tag">&lt;/<span class="name">server_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">tool_name</span>&gt;</span>get_current_datetime<span class="tag">&lt;/<span class="name">tool_name</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">arguments</span>&gt;</span></span><br><span class="line">&#123;</span><br><span class="line">  &quot;timezone_name&quot;: &quot;America/New_York&quot;</span><br><span class="line">&#125;</span><br><span class="line"><span class="tag">&lt;/<span class="name">arguments</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">use_mcp_tool</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="開發者注意事項"><a href="#開發者注意事項" class="headerlink" title="開發者注意事項"></a>開發者注意事項</h2><p>如需在開發或除錯時手動執行 Weather MCP Server，可以直接執行：</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">python -m mcp_weather_server</span><br></pre></td></tr></table></figure>
-
-<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p>Weather MCP Server 是一個輕量、無需 API 金鑰的天氣資訊服務，適合用於教育、研究或原型開發。透過 MCP 的整合能力，可以輕鬆地將天氣查詢功能加入到各種自動化或智慧應用中。</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/mcp-server-weather/">https://isdaniel.github.io/mcp-server-weather/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-        <tag>AI</tag>
-        <tag>MCP</tag>
       </tags>
   </entry>
   <entry>
