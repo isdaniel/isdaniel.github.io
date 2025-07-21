@@ -4395,62 +4395,6 @@ GROUP BY userName
       </tags>
   </entry>
   <entry>
-    <title>動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制 (第29天)</title>
-    <url>/Ithelp-day29/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#%E5%A4%9A%E5%9C%8B%E8%B7%AF%E7%94%B1%E8%A8%AD%E5%AE%9A">多國路由設定</a></li>
-<li><a href="#%E5%8F%96%E5%BE%97%E8%B2%A8%E5%B9%A3%E7%AC%A6%E8%99%9F">取得貨幣符號</a></li>
-<li><a href="#%E6%93%B4%E5%85%85-webviewpagetmodel">擴充 WebViewPage<TModel></a></li>
-<li><a href="#razorview%E4%BD%BF%E7%94%A8%E6%93%B4%E5%85%85%E5%BE%8Cwebviewpagetmodel">RazorView使用擴充後WebViewPage<TModel></a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
-<p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
-<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>&#123;culture&#125;</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">&quot;Default&quot;</span>,</span><br><span class="line">    url: <span class="string">&quot;&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;&quot;</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">&quot;Home&quot;</span>, action = <span class="string">&quot;Index&quot;</span>, culture = <span class="string">&quot;en&quot;</span> &#125;);</span><br></pre></td></tr></table></figure>
-
-<h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
-<p>在<code>CurrencyProvider</code>類別透過<code>Routes.Values[&quot;culture&quot;]</code>取得使用者傳遞語系國家.</p>
-<p>透過此參數可以知道使用者想要使用哪個國家貨幣.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="built_in">string</span> <span class="title">GetCurrencySymbol</span>()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CurrencyProvider</span> : <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">string</span> <span class="title">GetCurrencySymbol</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        HttpContextBase contextWrapper = <span class="keyword">new</span> HttpContextWrapper(HttpContext.Current);</span><br><span class="line"></span><br><span class="line">        <span class="built_in">string</span> culture = RouteTable.Routes.GetRouteData(contextWrapper)?.Values[<span class="string">&quot;culture&quot;</span>] <span class="keyword">as</span> <span class="built_in">string</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> GetSymbol(culture);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="built_in">string</span> <span class="title">GetSymbol</span>(<span class="params"><span class="built_in">string</span> culture</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">switch</span> (culture)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&quot;en&quot;</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;$&quot;</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&quot;eu&quot;</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;£&quot;</span>;</span><br><span class="line">            <span class="literal">default</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;$&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="擴充-WebViewPage"><a href="#擴充-WebViewPage" class="headerlink" title="擴充 WebViewPage"></a>擴充 WebViewPage<TModel></h2><p>在<code>Autofac</code>多註冊一個</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">builder.RegisterType&lt;CurrencyProvider&gt;().As&lt;ICurrency&gt;();</span><br><span class="line">DependencyResolver.SetResolver(<span class="keyword">new</span> CustomerDependencyResolver(builder.Build()));</span><br></pre></td></tr></table></figure>
-
-<p>最後在建立一個<code>CountryViewPage&lt;TModel&gt;</code>抽象類別繼承於<code>WebViewPage&lt;TModel&gt;</code>.</p>
-<p>在此類別中建立一個<code>ICurrency</code>屬性,並在建構子中透過<code>DependencyResolver.Current.GetService</code>給值</p>
-<blockquote>
-<p>因為這間已經替換成<code>Autofac</code>解析器,所以會吃<code>Autofac</code>註冊的類別.</p>
-</blockquote>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">CountryViewPage</span>&lt;<span class="title">TModel</span>&gt; : <span class="title">WebViewPage</span>&lt;<span class="title">TModel</span>&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CountryViewPage</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Currency = DependencyResolver.Current.GetService&lt;ICurrency&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ICurrency Currency &#123; <span class="keyword">get</span>;  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="RazorView使用擴充後WebViewPage"><a href="#RazorView使用擴充後WebViewPage" class="headerlink" title="RazorView使用擴充後WebViewPage"></a>RazorView使用擴充後WebViewPage<TModel></h2><p>在<code>View</code>上使用新<code>WebViewPage&lt;TModel&gt;</code>只需要在最上面加<code>@inherits CountryViewPage&lt;object&gt;</code>.<br>我們就可以透過<code>@</code>呼叫<code>Currency</code>物件.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">@inherits CountryViewPage&lt;<span class="built_in">object</span>&gt;</span><br><span class="line"></span><br><span class="line">@&#123;</span><br><span class="line">    ViewBag.Title = <span class="string">&quot;About&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;h2&gt;@ViewBag.Title.&lt;/h2&gt;</span><br><span class="line">&lt;h3&gt;@ViewBag.Message @Currency.GetCurrencySymbol()&lt;/h3&gt;</span><br><span class="line"></span><br><span class="line">&lt;p&gt;Use <span class="keyword">this</span> area to provide additional information.&lt;/p&gt;</span><br></pre></td></tr></table></figure>
-
-<p>如果每個頁面都需要使用新的<code>WebViewPage&lt;TModel&gt;</code>可以透過<code>web.config</code>新增加一個<code>&lt;pages pageBaseType=&quot;CountryViewPage&quot;&gt;</code>將<code>Razor</code>產生的<code>C#</code>程式碼繼承於此類別</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">system.web.webPages.razor</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">pages</span> <span class="attr">pageBaseType</span>=<span class="string">&quot;CountryViewPage&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">namespaces</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Mvc&quot;</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Mvc.Ajax&quot;</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Mvc.Html&quot;</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Routing&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">namespaces</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">pages</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">system.web.webPages.razor</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>其實我們也可以繼承<code>WebViewPage&lt;TModel&gt;</code>來擴充<code>View</code>多變性</p>
-<p>這邊有一個題目提供讀者來完成透過上面概念完成多國語系,這裡提供一條方法完成</p>
-<blockquote>
-<p>寫一個<code>string transfer(string key)</code>透過<code>Resource</code>檔案來完成;</p>
-</blockquote>
-<p><a href="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerWebViewPage">Github範例程式原始碼</a> <code>CustomerWebViewPage</code>分支上</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Ithelp-day29/">https://isdaniel.github.io/Ithelp-day29/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>啟動吧!Asp.Net IsapiRunTime &amp; HttpRuntime (第3天)</title>
     <url>/Ithelp-day3/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -4550,6 +4494,62 @@ GROUP BY userName
 </ul>
 <p>下篇我們會來好好介紹<code>HttpApplicationFactory</code>這個工廠到底如何返回<code>IHttpHanlder</code>物件.</p>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Ithelp-day3/">https://isdaniel.github.io/Ithelp-day3/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制 (第29天)</title>
+    <url>/Ithelp-day29/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E5%A4%9A%E5%9C%8B%E8%B7%AF%E7%94%B1%E8%A8%AD%E5%AE%9A">多國路由設定</a></li>
+<li><a href="#%E5%8F%96%E5%BE%97%E8%B2%A8%E5%B9%A3%E7%AC%A6%E8%99%9F">取得貨幣符號</a></li>
+<li><a href="#%E6%93%B4%E5%85%85-webviewpagetmodel">擴充 WebViewPage<TModel></a></li>
+<li><a href="#razorview%E4%BD%BF%E7%94%A8%E6%93%B4%E5%85%85%E5%BE%8Cwebviewpagetmodel">RazorView使用擴充後WebViewPage<TModel></a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
+<p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
+<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>&#123;culture&#125;</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">&quot;Default&quot;</span>,</span><br><span class="line">    url: <span class="string">&quot;&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;&quot;</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">&quot;Home&quot;</span>, action = <span class="string">&quot;Index&quot;</span>, culture = <span class="string">&quot;en&quot;</span> &#125;);</span><br></pre></td></tr></table></figure>
+
+<h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
+<p>在<code>CurrencyProvider</code>類別透過<code>Routes.Values[&quot;culture&quot;]</code>取得使用者傳遞語系國家.</p>
+<p>透過此參數可以知道使用者想要使用哪個國家貨幣.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="built_in">string</span> <span class="title">GetCurrencySymbol</span>()</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">CurrencyProvider</span> : <span class="title">ICurrency</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="built_in">string</span> <span class="title">GetCurrencySymbol</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        HttpContextBase contextWrapper = <span class="keyword">new</span> HttpContextWrapper(HttpContext.Current);</span><br><span class="line"></span><br><span class="line">        <span class="built_in">string</span> culture = RouteTable.Routes.GetRouteData(contextWrapper)?.Values[<span class="string">&quot;culture&quot;</span>] <span class="keyword">as</span> <span class="built_in">string</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> GetSymbol(culture);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="built_in">string</span> <span class="title">GetSymbol</span>(<span class="params"><span class="built_in">string</span> culture</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">switch</span> (culture)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&quot;en&quot;</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;$&quot;</span>;</span><br><span class="line">            <span class="keyword">case</span> <span class="string">&quot;eu&quot;</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;£&quot;</span>;</span><br><span class="line">            <span class="literal">default</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="string">&quot;$&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="擴充-WebViewPage"><a href="#擴充-WebViewPage" class="headerlink" title="擴充 WebViewPage"></a>擴充 WebViewPage<TModel></h2><p>在<code>Autofac</code>多註冊一個</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">builder.RegisterType&lt;CurrencyProvider&gt;().As&lt;ICurrency&gt;();</span><br><span class="line">DependencyResolver.SetResolver(<span class="keyword">new</span> CustomerDependencyResolver(builder.Build()));</span><br></pre></td></tr></table></figure>
+
+<p>最後在建立一個<code>CountryViewPage&lt;TModel&gt;</code>抽象類別繼承於<code>WebViewPage&lt;TModel&gt;</code>.</p>
+<p>在此類別中建立一個<code>ICurrency</code>屬性,並在建構子中透過<code>DependencyResolver.Current.GetService</code>給值</p>
+<blockquote>
+<p>因為這間已經替換成<code>Autofac</code>解析器,所以會吃<code>Autofac</code>註冊的類別.</p>
+</blockquote>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title">CountryViewPage</span>&lt;<span class="title">TModel</span>&gt; : <span class="title">WebViewPage</span>&lt;<span class="title">TModel</span>&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CountryViewPage</span>()</span></span><br><span class="line">    &#123;</span><br><span class="line">        Currency = DependencyResolver.Current.GetService&lt;ICurrency&gt;();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> ICurrency Currency &#123; <span class="keyword">get</span>;  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="RazorView使用擴充後WebViewPage"><a href="#RazorView使用擴充後WebViewPage" class="headerlink" title="RazorView使用擴充後WebViewPage"></a>RazorView使用擴充後WebViewPage<TModel></h2><p>在<code>View</code>上使用新<code>WebViewPage&lt;TModel&gt;</code>只需要在最上面加<code>@inherits CountryViewPage&lt;object&gt;</code>.<br>我們就可以透過<code>@</code>呼叫<code>Currency</code>物件.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">@inherits CountryViewPage&lt;<span class="built_in">object</span>&gt;</span><br><span class="line"></span><br><span class="line">@&#123;</span><br><span class="line">    ViewBag.Title = <span class="string">&quot;About&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&lt;h2&gt;@ViewBag.Title.&lt;/h2&gt;</span><br><span class="line">&lt;h3&gt;@ViewBag.Message @Currency.GetCurrencySymbol()&lt;/h3&gt;</span><br><span class="line"></span><br><span class="line">&lt;p&gt;Use <span class="keyword">this</span> area to provide additional information.&lt;/p&gt;</span><br></pre></td></tr></table></figure>
+
+<p>如果每個頁面都需要使用新的<code>WebViewPage&lt;TModel&gt;</code>可以透過<code>web.config</code>新增加一個<code>&lt;pages pageBaseType=&quot;CountryViewPage&quot;&gt;</code>將<code>Razor</code>產生的<code>C#</code>程式碼繼承於此類別</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">system.web.webPages.razor</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">pages</span> <span class="attr">pageBaseType</span>=<span class="string">&quot;CountryViewPage&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">namespaces</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Mvc&quot;</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Mvc.Ajax&quot;</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Mvc.Html&quot;</span> /&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">add</span> <span class="attr">namespace</span>=<span class="string">&quot;System.Web.Routing&quot;</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">namespaces</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">pages</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">system.web.webPages.razor</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結:"></a>小結:</h2><p>其實我們也可以繼承<code>WebViewPage&lt;TModel&gt;</code>來擴充<code>View</code>多變性</p>
+<p>這邊有一個題目提供讀者來完成透過上面概念完成多國語系,這裡提供一條方法完成</p>
+<blockquote>
+<p>寫一個<code>string transfer(string key)</code>透過<code>Resource</code>檔案來完成;</p>
+</blockquote>
+<p><a href="https://github.com/isdaniel/ItHelp_MVC_10th/tree/CustomerWebViewPage">Github範例程式原始碼</a> <code>CustomerWebViewPage</code>分支上</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/Ithelp-day29/">https://isdaniel.github.io/Ithelp-day29/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
