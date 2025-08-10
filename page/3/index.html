@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">135</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">136</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">63</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">65</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">185</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">186</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,130 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/redlock-deepknow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/redlock-deepknow/" class="post-title-link" itemprop="url">利用Redlock演算法實現自己的分佈式鎖</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-10-25 09:30:11" itemprop="dateCreated datePublished" datetime="2021-10-25T09:30:11+00:00">2021-10-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/redlock-deepknow/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="redlock-deepknow/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我之前有寫透過 <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">lock or CAS</a> 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>
+<p>下面程式在單體服務或應用程式不會出問題，但如果服務器有多台問題可就大了，因為下面的 lock 只限於單體 Server 上</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">static</span> <span class="built_in">object</span> _lock = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line">[<span class="meta">HttpGet()</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">string</span> <span class="title">Get</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">int</span> remainCount;</span><br><span class="line">    <span class="keyword">lock</span> (_lock)</span><br><span class="line">    &#123;</span><br><span class="line">        </span><br><span class="line">        remainCount = (<span class="built_in">int</span>)RedisConnection.GetDatabase().StringGet(_productId);</span><br><span class="line">        <span class="keyword">if</span> (remainCount &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            RedisConnection.GetDatabase().StringSet(_productId, --remainCount);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">string</span> productMsg = remainCount &lt;= <span class="number">0</span> ? <span class="string">&quot;沒貨了賣完了&quot;</span> : <span class="string">$&quot;還剩下 <span class="subst">&#123;remainCount&#125;</span> 商品&quot;</span>;</span><br><span class="line">    <span class="built_in">string</span> result = <span class="string">$&quot;<span class="subst">&#123;Dns.GetHostName()&#125;</span> 處理貨物狀態!! <span class="subst">&#123;productMsg&#125;</span>&quot;</span>;</span><br><span class="line">    _logger.LogInformation(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果有聽過 Redis 可能就會聽過 <a href="https://github.com/samcook/RedLock.net">RedLock.net</a> 來處理，但您知道 RedLock.net 底層大致上怎麼實作的嗎?</p>
+<p>本篇文章會帶領大家透過 distlock 算法時做出，自己的Redlock</p>
+<blockquote>
+<p>本篇只介紹核心概念，細部防錯我沒有寫出來，所以建議本篇程式不要用在 prod 環境</p>
+</blockquote>
+<p>我使用 docker-compose 建立問題架構，架構圖如下</p>
+<p><img src="https://i.imgur.com/nt8Q9Sv.png"></p>
+<p>原始碼位置 <a href="https://github.com/isdaniel/Redlock-Csharp">Redlock-Csharp</a></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/redlock-deepknow/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-cost-factor-tuning/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +415,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -416,7 +540,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -538,7 +662,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -665,7 +789,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -790,7 +914,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -914,7 +1038,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1035,7 +1159,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1161,7 +1285,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1295,7 +1419,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1367,130 +1491,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/c-sharp-clr-deepknow/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/lock-deepknow/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/lock-deepknow/" class="post-title-link" itemprop="url">CLR系列-Lock深入淺出</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-08-15 21:13:34" itemprop="dateCreated datePublished" datetime="2021-08-15T21:13:34+00:00">2021-08-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/CLR/" itemprop="url" rel="index"><span itemprop="name">CLR</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/lock-deepknow/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="lock-deepknow/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>11k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>10 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <div itemscope itemtype="http://schema.org/ImageGallery">
-            <img src="https://i.imgur.com/dWZF6DH.png" itemprop="contentUrl">
-        </div>
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>你知道object lock底層怎麼實作，可重入鎖是底層是怎麼運作的嗎?</p>
-<p>本篇就跟大家分享這些細節.</p>
-<h2 id="可重入鎖Demo"><a href="#可重入鎖Demo" class="headerlink" title="可重入鎖Demo"></a>可重入鎖Demo</h2><figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="built_in">object</span> _object = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        Task.WaitAll(Task.Run(() =&gt; &#123; TryLockDemo(); &#125;), Task.Run(() =&gt; &#123; TryLockDemo(); &#125;));</span><br><span class="line"></span><br><span class="line">        Console.WriteLine(<span class="string">&quot;Hello World!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">TryLockDemo</span>()</span> &#123;</span><br><span class="line">        <span class="keyword">var</span> threadId = Thread.CurrentThread.ManagedThreadId;</span><br><span class="line">        Console.WriteLine(<span class="string">$&quot;[<span class="subst">&#123;threadId&#125;</span>] <span class="subst">&#123;DateTime.Now:HH:mm:ss&#125;</span> TryLockDemo Start&quot;</span>);</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            Monitor.Enter(_object);</span><br><span class="line">            Console.WriteLine(<span class="string">$&quot;[<span class="subst">&#123;threadId&#125;</span>] <span class="subst">&#123;DateTime.Now:HH:mm:ss&#125;</span> get first lock&quot;</span>);</span><br><span class="line">            <span class="keyword">try</span></span><br><span class="line">            &#123;</span><br><span class="line">                Thread.Sleep(<span class="number">3000</span>);</span><br><span class="line">                Monitor.Enter(_object);</span><br><span class="line">                Console.WriteLine(<span class="string">$&quot;[<span class="subst">&#123;threadId&#125;</span>] <span class="subst">&#123;DateTime.Now:HH:mm:ss&#125;</span> get second lock&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">finally</span></span><br><span class="line">            &#123;</span><br><span class="line">                Monitor.Exit(_object);</span><br><span class="line">                Console.WriteLine(<span class="string">$&quot;[<span class="subst">&#123;threadId&#125;</span>] <span class="subst">&#123;DateTime.Now:HH:mm:ss&#125;</span> release second lock&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">finally</span></span><br><span class="line">        &#123;</span><br><span class="line">            Thread.Sleep(<span class="number">3000</span>);</span><br><span class="line">            Monitor.Exit(_object);</span><br><span class="line">            Console.WriteLine(<span class="string">$&quot;[<span class="subst">&#123;threadId&#125;</span>] <span class="subst">&#123;DateTime.Now:HH:mm:ss&#125;</span> release first lock&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面這段程式碼，同時間會由2個Thread來呼叫處理<code>TryLockDemo</code>方法.</p>
-<p>主要是演示lock中在對於同一個object lock一次且在multiple-Thread中會怎麼運作</p>
-<p>為什麼Thread 1釋放first lock時，Thread 2會繼續blocking並等待Thread 1釋放second lock?</p>
-<p><img src="https://i.imgur.com/gKt8aY4.png"></p>
-<h2 id="object中Syncblk"><a href="#object中Syncblk" class="headerlink" title="object中Syncblk"></a>object中Syncblk</h2>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/lock-deepknow/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1582,20 +1582,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">185</span>
+          <span class="site-state-item-count">186</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">63</span>
+        <span class="site-state-item-count">65</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">135</span>
+        <span class="site-state-item-count">136</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1656,12 +1656,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">899k</span>
+    <span title="Symbols count total">905k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:37</span>
+    <span title="Reading time total">13:43</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

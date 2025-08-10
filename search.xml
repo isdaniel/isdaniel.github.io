@@ -14251,6 +14251,145 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)</title>
+    <url>/logical-replication-checker-replication_checker_rs/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>大家好，今天要和大家介紹我近期開發的一個開源專案 <a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel/replication_checker_rs">replication_checker_rs</a> 如果你想用一個輕量、可讀性高的工具實時觀察 PostgreSQL 邏輯複寫（logical replication）流，或想把複寫協議的學習變成可執行的實驗場，<code>replication_checker_rs</code> 是一個不錯的起點：它是 Rust 實現 PostgreSQL logical replication protocol 使用 <code>libpq-sys</code> 的實作，能連上資料庫、建立 replication slot，並將 INSERT &#x2F; UPDATE &#x2F; DELETE &#x2F; TRUNCATE 等變更以可讀格式顯示出來。(<a href="https://github.com/isdaniel/replication_checker_rs">https://github.com/isdaniel/replication_checker_rs</a>)</p>
+<hr>
+<h2 id="為什麼會想用它？"><a href="#為什麼會想用它？" class="headerlink" title="為什麼會想用它？"></a>為什麼會想用它？</h2><ul>
+<li><strong>學習角度</strong>：它直接實作 PostgreSQL 的 logical replication protocol（WAL message parsing、relation&#x2F;tuple 格式）以可讀、可改造的 Rust 程式碼呈現，適合希望理解底層協議的人。</li>
+<li><strong>快速驗證</strong>：想知道 publication 有沒有正確產生事件、或某些 schema 變更會如何呈現時，可以直接跑這個工具觀察實際輸出。</li>
+<li><strong>Rust + libpq 真實範例</strong>：展示如何用 <code>libpq-sys</code> 與 Tokio 做低階連線管理與 parser 實作</li>
+<li><strong>延伸空間大</strong>：可以把它當作 PoC（proof of concept），加上 JSON 化、推到 Kafka&#x2F;Redis、做到可重啟的 consumer。</li>
+</ul>
+<hr>
+<h2 id="功能與限制（快速掃描）"><a href="#功能與限制（快速掃描）" class="headerlink" title="功能與限制（快速掃描）"></a>功能與限制（快速掃描）</h2><p><strong>主要功能</strong></p>
+<ul>
+<li>用作邏輯複寫客戶端（logical replication client），可建立 replication slot 並接收變更。</li>
+<li>支援顯示 <code>BEGIN</code>、<code>COMMIT</code>、<code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code>、<code>TRUNCATE</code> 以及 relation／tuple 資訊，並能處理 streaming（大型）交易。</li>
+</ul>
+<p><strong>目前限制</strong></p>
+<ul>
+<li>目前只把變更<strong>顯示為人類可讀格式</strong>，沒有把事件推到 Kafka&#x2F;Redis 等下游處理器。</li>
+<li>只對文字型別（text types）有良好處理；binary 類型會以 raw 形式顯示。</li>
+<li>slot 管理、錯誤復原邏輯較簡單（遇到大部分錯誤會結束程式）</li>
+</ul>
+<hr>
+<h2 id="實作前準備（PostgreSQL-與系統）"><a href="#實作前準備（PostgreSQL-與系統）" class="headerlink" title="實作前準備（PostgreSQL 與系統）"></a>實作前準備（PostgreSQL 與系統）</h2><ol>
+<li><strong>PostgreSQL 必須開啟 logical WAL</strong>：<code>wal_level = logical</code>（修改後需重啟 PostgreSQL）。這是 logical replication 的必要條件。</li>
+<li><strong>建立 publication</strong>（只複寫你想要的 table，或 <code>FOR ALL TABLES</code>）：<code>CREATE PUBLICATION my_publication FOR TABLE table1, table2;</code>。</li>
+<li><strong>建立有 replication 權限的 user</strong>：例如 <code>CREATE USER replicator WITH REPLICATION LOGIN PASSWORD &#39;password&#39;;</code> 並給予必要的 SELECT 權限。</li>
+<li><strong>系統相依套件</strong>：需要 <code>libpq</code> 開發檔（例如 Debian&#x2F;Ubuntu 的 <code>libpq-dev</code>、macOS 用 Homebrew 安裝 <code>postgresql</code>），並使用 Rust 1.70+。</li>
+</ol>
+<blockquote>
+<p>請注意：PostgreSQL DB 版本必須等於或高於版本 14，更多資訊請參閱以下連結。</p>
+</blockquote>
+<p><a href="https://www.postgresql.org/docs/14/protocol-replication.html">https://www.postgresql.org/docs/14/protocol-replication.html</a><br><a href="https://www.postgresql.org/docs/current/protocol-logical-replication.html#PROTOCOL-LOGICAL-REPLICATION-PARAMS">https://www.postgresql.org/docs/current/protocol-logical-replication.html#PROTOCOL-LOGICAL-REPLICATION-PARAMS</a></p>
+<h3 id="PostgreSQL-設定（必要）"><a href="#PostgreSQL-設定（必要）" class="headerlink" title="PostgreSQL 設定（必要）"></a>PostgreSQL 設定（必要）</h3><ol>
+<li><code>postgresql.conf</code>：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">wal_level = logical</span><br><span class="line">max_replication_slots = 10    # 視需求調整</span><br><span class="line">max_wal_senders = 10</span><br></pre></td></tr></table></figure>
+
+<p>修改後重啟 PostgreSQL。</p>
+<ol start="2">
+<li>建 publication 與 replication user（在 psql 下執行）：</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 建 replication user</span></span><br><span class="line"><span class="keyword">CREATE</span> ROLE replicator <span class="keyword">WITH</span> REPLICATION LOGIN PASSWORD <span class="string">&#x27;replicator_pw&#x27;</span>;</span><br><span class="line"><span class="comment">-- 建 publication（只複寫特定 table 或使用 FOR ALL TABLES）</span></span><br><span class="line"><span class="keyword">CREATE</span> PUBLICATION my_publication <span class="keyword">FOR</span> <span class="keyword">TABLE</span> public.my_table;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：不要無限制地建立 replication slot（未刪除會造成 WAL 快速累積），測試時留意 WAL 使用量。</p>
+</blockquote>
+<hr>
+<h2 id="快速上手（編譯-執行）"><a href="#快速上手（編譯-執行）" class="headerlink" title="快速上手（編譯 &amp; 執行）"></a>快速上手（編譯 &amp; 執行）</h2><p><strong>從原始碼編譯</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/replication_checker_rs.git</span><br><span class="line"><span class="built_in">cd</span> replication_checker_rs</span><br><span class="line">cargo build --release</span><br></pre></td></tr></table></figure>
+
+<p>（注意系統需先安裝 libpq 開發庫）。</p>
+<p><strong>範例執行方式</strong>（README 範例改寫，實務上把 db 參數用空格分開的 key-value 傳入）</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 設定 slot / publication 名稱（可用環境變數）</span></span><br><span class="line"><span class="built_in">export</span> slot_name=<span class="string">&quot;my_slot&quot;</span></span><br><span class="line"><span class="built_in">export</span> pub_name=<span class="string">&quot;my_publication&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行（參數順序為 key value key value ...）</span></span><br><span class="line">./target/release/pg_replica_rs user azureuser **replication database** host 127.0.0.1 dbname redis_fdw_rs port 5432</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>連接字串需要使用 replication database 代表是 replication 操作<br>你也可以用 <code>RUST_LOG</code> 控制日誌等級（例：<code>RUST_LOG=debug</code>）。</p>
+</blockquote>
+<p><strong>Docker 方式</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker build -t pg_replica_rs .</span><br><span class="line">docker run -e slot_name=my_slot -e pub_name=my_pub \</span><br><span class="line">  pg_replica_rs user postgres password secret host host.docker.internal port 5432 dbname mydb</span><br></pre></td></tr></table></figure>
+
+<p>方便在隔離環境做測試。</p>
+<h2 id="實戰：建立-publication、產生測試資料、觀察輸出"><a href="#實戰：建立-publication、產生測試資料、觀察輸出" class="headerlink" title="實戰：建立 publication、產生測試資料、觀察輸出"></a>實戰：建立 publication、產生測試資料、觀察輸出</h2><h3 id="在資料庫上建立測試-table-與-publication"><a href="#在資料庫上建立測試-table-與-publication" class="headerlink" title="在資料庫上建立測試 table 與 publication"></a>在資料庫上建立測試 table 與 publication</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> public.my_table (</span><br><span class="line">  id serial <span class="keyword">primary key</span>,</span><br><span class="line">  msg text</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> PUBLICATION my_publication <span class="keyword">FOR</span> <span class="keyword">TABLE</span> public.my_table;</span><br></pre></td></tr></table></figure>
+
+<h3 id="在另一個-psql-session-產生變更"><a href="#在另一個-psql-session-產生變更" class="headerlink" title="在另一個 psql session 產生變更"></a>在另一個 psql session 產生變更</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> public.my_table (msg) <span class="keyword">VALUES</span> (<span class="string">&#x27;hello replication&#x27;</span>);</span><br><span class="line"><span class="keyword">UPDATE</span> public.my_table <span class="keyword">SET</span> msg <span class="operator">=</span> <span class="string">&#x27;altered&#x27;</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">FROM</span> public.my_table <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="觀察-replication-checker-rs-的輸出（示例）"><a href="#觀察-replication-checker-rs-的輸出（示例）" class="headerlink" title="觀察 replication_checker_rs 的輸出（示例）"></a>觀察 <code>replication_checker_rs</code> 的輸出（示例）</h3><figure class="highlight apache"><table><tr><td class="code"><pre><span class="line"><span class="attribute">025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">57</span>:<span class="number">54</span>.<span class="number">417412</span>Z  INFO Started receiving data from database server</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">488499</span>Z  INFO BEGIN: Xid <span class="number">1522</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489158</span>Z  INFO Received relation info for public.t1</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489235</span>Z  INFO TRUNCATE</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489255</span>Z  INFO public.t1</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489318</span>Z  INFO COMMIT: flags: <span class="number">0</span>, lsn: <span class="number">43614824</span>, end_lsn: <span class="number">43614944</span>, commit_time: <span class="number">2025</span>-<span class="number">08</span>-<span class="number">10</span> <span class="number">02</span>:<span class="number">58</span>:<span class="number">01</span>.<span class="number">484</span> UTC</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">583760</span>Z  INFO BEGIN: Xid <span class="number">1523</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">583925</span>Z  INFO Received relation info for public.t1</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584000</span>Z  INFO table public.t1: INSERT:</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584012</span>Z  INFO a: <span class="number">1</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584040</span>Z  INFO table public.t1: INSERT:</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584062</span>Z  INFO a: <span class="number">2</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584104</span>Z  INFO COMMIT: flags: <span class="number">0</span>, lsn: <span class="number">43615128</span>, end_lsn: <span class="number">43615176</span>, commit_time: <span class="number">2025</span>-<span class="number">08</span>-<span class="number">10</span> <span class="number">02</span>:<span class="number">58</span>:<span class="number">07</span>.<span class="number">580</span> UTC</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="程式碼結構與關鍵模組導覽"><a href="#程式碼結構與關鍵模組導覽" class="headerlink" title="程式碼結構與關鍵模組導覽"></a>程式碼結構與關鍵模組導覽</h2><p>（以 repo 常見的檔案分佈為範例）</p>
+<ul>
+<li><code>main.rs</code>：啟動、參數解析、log 設定</li>
+<li><code>server.rs</code> &#x2F; <code>connection.rs</code>：與 Postgres 建立 replication 連線、處理 libpq loop</li>
+<li><code>parser.rs</code>：負責把 raw WAL message 解析成內部事件（BEGIN&#x2F;RELATION&#x2F;INSERT&#x2F;UPDATE&#x2F;DELETE&#x2F;TRUNCATE&#x2F;COMMIT）</li>
+<li><code>types.rs</code>：定義 relation、tuple 與欄位型別</li>
+<li><code>utils.rs</code>：byte 解析、LSN 處理、輔助 function</li>
+</ul>
+<hr>
+<h2 id="深入：實踐中的概念與操作建議"><a href="#深入：實踐中的概念與操作建議" class="headerlink" title="深入：實踐中的概念與操作建議"></a>深入：實踐中的概念與操作建議</h2><p>下面幾點是把工具從「觀察器」進化到「可實際應用」時會用到的概念與工程建議。</p>
+<ol>
+<li><p><strong>Replication Slot</strong></p>
+<ul>
+<li>Slot 決定了你從哪個 WAL LSN 開始讀，並讓 PostgreSQL 保留 WAL（直到被確認消費）。測試時注意不要無限建立未刪除的 slot（會造成 WAL 累積）。<code>replication_checker_rs</code> 可建立 slot，但目前在程式中 slot cleanup 還是簡單處理，所以測試環境中你要管理好。</li>
+</ul>
+</li>
+<li><p><strong>Publication 與 Schema 一致性</strong></p>
+<ul>
+<li>Publication 決定哪些 table 的變更會被發送。上線前請確認 schema（尤其 REPLICA IDENTITY、nullable、type 改動）在 source 與 downstream 處理端的一致性，否則解析或重放會有問題。<code>replication_checker_rs</code> 會顯示 relation 資訊，能幫你驗證。</li>
+</ul>
+</li>
+<li><p><strong>Streaming 交易</strong></p>
+<ul>
+<li>對大交易（very large transactions），Postgres 可能以 streaming 模式傳送。此專案已處理 streaming 交易，這讓它在面對大批量資料變更時不會輕易崩潰。(</li>
+</ul>
+</li>
+<li><p><strong>Feedback（ack）機制</strong></p>
+<ul>
+<li>Logical replication protocol 支援回報已處理的 WAL 位置（可用於讓 primary safe remove WAL）。專案實作有 feedback 機制，但在 production 要確保回報策略（多久 ack、持久化 LSN 等）與你下游同步策略一致。</li>
+<li></li>
+</ul>
+</li>
+<li><p><strong>從「顯示」到「處理」：把事件送到下游</strong></p>
+<ul>
+<li>如果你要把變更送到 Kafka、Redis 或寫入另一個 DB，建議把 parser 與 message handling 拆成兩層：<strong>（1）可靠地接收並 ack WAL（LSN）</strong>、<strong>（2）異步或批次地把事件轉送到下游並重試</strong>。目前 <code>replication_checker_rs</code> 主要做第（1）與可視化，延伸第（2）需要你加上連線池、backpressure 與錯誤重試。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="實務上常見問題（與排解）"><a href="#實務上常見問題（與排解）" class="headerlink" title="實務上常見問題（與排解）"></a>實務上常見問題（與排解）</h2><ul>
+<li><code>libpq not found</code>：請安裝系統的 PostgreSQL 開發套件（如 <code>libpq-dev</code>、<code>postgresql-devel</code> 或 Homebrew 的 <code>postgresql</code>）。</li>
+<li>權限錯誤：Replication user 需要 <code>REPLICATION</code> 權限，且 publication 應包含你想觀察的 tables。</li>
+<li>Slot 已存在：若 slot 名稱衝突，請手動刪除舊 slot 或指定不同名稱再試。</li>
+</ul>
+<hr>
+<h2 id="延伸建議（如果你想把它用到更真實的場景）"><a href="#延伸建議（如果你想把它用到更真實的場景）" class="headerlink" title="延伸建議（如果你想把它用到更真實的場景）"></a>延伸建議（如果你想把它用到更真實的場景）</h2><ol>
+<li>將輸出轉成 <strong>structured JSON</strong> 並發到 Kafka 或 Event Hub（便於 downstream consumer 處理）。</li>
+<li>增加 <strong>slot cleanup &amp; resume 機制</strong>：遇錯不要直接停，保存最後 ack 的 LSN，重啟時從該位置恢復。</li>
+<li>支援 binary 類型與更完整的 type mapping（目前以 raw 顯示 binary）。</li>
+<li>把 <code>replication_checker_rs</code> 包成一個可監控的 service，加上 metrics（Prometheus）與 health-check endpoint。<br>這些方向都屬於從 PoC → production 的典型演進路線。</li>
+</ol>
+<hr>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p><code>replication_checker_rs</code> 是一個很實用的學習與測試工具：它把 PostgreSQL logical replication protocol 的各個重要面向（slot、publication、BEGIN&#x2F;COMMIT、tuple parsing、streaming 交易、feedback）用 Rust + libpq 呈現出來，適合用來做教學、驗證複寫行為或作為你自製複寫處理器的起點。想進一步把它變成 production-ready，需要在錯誤復原、slot 管理、下游整合跟 binary type 處理上補強。(<a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel/replication_checker_rs">GitHub</a>)</p>
+<ul>
+<li><a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel/replication_checker_rs">replication_checker_rs</a></li>
+<li>歡迎 Star、開 issue、PR 一起改進專案！</li>
+</ul>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/">https://isdaniel.github.io/logical-replication-checker-replication_checker_rs&#x2F;</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Rust</category>
+        <category>PostgreSQL</category>
+        <category>logical-replication</category>
+      </categories>
+      <tags>
+        <tag>Rust</tag>
+        <tag>PostgreSQL</tag>
+        <tag>logical-replication</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>LRU 演算法解說</title>
     <url>/lru-algorithm/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料結構跟演算法是程式設計師的內功，在中小型系統懂這兩樣東西效用可能有限，但在大型系統中熟不熟用資料結構跟演算法做出來的效益會天差地遠</p>

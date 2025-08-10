@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">135</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">136</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">63</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">65</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">185</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">186</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,133 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/azure-flexible-longterm-backup/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/azure-flexible-longterm-backup/" class="post-title-link" itemprop="url">Azure PostgreSQL Flexible long term backup with Managed Identity</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-12-25 22:30:11" itemprop="dateCreated datePublished" datetime="2022-12-25T22:30:11+00:00">2022-12-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Azure/" itemprop="url" rel="index"><span itemprop="name">Azure</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Azure/flexibleServer/" itemprop="url" rel="index"><span itemprop="name">flexibleServer</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Azure/flexibleServer/Managed-Identity/" itemprop="url" rel="index"><span itemprop="name">Managed Identity</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/azure-flexible-longterm-backup/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="azure-flexible-longterm-backup/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>This ariticle will guide us how to do long-term backup (more than 35 days) on Azure PostgreSQL Flexible.</p>
+<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites:"></a>Prerequisites:</h2><ul>
+<li>A Postgres flexible server and an Azure VM (Linux (ubuntu 20.04)) that has access to it.</li>
+<li>A MI (Managed Identity) in your subscription.</li>
+<li>Please kindly make sure backup Postgres flexible server version align with pg_dump version.</li>
+</ul>
+<p>Here is the sample code of Azure PostgreSQL Flexible long term backup with Managed Identity.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start program&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;=====================&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start installing postgresql client suit&#x27;</span></span><br><span class="line"><span class="built_in">sudo</span> apt update</span><br><span class="line"><span class="built_in">sudo</span> apt -y install postgresql-client</span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;======================&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;postgresql client install ends&#x27;</span></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;start mount storage&#x27;</span></span><br><span class="line"></span><br><span class="line">wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb</span><br><span class="line"><span class="built_in">sudo</span> dpkg -i packages-microsoft-prod.deb</span><br><span class="line"><span class="built_in">sudo</span> apt-get update</span><br><span class="line"><span class="built_in">sudo</span> apt-get install blobfuse -y</span><br><span class="line"><span class="built_in">sudo</span> apt-get install jq -y</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> [ ! -f blob.conf  ]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">echo</span> <span class="string">&#x27;accountName &lt;&lt;Your blob accountName&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;authType MSI&#x27;</span> &gt;&gt; fuse_connection.cfg</span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;identityObjectId &lt;&lt;Your blob accountKey&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line">	<span class="built_in">echo</span> <span class="string">&#x27;containerName &lt;&lt;Your blob Container Name&gt;&gt;&#x27;</span> &gt;&gt; blob.conf </span><br><span class="line"><span class="keyword">fi</span></span><br><span class="line"><span class="comment">#create a folder which can mount to blob</span></span><br><span class="line"><span class="built_in">mkdir</span> ~/data</span><br><span class="line"><span class="built_in">sudo</span> blobfuse ~/data --tmp-path=/mnt/resource/mycontainer  --config-file=./blob.conf -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&#x27;======= starting backup============&#x27;</span></span><br><span class="line">DNAME=`<span class="built_in">date</span> +%Y%m%d%H%M%S`</span><br><span class="line"><span class="built_in">export</span> PGPASSWORD=`curl -s <span class="string">&#x27;http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&amp;resource=https%3A%2F%2Fossrdbms-aad.database.windows.net&amp;client_id=&lt;&lt;MI client ID&gt;&gt;&#x27;</span> -H Metadata:<span class="literal">true</span> | jq -r .access_token`</span><br><span class="line">pg_dump --host=test-conn.postgres.database.azure.com --username=<span class="string">&#x27;MI-Demo&#x27;</span> -Fc -c  testdb &gt; ~/data/dump<span class="variable">$DNAME</span>.sql</span><br></pre></td></tr></table></figure>
+
+<h2 id="Experiments"><a href="#Experiments" class="headerlink" title="Experiments:"></a>Experiments:</h2><h3 id="Here-is-the-guideline-for-using-managed-identity-to-connect-to-your-DB-server-in-VM"><a href="#Here-is-the-guideline-for-using-managed-identity-to-connect-to-your-DB-server-in-VM" class="headerlink" title="Here is the guideline for using managed identity to connect to your DB server in VM."></a>Here is the guideline for using managed identity to connect to your DB server in VM.</h3><p>We would make sure the Authentication setting that was PostgreSQL and Azure Active Directory authentication.</p>
+<p><img src="https://i.imgur.com/BVNlWCx.png"></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/azure-flexible-longterm-backup/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-debug-source-code/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +418,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -409,7 +536,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -552,7 +679,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -676,7 +803,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -802,7 +929,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -925,7 +1052,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1049,7 +1176,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1172,7 +1299,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1298,7 +1425,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
+                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1369,130 +1496,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/map-theory/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/redlock-deepknow/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/redlock-deepknow/" class="post-title-link" itemprop="url">利用Redlock演算法實現自己的分佈式鎖</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-10-25 09:30:11" itemprop="dateCreated datePublished" datetime="2021-10-25T09:30:11+00:00">2021-10-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-07-21 08:32:26" itemprop="dateModified" datetime="2025-07-21T08:32:26+00:00">2025-07-21</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/redlock-deepknow/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="redlock-deepknow/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>5.8k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>5 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我之前有寫透過 <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">lock or CAS</a> 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>
-<p>下面程式在單體服務或應用程式不會出問題，但如果服務器有多台問題可就大了，因為下面的 lock 只限於單體 Server 上</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">static</span> <span class="built_in">object</span> _lock = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line">[<span class="meta">HttpGet()</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">string</span> <span class="title">Get</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">int</span> remainCount;</span><br><span class="line">    <span class="keyword">lock</span> (_lock)</span><br><span class="line">    &#123;</span><br><span class="line">        </span><br><span class="line">        remainCount = (<span class="built_in">int</span>)RedisConnection.GetDatabase().StringGet(_productId);</span><br><span class="line">        <span class="keyword">if</span> (remainCount &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            RedisConnection.GetDatabase().StringSet(_productId, --remainCount);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">string</span> productMsg = remainCount &lt;= <span class="number">0</span> ? <span class="string">&quot;沒貨了賣完了&quot;</span> : <span class="string">$&quot;還剩下 <span class="subst">&#123;remainCount&#125;</span> 商品&quot;</span>;</span><br><span class="line">    <span class="built_in">string</span> result = <span class="string">$&quot;<span class="subst">&#123;Dns.GetHostName()&#125;</span> 處理貨物狀態!! <span class="subst">&#123;productMsg&#125;</span>&quot;</span>;</span><br><span class="line">    _logger.LogInformation(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>如果有聽過 Redis 可能就會聽過 <a href="https://github.com/samcook/RedLock.net">RedLock.net</a> 來處理，但您知道 RedLock.net 底層大致上怎麼實作的嗎?</p>
-<p>本篇文章會帶領大家透過 distlock 算法時做出，自己的Redlock</p>
-<blockquote>
-<p>本篇只介紹核心概念，細部防錯我沒有寫出來，所以建議本篇程式不要用在 prod 環境</p>
-</blockquote>
-<p>我使用 docker-compose 建立問題架構，架構圖如下</p>
-<p><img src="https://i.imgur.com/nt8Q9Sv.png"></p>
-<p>原始碼位置 <a href="https://github.com/isdaniel/Redlock-Csharp">Redlock-Csharp</a></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/redlock-deepknow/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1584,20 +1587,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">185</span>
+          <span class="site-state-item-count">186</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">63</span>
+        <span class="site-state-item-count">65</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">135</span>
+        <span class="site-state-item-count">136</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1658,12 +1661,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">899k</span>
+    <span title="Symbols count total">905k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:37</span>
+    <span title="Reading time total">13:43</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
