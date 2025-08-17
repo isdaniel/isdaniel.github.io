@@ -16913,6 +16913,125 @@ using (var channel = connection.CreateModel())
       </tags>
   </entry>
   <entry>
+    <title>【開源介紹】redis_fdw_rs：讓 PostgreSQL 直接查 Redis 的 FDW 擴充套件（Rust 編寫）</title>
+    <url>/redis-fdw-rs/</url>
+    <content><![CDATA[<p>大家好，今天要和大家介紹我近期開發的一個開源專案 —— <a href="https://github.com/isdaniel/redis_fdw_rs"><code>redis_fdw_rs</code></a>，這是一個使用 Rust 語言與 <a href="https://github.com/pgcentralfoundation/pgrx">pgrx</a> 框架實作的 **Redis Foreign Data Wrapper (FDW)**，讓你能夠在 PostgreSQL 中直接查詢 Redis 資料，就像操作一般的資料表一樣。</p>
+<h2 id="為什麼需要-Redis-FDW？"><a href="#為什麼需要-Redis-FDW？" class="headerlink" title="為什麼需要 Redis FDW？"></a>為什麼需要 Redis FDW？</h2><p>Redis 是高效的快取資料庫，常被用於儲存 session、排行榜、事件流等資料。但當你想從 PostgreSQL 中同步存取 Redis 資料，就必須透過額外程式碼或 ETL 工具，相對麻煩。</p>
+<p><code>redis_fdw_rs</code> 就是為了解決這個痛點而生：<strong>透過 FDW 介面，讓 PostgreSQL 能用 SQL 查 Redis！</strong></p>
+<hr>
+<h2 id="🚀-專案特色與支援功能"><a href="#🚀-專案特色與支援功能" class="headerlink" title="🚀 專案特色與支援功能"></a>🚀 專案特色與支援功能</h2><p>這個 FDW 專案目前已經支援以下功能，適合實際部署與使用：</p>
+<ul>
+<li>✅ <strong>支援 Redis Cluster</strong></li>
+<li>✅ <strong>WHERE 條件下推</strong>（Pushdown）：減少資料搬移量，提升查詢效率</li>
+<li>✅ <strong>連線池管理</strong>：避免反覆連線 Redis 的開銷</li>
+<li>✅ <strong>Stream 大量資料支援</strong>：批次查詢、分頁等場景皆可處理</li>
+<li>✅ <strong>支援 PostgreSQL 14~17</strong></li>
+<li>✅ <strong>Unit Test &amp; Integration Test</strong>：專案有測試覆蓋，確保穩定性</li>
+</ul>
+<hr>
+<h2 id="使用範例（超簡單）"><a href="#使用範例（超簡單）" class="headerlink" title="使用範例（超簡單）"></a>使用範例（超簡單）</h2><p>只需要幾行 SQL，就能連結 Redis 並開始查詢：</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 建立 Redis 伺服器連線</span></span><br><span class="line"><span class="keyword">CREATE</span> SERVER redis_server</span><br><span class="line"><span class="keyword">FOREIGN</span> DATA WRAPPER redis_wrapper</span><br><span class="line">OPTIONS (host_port <span class="string">&#x27;127.0.0.1:6379&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 宣告一個 Redis hash 的外部表格</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">FOREIGN</span> <span class="keyword">TABLE</span> user_profiles (</span><br><span class="line">  field text,</span><br><span class="line">  <span class="keyword">value</span> text</span><br><span class="line">)</span><br><span class="line">SERVER redis_server</span><br><span class="line">OPTIONS (table_type <span class="string">&#x27;hash&#x27;</span>, table_key_prefix <span class="string">&#x27;user:profiles&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 開始使用 SQL 操作 Redis！</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> user_profiles <span class="keyword">VALUES</span> (<span class="string">&#x27;name&#x27;</span>, <span class="string">&#x27;John&#x27;</span>);</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> user_profiles <span class="keyword">WHERE</span> field <span class="operator">=</span> <span class="string">&#x27;email&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Redis-Cluster-模式支援"><a href="#Redis-Cluster-模式支援" class="headerlink" title="Redis Cluster 模式支援"></a>Redis Cluster 模式支援</h2><p><code>redis_fdw_rs</code> 也完全支援 Redis Cluster 架構。你只需指定多個節點的 <code>host_port</code>，即可享有以下好處：</p>
+<h3 id="Cluster-優勢"><a href="#Cluster-優勢" class="headerlink" title="Cluster 優勢"></a>Cluster 優勢</h3><ul>
+<li><strong>自動故障轉移</strong>：節點失效時自動轉移到健康節點</li>
+<li><strong>自動 sharding</strong>：資料分散在多節點，自動分片</li>
+<li><strong>節點自動探索</strong>：只需指定一個節點，驅動程式會自動發現整個叢集</li>
+<li><strong>高可用性</strong>：節點損壞仍可正常讀寫</li>
+</ul>
+<h3 id="範例設定："><a href="#範例設定：" class="headerlink" title="範例設定："></a>範例設定：</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- 建立 cluster foreign server</span></span><br><span class="line"><span class="keyword">CREATE</span> SERVER redis_cluster_server</span><br><span class="line"><span class="keyword">FOREIGN</span> DATA WRAPPER redis_wrapper</span><br><span class="line">OPTIONS (</span><br><span class="line">    host_port <span class="string">&#x27;127.0.0.1:7000,127.0.0.1:7001,127.0.0.1:7002&#x27;</span>,</span><br><span class="line">    password <span class="string">&#x27;your_redis_password&#x27;</span>  <span class="comment">-- 可選</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 建立 cluster 對應的外部表格</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">FOREIGN</span> <span class="keyword">TABLE</span> user_sessions (</span><br><span class="line">    field TEXT,</span><br><span class="line">    <span class="keyword">value</span> TEXT</span><br><span class="line">)</span><br><span class="line">SERVER redis_cluster_server</span><br><span class="line">OPTIONS (</span><br><span class="line">    database <span class="string">&#x27;0&#x27;</span>,</span><br><span class="line">    table_type <span class="string">&#x27;hash&#x27;</span>,</span><br><span class="line">    table_key_prefix <span class="string">&#x27;session:active&#x27;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 與單節點操作無異</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> user_sessions <span class="keyword">VALUES</span> (<span class="string">&#x27;user123&#x27;</span>, <span class="string">&#x27;session_token_abc&#x27;</span>);</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> user_sessions <span class="keyword">WHERE</span> field <span class="operator">=</span> <span class="string">&#x27;user123&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="範例結果"><a href="#範例結果" class="headerlink" title="範例結果"></a>範例結果</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line">redis_fdw_rs<span class="operator">=</span># <span class="keyword">INSERT INTO</span> user_profiles (key, <span class="keyword">value</span>)</span><br><span class="line"><span class="keyword">SELECT</span> i, <span class="string">&#x27;value_&#x27;</span> <span class="operator">||</span> i</span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">100000</span>) i;</span><br><span class="line"><span class="keyword">INSERT</span> <span class="number">0</span> <span class="number">100000</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">12911.183</span> ms (<span class="number">00</span>:<span class="number">12.911</span>)</span><br><span class="line">redis_fdw_rs<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> user_profiles <span class="keyword">where</span> key <span class="operator">=</span> <span class="string">&#x27;5&#x27;</span>;</span><br><span class="line"> key <span class="operator">|</span>  <span class="keyword">value</span></span><br><span class="line"><span class="comment">-----+---------</span></span><br><span class="line"> <span class="number">5</span>   <span class="operator">|</span> value_5</span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br><span class="line"><span class="type">Time</span>: <span class="number">15.380</span> ms</span><br><span class="line">redis_fdw_rs<span class="operator">=</span># <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> user_profiles <span class="keyword">where</span> key <span class="keyword">in</span> (<span class="string">&#x27;10&#x27;</span>, <span class="string">&#x27;15&#x27;</span>, <span class="string">&#x27;20&#x27;</span>);</span><br><span class="line"> key <span class="operator">|</span>  <span class="keyword">value</span></span><br><span class="line"><span class="comment">-----+----------</span></span><br><span class="line"> <span class="number">10</span>  <span class="operator">|</span> value_10</span><br><span class="line"> <span class="number">15</span>  <span class="operator">|</span> value_15</span><br><span class="line"> <span class="number">20</span>  <span class="operator">|</span> value_20</span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br><span class="line"></span><br><span class="line">redis_fdw_rs<span class="operator">=</span>#  <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> user_profiles <span class="keyword">where</span> key <span class="keyword">like</span> <span class="string">&#x27;555%&#x27;</span>;</span><br><span class="line">  key  <span class="operator">|</span>    <span class="keyword">value</span></span><br><span class="line"><span class="comment">-------+-------------</span></span><br><span class="line"> <span class="number">55556</span> <span class="operator">|</span> value_55556</span><br><span class="line"> <span class="number">55581</span> <span class="operator">|</span> value_55581</span><br><span class="line"> <span class="number">55569</span> <span class="operator">|</span> value_55569</span><br><span class="line"> <span class="number">55561</span> <span class="operator">|</span> value_55561</span><br><span class="line"> <span class="number">55516</span> <span class="operator">|</span> value_55516</span><br><span class="line"> <span class="number">55538</span> <span class="operator">|</span> value_55538</span><br><span class="line"> <span class="number">55549</span> <span class="operator">|</span> value_55549</span><br><span class="line"> <span class="number">55539</span> <span class="operator">|</span> value_55539</span><br><span class="line"> <span class="number">55531</span> <span class="operator">|</span> value_55531</span><br><span class="line"> <span class="number">55545</span> <span class="operator">|</span> value_55545</span><br><span class="line"> <span class="number">55590</span> <span class="operator">|</span> value_55590</span><br><span class="line"> <span class="number">55512</span> <span class="operator">|</span> value_55512</span><br><span class="line"> <span class="number">55523</span> <span class="operator">|</span> value_55523</span><br><span class="line"> <span class="number">55534</span> <span class="operator">|</span> value_55534</span><br><span class="line"> <span class="number">55518</span> <span class="operator">|</span> value_55518</span><br><span class="line"> <span class="number">55560</span> <span class="operator">|</span> value_55560</span><br><span class="line"> <span class="number">55564</span> <span class="operator">|</span> value_55564</span><br><span class="line"> <span class="number">55592</span> <span class="operator">|</span> value_55592</span><br><span class="line"> <span class="number">55572</span> <span class="operator">|</span> value_55572</span><br><span class="line"> <span class="number">55519</span> <span class="operator">|</span> value_55519</span><br><span class="line"> <span class="number">55526</span> <span class="operator">|</span> value_55526</span><br><span class="line"> <span class="number">5559</span>  <span class="operator">|</span> value_5559</span><br><span class="line"> <span class="number">55530</span> <span class="operator">|</span> value_55530</span><br><span class="line"> <span class="number">55511</span> <span class="operator">|</span> value_55511</span><br><span class="line"> <span class="number">55562</span> <span class="operator">|</span> value_55562</span><br><span class="line"> <span class="number">55542</span> <span class="operator">|</span> value_55542</span><br><span class="line"> <span class="number">55582</span> <span class="operator">|</span> value_55582</span><br><span class="line"> <span class="number">55580</span> <span class="operator">|</span> value_55580</span><br><span class="line"> <span class="number">55501</span> <span class="operator">|</span> value_55501</span><br><span class="line"> <span class="number">55540</span> <span class="operator">|</span> value_55540</span><br><span class="line"> <span class="number">55554</span> <span class="operator">|</span> value_55554</span><br><span class="line"> <span class="number">55546</span> <span class="operator">|</span> value_55546</span><br><span class="line"> <span class="number">55513</span> <span class="operator">|</span> value_55513</span><br><span class="line"> <span class="number">55548</span> <span class="operator">|</span> value_55548</span><br><span class="line"><span class="comment">--More--</span></span><br></pre></td></tr></table></figure>
+
+
+<hr>
+<h2 id="支援的-Redis-資料型態"><a href="#支援的-Redis-資料型態" class="headerlink" title="支援的 Redis 資料型態"></a>支援的 Redis 資料型態</h2><p>目前支援以下 Redis 資料型別，並標示已實作的操作：</p>
+<table>
+<thead>
+<tr>
+<th>Redis Type</th>
+<th>SELECT</th>
+<th>INSERT</th>
+<th>UPDATE</th>
+<th>DELETE</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Hash</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td><strong>Partial</strong> (UPDATE not supported)</td>
+</tr>
+<tr>
+<td>List</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td><strong>Partial</strong> (UPDATE not supported)</td>
+</tr>
+<tr>
+<td>Set</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td><strong>Partial</strong> (UPDATE not supported)</td>
+</tr>
+<tr>
+<td>ZSet</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td><strong>Partial</strong> (UPDATE not supported)</td>
+</tr>
+<tr>
+<td>String</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td><strong>Partial</strong> (UPDATE not supported)</td>
+</tr>
+<tr>
+<td>Stream</td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+<td>✅</td>
+<td><strong>Full</strong> (Large data set support with pagination)</td>
+</tr>
+</tbody></table>
+<p>可透過 <code>table_type</code> 和 <code>table_key_prefix</code> 指定資料類型與 key 前綴，也支援選擇 Redis 的 <code>database</code>（預設為 0）。</p>
+<hr>
+<h2 id="專案資源"><a href="#專案資源" class="headerlink" title="專案資源"></a>專案資源</h2><ul>
+<li>GitHub 倉庫：<a href="https://github.com/isdaniel/redis_fdw_rs">https://github.com/isdaniel/redis_fdw_rs</a></li>
+<li>文件與安裝說明完整、範例齊全</li>
+<li>歡迎 Star、開 issue、PR 一起改進專案！</li>
+</ul>
+<hr>
+<h2 id="結語：一起打造更強的資料存取能力！"><a href="#結語：一起打造更強的資料存取能力！" class="headerlink" title="結語：一起打造更強的資料存取能力！"></a>結語：一起打造更強的資料存取能力！</h2><p>這個專案仍持續演進中，如果你有 Redis &#x2F; PostgreSQL 混合架構的需求，或是對 Rust、FDW 開發有興趣，非常歡迎你一起參與改進。</p>
+<p>有任何回饋，歡迎透過 GitHub 討論，我會持續更新與優化這個實用的工具！</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/redis-fdw-rs/">https://isdaniel.github.io/redis-fdw-rs/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>rust</category>
+        <category>opensource</category>
+        <category>redis</category>
+        <category>fdw</category>
+      </categories>
+      <tags>
+        <tag>rust</tag>
+        <tag>opensource</tag>
+        <tag>redis</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>利用Redlock演算法實現自己的分佈式鎖</title>
     <url>/redlock-deepknow/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我之前有寫透過 <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">lock or CAS</a> 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>

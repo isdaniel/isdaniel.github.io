@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">136</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">65</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">186</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">187</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,158 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/float-double/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/float-double/" class="post-title-link" itemprop="url">為什麼 Float和Double會有誤差 (浮點數儲存原理)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-10 22:30:11" itemprop="dateCreated datePublished" datetime="2019-06-10T22:30:11+00:00">2019-06-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/float-double/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="float-double/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>1.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>1 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>大家都知道float和double會有誤差 </p>
+<p>但原因是什麼呢? </p>
+<p>今天就跟大家分享Float和Double會誤差的原因</p>
+<h2 id="一-浮點數介紹"><a href="#一-浮點數介紹" class="headerlink" title="一. 浮點數介紹"></a>一. 浮點數介紹</h2><blockquote>
+<p>一開始先對於float和double做身家調查</p>
+</blockquote>
+<h3 id="浮點類型的範圍"><a href="#浮點類型的範圍" class="headerlink" title="浮點類型的範圍"></a>浮點類型的範圍</h3><table>
+<thead>
+<tr>
+<th>類型</th>
+<th>最小值</th>
+<th>最大值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>float</td>
+<td>1.175494351 E – 38</td>
+<td>3.402823466 E + 38</td>
+</tr>
+<tr>
+<td>double</td>
+<td>2.2250738585072014 E – 308</td>
+<td>1.7976931348623158 E + 308</td>
+</tr>
+</tbody></table>
+<h3 id="浮點類型"><a href="#浮點類型" class="headerlink" title="浮點類型"></a>浮點類型</h3><table>
+<thead>
+<tr>
+<th>類型</th>
+<th>有效數字</th>
+<th>位元組數</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>float</td>
+<td>6 – 7</td>
+<td>4</td>
+</tr>
+<tr>
+<td>double</td>
+<td>15 – 16</td>
+<td>8</td>
+</tr>
+</tbody></table>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/float-double/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/sql-gaps-and-islands-problem/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +443,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -407,7 +559,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -527,7 +679,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -652,7 +804,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -777,7 +929,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -906,7 +1058,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1038,7 +1190,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1163,7 +1315,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1291,7 +1443,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1360,137 +1512,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Autofac-introduce/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/Bridge-Pattern/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/Bridge-Pattern/" class="post-title-link" itemprop="url">橋接模式(BridgePattern)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-06-02 22:30:11" itemprop="dateCreated datePublished" datetime="2019-06-02T22:30:11+00:00">2019-06-02</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/Bridge-Pattern/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="Bridge-Pattern/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>6.2k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>6 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><h3 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h3><p>如果有兩大類模組是多對多的組合，如本次Smaple Code. Nick和Addidas 包包都有紅、藍、黃….或其他顏色</p>
-<p>就可能呈現下面6種組合</p>
-<ul>
-<li>Nick(紅)</li>
-<li>Nick(藍)</li>
-<li>Nick(黃)</li>
-<li>Addidas(紅)</li>
-<li>Addidas(藍)</li>
-<li>Addidas(黃)</li>
-</ul>
-<p>如果此建立類別的話 可能情況如下面的UNL圖</p>
-<p><img src="https://github.com/isdaniel/DesignPattern/raw/master/DesignPattern/img/Bridge/BridgePattern1.PNG"></p>
-<div class="note note--important">類別數量 = 顏色數量 * 包包品牌數量</div>
-
-<p>這樣會有兩個問題</p>
-<ol>
-<li>隨著品牌和顏色增多，包包類別數量急速增長　<strong>(X &#x3D; m*n)個</strong></li>
-<li>顏色我們可看做一個抽象 不應當和包包合在一起</li>
-</ol>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/Bridge-Pattern/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1582,20 +1603,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">186</span>
+          <span class="site-state-item-count">187</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">65</span>
+        <span class="site-state-item-count">69</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">136</span>
+        <span class="site-state-item-count">139</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1656,12 +1677,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">905k</span>
+    <span title="Symbols count total">909k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:43</span>
+    <span title="Reading time total">13:46</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

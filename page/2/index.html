@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">136</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">65</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">186</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">187</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,139 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-vscode-sourcecode-debugger/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/postgresql-vscode-sourcecode-debugger/" class="post-title-link" itemprop="url">How can we use vscode debug PostgreSQL running process by source code?</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2023-06-02 22:30:11" itemprop="dateCreated datePublished" datetime="2023-06-02T22:30:11+00:00">2023-06-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/vscode/" itemprop="url" rel="index"><span itemprop="name">vscode</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/vscode/postgresql/" itemprop="url" rel="index"><span itemprop="name">postgresql</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/vscode/postgresql/debugger/" itemprop="url" rel="index"><span itemprop="name">debugger</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/vscode/postgresql/debugger/sourcecode/" itemprop="url" rel="index"><span itemprop="name">sourcecode</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/postgresql-vscode-sourcecode-debugger/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-vscode-sourcecode-debugger/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Foreword"><a href="#Foreword" class="headerlink" title="Foreword"></a>Foreword</h2><p>Using gdb for command-line debugging still feels inconvenient. I initially wanted to find a simpler way to directly debug the PostgreSQL source code under Windows. After searching for a while, I found that Visual Studio (VS) was the only option available, but it is heavy and the steps are quite complex. Since most real environments run on Linux, it is better to debug the PostgreSQL source code under Linux.</p>
+<h2 id="How-to-build-install-PostgreSQL-from-source-code"><a href="#How-to-build-install-PostgreSQL-from-source-code" class="headerlink" title="How to build &amp; install PostgreSQL from source code."></a>How to build &amp; install PostgreSQL from source code.</h2><p>I used Ubuntu Linux environment, the first step we might need to install pre-requirement tool for PostgreSQL build.</p>
+<figure class="highlight q"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-<span class="built_in">get</span> <span class="keyword">update</span></span><br><span class="line">sudo apt-<span class="built_in">get</span> install build-essential libreadline-<span class="built_in">dev</span> zlib1g-<span class="built_in">dev</span> flex bison libxml2-<span class="built_in">dev</span> libxslt-<span class="built_in">dev</span> libssl-<span class="built_in">dev</span> libxml2-utils xsltproc ccache libsystemd-<span class="built_in">dev</span> -y</span><br></pre></td></tr></table></figure>
+
+<p>download PostgreSQL source code.</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">wget</span> https://ftp.postgresql.org/pub/source/v14.<span class="number">8</span>/postgresql-<span class="number">14</span>.<span class="number">8</span>.tar.gz</span><br><span class="line"><span class="attribute">tar</span> xvfz postgresql-<span class="number">14</span>.<span class="number">8</span>.tar.gz</span><br><span class="line"><span class="attribute">cd</span> postgresql-<span class="number">14</span>.<span class="number">8</span></span><br></pre></td></tr></table></figure>
+
+<p>we would need to make sure the path (<code>--prefix</code>) exist in your system.  </p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">./configure</span> <span class="params">--prefix=/home/daniel/postgresql-14</span>.8/pgsql <span class="params">--with-icu</span> <span class="params">--with-openssl</span> <span class="params">--with-systemd</span> <span class="params">--with-libxml</span> <span class="params">--enable-debug</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#or debug -g3 mode</span></span><br><span class="line"></span><br><span class="line"><span class="string">./configure</span> <span class="params">--prefix=/home/daniel/postgresql-14</span>.8/pgsql <span class="params">--with-icu</span> <span class="params">--with-openssl</span> <span class="params">--with-systemd</span> <span class="params">--with-libxml</span> <span class="params">--enable-debug</span> CFLAGS=<span class="string">&quot;-DGCC_HASCLASSVISIBILITY -O0 -Wall -W -g3 -gdwarf-2&quot;</span></span><br><span class="line"></span><br><span class="line">make -j 8</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>we must build with <code>--enable-debug</code> parameter, otherwise we can’t debug with our source code.</p>
+</blockquote>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/postgresql-vscode-sourcecode-debugger/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/azure-flexible-longterm-backup/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +424,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -418,7 +551,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -536,7 +669,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -679,7 +812,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -803,7 +936,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -929,7 +1062,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1052,7 +1185,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1176,7 +1309,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1299,7 +1432,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1371,131 +1504,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/lru-algorithm/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/map-theory/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/map-theory/" class="post-title-link" itemprop="url">資料庫查詢核心概念-地圖理論</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-11-02 23:10:43" itemprop="dateCreated datePublished" datetime="2021-11-02T23:10:43+00:00">2021-11-02</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/map-theory/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="map-theory/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>1.4k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>1 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>我認為 DB query optimizer (QO) 產生執行計畫並執行查詢和 使用地圖找尋最佳路徑很類似</p>
-<p>下面會跟大家分享我心中 <strong>地圖理論</strong> 希望可以對於想了解 DB 運作的人更快上手</p>
-<h2 id="看見全貌"><a href="#看見全貌" class="headerlink" title="看見全貌"></a>看見全貌</h2><p>在了解一個事情跟技術，我們需要先用宏觀的角度來看待事情</p>
-<p>下圖是 postgresql DB 運作核心概念圖</p>
-<p><img src="https://i.imgur.com/shthcpN.png"></p>
-<p>其中在執行語法前後最重要的幾個步驟是</p>
-<ol>
-<li>Parser：檢查語法是否有錯誤，如果錯誤就不執行後續步驟</li>
-<li>ReWriter：嘗試優化改寫 SQL</li>
-<li>Planner：利用<strong>統計資訊</strong> &amp; 演算法建立執行計畫</li>
-<li>Executor：挑選一個成本最低的執行計劃來查找資料</li>
-</ol>
-<p>我認為資料 Search Engine 的 Planner &amp; Executor 核心概念跟查找地圖( google map 很類似 )</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/map-theory/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1587,20 +1595,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">186</span>
+          <span class="site-state-item-count">187</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">65</span>
+        <span class="site-state-item-count">69</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">136</span>
+        <span class="site-state-item-count">139</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1661,12 +1669,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">905k</span>
+    <span title="Symbols count total">909k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:43</span>
+    <span title="Reading time total">13:46</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

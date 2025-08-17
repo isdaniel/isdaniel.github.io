@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">136</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">65</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">186</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">187</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,143 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/Ithelp-day16/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/Ithelp-day16/" class="post-title-link" itemprop="url">MVC Filter 機制解密 (第16天)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-09-27 10:00:00" itemprop="dateCreated datePublished" datetime="2019-09-27T10:00:00+00:00">2019-09-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/11th%E9%90%B5%E4%BA%BA%E8%B3%BD/" itemprop="url" rel="index"><span itemprop="name">11th鐵人賽</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/Ithelp-day16/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="Ithelp-day16/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>10k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E6%8F%AD%E5%AF%86%E5%8F%96%E5%BE%97%E9%81%8E%E6%BF%BE%E5%99%A8filter%E6%A9%9F%E5%88%B6aop">揭密取得過濾器(Filter)機制AOP</a><ul>
+<li><a href="#aopaspect-oriented-programming%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5proxy-pattern">AOP(Aspect-Oriented Programming)核心概念Proxy Pattern</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BA%94%E7%A8%AE%E9%81%8E%E6%BF%BE%E5%99%A8filter%E4%BB%8B%E9%9D%A2">五種過濾器(Filter)介面</a></li>
+<li><a href="#authorizationfilter">AuthorizationFilter</a><ul>
+<li><a href="#iauthenticationfilter-and-authenticationcontext">IAuthenticationFilter and AuthenticationContext</a></li>
+<li><a href="#invokeauthenticationfilters%E6%96%B9%E6%B3%95">InvokeAuthenticationFilters方法</a></li>
+<li><a href="#iauthorizationfilter-and-authorizationcontext">IAuthorizationFilter and AuthorizationContext</a><ul>
+<li><a href="#authorizationcontext%E9%A1%9E%E5%88%A5">AuthorizationContext類別</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#iactionfilter%E6%96%B9%E6%B3%95%E5%9F%B7%E8%A1%8C%E5%89%8D%E5%BE%8C%E7%9A%84%E9%81%8E%E6%BF%BE%E5%99%A8">IActionFilter方法執行前,後的過濾器</a></li>
+<li><a href="#invokeactionresult-%E5%8B%95%E4%BD%9C%E5%9F%B7%E8%A1%8C%E5%89%8D%E5%BE%8C%E9%81%8E%E6%BF%BE%E5%99%A8">InvokeActionResult 動作執行前,後過濾器</a></li>
+<li><a href="#iexceptionfilter%E9%8C%AF%E8%AA%A4%E9%81%8E%E6%BF%BE%E5%99%A8">IExceptionFilter錯誤過濾器</a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上篇和大家介紹<code>Filter</code>去是如何取得且我們可以透過IOC容器註冊<code>IFilterProvider</code>來擴充取得<code>Filter</code>注入點.</p>
+<p>在<strong>ASP.NET MVC</strong>的<code>Filter</code>，在執行目標前後彈性擴充額外操作(繼承<code>ActionFilter</code>並掛<code>Attribute</code>)，這是一種典型的<code>AOP</code>設計模式</p>
+<p>本篇會和大家繼續分享<code>InvokeAction</code>後續動作.</p>
+<p>為什麼我們在<code>Action</code>方法和<code>Controller</code>類別放置一個繼承（<code>AuthorizationFilter、ActionFilter、ResultFilter,ExceptionFilter</code>）標籤(<code>Attribute</code>)對應介面(<code>IAuthorizationFilter、IActionFilter、IResultFilter,IExceptionFilter</code>),程式幫我們自動載入<strong>MVC</strong>生命週期中並執行?</p>
+<blockquote>
+<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="揭密取得過濾器-Filter-機制AOP"><a href="#揭密取得過濾器-Filter-機制AOP" class="headerlink" title="揭密取得過濾器(Filter)機制AOP"></a>揭密取得過濾器(Filter)機制AOP</h2><p>AOP 是 <strong>OOP(物件導向)一個變化程式撰寫思想。</strong>（非取代OOP而是擴充）</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Ithelp-day16/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ithelp-day16/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +428,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -428,7 +565,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -565,7 +702,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -702,7 +839,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -827,7 +964,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -952,7 +1089,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1083,7 +1220,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1214,7 +1351,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1352,7 +1489,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
+                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1455,131 +1592,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/Ithelp-day11/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/Ithelp-day11/" class="post-title-link" itemprop="url">Asp.net MVC Controller是怎麼被建立 (第11天)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-09-22 10:00:00" itemprop="dateCreated datePublished" datetime="2019-09-22T10:00:00+00:00">2019-09-22</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-10 03:23:11" itemprop="dateModified" datetime="2025-08-10T03:23:11+00:00">2025-08-10</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/11th%E9%90%B5%E4%BA%BA%E8%B3%BD/" itemprop="url" rel="index"><span itemprop="name">11th鐵人賽</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/Ithelp-day11/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="Ithelp-day11/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>7.3k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>7 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#%E5%8F%96%E5%BE%97%E5%9F%B7%E8%A1%8Ccontroller">取得執行Controller</a><ul>
-<li><a href="#controllerbuilder">ControllerBuilder</a></li>
-<li><a href="#icontrollerfactory%E4%BB%8B%E9%9D%A2">IControllerFactory介面</a></li>
-<li><a href="#controllerfactorydefaultcontrollerfactorycs">ControllerFactory(DefaultControllerFactory.cs)</a></li>
-</ul>
-</li>
-<li><a href="#%E5%BB%BA%E7%AB%8Bcontroller%E7%9A%84icontrolleractivator">建立Controller的IControllerActivator</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前篇介紹MVC使用<code>HttpHandler</code>是<code>MvcHandler</code>透過並<code>MvcRouteHandler</code>物件來返回.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/10/relationship_pic.PNG" alt="relationship_pic.PNG"></p>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-<p>大家介紹如何取得<code>Controller</code>執行物件</p>
-<h2 id="取得執行Controller"><a href="#取得執行Controller" class="headerlink" title="取得執行Controller"></a>取得執行Controller</h2><p>在<code>ProcessRequest</code>方法是透過<code>ProcessRequestInit</code>取得執行<code>controller</code>物件,讓我們看看是這個方法如何<code>controller</code>物件.</p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ProcessRequestInit</span>(<span class="params">HttpContextBase httpContext, <span class="keyword">out</span> IController controller, <span class="keyword">out</span> IControllerFactory factory</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    HttpContext currentContext = HttpContext.Current;</span><br><span class="line">    <span class="keyword">if</span> (currentContext != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">bool</span>? isRequestValidationEnabled = ValidationUtility.IsValidationEnabled(currentContext);</span><br><span class="line">        <span class="keyword">if</span> (isRequestValidationEnabled == <span class="literal">true</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            ValidationUtility.EnableDynamicValidation(currentContext);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    AddVersionHeader(httpContext);</span><br><span class="line">    RemoveOptionalRoutingParameters();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Get the controller type</span></span><br><span class="line">    <span class="built_in">string</span> controllerName = RequestContext.RouteData.GetRequiredString(<span class="string">&quot;controller&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Instantiate the controller and call Execute</span></span><br><span class="line">    factory = ControllerBuilder.GetControllerFactory();</span><br><span class="line">    controller = factory.CreateController(RequestContext, controllerName);</span><br><span class="line">    <span class="keyword">if</span> (controller == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(</span><br><span class="line">            String.Format(</span><br><span class="line">                CultureInfo.CurrentCulture,</span><br><span class="line">                MvcResources.ControllerBuilder_FactoryReturnedNull,</span><br><span class="line">                factory.GetType(),</span><br><span class="line">                controllerName));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/Ithelp-day11/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -1652,20 +1664,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">186</span>
+          <span class="site-state-item-count">187</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">65</span>
+        <span class="site-state-item-count">69</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">136</span>
+        <span class="site-state-item-count">139</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1726,12 +1738,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">905k</span>
+    <span title="Symbols count total">909k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:43</span>
+    <span title="Reading time total">13:46</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
