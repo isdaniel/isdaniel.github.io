@@ -15590,6 +15590,197 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       </tags>
   </entry>
   <entry>
+    <title>PostgreSQL to any DB CDC (pg2any library) Rust</title>
+    <url>/pg2any-rust-introduce/</url>
+    <content><![CDATA[<h1 id="PostgreSQL-CDC-Example"><a href="#PostgreSQL-CDC-Example" class="headerlink" title="PostgreSQL CDC Example"></a>PostgreSQL CDC Example</h1><p>A Rust-based Change Data Capture (CDC) application that streams real-time data changes from PostgreSQL to other databases (MySQL, SQL Server, etc.) using logical replication.</p>
+<h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p>This project demonstrates how to build a production-ready CDC pipeline using the <code>pg2any_lib</code> crate. It captures changes from PostgreSQL using logical replication and streams them to destination databases in real-time.</p>
+<p><a href="https://github.com/isdaniel/rust_playground/tree/main/pg2any-example">Github example</a>.</p>
+<p>PostgreSQL Streaming logical Replication POC <a href="https://github.com/isdaniel/replication_checker_rs">replication_checker_rs</a></p>
+<h3 id="Features"><a href="#Features" class="headerlink" title="Features"></a>Features</h3><ul>
+<li><strong>Real-time streaming</strong> from PostgreSQL to multiple database types</li>
+<li><strong>Logical replication</strong> with configurable replication slots and publications</li>
+<li><strong>Comprehensive monitoring</strong> with Prometheus metrics and health checks</li>
+<li><strong>Docker containerization</strong> for easy deployment</li>
+<li><strong>Structured logging</strong> with configurable log levels</li>
+<li><strong>Graceful error handling</strong> and automatic recovery mechanisms</li>
+</ul>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h3><ul>
+<li>Docker and Docker Compose</li>
+<li>PostgreSQL 10+ with logical replication enabled</li>
+<li>Destination database (MySQL 8.0+, SQL Server, etc.)</li>
+</ul>
+<h3 id="1-Clone-and-Setup"><a href="#1-Clone-and-Setup" class="headerlink" title="1. Clone and Setup"></a>1. Clone and Setup</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">git <span class="built_in">clone</span> &lt;your-repo&gt;</span><br><span class="line"><span class="built_in">cd</span> pg2any-example</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Environment-Configuration"><a href="#2-Environment-Configuration" class="headerlink" title="2. Environment Configuration"></a>2. Environment Configuration</h3><p>Copy and modify the environment file:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">cp</span> .<span class="built_in">env</span> .env.local</span><br><span class="line"><span class="comment"># Edit .env.local with your specific database configurations</span></span><br></pre></td></tr></table></figure>
+
+<p>Key environment variables:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Source PostgreSQL Database</span></span><br><span class="line">CDC_SOURCE_CONNECTION_STRING=postgresql://user:password@host:port/database?replication=database</span><br><span class="line"></span><br><span class="line"><span class="comment"># Destination Database</span></span><br><span class="line">CDC_DEST_TYPE=MySQL  <span class="comment"># or SqlServer</span></span><br><span class="line">CDC_DEST_URI=mysql://user:password@host:port/database</span><br><span class="line"></span><br><span class="line"><span class="comment"># CDC Configuration</span></span><br><span class="line">CDC_REPLICATION_SLOT=cdc_slot</span><br><span class="line">CDC_PUBLICATION=cdc_pub</span><br><span class="line">CDC_PROTOCOL_VERSION=2</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-Run-with-Docker-Compose"><a href="#3-Run-with-Docker-Compose" class="headerlink" title="3. Run with Docker Compose"></a>3. Run with Docker Compose</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Start all services (PostgreSQL, MySQL, CDC app, Prometheus)</span></span><br><span class="line">docker-compose up -d</span><br><span class="line"></span><br><span class="line"><span class="comment"># View logs</span></span><br><span class="line">docker-compose logs -f cdc_app</span><br><span class="line"></span><br><span class="line"><span class="comment"># Stop all services</span></span><br><span class="line">docker-compose down</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-Local-Development"><a href="#4-Local-Development" class="headerlink" title="4. Local Development"></a>4. Local Development</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Install dependencies</span></span><br><span class="line">cargo build</span><br><span class="line"></span><br><span class="line"><span class="comment"># Run locally (ensure databases are accessible)</span></span><br><span class="line">cargo run</span><br><span class="line"></span><br><span class="line"><span class="comment"># Run with custom environment file</span></span><br><span class="line"><span class="built_in">env</span> $(<span class="built_in">cat</span> .env.local | xargs) cargo run</span><br></pre></td></tr></table></figure>
+
+<h2 id="Configuration"><a href="#Configuration" class="headerlink" title="Configuration"></a>Configuration</h2><h3 id="Environment-Variables"><a href="#Environment-Variables" class="headerlink" title="Environment Variables"></a>Environment Variables</h3><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CDC_SOURCE_CONNECTION_STRING</code></td>
+<td>PostgreSQL connection with replication</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>CDC_DEST_TYPE</code></td>
+<td>Destination database type (MySQL&#x2F;SqlServer)</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>CDC_DEST_URI</code></td>
+<td>Destination database connection string</td>
+<td>-</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>CDC_REPLICATION_SLOT</code></td>
+<td>PostgreSQL replication slot name</td>
+<td><code>cdc_slot</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CDC_PUBLICATION</code></td>
+<td>PostgreSQL publication name</td>
+<td><code>cdc_pub</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CDC_PROTOCOL_VERSION</code></td>
+<td>Logical replication protocol version</td>
+<td><code>2</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CDC_BINARY_FORMAT</code></td>
+<td>Use binary format for data</td>
+<td><code>false</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CDC_STREAMING</code></td>
+<td>Enable streaming mode</td>
+<td><code>true</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CDC_CONNECTION_TIMEOUT</code></td>
+<td>Connection timeout (seconds)</td>
+<td><code>30</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CDC_QUERY_TIMEOUT</code></td>
+<td>Query timeout (seconds)</td>
+<td><code>10</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>CDC_HEARTBEAT_INTERVAL</code></td>
+<td>Heartbeat interval (seconds)</td>
+<td><code>10</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>METRICS_PORT</code></td>
+<td>Prometheus metrics port</td>
+<td><code>8080</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>RUST_LOG</code></td>
+<td>Logging level</td>
+<td><code>info</code></td>
+<td>No</td>
+</tr>
+</tbody></table>
+<h3 id="PostgreSQL-Setup"><a href="#PostgreSQL-Setup" class="headerlink" title="PostgreSQL Setup"></a>PostgreSQL Setup</h3><p>Your PostgreSQL instance must have logical replication enabled:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- Check current settings</span></span><br><span class="line"><span class="keyword">SHOW</span> wal_level;</span><br><span class="line"><span class="keyword">SHOW</span> max_replication_slots;</span><br><span class="line"><span class="keyword">SHOW</span> max_wal_senders;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- If needed, update postgresql.conf:</span></span><br><span class="line"><span class="comment">-- wal_level = logical</span></span><br><span class="line"><span class="comment">-- max_replication_slots = 10</span></span><br><span class="line"><span class="comment">-- max_wal_senders = 10</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Create publication for tables you want to replicate</span></span><br><span class="line"><span class="keyword">CREATE</span> PUBLICATION cdc_pub <span class="keyword">FOR</span> <span class="keyword">ALL</span> TABLES;</span><br><span class="line"><span class="comment">-- Or for specific tables:</span></span><br><span class="line"><span class="comment">-- CREATE PUBLICATION cdc_pub FOR TABLE table1, table2;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- Grant necessary permissions</span></span><br><span class="line"><span class="keyword">GRANT</span> REPLICATION <span class="keyword">ON</span> DATABASE your_db <span class="keyword">TO</span> your_user;</span><br><span class="line"><span class="keyword">GRANT</span> <span class="keyword">SELECT</span> <span class="keyword">ON</span> <span class="keyword">ALL</span> TABLES <span class="keyword">IN</span> SCHEMA public <span class="keyword">TO</span> your_user;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h2><figure class="highlight fortran"><table><tr><td class="code"><pre><span class="line">┌─────────────────┐    ┌───────────────────┐    ┌─────────────────┐</span><br><span class="line">│   PostgreSQL    │───▶│   CDC Application │───▶│ MySQL/SqlServer │</span><br><span class="line">│ (<span class="keyword">Logical</span> Replic)│    │  (pg2any-example) │    │  (Destination)  │</span><br><span class="line">└─────────────────┘    └───────────────────┘    └─────────────────┘</span><br><span class="line">                                │</span><br><span class="line">                                ▼</span><br><span class="line">                       ┌─────────────────┐</span><br><span class="line">                       │   Prometheus    │</span><br><span class="line">                       │   (Metrics)     │</span><br><span class="line">                       └─────────────────┘</span><br></pre></td></tr></table></figure>
+
+<h3 id="Components"><a href="#Components" class="headerlink" title="Components"></a>Components</h3><ol>
+<li><strong>CDC Application</strong>: Main Rust application that handles replication</li>
+<li><strong>Source Database</strong>: PostgreSQL with logical replication enabled</li>
+<li><strong>Destination Database</strong>: Target database (MySQL, SQL Server, etc.)</li>
+<li><strong>Monitoring</strong>: Prometheus metrics and health checks</li>
+</ol>
+<h2 id="Monitoring"><a href="#Monitoring" class="headerlink" title="Monitoring"></a>Monitoring</h2><h3 id="Health-Checks"><a href="#Health-Checks" class="headerlink" title="Health Checks"></a>Health Checks</h3><p>The application exposes health endpoints:</p>
+<ul>
+<li><strong>Health</strong>: <code>GET /health</code> - Application health status</li>
+<li><strong>Metrics</strong>: <code>GET /metrics</code> - Prometheus metrics</li>
+</ul>
+<h3 id="Prometheus-Metrics"><a href="#Prometheus-Metrics" class="headerlink" title="Prometheus Metrics"></a>Prometheus Metrics</h3><p>Available at <code>http://localhost:9090</code> when using Docker Compose:</p>
+<ul>
+<li>Connection status</li>
+<li>Replication lag</li>
+<li>Message processing rates</li>
+<li>Error counts</li>
+</ul>
+<h3 id="Logs"><a href="#Logs" class="headerlink" title="Logs"></a>Logs</h3><p>Structured logging with configurable levels:</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Set log level</span></span><br><span class="line"><span class="built_in">export</span> RUST_LOG=debug</span><br><span class="line"></span><br><span class="line"><span class="comment"># View logs in Docker</span></span><br><span class="line">docker-compose logs -f cdc_app</span><br></pre></td></tr></table></figure>
+
+<h2 id="Troubleshooting"><a href="#Troubleshooting" class="headerlink" title="Troubleshooting"></a>Troubleshooting</h2><h3 id="Common-Issues"><a href="#Common-Issues" class="headerlink" title="Common Issues"></a>Common Issues</h3><ol>
+<li><p><strong>Connection Refused</strong></p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Check if PostgreSQL allows replication connections</span></span><br><span class="line"><span class="comment"># Ensure pg_hba.conf has replication entries</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Replication Slot Already Exists</strong></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- Drop existing slot if needed</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_drop_replication_slot(<span class="string">&#x27;cdc_slot&#x27;</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Permission Denied</strong></p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- Grant necessary permissions</span></span><br><span class="line"><span class="keyword">GRANT</span> REPLICATION <span class="keyword">ON</span> DATABASE your_db <span class="keyword">TO</span> your_user;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>High Replication Lag</strong></p>
+<ul>
+<li>Check network connectivity</li>
+<li>Monitor destination database performance</li>
+<li>Review CDC application logs</li>
+</ul>
+</li>
+</ol>
+<h2 id="Performance-Tuning"><a href="#Performance-Tuning" class="headerlink" title="Performance Tuning"></a>Performance Tuning</h2><h3 id="PostgreSQL-Optimization"><a href="#PostgreSQL-Optimization" class="headerlink" title="PostgreSQL Optimization"></a>PostgreSQL Optimization</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- Increase WAL settings for high throughput</span></span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> <span class="keyword">SET</span> max_wal_senders <span class="operator">=</span> <span class="number">20</span>;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> <span class="keyword">SET</span> max_replication_slots <span class="operator">=</span> <span class="number">20</span>;</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">SYSTEM</span> <span class="keyword">SET</span> wal_keep_segments <span class="operator">=</span> <span class="number">100</span>; <span class="comment">-- or wal_keep_size for PG 13+</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Application-Tuning"><a href="#Application-Tuning" class="headerlink" title="Application Tuning"></a>Application Tuning</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Adjust timeouts for your environment</span></span><br><span class="line">CDC_CONNECTION_TIMEOUT=60</span><br><span class="line">CDC_QUERY_TIMEOUT=30</span><br><span class="line">CDC_HEARTBEAT_INTERVAL=5</span><br></pre></td></tr></table></figure>
+
+<h2 id="Dependencies"><a href="#Dependencies" class="headerlink" title="Dependencies"></a>Dependencies</h2><ul>
+<li><a href="https://crates.io/crates/pg2any_lib">pg2any_lib</a> - Core CDC functionality</li>
+<li><a href="https://crates.io/crates/tokio">tokio</a> - Async runtime</li>
+<li><a href="https://crates.io/crates/tracing">tracing</a> - Structured logging</li>
+</ul>
+<h2 id="Support"><a href="#Support" class="headerlink" title="Support"></a>Support</h2><ul>
+<li>Check the <a href="https://docs.rs/pg2any_lib">pg2any_lib documentation</a></li>
+<li>Open an issue for bugs or feature requests</li>
+<li>Review logs for detailed error information</li>
+</ul>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/pg2any-rust-introduce/">https://isdaniel.github.io/pg2any-rust-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Rust</category>
+        <category>PostgreSQL</category>
+        <category>logical-replication</category>
+      </categories>
+      <tags>
+        <tag>Rust</tag>
+        <tag>PostgreSQL</tag>
+        <tag>logical-replication</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Postgresql AutoVacuum 介紹</title>
     <url>/postgresql-autovacuum/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探</p>

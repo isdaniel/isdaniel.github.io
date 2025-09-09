@@ -205,7 +205,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">187</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,132 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/lru-algorithm/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/lru-algorithm/" class="post-title-link" itemprop="url">LRU 演算法解說</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-11-11 11:12:43" itemprop="dateCreated datePublished" datetime="2021-11-11T11:12:43+00:00">2021-11-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Algorithm/DataStructure/" itemprop="url" rel="index"><span itemprop="name">DataStructure</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/lru-algorithm/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="lru-algorithm/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div itemscope itemtype="http://schema.org/ImageGallery">
+            <img src="https://i.imgur.com/bd3VgSx.png" itemprop="contentUrl">
+        </div>
+          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料結構跟演算法是程式設計師的內功，在中小型系統懂這兩樣東西效用可能有限，但在大型系統中熟不熟用資料結構跟演算法做出來的效益會天差地遠</p>
+<p>對於常使用的物件和變數我們會放置在 Redis 上( cache server )，但記憶體有限，我們想放的東西無限，造就無法將所有物件都存放在 Redis 或 Server Memory 上.</p>
+<p>假如你有設定過 Redis config 你會看到一個 property <code>maxmemory_policy</code> 來管理如何淘汰，記憶體中的物件</p>
+<ul>
+<li>volatile-lru</li>
+<li>allkeys-lru</li>
+</ul>
+<p>上面有個名稱 LRU (Least Recently Used Cache)　代表甚麼意涵呢？稍後會跟大家做解釋</p>
+<p><a href="https://github.com/isdaniel/BlogSample/tree/master/src/Algorithm_DataStructure/LRU_Algorithm">Github Sample Project</a></p>
+<h2 id="LRU-算法概念"><a href="#LRU-算法概念" class="headerlink" title="LRU 算法概念"></a>LRU 算法概念</h2><p>LRU (Least Recently Used Cache) 顧名思義，會記憶體不夠用時優先保留最近常使用的 Cache 資料，並剔除最舊的資料來緩解壓力</p>
+<p>這個算法策略可以確保 Hot Data 在記憶體不足時不會被刪除</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/lru-algorithm/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/map-theory/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +417,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -416,7 +542,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -540,7 +666,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -665,7 +791,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -787,7 +913,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -914,7 +1040,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1039,7 +1165,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1163,7 +1289,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1284,7 +1410,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1356,140 +1482,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/rabbitmq-cluster-operator/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/kubernetes-first/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/kubernetes-first/" class="post-title-link" itemprop="url">初探-介紹Kubernetes</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-08-29 22:06:40" itemprop="dateCreated datePublished" datetime="2021-08-29T22:06:40+00:00">2021-08-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/" itemprop="url" rel="index"><span itemprop="name">k8s</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/Kubernetes/" itemprop="url" rel="index"><span itemprop="name">Kubernetes</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/k8s/Kubernetes/CICD/" itemprop="url" rel="index"><span itemprop="name">CICD</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/kubernetes-first/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="kubernetes-first/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.4k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>3 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <div itemscope itemtype="http://schema.org/ImageGallery">
-            <img src="https://i.imgur.com/ROkC1Q2.png" itemprop="contentUrl">
-        </div>
-          <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>k8s前身是Google開發borg系統，用於管理Google系統，後面由許多borg核心開發人用利用Go語言改寫就造就Kubernetes</p>
-<p>可以根據<a href="https://zh.wikipedia.org/zh-hant/%E5%AE%A3%E5%91%8A%E5%BC%8F%E7%B7%A8%E7%A8%8B">聲明式</a>設定，管理、擴展我們的容器化應用編排系統</p>
-<ul>
-<li>有效安全幫我們執行Container Rollout</li>
-<li>能夠因應系統流量變化，進行伸縮擴容（Scaling）</li>
-<li>Health check實現自動偵測故障及重啟功能</li>
-<li>透過Namespace有效幫我們做資源隔離</li>
-</ul>
-<p>k8s協助我們方便掌控複雜容器系統架構，具有良好伸縮性</p>
-<blockquote>
-<p>建議在閱讀k8s文章前先要有Docker相關知識，不然許多點會有看沒有懂</p>
-</blockquote>
-<p>我們練習會使用<a href="https://github.com/rancher/k3d">k3d</a>使用Docker建議k8s來練習</p>
-<h2 id="k8s-主要組件介紹"><a href="#k8s-主要組件介紹" class="headerlink" title="k8s 主要組件介紹"></a>k8s 主要組件介紹</h2><p>先來張圖(此圖來自wiki)wiki畫的很棒，我拿來借用一下XDD</p>
-<p><img src="https://i.imgur.com/r6gcJ8U.png"></p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/kubernetes-first/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1581,7 +1573,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">187</span>
+          <span class="site-state-item-count">188</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1655,12 +1647,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">909k</span>
+    <span title="Symbols count total">914k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:46</span>
+    <span title="Reading time total">13:51</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>

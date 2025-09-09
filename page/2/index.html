@@ -205,7 +205,7 @@
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">187</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,147 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/c_foreach/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/c_foreach/" class="post-title-link" itemprop="url">C language implement foreach</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2024-04-17 22:30:11" itemprop="dateCreated datePublished" datetime="2024-04-17T22:30:11+00:00">2024-04-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/c_foreach/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="c_foreach/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Foreword"><a href="#Foreword" class="headerlink" title="Foreword"></a>Foreword</h2><p>In PostgreSQL, there isn’t a native foreach loop construct in C, because C itself doesn’t have a foreach loop as you might find in higher-level languages like Python or PHP. However, PostgreSQL often implements loop iterations over elements using <strong>Macros</strong> that simplify the handling of data structures, such as linked lists, which are commonly used within its codebase.</p>
+<h2 id="Common-Loop-Macros-in-PostgreSQL"><a href="#Common-Loop-Macros-in-PostgreSQL" class="headerlink" title="Common Loop Macros in PostgreSQL"></a>Common Loop Macros in PostgreSQL</h2><ol>
+<li><p><code>lfirst(lc)</code>:</p>
+<ul>
+<li>This macro retrieves the data stored in a <code>ListCell</code>. The <code>ListCell</code> structure typically contains a union that can hold various types of pointers (like <code>void*</code>, <code>int</code>, etc.). The <code>ptr_value</code> is a generic pointer that can point to any node or structure, and <code>lfirst</code> simply casts it back from the <code>void *</code>.</li>
+</ul>
+</li>
+<li><p><code>lfirst_node(type, lc)</code>:</p>
+<ul>
+<li>This macro is used when the list elements are known to be of a specific node type, which is common in the parser and planner where lists often contain specific types of nodes (e.g., expression or plan nodes). <code>lfirst_node</code> uses <code>castNode</code> to cast the pointer retrieved by <code>lfirst</code> to the specified type, ensuring type safety and readability in the code.</li>
+</ul>
+</li>
+<li><p><code>castNode(_type_, nodeptr)</code>:</p>
+<ul>
+<li>A simple cast to the specified type <code>_type_</code>. It enhances readability and ensures that the casting is explicit in the code, which is crucial for understanding that a type conversion is taking place, particularly when navigating complex data structures common in PostgreSQL’s internals.</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> lfirst(lc)				((lc)-&gt;ptr_value)</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> lfirst_node(type,lc)	castNode(type, lfirst(lc))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> castNode(_type_, nodeptr) ((_type_ *) (nodeptr))</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> true	1</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> false	0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> foreach(cell, lst)	\</span></span><br><span class="line"><span class="meta">	for (ForEachState cell##__state = &#123;(lst), 0&#125;; \</span></span><br><span class="line"><span class="meta">		 (cell##__state.l != NIL &amp;&amp; \</span></span><br><span class="line"><span class="meta">		  cell##__state.i <span class="string">&lt; cell##__state.l-&gt;</span>length) ? \</span></span><br><span class="line"><span class="meta">		 (cell = &amp;cell##__state.l-&gt;elements[cell##__state.i], true) : \</span></span><br><span class="line"><span class="meta">		 (cell = NULL, false); \</span></span><br><span class="line"><span class="meta">		 cell##__state.i++)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NIL						((List *) NULL)</span></span><br></pre></td></tr></table></figure>
+
+<p>The <code>ListCell</code> union consists of a single member, <code>ptr_value</code>, which is a generic pointer <code>(void *)</code>.</p>
+<p>This pointer can hold a reference to any type of data, allowing for flexibility in what kind of data the list can contain.<br>This structure is useful for managing lists of generic data types.</p>
+<p>The List structure represents a dynamic list in PostgreSQL.<br>It contains:</p>
+<ul>
+<li><code>length</code>: An integer that specifies the current number of elements in the list.</li>
+<li><code>elements</code>: A pointer to an array of <code>ListCell</code> elements, which holds the actual data in the list. This array can be re-allocated as the list grows or shrinks, allowing for dynamic resizing.</li>
+<li>The comment suggests that sometimes <code>ListCell</code> elements may be allocated directly alongside the List structure itself. This can optimize memory usage and improve performance.</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">union</span> <span class="title">ListCell</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="type">void</span>	   *ptr_value;</span><br><span class="line">&#125; ListCell;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">List</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="type">int</span>			length;			<span class="comment">/* number of elements currently present */</span></span><br><span class="line">	ListCell   *elements;		<span class="comment">/* re-allocatable array of cells */</span></span><br><span class="line">&#125; List;</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/c_foreach/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/postgresql-vscode-sourcecode-debugger/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +432,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -424,7 +565,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -551,7 +692,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -669,7 +810,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -812,7 +953,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -936,7 +1077,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1062,7 +1203,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1185,7 +1326,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1309,7 +1450,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
+                <time title="Modified: 2025-09-09 09:33:14" itemprop="dateModified" datetime="2025-09-09T09:33:14+00:00">2025-09-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1378,132 +1519,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/aws-rds-proxy/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/lru-algorithm/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/lru-algorithm/" class="post-title-link" itemprop="url">LRU 演算法解說</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-11-11 11:12:43" itemprop="dateCreated datePublished" datetime="2021-11-11T11:12:43+00:00">2021-11-11</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-08-17 02:37:51" itemprop="dateModified" datetime="2025-08-17T02:37:51+00:00">2025-08-17</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/DataStructure/" itemprop="url" rel="index"><span itemprop="name">DataStructure</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/lru-algorithm/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="lru-algorithm/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.9k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>4 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <div itemscope itemtype="http://schema.org/ImageGallery">
-            <img src="https://i.imgur.com/bd3VgSx.png" itemprop="contentUrl">
-        </div>
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料結構跟演算法是程式設計師的內功，在中小型系統懂這兩樣東西效用可能有限，但在大型系統中熟不熟用資料結構跟演算法做出來的效益會天差地遠</p>
-<p>對於常使用的物件和變數我們會放置在 Redis 上( cache server )，但記憶體有限，我們想放的東西無限，造就無法將所有物件都存放在 Redis 或 Server Memory 上.</p>
-<p>假如你有設定過 Redis config 你會看到一個 property <code>maxmemory_policy</code> 來管理如何淘汰，記憶體中的物件</p>
-<ul>
-<li>volatile-lru</li>
-<li>allkeys-lru</li>
-</ul>
-<p>上面有個名稱 LRU (Least Recently Used Cache)　代表甚麼意涵呢？稍後會跟大家做解釋</p>
-<p><a href="https://github.com/isdaniel/BlogSample/tree/master/src/Algorithm_DataStructure/LRU_Algorithm">Github Sample Project</a></p>
-<h2 id="LRU-算法概念"><a href="#LRU-算法概念" class="headerlink" title="LRU 算法概念"></a>LRU 算法概念</h2><p>LRU (Least Recently Used Cache) 顧名思義，會記憶體不夠用時優先保留最近常使用的 Cache 資料，並剔除最舊的資料來緩解壓力</p>
-<p>這個算法策略可以確保 Hot Data 在記憶體不足時不會被刪除</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/lru-algorithm/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1595,7 +1610,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">187</span>
+          <span class="site-state-item-count">188</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1669,12 +1684,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">909k</span>
+    <span title="Symbols count total">914k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:46</span>
+    <span title="Reading time total">13:51</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
   </div>
