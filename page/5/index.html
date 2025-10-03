@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
+<meta name="generator" content="Hexo 8.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,133 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/db-heaptable/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/db-heaptable/" class="post-title-link" itemprop="url">Sqlserver不可不知道Heap Table.</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-06-19 22:30:11" itemprop="dateCreated datePublished" datetime="2021-06-19T22:30:11+00:00">2021-06-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Turning/sql-server/" itemprop="url" rel="index"><span itemprop="name">sql-server</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/db-heaptable/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="db-heaptable/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <div itemscope itemtype="http://schema.org/ImageGallery">
+            <img src="https://i.imgur.com/HT0bui0.png" itemprop="contentUrl">
+        </div>
+          <h2 id="Heap-資料表"><a href="#Heap-資料表" class="headerlink" title="Heap 資料表"></a>Heap 資料表</h2><p>如果資料表沒有<code>Clustered Index</code>那此表就會是Heap資料表</p>
+<p>Heap資料表有個特性是<code>Insert</code>資料快比較快，因為插入資料不需要考慮排序。</p>
+<p>適合使用在Log資料表、Event資料表、稽核資料表….一直新增資料，但比較少查詢或更新的表</p>
+<blockquote>
+<p>一般來說Heap資料表很少見,因為都會建議每張表都要有Clustered Index.</p>
+</blockquote>
+<p>另外Heap資料表Data Page沒有像其他B+Tree Index有對於左右Page連結Reference.</p>
+<h3 id="Heap資料表中不得不知-forwarding-pointer"><a href="#Heap資料表中不得不知-forwarding-pointer" class="headerlink" title="Heap資料表中不得不知(forwarding pointer)"></a>Heap資料表中不得不知(forwarding pointer)</h3><p>假如在Heap資料表更新欄位資料，就可能會造成<code>forwarding pointer</code>如果你資料表有許多<code>forwarding pointer</code>可能就要考慮是否要優化調整….</p>
+<blockquote>
+<p>forwarding pointer會造成Logic read增加,因為在Heap讀取資料使用<code>Allocation scan</code>(依照儲存page順序讀取資料,讀到page有forwarding pointer就會多讀取資料頁)</p>
+</blockquote>
+<p><code>forwarding pointer</code>是因為原本<code>Page</code>(8KB)塞不下更新後資料就會先把資料搬到另一個新建立<code>Page</code>上並在原本<code>Page</code>建立一個類似指標東西指向它.</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/db-heaptable/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/sqlserver-create-column-tips/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +418,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -418,7 +545,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -536,7 +663,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -659,7 +786,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -777,7 +904,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -901,7 +1028,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1025,7 +1152,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1151,7 +1278,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1277,7 +1404,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1372,150 +1499,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/DBLock-1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/DBLock-1/" class="post-title-link" itemprop="url">淺談SqlServer Lock(一)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-08-16 11:12:43" itemprop="dateCreated datePublished" datetime="2020-08-16T11:12:43+00:00">2020-08-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/Turning/" itemprop="url" rel="index"><span itemprop="name">Turning</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/DBLock-1/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="DBLock-1/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.5k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>3 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-        <div itemscope itemtype="http://schema.org/ImageGallery">
-            <img src="https://i.imgur.com/3WWvSXp.png" itemprop="contentUrl">
-        </div>
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E6%96%87">前文</a></li>
-<li><a href="#%E5%85%A9%E7%A8%AE%E5%9C%8D%E5%BA%A6%E7%9A%84lock">兩種圍度的Lock</a><ul>
-<li><a href="#lock%E7%AF%84%E5%9C%8D">Lock範圍</a></li>
-<li><a href="#lock%E9%A1%9E%E5%9E%8B">Lock類型</a><ul>
-<li><a href="#update-lock-%E5%AD%98%E5%9C%A8%E7%9A%84%E6%84%8F%E7%BE%A9">Update Lock 存在的意義</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#lock-%E4%BA%92%E6%96%A5-demo">Lock 互斥 Demo</a><ul>
-<li><a href="#locking-optimization">Locking Optimization</a></li>
-<li><a href="#nolock%E7%9A%84%E9%9A%B1%E6%86%82">NoLock的隱憂</a><ul>
-<li><a href="#read-uncommitted-%E9%AB%92%E8%AE%80%E5%8F%96">Read Uncommitted 髒讀取</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
-</ul>
-<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>之前有跟大家介紹資料庫交易中的<a href="https://isdaniel.github.io/ACID/">ACID</a>,今天我們就來談談常常聽到<strong>Lock</strong></p>
-<p>在討論Lock前我們必須先了解,為什麼會有Lock?</p>
-<p>假如你的系統能保證只有一個使用著操作每個資源,其實也就不用lock存在,但現實生活中往往有個命令對於同一個資源操作.這時候我們為了確保資料正確性,必須使用lock來避免<a href="https://en.wikipedia.org/wiki/Race_condition">Racing Condition</a>.</p>
-<p>在早期系統我們要儲存資料會存放檔案在Disk並使用類似Excel方式來儲存,但這會導致每次讀取只有有一個使用者(因為對於檔案上Lock),被lock資源其他人就無法存入</p>
-<h2 id="兩種圍度的Lock"><a href="#兩種圍度的Lock" class="headerlink" title="兩種圍度的Lock"></a>兩種圍度的Lock</h2><p>在<code>Sql-Server</code> Lock有分兩種圍度</p>
-<ol>
-<li>Lock範圍</li>
-<li>Lock類型</li>
-</ol>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/DBLock-1/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -1588,20 +1571,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">188</span>
+          <span class="site-state-item-count">189</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-count">70</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">139</span>
+        <span class="site-state-item-count">141</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1662,14 +1645,14 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">914k</span>
+    <span title="Symbols count total">919k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:51</span>
+    <span title="Reading time total">13:56</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.0.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2

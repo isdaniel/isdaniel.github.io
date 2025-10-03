@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
+<meta name="generator" content="Hexo 8.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,136 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/own-session/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/own-session/" class="post-title-link" itemprop="url">【C#】我們來土砲一個 Asp.net Session (Session核心原理)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-05-27 21:16:07" itemprop="dateCreated datePublished" datetime="2019-05-27T21:16:07+00:00">2019-05-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/SourceCode/" itemprop="url" rel="index"><span itemprop="name">SourceCode</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/own-session/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="own-session/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.8k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>我們在寫網站一定會使用到 <code>Session</code><br>今天就跟大家分享自製微型 <code>Asp.net Session</code></p>
+<blockquote>
+<p>分析Session-&gt;實作Session-&gt;使用Session</p>
+</blockquote>
+<p>在實作之前您必須先了解甚麼是Session<br>網路上一大堆介紹Session文章在此我就不多介紹<br>或可以點進之前小弟的介紹文來簡單了解 <a href="https://dotblogs.com.tw/daniel/2017/04/08/110915">SessionID.cookie,Session傻傻分不清楚??</a></p>
+<p>簡單說明：<br>Http協議是一個無狀態協議。</p>
+<blockquote>
+<p>核心是 請求&#x3D;&gt;處理&#x3D;&gt;回應</p>
+</blockquote>
+<p>每次請求都是獨立不會記住上一次做了甚麼<br>Session可以幫我們把資料存在Server記憶體，方便我們下次請求使用<br>上網連線眾多使用者，Server怎麼知道哪份資料,屬於哪個使用者的? 這就要依靠 <strong>SessonID</strong><br><strong>SessionID</strong>就像使用者的號碼牌，可以到Server拿相對應的資料</p>
+<p>分析：</p>
+<ol>
+<li>使用者請求頁面時會攜帶該網域下Cookies。</li>
+<li>Asp.net接收到並使用Key為SessionID的Cookie，使用Cookie的Value來SessionPool中查找屬於使用者的Session。<br>  如果是第一次請求或是沒有SessionID 會幫他產生一個新的並加入回應的Cookie中</li>
+<li>取得Session物件後就可以在程式中使用。</li>
+</ol>
+<p>分析如下圖：</p>
+<p><img src="https://i.imgur.com/FUmkKyI.png"></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/own-session/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/ref-address/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +421,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -421,7 +551,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -546,7 +676,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -669,7 +799,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -786,7 +916,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -903,7 +1033,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1028,7 +1158,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1146,7 +1276,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1311,20 +1441,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">188</span>
+          <span class="site-state-item-count">189</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-count">70</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">139</span>
+        <span class="site-state-item-count">141</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1385,14 +1515,14 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">914k</span>
+    <span title="Symbols count total">919k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:51</span>
+    <span title="Reading time total">13:56</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.0.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2

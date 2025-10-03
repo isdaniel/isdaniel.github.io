@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
+<meta name="generator" content="Hexo 8.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,134 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/Autofac-AOP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/Autofac-AOP/" class="post-title-link" itemprop="url">Autofac + Interceptors(AOP) 動態代理</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-02 22:30:11" itemprop="dateCreated datePublished" datetime="2019-06-02T22:30:11+00:00">2019-06-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/IOC/" itemprop="url" rel="index"><span itemprop="name">IOC</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/Autofac-AOP/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="Autofac-AOP/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Autofac 是個IOC容器  不懂IOC 參考 我之前寫<br>的<a href="/ioc-di/" title="IOC(控制反轉)，DI(依賴注入) 深入淺出~~">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
+<p>小弟之前有一個開源框架<a href="/awesomeproxy-net/" title="【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用">【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</a> 裡面簡單介紹 AOP核心概念和如何實作!</p>
+<p>Autofac 有寫一個 <a href="https://github.com/autofac/Autofac.Extras.DynamicProxy">Autofac.Extras.DynamicProxy</a> 把AOP和IOC容器融合的框架</p>
+<p>在Autofac使用AOP 需要實現下面幾個步驟</p>
+<p>本次範例我們從資料庫中撈取時間資料出來，並使用<code>Thread.Sleep(5000) </code>作出延遲，判斷時間是否前後一致。</p>
+<h2 id="第一步（定義攔截器）："><a href="#第一步（定義攔截器）：" class="headerlink" title="第一步（定義攔截器）："></a>第一步（定義攔截器）：</h2><p>我們撰寫一個快取的攔截器繼承<code>IInterceptor</code> 介面，並實現<code>Intercep</code>方法</p>
+<p>其中 <code>IInvocation </code>參數有許多有用的資料</p>
+<ul>
+<li>Arguments：傳入方法中的參數</li>
+<li>InvocationTarget ：被代理物件</li>
+<li>MethodInvocationTarget：被代理物件的呼叫方法資訊</li>
+<li>Proxy：代理物件</li>
+<li>Method：代理的呼叫方法資訊</li>
+<li>ReturnValue：呼叫方法的回傳值</li>
+</ul>
+<p>這幾個欄位是我們比較常用的資訊</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Autofac-AOP/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/Autofac-introduce/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +419,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -414,7 +542,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -450,14 +578,14 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>6.2k</span>
+              <span>5.6k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
                 <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>6 mins.</span>
+              <span>5 mins.</span>
             </span>
 
         </div>
@@ -545,7 +673,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -691,7 +819,7 @@ EXECUTE sp_executesql @query
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -810,7 +938,7 @@ EXECUTE sp_executesql @query
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -942,7 +1070,7 @@ CONNECT BY LEVEL &lt;= 10
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -974,7 +1102,7 @@ CONNECT BY LEVEL &lt;= 10
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>2.6k</span>
+              <span>2.5k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -1005,11 +1133,11 @@ CONNECT BY LEVEL &lt;= 10
 <p>RabbitMQ預設密碼是 <code>guest</code></p>
 <pre><code>//建立連接工廠
 ConnectionFactory factory = new ConnectionFactory
-&#123;
+{
     UserName = &quot;guest&quot;,
     Password = &quot;guest&quot;,
     HostName = &quot;localhost&quot;
-&#125;;
+};
 </code></pre>
 <p>呼叫<code>factory.CreateConnection</code> 建立連接RabbitMQ連接物件，並呼叫 <code>CreateModel</code>方法建立一個<code>channel</code> Model</p>
           <!--noindex-->
@@ -1069,7 +1197,7 @@ ConnectionFactory factory = new ConnectionFactory
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1193,7 +1321,7 @@ ConnectionFactory factory = new ConnectionFactory
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1321,7 +1449,7 @@ ConnectionFactory factory = new ConnectionFactory
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1390,137 +1518,6 @@ ConnectionFactory factory = new ConnectionFactory
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/autofac-introduce/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/bridge-pattern/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/bridge-pattern/" class="post-title-link" itemprop="url">橋接模式(BridgePattern)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-06-02 22:30:11" itemprop="dateCreated datePublished" datetime="2019-06-02T22:30:11+00:00">2019-06-02</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/bridge-pattern/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="bridge-pattern/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>6.2k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>6 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><h3 id="目的："><a href="#目的：" class="headerlink" title="目的："></a>目的：</h3><p>如果有兩大類模組是多對多的組合，如本次Smaple Code. Nick和Addidas 包包都有紅、藍、黃….或其他顏色</p>
-<p>就可能呈現下面6種組合</p>
-<ul>
-<li>Nick(紅)</li>
-<li>Nick(藍)</li>
-<li>Nick(黃)</li>
-<li>Addidas(紅)</li>
-<li>Addidas(藍)</li>
-<li>Addidas(黃)</li>
-</ul>
-<p>如果此建立類別的話 可能情況如下面的UNL圖</p>
-<p><img src="https://github.com/isdaniel/DesignPattern/raw/master/DesignPattern/img/Bridge/BridgePattern1.PNG"></p>
-<div class="note note--important">類別數量 = 顏色數量 * 包包品牌數量</div>
-
-<p>這樣會有兩個問題</p>
-<ol>
-<li>隨著品牌和顏色增多，包包類別數量急速增長　<strong>(X &#x3D; m*n)個</strong></li>
-<li>顏色我們可看做一個抽象 不應當和包包合在一起</li>
-</ol>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/bridge-pattern/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1612,20 +1609,20 @@ ConnectionFactory factory = new ConnectionFactory
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">188</span>
+          <span class="site-state-item-count">189</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-count">70</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">139</span>
+        <span class="site-state-item-count">141</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1686,14 +1683,14 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">914k</span>
+    <span title="Symbols count total">919k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:51</span>
+    <span title="Reading time total">13:56</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.0.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2

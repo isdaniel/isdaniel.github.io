@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
+<meta name="generator" content="Hexo 8.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -29,10 +29,10 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/8EUN7Vu.png">
 <meta property="article:published_time" content="2022-01-12T08:12:43.000Z">
-<meta property="article:modified_time" content="2025-09-09T09:40:37.545Z">
+<meta property="article:modified_time" content="2025-10-03T01:25:40.255Z">
 <meta property="article:author" content="Daniel Shih">
-<meta property="article:tag" content="Redis">
 <meta property="article:tag" content="Cluster">
+<meta property="article:tag" content="Redis">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://i.imgur.com/8EUN7Vu.png">
 
@@ -200,17 +200,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -295,7 +295,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -403,7 +403,7 @@
 <p>使用 <code>get</code> 拿資料時發現我們只拿的到 <code>k2,k3</code> 的資料</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.2:6379&gt; get k1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; get k2</span><br><span class="line"><span class="string">&quot;1&quot;</span></span><br><span class="line">172.22.0.2:6379&gt; get k3</span><br><span class="line"><span class="string">&quot;1&quot;</span></span><br><span class="line">172.22.0.2:6379&gt; get k4</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; get k5</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure>
 
-<p>我們可以透過 <code>CLUSTER KEYSLOT &#123;key&#125;</code> 來算出我們 key 算出來的 slot 數值</p>
+<p>我們可以透過 <code>CLUSTER KEYSLOT {key}</code> 來算出我們 key 算出來的 slot 數值</p>
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k1</span><br><span class="line">(<span class="built_in">integer</span>) 12706</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k2</span><br><span class="line">(<span class="built_in">integer</span>) 449</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k3</span><br><span class="line">(<span class="built_in">integer</span>) 4576</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k4</span><br><span class="line">(<span class="built_in">integer</span>) 8455</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k5</span><br><span class="line">(<span class="built_in">integer</span>) 12582</span><br></pre></td></tr></table></figure>
 
 <p>因為我們是進入 <code>172.22.0.2</code> 這台 Redis server 操作 我們只能操作屬於我們 slot 也就是介於 <code>[0-5460]</code> slot 資料，所以只有 <code>k2,k3</code> 符合</p>
@@ -413,7 +413,7 @@
 <blockquote>
 <p><code>-c</code> 代表是要使用 cluster 操作</p>
 </blockquote>
-<p>在執行 <code>set &#123;key&#125; &#123;value&#125;</code> 命令，會發現已經沒有 error 但取而代之是 <code>Redirected to slot</code></p>
+<p>在執行 <code>set {key} {value}</code> 命令，會發現已經沒有 error 但取而代之是 <code>Redirected to slot</code></p>
 <p>那是因為 <code>-c</code> 模式下會幫我們在資料寫入前轉到該 slot redis server node 中在執行命令.</p>
 <p>所以能發現出現 <code>Redirected to slot</code> Redis server ip 就會改變</p>
 <figure class="highlight accesslog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">/$ redis-cli -h <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span> -a redisCluster -c</span><br><span class="line"></span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k1 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[12706]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.4:6379</span>&gt; set k2 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[449]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k3 <span class="number">1</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k4 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[8455]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.5:6379</span>&gt; set k5 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[12582]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
@@ -445,7 +445,7 @@
 <figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">/$  redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 0 keys | 0 slots | 0 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots: (0 slots) master</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure>
 
 <p>目前要做的是把當前 Cluster 上 master 上的 slot 分配給，剛建立 master container，達到資料分擔</p>
-<p>我們可以透過 <code>redis-cli --cluster reshard &#123;被分配 Redis Cluster 節點 IP&#125;</code>，由上面資訊得知新建立 master id 是 <code>172.22.0.8:6379</code></p>
+<p>我們可以透過 <code>redis-cli --cluster reshard {被分配 Redis Cluster 節點 IP}</code>，由上面資訊得知新建立 master id 是 <code>172.22.0.8:6379</code></p>
 <figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">redis-<span class="keyword">cli</span> --<span class="keyword">cluster</span> reshard 172.22.0.8:6379 -a redisCluster</span><br></pre></td></tr></table></figure>
 
 <p>執行後我們會被詢問要轉移多少 slot 數量給新的 master，我們知道 Redis Cluster 有 16384 個 slot 所以為了平均分配 <code>16384/4 = 4096</code> </p>
@@ -632,20 +632,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">188</span>
+          <span class="site-state-item-count">189</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-count">70</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">139</span>
+        <span class="site-state-item-count">141</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -706,14 +706,14 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">914k</span>
+    <span title="Symbols count total">919k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:51</span>
+    <span title="Reading time total">13:56</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.0.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2

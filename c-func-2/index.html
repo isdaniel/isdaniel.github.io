@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
+<meta name="generator" content="Hexo 8.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,11 +28,11 @@
 <meta property="og:description" content="前文：這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt; 最後帶著大家來實現自己的Linq Where 先來看 Func&lt;&gt; ，Action&lt;&gt;原始定義 我們發現Func&lt;&gt; ，Action&lt;&gt; 其實本質就是委託 ，雖然有十幾個重載 但大同小異 public delegate TResult Func&lt;out TRe">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2019-06-02T11:06:40.000Z">
-<meta property="article:modified_time" content="2025-09-09T09:40:37.538Z">
+<meta property="article:modified_time" content="2025-10-03T01:25:40.249Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="C#">
-<meta property="article:tag" content="Func">
 <meta property="article:tag" content="Delegate">
+<meta property="article:tag" content="Func">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://isdaniel.github.io/c-func-2/">
@@ -199,17 +199,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -294,7 +294,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -330,7 +330,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.5k</span>
+              <span>3.3k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -362,10 +362,10 @@ public delegate void Action&lt;in T&gt;(T obj);
 </code></pre>
 <h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
 <pre><code>public class Person
-&#123;
-    public int Age &#123; get; set; &#125;
-    public string Name &#123; get; set; &#125;
-&#125;
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
 
 /// &lt;summary&gt;
 /// 年紀超過10歲算老人
@@ -373,22 +373,22 @@ public delegate void Action&lt;in T&gt;(T obj);
 /// &lt;param name=&quot;person&quot;&gt;&lt;/param&gt;
 /// &lt;returns&gt;&lt;/returns&gt;
 public static string CheckAge(Person person)
-&#123;
+{
     string result = &quot;年紀剛剛好&quot;;
     if (person.Age &gt;= 10)
-    &#123;
+    {
         result = &quot;老人&quot;;
-    &#125;
+    }
     return result;
-&#125;
+}
 static void Main(string[] args)
-&#123;
+{
     //Init一個Person物件
     Person p = new Person()
-    &#123;
+    {
         Age = 10,
         Name = &quot;tom&quot;
-    &#125;;
+    };
 
     #region Func
     //宣告一個Func&lt;Person,string&gt;委託 _thunkCheckAge
@@ -404,40 +404,40 @@ static void Main(string[] args)
     Console.WriteLine(result); 
     #endregion
     Console.ReadKey();
-&#125;
+}
 </code></pre>
 <h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
 <pre><code>public delegate void Action&lt;in T&gt;(T obj);
 </code></pre>
 <p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
 <pre><code>public class Person
-&#123;
-    public int Age &#123; get; set; &#125;
-    public string Name &#123; get; set; &#125;
-&#125;
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
 static void Main(string[] args)
-&#123;
+{
     //宣告_thunkPerson為Action&lt;Person&gt;委託
     //此Action傳入參數是Person由泛型來決定
     Action&lt;Person&gt; _thunkPerson;
     //Init一個Person物件
     Person p = new Person()
-    &#123;
+    {
         Age = 10,
         Name = &quot;tom&quot;
-    &#125;;
+    };
     //將CallPersonInfo方法 賦予給_thunkPerson
     _thunkPerson = new Action&lt;Person&gt;(CallPersonInfo);
 
     //執行_thunkPerson (就是執行CallPersonInfo方法)
     _thunkPerson(p);
     Console.ReadKey();
-&#125;
+}
 
 public static void CallPersonInfo(Person person)
-&#123;
-    Console.WriteLine($&quot;Age:&#123;person.Age&#125; Name:&#123;person.Name&#125;&quot;);
-&#125;
+{
+    Console.WriteLine($&quot;Age:{person.Age} Name:{person.Name}&quot;);
+}
 </code></pre>
 <h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action&#96;&#96;和<code>Func</code>差別是</p>
 <ul>
@@ -451,18 +451,18 @@ public static void CallPersonInfo(Person person)
 <h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
 <p>重點在於**[執行塞選條件]**這個動作</p>
 <pre><code>List&lt;Person&gt; pList = new List&lt;Person&gt;()
-&#123;
-    new Person() &#123; Age=100,Name=&quot;daniel&quot;&#125;,
-    new Person() &#123; Age=20,Name=&quot;Tom&quot; &#125;,
-    new Person() &#123; Age = 10,Name = &quot;Amy&quot;&#125;,
-    new Person() &#123; Age=5,Name = &quot;rjo&quot;&#125;
-&#125;;
+{
+    new Person() { Age=100,Name=&quot;daniel&quot;},
+    new Person() { Age=20,Name=&quot;Tom&quot; },
+    new Person() { Age = 10,Name = &quot;Amy&quot;},
+    new Person() { Age=5,Name = &quot;rjo&quot;}
+};
 pList.Where(per =&gt; per.Age &gt; 10);
 </code></pre>
 <p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
 <p>重點在<code>if(where(item))</code> 判斷物件是否符合條件，如符合就回傳此物件</p>
 <pre><code>public static class LinqExtension
-&#123;
+{
     /// &lt;summary&gt;
     /// 自訂一個Where 
     /// &lt;/summary&gt;
@@ -472,16 +472,16 @@ pList.Where(per =&gt; per.Age &gt; 10);
     /// &lt;returns&gt;&lt;/returns&gt;
     public static IEnumerable&lt;TSource&gt; MyWhere&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source
         ,Func&lt;TSource, bool&gt; where)
-    &#123;
+    {
         foreach (var item in source)
-        &#123;
+        {
             if (where(item))
-            &#123;
+            {
                 yield return item;
-            &#125;
-        &#125;
-    &#125;
-&#125;
+            }
+        }
+    }
+}
 </code></pre>
 <hr>
 <h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p>委託把不確定的動作，轉移給呼叫端來撰寫。  </p>
@@ -624,20 +624,20 @@ pList.Where(per =&gt; per.Age &gt; 10);
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">188</span>
+          <span class="site-state-item-count">189</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-count">70</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">139</span>
+        <span class="site-state-item-count">141</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -698,14 +698,14 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">914k</span>
+    <span title="Symbols count total">919k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:51</span>
+    <span title="Reading time total">13:56</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.0.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2

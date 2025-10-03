@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guardDatabase safety is a critical concern for any production system. Accidental data loss from DELETE or UPDATE statements without">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard">
+<meta property="og:url" content="https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guardDatabase safety is a critical concern for any production system. Accidental data loss from DELETE or UPDATE statements without">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2025-10-03T07:20:00.000Z">
+<meta property="article:modified_time" content="2025-10-03T01:25:40.254Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="Database-Safety">
+<meta property="article:tag" content="Extension">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="pgrx">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+  <title>Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard | 石頭的coding之路</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-ZKF58CMZ8X');
+  </script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">Hello World</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2025-10-03 07:20:00 / Modified: 01:25:40" itemprop="dateCreated datePublished" datetime="2025-10-03T07:20:00+00:00">2025-10-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Rust/" itemprop="url" rel="index"><span itemprop="name">Rust</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Rust/PostgreSQL/" itemprop="url" rel="index"><span itemprop="name">PostgreSQL</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Rust/PostgreSQL/Database-Safety/" itemprop="url" rel="index"><span itemprop="name">Database-Safety</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/pg-where-guard-rust-postgresql-extension/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="pg-where-guard-rust-postgresql-extension/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Building-Safe-PostgreSQL-Extensions-with-Rust-Introducing-pg-where-guard"><a href="#Building-Safe-PostgreSQL-Extensions-with-Rust-Introducing-pg-where-guard" class="headerlink" title="Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard"></a>Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</h1><p>Database safety is a critical concern for any production system. Accidental data loss from <code>DELETE</code> or <code>UPDATE</code> statements without <code>WHERE</code> clauses can be catastrophic. Today, I’ll introduce <strong>pg_where_guard</strong>, a PostgreSQL extension built with Rust and the pgrx framework that prevents these dangerous operations.</p>
+<h2 id="What-is-pg-where-guard"><a href="#What-is-pg-where-guard" class="headerlink" title="What is pg_where_guard?"></a>What is pg_where_guard?</h2><p><strong>pg_where_guard</strong> is a PostgreSQL extension that acts as a safety net for your database by intercepting and blocking potentially dangerous SQL operations:</p>
+<ul>
+<li><strong>DELETE Protection</strong>: Prevents <code>DELETE FROM table</code> without WHERE clause</li>
+<li><strong>UPDATE Protection</strong>: Prevents <code>UPDATE table SET ...</code> without WHERE clause</li>
+<li><strong>CTE Support</strong>: Recursively checks Common Table Expressions</li>
+<li><strong>Hook Integration</strong>: Uses PostgreSQL’s <code>post_parse_analyze_hook</code> for query interception</li>
+<li><strong>Memory Safe</strong>: Written in Rust with pgrx for safety and performance</li>
+</ul>
+<p><a href="https://github.com/isdaniel/pg_where_guard">GitHub Repository</a></p>
+<h2 id="Why-Rust-for-PostgreSQL-Extensions"><a href="#Why-Rust-for-PostgreSQL-Extensions" class="headerlink" title="Why Rust for PostgreSQL Extensions?"></a>Why Rust for PostgreSQL Extensions?</h2><p>Building PostgreSQL extensions traditionally meant working with C and dealing with manual memory management, potential segmentation faults, and complex debugging. Rust changes this paradigm by offering:</p>
+<h3 id="Performance"><a href="#Performance" class="headerlink" title="Performance"></a>Performance</h3><p>Zero-cost abstractions mean Rust code performs as well as equivalent C code while being much safer.</p>
+<h3 id="pgrx-Framework"><a href="#pgrx-Framework" class="headerlink" title="pgrx Framework"></a>pgrx Framework</h3><p>The <a href="https://github.com/pgcentralfoundation/pgrx">pgrx framework</a> provides:</p>
+<ul>
+<li>Type-safe PostgreSQL API bindings</li>
+<li>Automatic SQL schema generation</li>
+<li>Comprehensive testing support</li>
+<li>Easy development workflow</li>
+</ul>
+<h2 id="Technical-Architecture"><a href="#Technical-Architecture" class="headerlink" title="Technical Architecture"></a>Technical Architecture</h2><h3 id="Hook-Based-Implementation"><a href="#Hook-Based-Implementation" class="headerlink" title="Hook-Based Implementation"></a>Hook-Based Implementation</h3><p>pg_where_guard leverages PostgreSQL’s hook system to intercept queries after parsing:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Hook registration in _PG_init</span></span><br><span class="line">PREV_POST_PARSE_ANALYZE_HOOK = pg_sys::post_parse_analyze_hook;</span><br><span class="line">pg_sys::post_parse_analyze_hook = <span class="title function_ invoke__">Some</span>(delete_needs_where_check);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Query-Analysis-Engine"><a href="#Query-Analysis-Engine" class="headerlink" title="Query Analysis Engine"></a>Query Analysis Engine</h3><p>The extension examines the parsed query tree to detect dangerous operations:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Query checking logic</span></span><br><span class="line"><span class="keyword">match</span> query.commandType &#123;</span><br><span class="line">    pg_sys::CmdType::CMD_DELETE =&gt; &#123;</span><br><span class="line">        <span class="keyword">if</span> !query.jointree.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">            <span class="keyword">let</span> <span class="variable">jointree</span> = &amp;*query.jointree;</span><br><span class="line">            <span class="keyword">if</span> jointree.quals.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">                error!(<span class="string">&quot;DELETE requires a WHERE clause&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    pg_sys::CmdType::CMD_UPDATE =&gt; &#123;</span><br><span class="line">        <span class="keyword">if</span> !query.jointree.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">            <span class="keyword">let</span> <span class="variable">jointree</span> = &amp;*query.jointree;</span><br><span class="line">            <span class="keyword">if</span> jointree.quals.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">                error!(<span class="string">&quot;UPDATE requires a WHERE clause&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    _ =&gt; &#123;</span><br><span class="line">        <span class="comment">// Other command types are allowed</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Key-Components"><a href="#Key-Components" class="headerlink" title="Key Components"></a>Key Components</h3><ol>
+<li><p><strong>Hook Function</strong> (<code>delete_needs_where_check</code>):</p>
+<ul>
+<li>Intercepts queries via <code>post_parse_analyze_hook</code></li>
+<li>Checks command types (DELETE&#x2F;UPDATE)</li>
+<li>Validates presence of WHERE clauses</li>
+<li>Handles Common Table Expressions recursively</li>
+</ul>
+</li>
+<li><p><strong>Query Analysis</strong> (<code>check_query_for_where_clause</code>):</p>
+<ul>
+<li>Examines the query’s <code>jointree</code> structure</li>
+<li>Looks for <code>quals</code> (qualification&#x2F;WHERE conditions)</li>
+<li>Throws errors for unqualified modifications</li>
+</ul>
+</li>
+<li><p><strong>Extension Functions</strong>:</p>
+<ul>
+<li><code>pg_where_guard_is_enabled()</code>: Check if protection is active</li>
+<li><code>pg_where_guard_enable()</code>: Enable protection</li>
+</ul>
+</li>
+</ol>
+<h2 id="Installation-and-Setup"><a href="#Installation-and-Setup" class="headerlink" title="Installation and Setup"></a>Installation and Setup</h2><h3 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h3><p>Before installing pg_where_guard, ensure you have:</p>
+<ul>
+<li>Rust toolchain (1.70+)</li>
+<li>pgrx framework</li>
+<li>PostgreSQL development headers</li>
+<li>cargo-pgrx</li>
+</ul>
+<h3 id="Build-and-Install"><a href="#Build-and-Install" class="headerlink" title="Build and Install"></a>Build and Install</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Clone the repository</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/pg_where_guard.git</span><br><span class="line"><span class="built_in">cd</span> pg_where_guard</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install cargo-pgrx if not already installed</span></span><br><span class="line">cargo install cargo-pgrx</span><br><span class="line"></span><br><span class="line"><span class="comment"># Initialize pgrx for your PostgreSQL version</span></span><br><span class="line">cargo pgrx init</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install the extension</span></span><br><span class="line">cargo pgrx install</span><br></pre></td></tr></table></figure>
+
+<h3 id="Database-Setup"><a href="#Database-Setup" class="headerlink" title="Database Setup"></a>Database Setup</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Create the extension</span></span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION pg_where_guard;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Verify installation</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_where_guard_is_enabled();  <span class="comment">-- Returns: true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Usage-Examples"><a href="#Usage-Examples" class="headerlink" title="Usage Examples"></a>Usage Examples</h2><h3 id="Safe-Operations-Allowed"><a href="#Safe-Operations-Allowed" class="headerlink" title="Safe Operations (Allowed)"></a>Safe Operations (Allowed)</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Create a test table</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> employees (</span><br><span class="line">    id SERIAL <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    name TEXT <span class="keyword">NOT NULL</span>,</span><br><span class="line">    department TEXT,</span><br><span class="line">    salary <span class="type">INTEGER</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Insert test data</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, department, salary) <span class="keyword">VALUES</span></span><br><span class="line">    (<span class="string">&#x27;Alice Johnson&#x27;</span>, <span class="string">&#x27;Engineering&#x27;</span>, <span class="number">75000</span>),</span><br><span class="line">    (<span class="string">&#x27;Bob Smith&#x27;</span>, <span class="string">&#x27;Marketing&#x27;</span>, <span class="number">65000</span>),</span><br><span class="line">    (<span class="string">&#x27;Charlie Brown&#x27;</span>, <span class="string">&#x27;Engineering&#x27;</span>, <span class="number">80000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- These operations work fine (have WHERE clauses)</span></span><br><span class="line"><span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> <span class="number">78000</span> <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice Johnson&#x27;</span>;</span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> department <span class="operator">=</span> <span class="string">&#x27;Marketing&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Dangerous-Operations-Blocked"><a href="#Dangerous-Operations-Blocked" class="headerlink" title="Dangerous Operations (Blocked)"></a>Dangerous Operations (Blocked)</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- These commands will FAIL due to pg_where_guard protection:</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- This will fail: UPDATE without WHERE clause</span></span><br><span class="line"><span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> <span class="number">100000</span>;</span><br><span class="line"><span class="comment">-- ERROR: UPDATE requires a WHERE clause</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- This will fail: DELETE without WHERE clause</span></span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">FROM</span> employees;</span><br><span class="line"><span class="comment">-- ERROR: DELETE requires a WHERE clause</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Common-Table-Expression-Support"><a href="#Common-Table-Expression-Support" class="headerlink" title="Common Table Expression Support"></a>Common Table Expression Support</h3><p>The extension also protects CTEs:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- This would also be blocked</span></span><br><span class="line"><span class="keyword">WITH</span> department_update <span class="keyword">AS</span> (</span><br><span class="line">    <span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> salary <span class="operator">*</span> <span class="number">1.1</span>  <span class="comment">-- No WHERE clause!</span></span><br><span class="line">    RETURNING <span class="operator">*</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> department_update;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Considerations"><a href="#Performance-Considerations" class="headerlink" title="Performance Considerations"></a>Performance Considerations</h2><h3 id="Minimal-Overhead"><a href="#Minimal-Overhead" class="headerlink" title="Minimal Overhead"></a>Minimal Overhead</h3><p>pg_where_guard adds minimal performance overhead because it:</p>
+<ul>
+<li>Only analyzes DELETE and UPDATE statements</li>
+<li>Performs lightweight checks on the parsed query tree</li>
+<li>Uses efficient Rust code with zero-cost abstractions</li>
+<li>Operates at parse time, not execution time</li>
+</ul>
+<h3 id="Production-Readiness"><a href="#Production-Readiness" class="headerlink" title="Production Readiness"></a>Production Readiness</h3><p>The extension is designed for production use with:</p>
+<ul>
+<li>Comprehensive error handling</li>
+<li>Memory-safe implementation</li>
+<li>Minimal system resource usage</li>
+<li>Support for PostgreSQL 12-16</li>
+</ul>
+<h2 id="Development-and-Testing"><a href="#Development-and-Testing" class="headerlink" title="Development and Testing"></a>Development and Testing</h2><h3 id="Project-Structure"><a href="#Project-Structure" class="headerlink" title="Project Structure"></a>Project Structure</h3><figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">pg_where_guard/</span><br><span class="line">├── Cargo.toml              # Rust project <span class="keyword">configuration</span></span><br><span class="line">├── pg_where_guard.control  # PostgreSQL <span class="keyword">extension</span> control file</span><br><span class="line">├── src/</span><br><span class="line">│   ├── lib.rs             # Main <span class="keyword">extension</span> code</span><br><span class="line">│   └── bin/</span><br><span class="line">│       └── pgrx_embed.rs  # pgrx <span class="keyword">schema</span> generation</span><br><span class="line">├── <span class="keyword">sql</span>/                   # <span class="keyword">SQL</span> test scripts</span><br><span class="line">└── tests/                 # Test files</span><br></pre></td></tr></table></figure>
+
+<h3 id="Running-Tests"><a href="#Running-Tests" class="headerlink" title="Running Tests"></a>Running Tests</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Run the test suite</span></span><br><span class="line">cargo pgrx <span class="built_in">test</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Test with specific PostgreSQL version</span></span><br><span class="line">cargo pgrx <span class="built_in">test</span> pg15</span><br></pre></td></tr></table></figure>
+
+<h3 id="Development-Workflow"><a href="#Development-Workflow" class="headerlink" title="Development Workflow"></a>Development Workflow</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Start a development PostgreSQL instance</span></span><br><span class="line">cargo pgrx run</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install the extension in development</span></span><br><span class="line">cargo pgrx install --debug</span><br></pre></td></tr></table></figure>
+
+<h2 id="Benefits-of-the-Rust-pgrx-Approach"><a href="#Benefits-of-the-Rust-pgrx-Approach" class="headerlink" title="Benefits of the Rust + pgrx Approach"></a>Benefits of the Rust + pgrx Approach</h2><h3 id="Developer-Experience"><a href="#Developer-Experience" class="headerlink" title="Developer Experience"></a>Developer Experience</h3><ol>
+<li><strong>Type Safety</strong>: Compile-time guarantees prevent runtime errors</li>
+<li><strong>Modern Tooling</strong>: Cargo ecosystem and excellent IDE support</li>
+<li><strong>Testing</strong>: Built-in unit testing and integration testing</li>
+<li><strong>Documentation</strong>: Automatic documentation generation</li>
+</ol>
+<h3 id="Safety-Guarantees"><a href="#Safety-Guarantees" class="headerlink" title="Safety Guarantees"></a>Safety Guarantees</h3><ol>
+<li><strong>Memory Safety</strong>: No buffer overflows or memory leaks</li>
+<li><strong>Thread Safety</strong>: Rust’s ownership model prevents data races</li>
+<li><strong>Error Handling</strong>: Explicit error handling with Result types</li>
+<li><strong>Null Safety</strong>: No null pointer dereferences</li>
+</ol>
+<h3 id="Performance-Benefits"><a href="#Performance-Benefits" class="headerlink" title="Performance Benefits"></a>Performance Benefits</h3><ol>
+<li><strong>Zero-Cost Abstractions</strong>: High-level code without runtime overhead</li>
+<li><strong>Optimized Compilation</strong>: LLVM backend generates efficient machine code</li>
+<li><strong>Minimal Dependencies</strong>: Small runtime footprint</li>
+<li><strong>Efficient Resource Usage</strong>: Predictable memory usage patterns</li>
+</ol>
+<h2 id="Comparison-with-Traditional-C-Extensions"><a href="#Comparison-with-Traditional-C-Extensions" class="headerlink" title="Comparison with Traditional C Extensions"></a>Comparison with Traditional C Extensions</h2><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>C Extension</th>
+<th>Rust + pgrx Extension</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Memory Safety</td>
+<td>Manual management</td>
+<td>Automatic, compile-time guaranteed</td>
+</tr>
+<tr>
+<td>Development Speed</td>
+<td>Slow, error-prone</td>
+<td>Fast, safe development</td>
+</tr>
+<tr>
+<td>Debugging</td>
+<td>GDB, complex</td>
+<td>Standard Rust tooling</td>
+</tr>
+<tr>
+<td>Testing</td>
+<td>Manual, limited</td>
+<td>Built-in unit&#x2F;integration tests</td>
+</tr>
+<tr>
+<td>Maintenance</td>
+<td>High overhead</td>
+<td>Low overhead</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Optimal</td>
+<td>Near-optimal with safety</td>
+</tr>
+</tbody></table>
+<h3 id="Integration-Possibilities"><a href="#Integration-Possibilities" class="headerlink" title="Integration Possibilities"></a>Integration Possibilities</h3><p>pg_where_guard can be integrated with:</p>
+<ul>
+<li><strong>Database Migration Tools</strong>: Validate migrations before execution</li>
+<li><strong>ORM Frameworks</strong>: Add safety checks to generated queries</li>
+<li><strong>Monitoring Systems</strong>: Alert on attempted dangerous operations</li>
+<li><strong>Audit Systems</strong>: Log blocked operations for compliance</li>
+</ul>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>pg_where_guard demonstrates the power of modern Rust tooling for PostgreSQL extension development. By combining Rust’s safety guarantees with pgrx’s ease of use, we can build robust database tools that protect against common but dangerous operations.</p>
+<p>The extension serves as both a practical safety tool and an example of how Rust is revolutionizing systems programming beyond traditional applications. As the PostgreSQL ecosystem continues to evolve, Rust-based extensions like pg_where_guard pave the way for safer, more maintainable database tools.</p>
+<h3 id="Key-Takeaways"><a href="#Key-Takeaways" class="headerlink" title="Key Takeaways"></a>Key Takeaways</h3><ol>
+<li><strong>Safety First</strong>: Rust eliminates entire classes of bugs that plague C extensions</li>
+<li><strong>Developer Productivity</strong>: pgrx makes PostgreSQL extension development accessible</li>
+<li><strong>Performance</strong>: Memory safety doesn’t require sacrificing performance</li>
+<li><strong>Future-Proof</strong>: Rust’s growing ecosystem ensures long-term maintainability</li>
+</ol>
+<p>Whether you’re looking to protect your database from accidental data loss or explore modern PostgreSQL extension development, pg_where_guard offers a compelling example of what’s possible with Rust and pgrx.</p>
+<h3 id="Resources"><a href="#Resources" class="headerlink" title="Resources"></a>Resources</h3><ul>
+<li><a href="https://github.com/isdaniel/pg_where_guard">pg_where_guard GitHub Repository</a></li>
+<li><a href="https://github.com/pgcentralfoundation/pgrx">pgrx Framework Documentation</a></li>
+<li><a href="https://www.postgresql.org/docs/current/extend.html">PostgreSQL Extension Development Guide</a></li>
+</ul>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/">https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/rust-pgrx-extension-fdw/" rel="bookmark">Building a PostgreSQL Foreign Data Wrapper (FDW) in Rust with pgrx</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/logical-replication-checker-replication_checker_rs/" rel="bookmark">Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pg2any-rust-introduce/" rel="bookmark">PostgreSQL to any DB CDC (pg2any library) Rust</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/opentelemetry-sidecar/" rel="bookmark">Instrument Any App Instantly Using OpenTelemetry_SideCar</a></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/rustbox-introduce/" rel="bookmark">RustBox - Docker-Lite Sandbox for Hackers and Learners</a></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="https://i.imgur.com/1D2UpQk.png">
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Database-Safety/" rel="tag"># Database-Safety</a>
+              <a href="/tags/pgrx/" rel="tag"># pgrx</a>
+              <a href="/tags/Extension/" rel="tag"># Extension</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/pg2any-rust-introduce/" rel="prev" title="PostgreSQL to any DB CDC (pg2any library) Rust">
+      <i class="fa fa-chevron-left"></i> PostgreSQL to any DB CDC (pg2any library) Rust
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Building-Safe-PostgreSQL-Extensions-with-Rust-Introducing-pg-where-guard"><span class="nav-number">1.</span> <span class="nav-text">Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#What-is-pg-where-guard"><span class="nav-number">1.1.</span> <span class="nav-text">What is pg_where_guard?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Why-Rust-for-PostgreSQL-Extensions"><span class="nav-number">1.2.</span> <span class="nav-text">Why Rust for PostgreSQL Extensions?</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance"><span class="nav-number">1.2.1.</span> <span class="nav-text">Performance</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pgrx-Framework"><span class="nav-number">1.2.2.</span> <span class="nav-text">pgrx Framework</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Technical-Architecture"><span class="nav-number">1.3.</span> <span class="nav-text">Technical Architecture</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Hook-Based-Implementation"><span class="nav-number">1.3.1.</span> <span class="nav-text">Hook-Based Implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Query-Analysis-Engine"><span class="nav-number">1.3.2.</span> <span class="nav-text">Query Analysis Engine</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Components"><span class="nav-number">1.3.3.</span> <span class="nav-text">Key Components</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Installation-and-Setup"><span class="nav-number">1.4.</span> <span class="nav-text">Installation and Setup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Prerequisites"><span class="nav-number">1.4.1.</span> <span class="nav-text">Prerequisites</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Build-and-Install"><span class="nav-number">1.4.2.</span> <span class="nav-text">Build and Install</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Database-Setup"><span class="nav-number">1.4.3.</span> <span class="nav-text">Database Setup</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Usage-Examples"><span class="nav-number">1.5.</span> <span class="nav-text">Usage Examples</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Safe-Operations-Allowed"><span class="nav-number">1.5.1.</span> <span class="nav-text">Safe Operations (Allowed)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dangerous-Operations-Blocked"><span class="nav-number">1.5.2.</span> <span class="nav-text">Dangerous Operations (Blocked)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Common-Table-Expression-Support"><span class="nav-number">1.5.3.</span> <span class="nav-text">Common Table Expression Support</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Considerations"><span class="nav-number">1.6.</span> <span class="nav-text">Performance Considerations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Minimal-Overhead"><span class="nav-number">1.6.1.</span> <span class="nav-text">Minimal Overhead</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Production-Readiness"><span class="nav-number">1.6.2.</span> <span class="nav-text">Production Readiness</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Development-and-Testing"><span class="nav-number">1.7.</span> <span class="nav-text">Development and Testing</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Project-Structure"><span class="nav-number">1.7.1.</span> <span class="nav-text">Project Structure</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Running-Tests"><span class="nav-number">1.7.2.</span> <span class="nav-text">Running Tests</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Development-Workflow"><span class="nav-number">1.7.3.</span> <span class="nav-text">Development Workflow</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Benefits-of-the-Rust-pgrx-Approach"><span class="nav-number">1.8.</span> <span class="nav-text">Benefits of the Rust + pgrx Approach</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Developer-Experience"><span class="nav-number">1.8.1.</span> <span class="nav-text">Developer Experience</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Safety-Guarantees"><span class="nav-number">1.8.2.</span> <span class="nav-text">Safety Guarantees</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Benefits"><span class="nav-number">1.8.3.</span> <span class="nav-text">Performance Benefits</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Comparison-with-Traditional-C-Extensions"><span class="nav-number">1.9.</span> <span class="nav-text">Comparison with Traditional C Extensions</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Integration-Possibilities"><span class="nav-number">1.9.1.</span> <span class="nav-text">Integration Possibilities</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">1.10.</span> <span class="nav-text">Conclusion</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Takeaways"><span class="nav-number">1.10.1.</span> <span class="nav-text">Key Takeaways</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Resources"><span class="nav-number">1.10.2.</span> <span class="nav-text">Resources</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">189</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">141</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">919k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">13:56</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.0.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/";
+    this.page.identifier = "pg-where-guard-rust-postgresql-extension/";
+    this.page.title = "Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

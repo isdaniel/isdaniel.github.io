@@ -502,40 +502,40 @@ builder.RegisterType&lt;InvoiceApiFactory&gt;().InstancePerRequest();
 <hr>
 <h3 id="程式碼解說"><a href="#程式碼解說" class="headerlink" title="程式碼解說"></a>程式碼解說</h3><p>建立 <code>BagBase</code> 類別並將 <code>ColorBase</code> 當建構傳入(因為<code>Bag</code>需要上顏色)</p>
 <pre><code>public abstract class BagBase
-&#123;
-    protected ColorBase color&#123; get; set; &#125;
+{
+    protected ColorBase color{ get; set; }
 
-    public BagBase(ColorBase color) &#123;
+    public BagBase(ColorBase color) {
         this.color = color;
-    &#125;
+    }
     public abstract void GetBag();
-&#125;
+}
 
 public abstract class ColorBase
-&#123;
+{
     public abstract string Color();
-&#125;
+}
 </code></pre>
 <p>這邊我只介紹一種顏色和包包來當作範例,因為其他概念都一樣</p>
 <pre><code>public class AdidasBag : BagBase
-&#123;
+{
     public AdidasBag(ColorBase color) : base(color)
-    &#123;
-    &#125;
+    {
+    }
 
     public override void GetBag()
-    &#123;
-        Console.WriteLine($&quot;It is Addidas Bag,Color is &#123;color.Color()&#125;&quot;);
-    &#125;
-&#125;
+    {
+        Console.WriteLine($&quot;It is Addidas Bag,Color is {color.Color()}&quot;);
+    }
+}
 
 class ColorBlue : ColorBase
-&#123;
+{
     public override string Color()
-    &#123;
+    {
         return &quot;Blue&quot;;
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p>建立</p>
 <ul>
@@ -545,14 +545,14 @@ class ColorBlue : ColorBase
 <p>因為<code>BagBase</code>要傳入顏色<code>GetBag</code>就可幫包包上色.</p>
 <p>使用如下外面看起來很合理乾淨.</p>
 <pre><code>class Program
-&#123;
+{
     static void Main(string[] args)
-    &#123;
+    {
         AdidasBag nick = new AdidasBag(new ColorBlue());
         nick.GetBag();
         Console.ReadKey();
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <hr>
 <h2 id="實際案例"><a href="#實際案例" class="headerlink" title="實際案例"></a>實際案例</h2><p>前陣子在做一個Unity2D遊戲，遇到一組遊戲邏輯</p>
@@ -574,130 +574,130 @@ class ColorBlue : ColorBase
 <pre><code>protected int _level;
 
 public RoadActionBase()
-&#123;
+{
     _level = SenceParamter.RoadCount;
-&#125;
+}
 
-public abstract ArrowType ArrowType &#123; get; &#125;
+public abstract ArrowType ArrowType { get; }
 
-public abstract int OffSetPos &#123; get; &#125;
+public abstract int OffSetPos { get; }
 
-public abstract Vector2 PlayerDirction &#123; get; &#125;
+public abstract Vector2 PlayerDirction { get; }
 </code></pre>
 <p>}</p>
 </li>
 </ol>
 <p><code>UpRoadAction</code>類別對於往<code>上</code>時的狀態做給值</p>
 <pre><code>public class UpRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Up;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return -_level;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.up;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p><code>DownRoadAction</code>類別對於往<code>下</code>時的狀態做給值</p>
 <pre><code>public class DownRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Down;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return _level;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.down;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p><code>RightRoadAction</code>類別對於往<code>右</code>時的狀態做給值</p>
 <pre><code>public class RightRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Right;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return 1;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.right;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p><code>LeftRoadAction</code>類別對於往<code>左</code>時的狀態做給值</p>
 <pre><code>public class LeftRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Left;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return -1;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.left;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p>建立一個 <code>MoveBase</code> 並將 <code>RoadActionBase</code>當作建構子傳入(內部邏輯有寫注解).</p>
 <div class="note note--important">重點在於一個 `IsWalkNext`方法 提供Hock給子類別做實現,因為手動和自動移動邏輯不一樣.</div>
@@ -706,30 +706,30 @@ public abstract Vector2 PlayerDirction &#123; get; &#125;
 /// 橋接模式
 /// &lt;/summary&gt;
 public abstract class MoveBase
-&#123;
+{
     protected PlayerController _player;
 
     protected int _level;
 
     protected float _Scape;
 
-    public RoadActionBase RoadAction &#123; get; protected set; &#125;
+    public RoadActionBase RoadAction { get; protected set; }
 
     public MoveBase(RoadActionBase roadAction)
-    &#123;
+    {
         _player = PlayerController.Instance;
         _level = SenceParamter.RoadCount;
         _Scape = SenceParamter.Scape + SenceParamter.RoadHeigh;
         RoadAction = roadAction;
-    &#125;
+    }
 
     public virtual void Move(RoadContext currentRoad, RoadContext nextRoad)
-    &#123;
+    {
         //取得下一個位置
         Vector2 nextPos = nextRoad.transform.localPosition;
 
         if (IsWalkNext(currentRoad, nextRoad, _player.targetPos, nextPos))
-        &#123;
+        {
             //將下一個資料塞給當前玩家
             _player.targetPos = nextPos;
             _player.RoadContext = nextRoad;
@@ -739,18 +739,18 @@ public abstract class MoveBase
 
             //加入等待轉換的地方
             ReloadRoadController.Instance.AddRoadContext(currentRoad);
-        &#125;
-    &#125;
+        }
+    }
 
     protected abstract bool IsWalkNext(RoadContext currentRoad, RoadContext nextRoad, Vector3 targetPos, Vector3 nextPos);
-&#125;
+}
 </code></pre>
 <p><code>TouchMove</code> 類別重載 <code>IsWalkNext</code>實現自己的邏輯</p>
 <pre><code>public class TouchMove : MoveBase
-&#123;
+{
     public TouchMove(RoadActionBase roadAction) : base(roadAction)
-    &#123;
-    &#125;
+    {
+    }
 
     /// &lt;summary&gt;
     /// 判斷是否可以 前往下一個目標
@@ -761,7 +761,7 @@ public abstract class MoveBase
     /// &lt;param name=&quot;nextPos&quot;&gt;&lt;/param&gt;
     /// &lt;returns&gt;&lt;/returns&gt;
     protected override bool IsWalkNext(RoadContext currentRoad, RoadContext nextRoad, Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         ArrowType arrowType = RoadAction.ArrowType;
         //1.下一個道路要可以進去
         //2.當前道路要可以出來
@@ -771,21 +771,21 @@ public abstract class MoveBase
             arrowType.CanWalk(nextRoad.CanWalkIn) &amp;&amp;
             CanMoveNextPos(targetPos, nextPos);
 
-    &#125;
+    }
 
     private bool CanMoveNextPos(Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         return ((int)Vector2.Distance(targetPos, nextPos)) % 
             ((int)_Scape) == 0;
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p><code>AutoMove</code> 類別重載 <code>IsWalkNext</code>實現自己的邏輯</p>
 <pre><code>public class AutoMove : MoveBase
-&#123;
+{
     public AutoMove(RoadActionBase roadAction) : base(roadAction)
-    &#123;
-    &#125;
+    {
+    }
 
     /// &lt;summary&gt;
     /// 判斷是否可以 前往下一個目標
@@ -796,7 +796,7 @@ public abstract class MoveBase
     /// &lt;param name=&quot;nextPos&quot;&gt;&lt;/param&gt;
     /// &lt;returns&gt;&lt;/returns&gt;
     protected override bool IsWalkNext(RoadContext currentRoad, RoadContext nextRoad, Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         //1.下一個道路要可以進去
         //2.當前道路要可以出來
         //3.必須為四周的道路
@@ -807,14 +807,14 @@ public abstract class MoveBase
                 CanMoveNextPos(targetPos, nextPos) &amp;&amp;
                 !nextRoad.IsChangeState &amp;&amp; 
                 GameModel.Step &gt;0;
-    &#125;
+    }
 
     private bool CanMoveNextPos(Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         return ((int)Vector2.Distance(targetPos, nextPos)) % 
             ((int)_Scape) == 0;
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p>上面程式碼最主要是跟大家分享移動方式和方位的關係,<code>上下左右</code>值和方位式固定,將此配上不同的移動方式有不一樣的邏輯.</p>
 <p><a href="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/BridgePattern">SourceCode</a></p>
@@ -1908,7 +1908,7 @@ GROUP BY userName
 <h4 id="建立一個類別實現IHttpHander"><a href="#建立一個類別實現IHttpHander" class="headerlink" title="建立一個類別實現IHttpHander"></a>建立一個類別實現<code>IHttpHander</code></h4><p>繼承完<code>IHttpHandler</code>我們會實現兩個方法.</p>
 <ol>
 <li><code>ProcessRequest(HttpContext context)</code> 執行此次請求動作.</li>
-<li><code>bool IsReusable &#123; get; &#125;</code> 是否要將此次請求加入快取中重用.</li>
+<li><code>bool IsReusable { get; }</code> 是否要將此次請求加入快取中重用.</li>
 </ol>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpHandler</span> : <span class="title">IHttpHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        context.Response.ContentType = <span class="string">&quot;text/html&quot;</span>;</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;Hello World&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -2755,7 +2755,7 @@ GROUP BY userName
 
 <p><code>AuthenticationContext</code>中重要的一個屬性是</p>
 <ul>
-<li><code>public ActionResult Result &#123; get; set; &#125;</code> 只要這個物件不為<code>null</code>就會直接返回此次請求.</li>
+<li><code>public ActionResult Result { get; set; }</code> 只要這個物件不為<code>null</code>就會直接返回此次請求.</li>
 </ul>
 <p>在方法中我封裝一個<code>AuthenticationContext</code>物件,把它當作參數傳入<code>IAuthenticationFilter.OnAuthentication</code>方法中(這就是我們在繼承<code>AuthenticationFilter</code>使用<code>AuthenticationContext</code>物件)</p>
 <p>值得一提程式會判斷<code>context.Result</code>是否為<code>null</code>來當作迴圈中斷點.</p>
@@ -2918,7 +2918,7 @@ GROUP BY userName
 <li><code>value</code>：參數值</li>
 </ul>
 <blockquote>
-<p>在<code>ActionFitlerAttribute.OnActionExcuting</code>重載方法,參數<code>ActionExecutingContext</code>物件中有一個屬性<code>public virtual IDictionary&lt;string, object&gt; ActionParameters &#123; get; set; &#125;</code><br>他透過<code>IValueProvider</code>解析完傳入字串轉換成一個存放參數字典.</p>
+<p>在<code>ActionFitlerAttribute.OnActionExcuting</code>重載方法,參數<code>ActionExecutingContext</code>物件中有一個屬性<code>public virtual IDictionary&lt;string, object&gt; ActionParameters { get; set; }</code><br>他透過<code>IValueProvider</code>解析完傳入字串轉換成一個存放參數字典.</p>
 </blockquote>
 <p>讓我們了解一下這部分是如何完成.</p>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; <span class="title">GetParameterValues</span>(<span class="params">ControllerContext controllerContext, ActionDescriptor actionDescriptor</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">	Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; parametersDict = <span class="keyword">new</span> Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt;(StringComparer.OrdinalIgnoreCase);</span><br><span class="line">	ParameterDescriptor[] parameterDescriptors = actionDescriptor.GetParameters();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">foreach</span> (ParameterDescriptor parameterDescriptor <span class="keyword">in</span> parameterDescriptors)</span><br><span class="line">	&#123;</span><br><span class="line">		parametersDict[parameterDescriptor.ParameterName] = GetParameterValue(controllerContext, parameterDescriptor);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> parametersDict;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -3400,7 +3400,7 @@ GROUP BY userName
 <h4 id="建立一個類別實現IHttpHander"><a href="#建立一個類別實現IHttpHander" class="headerlink" title="建立一個類別實現IHttpHander"></a>建立一個類別實現IHttpHander</h4><p>繼承完<code>IHttpHandler</code>我們會實現兩個方法.</p>
 <ol>
 <li><code>ProcessRequest(HttpContext context)</code> 執行此次請求動作.</li>
-<li><code>bool IsReusable &#123; get; &#125;</code> 是否要將此次請求加入快取中重用.</li>
+<li><code>bool IsReusable { get; }</code> 是否要將此次請求加入快取中重用.</li>
 </ol>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpHandler</span> : <span class="title">IHttpHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        context.Response.ContentType = <span class="string">&quot;text/html&quot;</span>;</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;Hello World&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -4083,7 +4083,7 @@ GROUP BY userName
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_decompile.PNG" alt="WebViewPage_decompile.PNG"></p>
 <p>透過反編譯工具可以看到原始碼,每個頁面都會產生相對應的類別並繼承於<code>WebViewPage&lt;object&gt;</code>類別(會因為使用泛型,因為有一個<code>@Model</code>)</p>
 <blockquote>
-<p><code>Page_Views_Home_About_cshtml</code>類別命名有個規則.<br><code>Page_Views_&#123;ViewfolderName&#125;_&#123;ViewFileName&#125;_&#123;ExtensionFileName&#125;</code></p>
+<p><code>Page_Views_Home_About_cshtml</code>類別命名有個規則.<br><code>Page_Views_{ViewfolderName}_{ViewFileName}_{ExtensionFileName}</code></p>
 </blockquote>
 <p>我目前看到的是一個<code>About</code>的<code>cshtml</code>檔案(<code>About.cshtml</code>).</p>
 <p>看到<code>override void Execute()</code>將我們頁面上的邏輯透過<code>WriteLiteral</code>將資料寫到<code>Output</code>上,在<code>ApplicationStartPage</code>有<code>WriteLiteral</code>實作方式.</p>
@@ -4169,7 +4169,7 @@ GROUP BY userName
 <p><code>RouteData</code>主要把<code>Client</code>傳送<strong>Http</strong>請求資訊經解析後存放在<code>Values</code>中.</p>
 <p><code>RouteBase</code>中有個<code>GetRouteData</code>方法，藉由我們的路由設定去解析當前是否匹配到路由規則，如果有就回傳一個<code>RouteData</code>物件，否則回傳<code>Null</code></p>
 <h2 id="建立自己Route機制"><a href="#建立自己Route機制" class="headerlink" title="建立自己Route機制"></a>建立自己Route機制</h2><p>一般使用<code>Route</code>這個物件是使用<code>/</code>當作註冊對應的規則</p>
-<p><code>&#123;Controller&#125;/&#123;Action&#125;</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
+<p><code>{Controller}/{Action}</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
 <p>第一個區塊字串被當作<code>ControllerName</code></p>
 <p>第二個區塊字串被當作<code>ActionName</code></p>
 <blockquote>
@@ -4177,7 +4177,7 @@ GROUP BY userName
 </blockquote>
 <p>這次例子我們希望可以透過<code>QueryString</code>來製作<code>Route</code>對應規則</p>
 <blockquote>
-<p><code>&#123;domain&#125;?controller=home&amp;action=about</code></p>
+<p><code>{domain}?controller=home&amp;action=about</code></p>
 </blockquote>
 <p>透過上面<code>URL</code>期望呼叫<code>HomeController.About</code>方法</p>
 <p>廢話不多說我們來看一下這個<code>QueryStringRoute</code>是如何被實現</p>
@@ -4407,7 +4407,7 @@ GROUP BY userName
 </ul>
 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
 <p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
-<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>&#123;culture&#125;</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
+<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>{culture}</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">&quot;Default&quot;</span>,</span><br><span class="line">    url: <span class="string">&quot;&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;&quot;</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">&quot;Home&quot;</span>, action = <span class="string">&quot;Index&quot;</span>, culture = <span class="string">&quot;en&quot;</span> &#125;);</span><br></pre></td></tr></table></figure>
 
 <h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
@@ -5358,7 +5358,7 @@ GROUP BY userName
 <p>以下的範例是<a href="https://github.com/JamesNK/Newtonsoft.Json/blob/c90e6e871ae39cd4686dac6fa64a780e527123a8/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs">private bool CheckForCircularReference</a>想要防止的問題</p>
 <figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">JsonTestClass</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="built_in">int</span>&gt; MyIntList &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> JsonTestClass Test&#123;<span class="keyword">get</span>;<span class="keyword">set</span>;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">JsonTestClass c = <span class="keyword">new</span> JsonTestClass();</span><br><span class="line">c.Name = <span class="string">&quot;test&quot;</span>;</span><br><span class="line">c.Test = c;</span><br><span class="line"><span class="built_in">string</span> json = JsonConvert.SerializeObject</span><br><span class="line">               (c, <span class="keyword">new</span> JsonSerializerSettings() &#123; TypeNameHandling = TypeNameHandling.All &#125;);</span><br></pre></td></tr></table></figure>
 
-<p>我們可以看到<code>c.Test = c;</code> 將自己本身付值給 <code>public JsonTestClass Test&#123;get;set;&#125;</code> 這個屬性.</p>
+<p>我們可以看到<code>c.Test = c;</code> 將自己本身付值給 <code>public JsonTestClass Test{get;set;}</code> 這個屬性.</p>
 <p>我們執行上面程式碼會得到此錯誤</p>
 <blockquote>
 <p>Self referencing loop detected for property ‘Test’ with type ‘Program+JsonTestClass’. Path ‘’.</p>
@@ -5618,11 +5618,11 @@ CONNECT BY PRIOR PartNo = ParentPartNo
 <p>RabbitMQ預設密碼是 <code>guest</code></p>
 <pre><code>//建立連接工廠
 ConnectionFactory factory = new ConnectionFactory
-&#123;
+{
     UserName = &quot;guest&quot;,
     Password = &quot;guest&quot;,
     HostName = &quot;localhost&quot;
-&#125;;
+};
 </code></pre>
 <p>呼叫<code>factory.CreateConnection</code> 建立連接RabbitMQ連接物件，並呼叫 <code>CreateModel</code>方法建立一個<code>channel</code> Model</p>
 <blockquote>
@@ -5630,7 +5630,7 @@ ConnectionFactory factory = new ConnectionFactory
 </blockquote>
 <pre><code>using (var connection = factory.CreateConnection())
 using (var channel = connection.CreateModel())
-&#123;
+{
     #region 如果在RabbitMq手動建立可以忽略這段程式
     //建立一個Queue
     channel.QueueDeclare(queueName, false, false, false, null);
@@ -5644,24 +5644,24 @@ using (var channel = connection.CreateModel())
 
     string input = string.Empty;
     do
-    &#123;
+    {
         input = Console.ReadLine();
         var sendBytes = Encoding.UTF8.GetBytes(input);
         //發布訊息到RabbitMQ Server
         channel.BasicPublish(exchangeName, routeKey, null, sendBytes);
 
-    &#125; while (Console.ReadKey().Key != ConsoleKey.Escape);
-&#125;
+    } while (Console.ReadKey().Key != ConsoleKey.Escape);
+}
 </code></pre>
 <p>最後在使用 <code>channel.BasicPublish </code>方法 將訊息推送給指定交換器，因為是走tcp所以將訊息轉換成二進制流</p>
 <hr>
 <h2 id="Consumer-Code"><a href="#Consumer-Code" class="headerlink" title="Consumer Code"></a>Consumer Code</h2><p>前面建立連接都大同小異都是利用<code>ConnectionFactory</code>來建立連接物件</p>
 <pre><code>ConnectionFactory factory = new ConnectionFactory
-&#123;
+{
     UserName = &quot;guest&quot;,
     Password = &quot;guest&quot;,
     HostName = &quot;localhost&quot;
-&#125;;
+};
 
 string exchangeName = &quot;exchangeFanout&quot;;
 string queueName = &quot;FanoutQueue&quot;;
@@ -5669,23 +5669,23 @@ string routeKey = string.Empty;
 
 using (var connection = factory.CreateConnection())
 using (var channel = connection.CreateModel())
-&#123;
+{
     //channel.QueueBind
     EventingBasicConsumer consumer = new EventingBasicConsumer(channel);
     channel.BasicQos(0, 1, false);
     //接收到消息事件 consumer.IsRunning
     consumer.Received += (ch, ea) =&gt;
-    &#123;
+    {
         var message = Encoding.UTF8.GetString(ea.Body);
 
-        Console.WriteLine($&quot;Queue:&#123;queueName&#125;收到資料： &#123;message&#125;&quot;);
+        Console.WriteLine($&quot;Queue:{queueName}收到資料： {message}&quot;);
         channel.BasicAck(ea.DeliveryTag, false);
-    &#125;;
+    };
 
     channel.BasicConsume(queueName, false, consumer); 
     Console.WriteLine(&quot;接收訊息&quot;);
     Console.ReadKey();
-&#125;
+}
 </code></pre>
 <p>值得一提的是 <code>EventingBasicConsumer</code> 這個類別有一個建構子函數，把 <code>channel</code> 物件傳入產生一個消費者</p>
 <pre><code>EventingBasicConsumer consumer = new EventingBasicConsumer(channel);
@@ -7181,7 +7181,7 @@ A~Z (26)
 <p>我們在呼叫方法時假如參數是一個<code>Value Type</code>,<code>.Net</code>會在呼叫前把此值<strong>複製</strong>在傳入方法中(如果是<code>Refer Type</code>傳入此物件<code>Heap</code>記憶體位置).</p>
 <p><code>String.Format</code>吃參數是<code>Object</code>,所以如果傳入參數是<code>Value Type</code>如(<code>1</code>,<code>1.1m</code>)就會遇到<code>Boxing</code>.</p>
 <blockquote>
-<p>但如果我們在呼叫<code>String.Format</code>前使用<code>ToString</code>方法就可以避免Boxing的動作,<code> $&quot;&#123;times.ToString()&#125;&quot;</code>.</p>
+<p>但如果我們在呼叫<code>String.Format</code>前使用<code>ToString</code>方法就可以避免Boxing的動作,<code> $&quot;{times.ToString()}&quot;</code>.</p>
 </blockquote>
 <h3 id="DataTable的Boxing-UnBoxing"><a href="#DataTable的Boxing-UnBoxing" class="headerlink" title="DataTable的Boxing UnBoxing"></a>DataTable的Boxing UnBoxing</h3><p>我們在<code>ADO.Net</code>將資料存放在<code>DataTable</code>就會經歷一次<code>Boxing</code>在利用<code>DataTable.Row[][]</code>返回是一個<code>Object</code>型態資料(因為會把ValueType型別資料放進Heap中).</p>
 <p>我們在取用時會把<code>Object</code>轉成我們希望型態(UnBoxing).</p>
@@ -7272,40 +7272,40 @@ A~Z (26)
 <hr>
 <h3 id="程式碼解說"><a href="#程式碼解說" class="headerlink" title="程式碼解說"></a>程式碼解說</h3><p>建立 <code>BagBase</code> 類別並將 <code>ColorBase</code> 當建構傳入(因為<code>Bag</code>需要上顏色)</p>
 <pre><code>public abstract class BagBase
-&#123;
-    protected ColorBase color&#123; get; set; &#125;
+{
+    protected ColorBase color{ get; set; }
 
-    public BagBase(ColorBase color) &#123;
+    public BagBase(ColorBase color) {
         this.color = color;
-    &#125;
+    }
     public abstract void GetBag();
-&#125;
+}
 
 public abstract class ColorBase
-&#123;
+{
     public abstract string Color();
-&#125;
+}
 </code></pre>
 <p>這邊我只介紹一種顏色和包包來當作範例,因為其他概念都一樣</p>
 <pre><code>public class AdidasBag : BagBase
-&#123;
+{
     public AdidasBag(ColorBase color) : base(color)
-    &#123;
-    &#125;
+    {
+    }
 
     public override void GetBag()
-    &#123;
-        Console.WriteLine($&quot;It is Addidas Bag,Color is &#123;color.Color()&#125;&quot;);
-    &#125;
-&#125;
+    {
+        Console.WriteLine($&quot;It is Addidas Bag,Color is {color.Color()}&quot;);
+    }
+}
 
 class ColorBlue : ColorBase
-&#123;
+{
     public override string Color()
-    &#123;
+    {
         return &quot;Blue&quot;;
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p>建立</p>
 <ul>
@@ -7315,14 +7315,14 @@ class ColorBlue : ColorBase
 <p>因為<code>BagBase</code>要傳入顏色<code>GetBag</code>就可幫包包上色.</p>
 <p>使用如下外面看起來很合理乾淨.</p>
 <pre><code>class Program
-&#123;
+{
     static void Main(string[] args)
-    &#123;
+    {
         AdidasBag nick = new AdidasBag(new ColorBlue());
         nick.GetBag();
         Console.ReadKey();
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <hr>
 <h2 id="實際案例"><a href="#實際案例" class="headerlink" title="實際案例"></a>實際案例</h2><p>前陣子在做一個Unity2D遊戲，遇到一組遊戲邏輯</p>
@@ -7344,130 +7344,130 @@ class ColorBlue : ColorBase
 <pre><code>protected int _level;
 
 public RoadActionBase()
-&#123;
+{
     _level = SenceParamter.RoadCount;
-&#125;
+}
 
-public abstract ArrowType ArrowType &#123; get; &#125;
+public abstract ArrowType ArrowType { get; }
 
-public abstract int OffSetPos &#123; get; &#125;
+public abstract int OffSetPos { get; }
 
-public abstract Vector2 PlayerDirction &#123; get; &#125;
+public abstract Vector2 PlayerDirction { get; }
 </code></pre>
 <p>}</p>
 </li>
 </ol>
 <p><code>UpRoadAction</code>類別對於往<code>上</code>時的狀態做給值</p>
 <pre><code>public class UpRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Up;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return -_level;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.up;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p><code>DownRoadAction</code>類別對於往<code>下</code>時的狀態做給值</p>
 <pre><code>public class DownRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Down;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return _level;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.down;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p><code>RightRoadAction</code>類別對於往<code>右</code>時的狀態做給值</p>
 <pre><code>public class RightRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Right;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return 1;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.right;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p><code>LeftRoadAction</code>類別對於往<code>左</code>時的狀態做給值</p>
 <pre><code>public class LeftRoadAction : RoadActionBase
-&#123;
+{
     public override ArrowType ArrowType
-    &#123;
+    {
         get
-        &#123;
+        {
             return ArrowType.Left;
-        &#125;
-    &#125;
+        }
+    }
 
     public override int OffSetPos
-    &#123;
+    {
         get
-        &#123;
+        {
             return -1;
-        &#125;
-    &#125;
+        }
+    }
 
     public override Vector2 PlayerDirction
-    &#123;
+    {
         get
-        &#123;
+        {
             return Vector2.left;
-        &#125;
-    &#125;
-&#125;
+        }
+    }
+}
 </code></pre>
 <p>建立一個 <code>MoveBase</code> 並將 <code>RoadActionBase</code>當作建構子傳入(內部邏輯有寫注解).</p>
 <div class="note note--important">重點在於一個 `IsWalkNext`方法 提供Hock給子類別做實現,因為手動和自動移動邏輯不一樣.</div>
@@ -7476,30 +7476,30 @@ public abstract Vector2 PlayerDirction &#123; get; &#125;
 /// 橋接模式
 /// &lt;/summary&gt;
 public abstract class MoveBase
-&#123;
+{
     protected PlayerController _player;
 
     protected int _level;
 
     protected float _Scape;
 
-    public RoadActionBase RoadAction &#123; get; protected set; &#125;
+    public RoadActionBase RoadAction { get; protected set; }
 
     public MoveBase(RoadActionBase roadAction)
-    &#123;
+    {
         _player = PlayerController.Instance;
         _level = SenceParamter.RoadCount;
         _Scape = SenceParamter.Scape + SenceParamter.RoadHeigh;
         RoadAction = roadAction;
-    &#125;
+    }
 
     public virtual void Move(RoadContext currentRoad, RoadContext nextRoad)
-    &#123;
+    {
         //取得下一個位置
         Vector2 nextPos = nextRoad.transform.localPosition;
 
         if (IsWalkNext(currentRoad, nextRoad, _player.targetPos, nextPos))
-        &#123;
+        {
             //將下一個資料塞給當前玩家
             _player.targetPos = nextPos;
             _player.RoadContext = nextRoad;
@@ -7509,18 +7509,18 @@ public abstract class MoveBase
 
             //加入等待轉換的地方
             ReloadRoadController.Instance.AddRoadContext(currentRoad);
-        &#125;
-    &#125;
+        }
+    }
 
     protected abstract bool IsWalkNext(RoadContext currentRoad, RoadContext nextRoad, Vector3 targetPos, Vector3 nextPos);
-&#125;
+}
 </code></pre>
 <p><code>TouchMove</code> 類別重載 <code>IsWalkNext</code>實現自己的邏輯</p>
 <pre><code>public class TouchMove : MoveBase
-&#123;
+{
     public TouchMove(RoadActionBase roadAction) : base(roadAction)
-    &#123;
-    &#125;
+    {
+    }
 
     /// &lt;summary&gt;
     /// 判斷是否可以 前往下一個目標
@@ -7531,7 +7531,7 @@ public abstract class MoveBase
     /// &lt;param name=&quot;nextPos&quot;&gt;&lt;/param&gt;
     /// &lt;returns&gt;&lt;/returns&gt;
     protected override bool IsWalkNext(RoadContext currentRoad, RoadContext nextRoad, Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         ArrowType arrowType = RoadAction.ArrowType;
         //1.下一個道路要可以進去
         //2.當前道路要可以出來
@@ -7541,21 +7541,21 @@ public abstract class MoveBase
             arrowType.CanWalk(nextRoad.CanWalkIn) &amp;&amp;
             CanMoveNextPos(targetPos, nextPos);
 
-    &#125;
+    }
 
     private bool CanMoveNextPos(Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         return ((int)Vector2.Distance(targetPos, nextPos)) % 
             ((int)_Scape) == 0;
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p><code>AutoMove</code> 類別重載 <code>IsWalkNext</code>實現自己的邏輯</p>
 <pre><code>public class AutoMove : MoveBase
-&#123;
+{
     public AutoMove(RoadActionBase roadAction) : base(roadAction)
-    &#123;
-    &#125;
+    {
+    }
 
     /// &lt;summary&gt;
     /// 判斷是否可以 前往下一個目標
@@ -7566,7 +7566,7 @@ public abstract class MoveBase
     /// &lt;param name=&quot;nextPos&quot;&gt;&lt;/param&gt;
     /// &lt;returns&gt;&lt;/returns&gt;
     protected override bool IsWalkNext(RoadContext currentRoad, RoadContext nextRoad, Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         //1.下一個道路要可以進去
         //2.當前道路要可以出來
         //3.必須為四周的道路
@@ -7577,14 +7577,14 @@ public abstract class MoveBase
                 CanMoveNextPos(targetPos, nextPos) &amp;&amp;
                 !nextRoad.IsChangeState &amp;&amp; 
                 GameModel.Step &gt;0;
-    &#125;
+    }
 
     private bool CanMoveNextPos(Vector3 targetPos, Vector3 nextPos)
-    &#123;
+    {
         return ((int)Vector2.Distance(targetPos, nextPos)) % 
             ((int)_Scape) == 0;
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p>上面程式碼最主要是跟大家分享移動方式和方位的關係,<code>上下左右</code>值和方位式固定,將此配上不同的移動方式有不一樣的邏輯.</p>
 <p><a href="https://github.com/isdaniel/DesignPattern/tree/master/DesignPattern/BridgePattern">SourceCode</a></p>
@@ -7665,10 +7665,10 @@ public delegate void Action&lt;in T&gt;(T obj);
 </code></pre>
 <h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
 <pre><code>public class Person
-&#123;
-    public int Age &#123; get; set; &#125;
-    public string Name &#123; get; set; &#125;
-&#125;
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
 
 /// &lt;summary&gt;
 /// 年紀超過10歲算老人
@@ -7676,22 +7676,22 @@ public delegate void Action&lt;in T&gt;(T obj);
 /// &lt;param name=&quot;person&quot;&gt;&lt;/param&gt;
 /// &lt;returns&gt;&lt;/returns&gt;
 public static string CheckAge(Person person)
-&#123;
+{
     string result = &quot;年紀剛剛好&quot;;
     if (person.Age &gt;= 10)
-    &#123;
+    {
         result = &quot;老人&quot;;
-    &#125;
+    }
     return result;
-&#125;
+}
 static void Main(string[] args)
-&#123;
+{
     //Init一個Person物件
     Person p = new Person()
-    &#123;
+    {
         Age = 10,
         Name = &quot;tom&quot;
-    &#125;;
+    };
 
     #region Func
     //宣告一個Func&lt;Person,string&gt;委託 _thunkCheckAge
@@ -7707,40 +7707,40 @@ static void Main(string[] args)
     Console.WriteLine(result); 
     #endregion
     Console.ReadKey();
-&#125;
+}
 </code></pre>
 <h3 id="解說-Action："><a href="#解說-Action：" class="headerlink" title="解說 Action："></a>解說 Action：</h3><p><code>Action</code>這個委託是<code>Void</code>，傳入參數型態是由泛型來決定</p>
 <pre><code>public delegate void Action&lt;in T&gt;(T obj);
 </code></pre>
 <p>宣告一個<code>Action&lt;Person&gt;</code>委託的 <code>_thunkPerson</code>物件<br>將<code>CallPersonInfo</code>方法 賦予給<code>_thunkPerson</code><br>執行<code>_thunkPerson</code> (就是執行<code>CallPersonInfo</code>方法)</p>
 <pre><code>public class Person
-&#123;
-    public int Age &#123; get; set; &#125;
-    public string Name &#123; get; set; &#125;
-&#125;
+{
+    public int Age { get; set; }
+    public string Name { get; set; }
+}
 static void Main(string[] args)
-&#123;
+{
     //宣告_thunkPerson為Action&lt;Person&gt;委託
     //此Action傳入參數是Person由泛型來決定
     Action&lt;Person&gt; _thunkPerson;
     //Init一個Person物件
     Person p = new Person()
-    &#123;
+    {
         Age = 10,
         Name = &quot;tom&quot;
-    &#125;;
+    };
     //將CallPersonInfo方法 賦予給_thunkPerson
     _thunkPerson = new Action&lt;Person&gt;(CallPersonInfo);
 
     //執行_thunkPerson (就是執行CallPersonInfo方法)
     _thunkPerson(p);
     Console.ReadKey();
-&#125;
+}
 
 public static void CallPersonInfo(Person person)
-&#123;
-    Console.WriteLine($&quot;Age:&#123;person.Age&#125; Name:&#123;person.Name&#125;&quot;);
-&#125;
+{
+    Console.WriteLine($&quot;Age:{person.Age} Name:{person.Name}&quot;);
+}
 </code></pre>
 <h3 id="小總結："><a href="#小總結：" class="headerlink" title="小總結："></a>小總結：</h3><p>Action&#96;&#96;和<code>Func</code>差別是</p>
 <ul>
@@ -7754,18 +7754,18 @@ public static void CallPersonInfo(Person person)
 <h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><p>如果我要找一個大於10歲的人,撰寫一般Linq Where 如下在where中塞選此集合的條件，那我要怎麼自己實現呢？</p>
 <p>重點在於**[執行塞選條件]**這個動作</p>
 <pre><code>List&lt;Person&gt; pList = new List&lt;Person&gt;()
-&#123;
-    new Person() &#123; Age=100,Name=&quot;daniel&quot;&#125;,
-    new Person() &#123; Age=20,Name=&quot;Tom&quot; &#125;,
-    new Person() &#123; Age = 10,Name = &quot;Amy&quot;&#125;,
-    new Person() &#123; Age=5,Name = &quot;rjo&quot;&#125;
-&#125;;
+{
+    new Person() { Age=100,Name=&quot;daniel&quot;},
+    new Person() { Age=20,Name=&quot;Tom&quot; },
+    new Person() { Age = 10,Name = &quot;Amy&quot;},
+    new Person() { Age=5,Name = &quot;rjo&quot;}
+};
 pList.Where(per =&gt; per.Age &gt; 10);
 </code></pre>
 <p>以下是實現自己的<code>Where</code>語法 有沒有很簡單!</p>
 <p>重點在<code>if(where(item))</code> 判斷物件是否符合條件，如符合就回傳此物件</p>
 <pre><code>public static class LinqExtension
-&#123;
+{
     /// &lt;summary&gt;
     /// 自訂一個Where 
     /// &lt;/summary&gt;
@@ -7775,16 +7775,16 @@ pList.Where(per =&gt; per.Age &gt; 10);
     /// &lt;returns&gt;&lt;/returns&gt;
     public static IEnumerable&lt;TSource&gt; MyWhere&lt;TSource&gt;(this IEnumerable&lt;TSource&gt; source
         ,Func&lt;TSource, bool&gt; where)
-    &#123;
+    {
         foreach (var item in source)
-        &#123;
+        {
             if (where(item))
-            &#123;
+            {
                 yield return item;
-            &#125;
-        &#125;
-    &#125;
-&#125;
+            }
+        }
+    }
+}
 </code></pre>
 <hr>
 <h2 id="總結："><a href="#總結：" class="headerlink" title="總結："></a>總結：</h2><p>委託把不確定的動作，轉移給呼叫端來撰寫。  </p>
@@ -7820,63 +7820,63 @@ public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
 <p>我們可以發現到泛型中有關鍵字 <code>in</code> 和 <code>out</code> 這是代表神麼意思呢?</p>
 <p>讓我們繼續看下去…..</p>
 <h3 id="解說："><a href="#解說：" class="headerlink" title="解說："></a>解說：</h3><p>分享前先探討一個問題 泛型是否可以父類別指向子類別</p>
-<pre><code>public interface IGeneric&lt;T&gt; &#123; &#125;
-public class Base&lt;T&gt; : IGeneric&lt;T&gt; &#123; &#125;
+<pre><code>public interface IGeneric&lt;T&gt; { }
+public class Base&lt;T&gt; : IGeneric&lt;T&gt; { }
 
-public class A &#123; &#125;
+public class A { }
 
 class Program
-&#123;
+{
 
     static void Main(string[] args)
-    &#123;
+    {
         IGeneric&lt;object&gt; b = new Base&lt;object&gt;();
         IGeneric&lt;A&gt; a = new Base&lt;A&gt;();
         //無法執行父類只向子類別 因為泛型預設是Invariance
         b = a;
         Console.ReadKey();
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p>上面範例程式很清楚知道無法編譯，那我要怎麼處理和解決的？</p>
 <p>第一種解法 使用 <code>AS</code> :</p>
-<pre><code>public interface IGeneric&lt;T&gt; &#123; &#125;
-public class Base&lt;T&gt; : IGeneric&lt;T&gt; &#123; &#125;
+<pre><code>public interface IGeneric&lt;T&gt; { }
+public class Base&lt;T&gt; : IGeneric&lt;T&gt; { }
 
-public class A &#123; &#125;
+public class A { }
 
 class Program
-&#123;
+{
 
     static void Main(string[] args)
-    &#123;
+    {
         IGeneric&lt;object&gt; b = new Base&lt;object&gt;();
         IGeneric&lt;A&gt; a = new Base&lt;A&gt;();
         //使用AS來轉型
         b = a as IGeneric&lt;object&gt;;
         Console.ReadKey();
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p>第二種解法 在<code>interface</code>的泛型中使用 <code>Out</code> (今天要介紹的主角)</p>
 <pre><code>//這裡使用out將T 解釋為Covariance
-public interface IGeneric&lt;out T&gt; &#123; &#125;
-public class Base&lt;T&gt; : IGeneric&lt;T&gt; &#123; &#125;
+public interface IGeneric&lt;out T&gt; { }
+public class Base&lt;T&gt; : IGeneric&lt;T&gt; { }
 
-public class A &#123; &#125;
+public class A { }
 
 class Program
-&#123;
+{
 
     static void Main(string[] args)
-    &#123;
+    {
         IGeneric&lt;object&gt; b = new Base&lt;object&gt;();
         IGeneric&lt;A&gt; a = new Base&lt;A&gt;();
         //在上面的泛型用out
         b = a;
         Console.ReadKey();
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <h3 id="三個重要名詞-Covariance，Contravariance，Invariance"><a href="#三個重要名詞-Covariance，Contravariance，Invariance" class="headerlink" title="三個重要名詞 Covariance，Contravariance，Invariance"></a>三個重要名詞 <code>Covariance，Contravariance，Invariance</code></h3><p>MSDN中有解釋 此關鍵字 泛型中的共變數和反變數</p>
 <p><code>Covariance</code>(共變數) ：</p>
@@ -7885,23 +7885,23 @@ class Program
 </blockquote>
 <p>因<code>IGeneric&lt;out T&gt;</code>所以下面a付值給b就不需轉型</p>
 <pre><code>//這裡使用out將T 解釋為Covariance
-public interface IGeneric&lt;out T&gt; &#123; &#125;
-public class Base&lt;T&gt; : IGeneric&lt;T&gt; &#123; &#125;
+public interface IGeneric&lt;out T&gt; { }
+public class Base&lt;T&gt; : IGeneric&lt;T&gt; { }
 
-public class A &#123; &#125;
+public class A { }
 
 class Program
-&#123;
+{
 
     static void Main(string[] args)
-    &#123;
+    {
         IGeneric&lt;object&gt; b = new Base&lt;object&gt;();
         IGeneric&lt;A&gt; a = new Base&lt;A&gt;();
         //在上面的泛型用out
         b = a;
         Console.ReadKey();
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p><code>Contravariance</code>(反變數)</p>
 <blockquote>
@@ -7910,45 +7910,45 @@ class Program
 <p>簡單說明：可將父類物件引用賦予給子類別 <strong>[泛型中有in]</strong><br>如下範例：</p>
 <p>因<code>IComparer&lt;in T&gt;</code> 所以子類可以取得父類的引用</p>
 <pre><code>//這裡使用in將T 解釋為Contravariance
-public interface IGeneric&lt;in T&gt; &#123; &#125;
+public interface IGeneric&lt;in T&gt; { }
 
-public class Base&lt;T&gt; : IGeneric&lt;T&gt; &#123; &#125;
+public class Base&lt;T&gt; : IGeneric&lt;T&gt; { }
 
 public abstract class Shape
-&#123;
-    public virtual double Area &#123; get &#123; return 0; &#125; &#125;
-&#125;
+{
+    public virtual double Area { get { return 0; } }
+}
 
 public class Square : Shape
-&#123;
+{
     private double r;
-    public Square(double radius) &#123; r = radius; &#125;
-    public double Radius &#123; get &#123; return r; &#125; &#125;
-    public override double Area &#123; get &#123; return r * r; &#125; &#125;
-&#125;
+    public Square(double radius) { r = radius; }
+    public double Radius { get { return r; } }
+    public override double Area { get { return r * r; } }
+}
 
 public class Circle : Shape
-&#123;
+{
     private double r;
-    public Circle(double radius) &#123; r = radius; &#125;
-    public double Radius &#123; get &#123; return r; &#125; &#125;
-    public override double Area &#123; get &#123; return Math.PI * r * r; &#125; &#125;
-&#125;
+    public Circle(double radius) { r = radius; }
+    public double Radius { get { return r; } }
+    public override double Area { get { return Math.PI * r * r; } }
+}
 
 public class ShapeAreaComparer : IComparer&lt;Shape&gt;
-&#123;
+{
     int IComparer&lt;Shape&gt;.Compare(Shape a, Shape b)
-    &#123;
+    {
         if (a == null) return b == null ? 0 : -1;
         return b == null ? 1 : a.Area.CompareTo(b.Area);
-    &#125;
-&#125;
+    }
+}
 
 class Program
-&#123;
+{
 
     static void Main(string[] args)
-    &#123;
+    {
         //泛型[形狀類別(基類)]
         IGeneric&lt;Shape&gt; b = new Base&lt;Shape&gt;();
         //泛型[圓形類別(子類)]
@@ -7956,8 +7956,8 @@ class Program
         //子類可以取得父類引用
         a = b;
         Console.ReadKey();
-    &#125;
-&#125;
+    }
+}
 </code></pre>
 <p><code>Invariance</code> 只能該類別指向該類別<br>一般泛型預設就是這個</p>
 <hr>
@@ -8066,7 +8066,7 @@ class Program
 <p><code>!dumpheap -type Person</code>來查看<code>Person</code>類別metadata在記憶體中如何上面所說的存放</p>
 <p><img src="https://i.imgur.com/VHsY1qy.png"></p>
 <h2 id="MethodTable"><a href="#MethodTable" class="headerlink" title="MethodTable"></a>MethodTable</h2><p>ObjectInstance的TypeHandle指向MethodTable，MethodTable的訊息可以透過<code>System.Type</code>訪問</p>
-<p>我們可以透過<code>!dumpmt -md &#123;method table address&#125;</code>來查看Method Table資訊</p>
+<p>我們可以透過<code>!dumpmt -md {method table address}</code>來查看Method Table資訊</p>
 <figure class="highlight pgsql"><table><tr><td class="code"><pre><span class="line">MethodDesc <span class="keyword">Table</span></span><br><span class="line">   Entry MethodDe    JIT <span class="type">Name</span></span><br><span class="line"><span class="number">733</span>f97b8 <span class="number">72</span>ffc838 PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.ToString()</span><br><span class="line"><span class="number">733</span>f96a0 <span class="number">73138978</span> PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.Equals(<span class="keyword">System</span>.<span class="keyword">Object</span>)</span><br><span class="line"><span class="number">734021</span>f0 <span class="number">73138998</span> PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.GetHashCode()</span><br><span class="line"><span class="number">733</span>b4f2c <span class="number">731389</span>a0 PreJIT <span class="keyword">System</span>.<span class="keyword">Object</span>.Finalize()</span><br><span class="line"><span class="number">02</span>b408b0 <span class="number">029</span>c4dd0    JIT ASapmle.Person..ctor()</span><br><span class="line"><span class="number">02</span>b40450 <span class="number">029</span>c4dc4   <span class="keyword">NONE</span> ASapmle.Person.AddAge()</span><br></pre></td></tr></table></figure>
 
 <p><img src="https://i.imgur.com/UMhIr2r.png"></p>
@@ -8098,8 +8098,8 @@ class Program
 <h2 id="WinDbg-clr-指令筆記"><a href="#WinDbg-clr-指令筆記" class="headerlink" title="WinDbg clr 指令筆記"></a>WinDbg clr 指令筆記</h2><ul>
 <li><code>.loadby sos clr</code>:進入CLR Debug查看</li>
 <li><code>!eeheap</code>:查看目前Heap使用情況</li>
-<li><code>!dumpmt -md &#123;address&#125;</code>:查詢某個物件的Method Table</li>
-<li><code>!dumpheap -type &#123;type name&#125;</code>:查看某個類別的詳細資訊</li>
+<li><code>!dumpmt -md {address}</code>:查詢某個物件的Method Table</li>
+<li><code>!dumpheap -type {type name}</code>:查看某個類別的詳細資訊</li>
 </ul>
 <h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>越是原理的知識越不會改變且在緊要關頭有時候還可以救你一命（可以更快定位出問題）</p>
 <p>本篇介紹了幾個CLR底層重要的物件希望對讀者們對於CLR可以有更深入的了解</p>
@@ -9316,7 +9316,7 @@ class Program
 <h2 id="Image-Container"><a href="#Image-Container" class="headerlink" title="Image &amp;&amp; Container"></a>Image &amp;&amp; Container</h2><p>Image有點類似程式語言中的類別,Docker透過Image建立Container物件</p>
 <p>Container類似程式語言中物件,透過Image(類別)建立出許多不同物件.</p>
 <blockquote>
-<p>可以透過<code>docker inspect &#123;Container Id or name&#125;</code>查看Container資訊</p>
+<p>可以透過<code>docker inspect {Container Id or name}</code>查看Container資訊</p>
 </blockquote>
 <ul>
 <li>-f:此參數可以透過go template查看設定值</li>
@@ -9612,7 +9612,7 @@ GROUP BY userName
 </ul>
 </li>
 <li>Expression.Assign 對於Expression給值 ex: expression1 &#x3D; expression2</li>
-<li>Expression.Block  大括號區域 ex:<code>&#123;&#125;</code></li>
+<li>Expression.Block  大括號區域 ex:<code>{}</code></li>
 <li>Expression.Convert 轉型</li>
 <li>Expression.Multiply 乘法</li>
 <li>Expression.Bind 綁定物件屬性,成員</li>
@@ -10454,7 +10454,7 @@ email_url: dog830228@gmail.com
 <h4 id="建立一個類別實現IHttpHander"><a href="#建立一個類別實現IHttpHander" class="headerlink" title="建立一個類別實現IHttpHander"></a>建立一個類別實現<code>IHttpHander</code></h4><p>繼承完<code>IHttpHandler</code>我們會實現兩個方法.</p>
 <ol>
 <li><code>ProcessRequest(HttpContext context)</code> 執行此次請求動作.</li>
-<li><code>bool IsReusable &#123; get; &#125;</code> 是否要將此次請求加入快取中重用.</li>
+<li><code>bool IsReusable { get; }</code> 是否要將此次請求加入快取中重用.</li>
 </ol>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpHandler</span> : <span class="title">IHttpHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        context.Response.ContentType = <span class="string">&quot;text/html&quot;</span>;</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;Hello World&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -11397,7 +11397,7 @@ email_url: dog830228@gmail.com
 
 <p><code>AuthenticationContext</code>中重要的一個屬性是</p>
 <ul>
-<li><code>public ActionResult Result &#123; get; set; &#125;</code> 只要這個物件不為<code>null</code>就會直接返回此次請求.</li>
+<li><code>public ActionResult Result { get; set; }</code> 只要這個物件不為<code>null</code>就會直接返回此次請求.</li>
 </ul>
 <p>在方法中我封裝一個<code>AuthenticationContext</code>物件,把它當作參數傳入<code>IAuthenticationFilter.OnAuthentication</code>方法中(這就是我們在繼承<code>AuthenticationFilter</code>使用<code>AuthenticationContext</code>物件)</p>
 <p>值得一提程式會判斷<code>context.Result</code>是否為<code>null</code>來當作迴圈中斷點.</p>
@@ -11560,7 +11560,7 @@ email_url: dog830228@gmail.com
 <li><code>value</code>：參數值</li>
 </ul>
 <blockquote>
-<p>在<code>ActionFitlerAttribute.OnActionExcuting</code>重載方法,參數<code>ActionExecutingContext</code>物件中有一個屬性<code>public virtual IDictionary&lt;string, object&gt; ActionParameters &#123; get; set; &#125;</code><br>他透過<code>IValueProvider</code>解析完傳入字串轉換成一個存放參數字典.</p>
+<p>在<code>ActionFitlerAttribute.OnActionExcuting</code>重載方法,參數<code>ActionExecutingContext</code>物件中有一個屬性<code>public virtual IDictionary&lt;string, object&gt; ActionParameters { get; set; }</code><br>他透過<code>IValueProvider</code>解析完傳入字串轉換成一個存放參數字典.</p>
 </blockquote>
 <p>讓我們了解一下這部分是如何完成.</p>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; <span class="title">GetParameterValues</span>(<span class="params">ControllerContext controllerContext, ActionDescriptor actionDescriptor</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">	Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; parametersDict = <span class="keyword">new</span> Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt;(StringComparer.OrdinalIgnoreCase);</span><br><span class="line">	ParameterDescriptor[] parameterDescriptors = actionDescriptor.GetParameters();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">foreach</span> (ParameterDescriptor parameterDescriptor <span class="keyword">in</span> parameterDescriptors)</span><br><span class="line">	&#123;</span><br><span class="line">		parametersDict[parameterDescriptor.ParameterName] = GetParameterValue(controllerContext, parameterDescriptor);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> parametersDict;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -12042,7 +12042,7 @@ email_url: dog830228@gmail.com
 <h4 id="建立一個類別實現IHttpHander"><a href="#建立一個類別實現IHttpHander" class="headerlink" title="建立一個類別實現IHttpHander"></a>建立一個類別實現IHttpHander</h4><p>繼承完<code>IHttpHandler</code>我們會實現兩個方法.</p>
 <ol>
 <li><code>ProcessRequest(HttpContext context)</code> 執行此次請求動作.</li>
-<li><code>bool IsReusable &#123; get; &#125;</code> 是否要將此次請求加入快取中重用.</li>
+<li><code>bool IsReusable { get; }</code> 是否要將此次請求加入快取中重用.</li>
 </ol>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MyHttpHandler</span> : <span class="title">IHttpHandler</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">ProcessRequest</span>(<span class="params">HttpContext context</span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        context.Response.ContentType = <span class="string">&quot;text/html&quot;</span>;</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;Hello World&lt;br/&gt;&quot;</span>);</span><br><span class="line">        context.Response.Write(<span class="string">&quot;==================&lt;br/&gt;&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">bool</span> IsReusable &#123; <span class="keyword">get</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -12725,7 +12725,7 @@ email_url: dog830228@gmail.com
 <p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/25/WebViewPage_decompile.PNG" alt="WebViewPage_decompile.PNG"></p>
 <p>透過反編譯工具可以看到原始碼,每個頁面都會產生相對應的類別並繼承於<code>WebViewPage&lt;object&gt;</code>類別(會因為使用泛型,因為有一個<code>@Model</code>)</p>
 <blockquote>
-<p><code>Page_Views_Home_About_cshtml</code>類別命名有個規則.<br><code>Page_Views_&#123;ViewfolderName&#125;_&#123;ViewFileName&#125;_&#123;ExtensionFileName&#125;</code></p>
+<p><code>Page_Views_Home_About_cshtml</code>類別命名有個規則.<br><code>Page_Views_{ViewfolderName}_{ViewFileName}_{ExtensionFileName}</code></p>
 </blockquote>
 <p>我目前看到的是一個<code>About</code>的<code>cshtml</code>檔案(<code>About.cshtml</code>).</p>
 <p>看到<code>override void Execute()</code>將我們頁面上的邏輯透過<code>WriteLiteral</code>將資料寫到<code>Output</code>上,在<code>ApplicationStartPage</code>有<code>WriteLiteral</code>實作方式.</p>
@@ -12811,7 +12811,7 @@ email_url: dog830228@gmail.com
 <p><code>RouteData</code>主要把<code>Client</code>傳送<strong>Http</strong>請求資訊經解析後存放在<code>Values</code>中.</p>
 <p><code>RouteBase</code>中有個<code>GetRouteData</code>方法，藉由我們的路由設定去解析當前是否匹配到路由規則，如果有就回傳一個<code>RouteData</code>物件，否則回傳<code>Null</code></p>
 <h2 id="建立自己Route機制"><a href="#建立自己Route機制" class="headerlink" title="建立自己Route機制"></a>建立自己Route機制</h2><p>一般使用<code>Route</code>這個物件是使用<code>/</code>當作註冊對應的規則</p>
-<p><code>&#123;Controller&#125;/&#123;Action&#125;</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
+<p><code>{Controller}/{Action}</code>在<code>Domian</code>後用<code>/</code>當作分隔</p>
 <p>第一個區塊字串被當作<code>ControllerName</code></p>
 <p>第二個區塊字串被當作<code>ActionName</code></p>
 <blockquote>
@@ -12819,7 +12819,7 @@ email_url: dog830228@gmail.com
 </blockquote>
 <p>這次例子我們希望可以透過<code>QueryString</code>來製作<code>Route</code>對應規則</p>
 <blockquote>
-<p><code>&#123;domain&#125;?controller=home&amp;action=about</code></p>
+<p><code>{domain}?controller=home&amp;action=about</code></p>
 </blockquote>
 <p>透過上面<code>URL</code>期望呼叫<code>HomeController.About</code>方法</p>
 <p>廢話不多說我們來看一下這個<code>QueryStringRoute</code>是如何被實現</p>
@@ -13049,7 +13049,7 @@ email_url: dog830228@gmail.com
 </ul>
 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>View</code>頁面(<code>razor</code>,<code>aspx</code>…)都是繼承<code>WebViewPage&lt;TModel&gt;</code>頁面,</p>
 <p>今天會帶大家寫一個範例完成透過<code>Route</code>判斷多國錢幣符號.</p>
-<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>&#123;culture&#125;</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
+<h2 id="多國路由設定"><a href="#多國路由設定" class="headerlink" title="多國路由設定"></a>多國路由設定</h2><p>在<code>Route</code>設定上多一個<code>{culture}</code>區塊.如果使用者沒有輸入預設使用英文(<code>en</code>).</p>
 <figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">routes.MapRoute(</span><br><span class="line">    name: <span class="string">&quot;Default&quot;</span>,</span><br><span class="line">    url: <span class="string">&quot;&#123;culture&#125;/&#123;controller&#125;/&#123;action&#125;&quot;</span>,</span><br><span class="line">    defaults: <span class="keyword">new</span> &#123; controller = <span class="string">&quot;Home&quot;</span>, action = <span class="string">&quot;Index&quot;</span>, culture = <span class="string">&quot;en&quot;</span> &#125;);</span><br></pre></td></tr></table></figure>
 
 <h2 id="取得貨幣符號"><a href="#取得貨幣符號" class="headerlink" title="取得貨幣符號"></a>取得貨幣符號</h2><p>建立一個介面<code>ICurrency</code>裡面有個方法可以取得傳入國家貨幣符號.</p>
@@ -14000,7 +14000,7 @@ email_url: dog830228@gmail.com
 <p>以下的範例是<a href="https://github.com/JamesNK/Newtonsoft.Json/blob/c90e6e871ae39cd4686dac6fa64a780e527123a8/Src/Newtonsoft.Json/Serialization/JsonSerializerInternalWriter.cs">private bool CheckForCircularReference</a>想要防止的問題</p>
 <figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">JsonTestClass</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="built_in">string</span> Name &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> List&lt;<span class="built_in">int</span>&gt; MyIntList &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">    <span class="keyword">public</span> JsonTestClass Test&#123;<span class="keyword">get</span>;<span class="keyword">set</span>;&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">JsonTestClass c = <span class="keyword">new</span> JsonTestClass();</span><br><span class="line">c.Name = <span class="string">&quot;test&quot;</span>;</span><br><span class="line">c.Test = c;</span><br><span class="line"><span class="built_in">string</span> json = JsonConvert.SerializeObject</span><br><span class="line">               (c, <span class="keyword">new</span> JsonSerializerSettings() &#123; TypeNameHandling = TypeNameHandling.All &#125;);</span><br></pre></td></tr></table></figure>
 
-<p>我們可以看到<code>c.Test = c;</code> 將自己本身付值給 <code>public JsonTestClass Test&#123;get;set;&#125;</code> 這個屬性.</p>
+<p>我們可以看到<code>c.Test = c;</code> 將自己本身付值給 <code>public JsonTestClass Test{get;set;}</code> 這個屬性.</p>
 <p>我們執行上面程式碼會得到此錯誤</p>
 <blockquote>
 <p>Self referencing loop detected for property ‘Test’ with type ‘Program+JsonTestClass’. Path ‘’.</p>
@@ -15590,6 +15590,188 @@ CONNECT BY PRIOR PartNo = ParentPartNo
       </tags>
   </entry>
   <entry>
+    <title>Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</title>
+    <url>/pg-where-guard-rust-postgresql-extension/</url>
+    <content><![CDATA[<h1 id="Building-Safe-PostgreSQL-Extensions-with-Rust-Introducing-pg-where-guard"><a href="#Building-Safe-PostgreSQL-Extensions-with-Rust-Introducing-pg-where-guard" class="headerlink" title="Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard"></a>Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</h1><p>Database safety is a critical concern for any production system. Accidental data loss from <code>DELETE</code> or <code>UPDATE</code> statements without <code>WHERE</code> clauses can be catastrophic. Today, I’ll introduce <strong>pg_where_guard</strong>, a PostgreSQL extension built with Rust and the pgrx framework that prevents these dangerous operations.</p>
+<h2 id="What-is-pg-where-guard"><a href="#What-is-pg-where-guard" class="headerlink" title="What is pg_where_guard?"></a>What is pg_where_guard?</h2><p><strong>pg_where_guard</strong> is a PostgreSQL extension that acts as a safety net for your database by intercepting and blocking potentially dangerous SQL operations:</p>
+<ul>
+<li><strong>DELETE Protection</strong>: Prevents <code>DELETE FROM table</code> without WHERE clause</li>
+<li><strong>UPDATE Protection</strong>: Prevents <code>UPDATE table SET ...</code> without WHERE clause</li>
+<li><strong>CTE Support</strong>: Recursively checks Common Table Expressions</li>
+<li><strong>Hook Integration</strong>: Uses PostgreSQL’s <code>post_parse_analyze_hook</code> for query interception</li>
+<li><strong>Memory Safe</strong>: Written in Rust with pgrx for safety and performance</li>
+</ul>
+<p><a href="https://github.com/isdaniel/pg_where_guard">GitHub Repository</a></p>
+<h2 id="Why-Rust-for-PostgreSQL-Extensions"><a href="#Why-Rust-for-PostgreSQL-Extensions" class="headerlink" title="Why Rust for PostgreSQL Extensions?"></a>Why Rust for PostgreSQL Extensions?</h2><p>Building PostgreSQL extensions traditionally meant working with C and dealing with manual memory management, potential segmentation faults, and complex debugging. Rust changes this paradigm by offering:</p>
+<h3 id="Performance"><a href="#Performance" class="headerlink" title="Performance"></a>Performance</h3><p>Zero-cost abstractions mean Rust code performs as well as equivalent C code while being much safer.</p>
+<h3 id="pgrx-Framework"><a href="#pgrx-Framework" class="headerlink" title="pgrx Framework"></a>pgrx Framework</h3><p>The <a href="https://github.com/pgcentralfoundation/pgrx">pgrx framework</a> provides:</p>
+<ul>
+<li>Type-safe PostgreSQL API bindings</li>
+<li>Automatic SQL schema generation</li>
+<li>Comprehensive testing support</li>
+<li>Easy development workflow</li>
+</ul>
+<h2 id="Technical-Architecture"><a href="#Technical-Architecture" class="headerlink" title="Technical Architecture"></a>Technical Architecture</h2><h3 id="Hook-Based-Implementation"><a href="#Hook-Based-Implementation" class="headerlink" title="Hook-Based Implementation"></a>Hook-Based Implementation</h3><p>pg_where_guard leverages PostgreSQL’s hook system to intercept queries after parsing:</p>
+<figure class="highlight rust"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Hook registration in _PG_init</span></span><br><span class="line">PREV_POST_PARSE_ANALYZE_HOOK = pg_sys::post_parse_analyze_hook;</span><br><span class="line">pg_sys::post_parse_analyze_hook = <span class="title function_ invoke__">Some</span>(delete_needs_where_check);</span><br></pre></td></tr></table></figure>
+
+<h3 id="Query-Analysis-Engine"><a href="#Query-Analysis-Engine" class="headerlink" title="Query Analysis Engine"></a>Query Analysis Engine</h3><p>The extension examines the parsed query tree to detect dangerous operations:</p>
+<figure class="highlight rust"><table><tr><td class="code"><pre><span class="line"><span class="comment">// Query checking logic</span></span><br><span class="line"><span class="keyword">match</span> query.commandType &#123;</span><br><span class="line">    pg_sys::CmdType::CMD_DELETE =&gt; &#123;</span><br><span class="line">        <span class="keyword">if</span> !query.jointree.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">            <span class="keyword">let</span> <span class="variable">jointree</span> = &amp;*query.jointree;</span><br><span class="line">            <span class="keyword">if</span> jointree.quals.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">                error!(<span class="string">&quot;DELETE requires a WHERE clause&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    pg_sys::CmdType::CMD_UPDATE =&gt; &#123;</span><br><span class="line">        <span class="keyword">if</span> !query.jointree.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">            <span class="keyword">let</span> <span class="variable">jointree</span> = &amp;*query.jointree;</span><br><span class="line">            <span class="keyword">if</span> jointree.quals.<span class="title function_ invoke__">is_null</span>() &#123;</span><br><span class="line">                error!(<span class="string">&quot;UPDATE requires a WHERE clause&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    _ =&gt; &#123;</span><br><span class="line">        <span class="comment">// Other command types are allowed</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Key-Components"><a href="#Key-Components" class="headerlink" title="Key Components"></a>Key Components</h3><ol>
+<li><p><strong>Hook Function</strong> (<code>delete_needs_where_check</code>):</p>
+<ul>
+<li>Intercepts queries via <code>post_parse_analyze_hook</code></li>
+<li>Checks command types (DELETE&#x2F;UPDATE)</li>
+<li>Validates presence of WHERE clauses</li>
+<li>Handles Common Table Expressions recursively</li>
+</ul>
+</li>
+<li><p><strong>Query Analysis</strong> (<code>check_query_for_where_clause</code>):</p>
+<ul>
+<li>Examines the query’s <code>jointree</code> structure</li>
+<li>Looks for <code>quals</code> (qualification&#x2F;WHERE conditions)</li>
+<li>Throws errors for unqualified modifications</li>
+</ul>
+</li>
+<li><p><strong>Extension Functions</strong>:</p>
+<ul>
+<li><code>pg_where_guard_is_enabled()</code>: Check if protection is active</li>
+<li><code>pg_where_guard_enable()</code>: Enable protection</li>
+</ul>
+</li>
+</ol>
+<h2 id="Installation-and-Setup"><a href="#Installation-and-Setup" class="headerlink" title="Installation and Setup"></a>Installation and Setup</h2><h3 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h3><p>Before installing pg_where_guard, ensure you have:</p>
+<ul>
+<li>Rust toolchain (1.70+)</li>
+<li>pgrx framework</li>
+<li>PostgreSQL development headers</li>
+<li>cargo-pgrx</li>
+</ul>
+<h3 id="Build-and-Install"><a href="#Build-and-Install" class="headerlink" title="Build and Install"></a>Build and Install</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Clone the repository</span></span><br><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/pg_where_guard.git</span><br><span class="line"><span class="built_in">cd</span> pg_where_guard</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install cargo-pgrx if not already installed</span></span><br><span class="line">cargo install cargo-pgrx</span><br><span class="line"></span><br><span class="line"><span class="comment"># Initialize pgrx for your PostgreSQL version</span></span><br><span class="line">cargo pgrx init</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install the extension</span></span><br><span class="line">cargo pgrx install</span><br></pre></td></tr></table></figure>
+
+<h3 id="Database-Setup"><a href="#Database-Setup" class="headerlink" title="Database Setup"></a>Database Setup</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- Create the extension</span></span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION pg_where_guard;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Verify installation</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_where_guard_is_enabled();  <span class="comment">-- Returns: true</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="Usage-Examples"><a href="#Usage-Examples" class="headerlink" title="Usage Examples"></a>Usage Examples</h2><h3 id="Safe-Operations-Allowed"><a href="#Safe-Operations-Allowed" class="headerlink" title="Safe Operations (Allowed)"></a>Safe Operations (Allowed)</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- Create a test table</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> employees (</span><br><span class="line">    id SERIAL <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">    name TEXT <span class="keyword">NOT NULL</span>,</span><br><span class="line">    department TEXT,</span><br><span class="line">    salary <span class="type">INTEGER</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Insert test data</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> employees (name, department, salary) <span class="keyword">VALUES</span></span><br><span class="line">    (<span class="string">&#x27;Alice Johnson&#x27;</span>, <span class="string">&#x27;Engineering&#x27;</span>, <span class="number">75000</span>),</span><br><span class="line">    (<span class="string">&#x27;Bob Smith&#x27;</span>, <span class="string">&#x27;Marketing&#x27;</span>, <span class="number">65000</span>),</span><br><span class="line">    (<span class="string">&#x27;Charlie Brown&#x27;</span>, <span class="string">&#x27;Engineering&#x27;</span>, <span class="number">80000</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- These operations work fine (have WHERE clauses)</span></span><br><span class="line"><span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> <span class="number">78000</span> <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;Alice Johnson&#x27;</span>;</span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">FROM</span> employees <span class="keyword">WHERE</span> department <span class="operator">=</span> <span class="string">&#x27;Marketing&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Dangerous-Operations-Blocked"><a href="#Dangerous-Operations-Blocked" class="headerlink" title="Dangerous Operations (Blocked)"></a>Dangerous Operations (Blocked)</h3><figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- These commands will FAIL due to pg_where_guard protection:</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- This will fail: UPDATE without WHERE clause</span></span><br><span class="line"><span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> <span class="number">100000</span>;</span><br><span class="line"><span class="comment">-- ERROR: UPDATE requires a WHERE clause</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- This will fail: DELETE without WHERE clause</span></span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">FROM</span> employees;</span><br><span class="line"><span class="comment">-- ERROR: DELETE requires a WHERE clause</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Common-Table-Expression-Support"><a href="#Common-Table-Expression-Support" class="headerlink" title="Common Table Expression Support"></a>Common Table Expression Support</h3><p>The extension also protects CTEs:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="comment">-- This would also be blocked</span></span><br><span class="line"><span class="keyword">WITH</span> department_update <span class="keyword">AS</span> (</span><br><span class="line">    <span class="keyword">UPDATE</span> employees <span class="keyword">SET</span> salary <span class="operator">=</span> salary <span class="operator">*</span> <span class="number">1.1</span>  <span class="comment">-- No WHERE clause!</span></span><br><span class="line">    RETURNING <span class="operator">*</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> department_update;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Performance-Considerations"><a href="#Performance-Considerations" class="headerlink" title="Performance Considerations"></a>Performance Considerations</h2><h3 id="Minimal-Overhead"><a href="#Minimal-Overhead" class="headerlink" title="Minimal Overhead"></a>Minimal Overhead</h3><p>pg_where_guard adds minimal performance overhead because it:</p>
+<ul>
+<li>Only analyzes DELETE and UPDATE statements</li>
+<li>Performs lightweight checks on the parsed query tree</li>
+<li>Uses efficient Rust code with zero-cost abstractions</li>
+<li>Operates at parse time, not execution time</li>
+</ul>
+<h3 id="Production-Readiness"><a href="#Production-Readiness" class="headerlink" title="Production Readiness"></a>Production Readiness</h3><p>The extension is designed for production use with:</p>
+<ul>
+<li>Comprehensive error handling</li>
+<li>Memory-safe implementation</li>
+<li>Minimal system resource usage</li>
+<li>Support for PostgreSQL 12-16</li>
+</ul>
+<h2 id="Development-and-Testing"><a href="#Development-and-Testing" class="headerlink" title="Development and Testing"></a>Development and Testing</h2><h3 id="Project-Structure"><a href="#Project-Structure" class="headerlink" title="Project Structure"></a>Project Structure</h3><figure class="highlight pgsql"><table><tr><td class="code"><pre><span class="line">pg_where_guard/</span><br><span class="line">├── Cargo.toml              # Rust project <span class="keyword">configuration</span></span><br><span class="line">├── pg_where_guard.control  # PostgreSQL <span class="keyword">extension</span> control file</span><br><span class="line">├── src/</span><br><span class="line">│   ├── lib.rs             # Main <span class="keyword">extension</span> code</span><br><span class="line">│   └── bin/</span><br><span class="line">│       └── pgrx_embed.rs  # pgrx <span class="keyword">schema</span> generation</span><br><span class="line">├── <span class="keyword">sql</span>/                   # <span class="keyword">SQL</span> test scripts</span><br><span class="line">└── tests/                 # Test files</span><br></pre></td></tr></table></figure>
+
+<h3 id="Running-Tests"><a href="#Running-Tests" class="headerlink" title="Running Tests"></a>Running Tests</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Run the test suite</span></span><br><span class="line">cargo pgrx <span class="built_in">test</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Test with specific PostgreSQL version</span></span><br><span class="line">cargo pgrx <span class="built_in">test</span> pg15</span><br></pre></td></tr></table></figure>
+
+<h3 id="Development-Workflow"><a href="#Development-Workflow" class="headerlink" title="Development Workflow"></a>Development Workflow</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Start a development PostgreSQL instance</span></span><br><span class="line">cargo pgrx run</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install the extension in development</span></span><br><span class="line">cargo pgrx install --debug</span><br></pre></td></tr></table></figure>
+
+<h2 id="Benefits-of-the-Rust-pgrx-Approach"><a href="#Benefits-of-the-Rust-pgrx-Approach" class="headerlink" title="Benefits of the Rust + pgrx Approach"></a>Benefits of the Rust + pgrx Approach</h2><h3 id="Developer-Experience"><a href="#Developer-Experience" class="headerlink" title="Developer Experience"></a>Developer Experience</h3><ol>
+<li><strong>Type Safety</strong>: Compile-time guarantees prevent runtime errors</li>
+<li><strong>Modern Tooling</strong>: Cargo ecosystem and excellent IDE support</li>
+<li><strong>Testing</strong>: Built-in unit testing and integration testing</li>
+<li><strong>Documentation</strong>: Automatic documentation generation</li>
+</ol>
+<h3 id="Safety-Guarantees"><a href="#Safety-Guarantees" class="headerlink" title="Safety Guarantees"></a>Safety Guarantees</h3><ol>
+<li><strong>Memory Safety</strong>: No buffer overflows or memory leaks</li>
+<li><strong>Thread Safety</strong>: Rust’s ownership model prevents data races</li>
+<li><strong>Error Handling</strong>: Explicit error handling with Result types</li>
+<li><strong>Null Safety</strong>: No null pointer dereferences</li>
+</ol>
+<h3 id="Performance-Benefits"><a href="#Performance-Benefits" class="headerlink" title="Performance Benefits"></a>Performance Benefits</h3><ol>
+<li><strong>Zero-Cost Abstractions</strong>: High-level code without runtime overhead</li>
+<li><strong>Optimized Compilation</strong>: LLVM backend generates efficient machine code</li>
+<li><strong>Minimal Dependencies</strong>: Small runtime footprint</li>
+<li><strong>Efficient Resource Usage</strong>: Predictable memory usage patterns</li>
+</ol>
+<h2 id="Comparison-with-Traditional-C-Extensions"><a href="#Comparison-with-Traditional-C-Extensions" class="headerlink" title="Comparison with Traditional C Extensions"></a>Comparison with Traditional C Extensions</h2><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>C Extension</th>
+<th>Rust + pgrx Extension</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Memory Safety</td>
+<td>Manual management</td>
+<td>Automatic, compile-time guaranteed</td>
+</tr>
+<tr>
+<td>Development Speed</td>
+<td>Slow, error-prone</td>
+<td>Fast, safe development</td>
+</tr>
+<tr>
+<td>Debugging</td>
+<td>GDB, complex</td>
+<td>Standard Rust tooling</td>
+</tr>
+<tr>
+<td>Testing</td>
+<td>Manual, limited</td>
+<td>Built-in unit&#x2F;integration tests</td>
+</tr>
+<tr>
+<td>Maintenance</td>
+<td>High overhead</td>
+<td>Low overhead</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Optimal</td>
+<td>Near-optimal with safety</td>
+</tr>
+</tbody></table>
+<h3 id="Integration-Possibilities"><a href="#Integration-Possibilities" class="headerlink" title="Integration Possibilities"></a>Integration Possibilities</h3><p>pg_where_guard can be integrated with:</p>
+<ul>
+<li><strong>Database Migration Tools</strong>: Validate migrations before execution</li>
+<li><strong>ORM Frameworks</strong>: Add safety checks to generated queries</li>
+<li><strong>Monitoring Systems</strong>: Alert on attempted dangerous operations</li>
+<li><strong>Audit Systems</strong>: Log blocked operations for compliance</li>
+</ul>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>pg_where_guard demonstrates the power of modern Rust tooling for PostgreSQL extension development. By combining Rust’s safety guarantees with pgrx’s ease of use, we can build robust database tools that protect against common but dangerous operations.</p>
+<p>The extension serves as both a practical safety tool and an example of how Rust is revolutionizing systems programming beyond traditional applications. As the PostgreSQL ecosystem continues to evolve, Rust-based extensions like pg_where_guard pave the way for safer, more maintainable database tools.</p>
+<h3 id="Key-Takeaways"><a href="#Key-Takeaways" class="headerlink" title="Key Takeaways"></a>Key Takeaways</h3><ol>
+<li><strong>Safety First</strong>: Rust eliminates entire classes of bugs that plague C extensions</li>
+<li><strong>Developer Productivity</strong>: pgrx makes PostgreSQL extension development accessible</li>
+<li><strong>Performance</strong>: Memory safety doesn’t require sacrificing performance</li>
+<li><strong>Future-Proof</strong>: Rust’s growing ecosystem ensures long-term maintainability</li>
+</ol>
+<p>Whether you’re looking to protect your database from accidental data loss or explore modern PostgreSQL extension development, pg_where_guard offers a compelling example of what’s possible with Rust and pgrx.</p>
+<h3 id="Resources"><a href="#Resources" class="headerlink" title="Resources"></a>Resources</h3><ul>
+<li><a href="https://github.com/isdaniel/pg_where_guard">pg_where_guard GitHub Repository</a></li>
+<li><a href="https://github.com/pgcentralfoundation/pgrx">pgrx Framework Documentation</a></li>
+<li><a href="https://www.postgresql.org/docs/current/extend.html">PostgreSQL Extension Development Guide</a></li>
+</ul>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/">https://isdaniel.github.io/pg-where-guard-rust-postgresql-extension/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>Rust</category>
+        <category>PostgreSQL</category>
+        <category>Database-Safety</category>
+      </categories>
+      <tags>
+        <tag>Rust</tag>
+        <tag>PostgreSQL</tag>
+        <tag>Database-Safety</tag>
+        <tag>pgrx</tag>
+        <tag>Extension</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>PostgreSQL to any DB CDC (pg2any library) Rust</title>
     <url>/pg2any-rust-introduce/</url>
     <content><![CDATA[<h1 id="PostgreSQL-CDC-Example"><a href="#PostgreSQL-CDC-Example" class="headerlink" title="PostgreSQL CDC Example"></a>PostgreSQL CDC Example</h1><p>A Rust-based Change Data Capture (CDC) application that streams real-time data changes from PostgreSQL to other databases (MySQL, SQL Server, etc.) using logical replication.</p>
@@ -16654,7 +16836,7 @@ CONNECT BY PRIOR PartNo = ParentPartNo
 <p>下面的yaml檔案是建立一個<code>RabbitmqCluster</code></p>
 <figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">rabbitmq.com/v1beta1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">RabbitmqCluster</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">hello-world</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">replicas:</span> <span class="number">3</span></span><br></pre></td></tr></table></figure>
 
-<p>透過 <code>kubectl apply -f &#123;your yaml filename&#125;</code> 後就可以透過 <code>kubectl get all</code> 查看 RabbitMQ cluster 是否建立完成</p>
+<p>透過 <code>kubectl apply -f {your yaml filename}</code> 後就可以透過 <code>kubectl get all</code> 查看 RabbitMQ cluster 是否建立完成</p>
 <p>如果建立完成會出現類似下圖</p>
 <p><img src="https://i.imgur.com/5qtQixT.png"></p>
 <p>綠色框框是這次建立的 RabbitMQ cluster 能看到 Pod 有三台</p>
@@ -16718,11 +16900,11 @@ CONNECT BY PRIOR PartNo = ParentPartNo
 <p>RabbitMQ預設密碼是 <code>guest</code></p>
 <pre><code>//建立連接工廠
 ConnectionFactory factory = new ConnectionFactory
-&#123;
+{
     UserName = &quot;guest&quot;,
     Password = &quot;guest&quot;,
     HostName = &quot;localhost&quot;
-&#125;;
+};
 </code></pre>
 <p>呼叫<code>factory.CreateConnection</code> 建立連接RabbitMQ連接物件，並呼叫 <code>CreateModel</code>方法建立一個<code>channel</code> Model</p>
 <blockquote>
@@ -16730,7 +16912,7 @@ ConnectionFactory factory = new ConnectionFactory
 </blockquote>
 <pre><code>using (var connection = factory.CreateConnection())
 using (var channel = connection.CreateModel())
-&#123;
+{
     #region 如果在RabbitMq手動建立可以忽略這段程式
     //建立一個Queue
     channel.QueueDeclare(queueName, false, false, false, null);
@@ -16744,24 +16926,24 @@ using (var channel = connection.CreateModel())
 
     string input = string.Empty;
     do
-    &#123;
+    {
         input = Console.ReadLine();
         var sendBytes = Encoding.UTF8.GetBytes(input);
         //發布訊息到RabbitMQ Server
         channel.BasicPublish(exchangeName, routeKey, null, sendBytes);
 
-    &#125; while (Console.ReadKey().Key != ConsoleKey.Escape);
-&#125;
+    } while (Console.ReadKey().Key != ConsoleKey.Escape);
+}
 </code></pre>
 <p>最後在使用 <code>channel.BasicPublish </code>方法 將訊息推送給指定交換器，因為是走tcp所以將訊息轉換成二進制流</p>
 <hr>
 <h2 id="Consumer-Code"><a href="#Consumer-Code" class="headerlink" title="Consumer Code"></a>Consumer Code</h2><p>前面建立連接都大同小異都是利用<code>ConnectionFactory</code>來建立連接物件</p>
 <pre><code>ConnectionFactory factory = new ConnectionFactory
-&#123;
+{
     UserName = &quot;guest&quot;,
     Password = &quot;guest&quot;,
     HostName = &quot;localhost&quot;
-&#125;;
+};
 
 string exchangeName = &quot;exchangeFanout&quot;;
 string queueName = &quot;FanoutQueue&quot;;
@@ -16769,23 +16951,23 @@ string routeKey = string.Empty;
 
 using (var connection = factory.CreateConnection())
 using (var channel = connection.CreateModel())
-&#123;
+{
     //channel.QueueBind
     EventingBasicConsumer consumer = new EventingBasicConsumer(channel);
     channel.BasicQos(0, 1, false);
     //接收到消息事件 consumer.IsRunning
     consumer.Received += (ch, ea) =&gt;
-    &#123;
+    {
         var message = Encoding.UTF8.GetString(ea.Body);
 
-        Console.WriteLine($&quot;Queue:&#123;queueName&#125;收到資料： &#123;message&#125;&quot;);
+        Console.WriteLine($&quot;Queue:{queueName}收到資料： {message}&quot;);
         channel.BasicAck(ea.DeliveryTag, false);
-    &#125;;
+    };
 
     channel.BasicConsume(queueName, false, consumer); 
     Console.WriteLine(&quot;接收訊息&quot;);
     Console.ReadKey();
-&#125;
+}
 </code></pre>
 <p>值得一提的是 <code>EventingBasicConsumer</code> 這個類別有一個建構子函數，把 <code>channel</code> 物件傳入產生一個消費者</p>
 <pre><code>EventingBasicConsumer consumer = new EventingBasicConsumer(channel);
@@ -16986,7 +17168,7 @@ using (var channel = connection.CreateModel())
 <p>使用 <code>get</code> 拿資料時發現我們只拿的到 <code>k2,k3</code> 的資料</p>
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">172.22.0.2:6379&gt; get k1</span><br><span class="line">(error) MOVED 12706 172.22.0.4:6379</span><br><span class="line">172.22.0.2:6379&gt; get k2</span><br><span class="line"><span class="string">&quot;1&quot;</span></span><br><span class="line">172.22.0.2:6379&gt; get k3</span><br><span class="line"><span class="string">&quot;1&quot;</span></span><br><span class="line">172.22.0.2:6379&gt; get k4</span><br><span class="line">(error) MOVED 8455 172.22.0.5:6379</span><br><span class="line">172.22.0.2:6379&gt; get k5</span><br><span class="line">(error) MOVED 12582 172.22.0.4:6379</span><br></pre></td></tr></table></figure>
 
-<p>我們可以透過 <code>CLUSTER KEYSLOT &#123;key&#125;</code> 來算出我們 key 算出來的 slot 數值</p>
+<p>我們可以透過 <code>CLUSTER KEYSLOT {key}</code> 來算出我們 key 算出來的 slot 數值</p>
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k1</span><br><span class="line">(<span class="built_in">integer</span>) 12706</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k2</span><br><span class="line">(<span class="built_in">integer</span>) 449</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k3</span><br><span class="line">(<span class="built_in">integer</span>) 4576</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k4</span><br><span class="line">(<span class="built_in">integer</span>) 8455</span><br><span class="line">172.22.0.2:6379&gt; CLUSTER KEYSLOT k5</span><br><span class="line">(<span class="built_in">integer</span>) 12582</span><br></pre></td></tr></table></figure>
 
 <p>因為我們是進入 <code>172.22.0.2</code> 這台 Redis server 操作 我們只能操作屬於我們 slot 也就是介於 <code>[0-5460]</code> slot 資料，所以只有 <code>k2,k3</code> 符合</p>
@@ -16996,7 +17178,7 @@ using (var channel = connection.CreateModel())
 <blockquote>
 <p><code>-c</code> 代表是要使用 cluster 操作</p>
 </blockquote>
-<p>在執行 <code>set &#123;key&#125; &#123;value&#125;</code> 命令，會發現已經沒有 error 但取而代之是 <code>Redirected to slot</code></p>
+<p>在執行 <code>set {key} {value}</code> 命令，會發現已經沒有 error 但取而代之是 <code>Redirected to slot</code></p>
 <p>那是因為 <code>-c</code> 模式下會幫我們在資料寫入前轉到該 slot redis server node 中在執行命令.</p>
 <p>所以能發現出現 <code>Redirected to slot</code> Redis server ip 就會改變</p>
 <figure class="highlight accesslog"><table><tr><td class="code"><pre><span class="line">/$ redis-cli -h <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span> -a redisCluster -c</span><br><span class="line"></span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k1 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[12706]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.4:6379</span>&gt; set k2 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[449]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">2</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k3 <span class="number">1</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.2:6379</span>&gt; set k4 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[8455]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">5</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br><span class="line"><span class="number">172.22.0.5:6379</span>&gt; set k5 <span class="number">1</span></span><br><span class="line">-&gt; Redirected to slot <span class="string">[12582]</span> located at <span class="number">172</span>.<span class="number">22</span>.<span class="number">0</span>.<span class="number">4</span>:<span class="number">6379</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
@@ -17028,7 +17210,7 @@ using (var channel = connection.CreateModel())
 <figure class="highlight sh"><table><tr><td class="code"><pre><span class="line">/$  redis-cli --cluster check 172.22.0.3:6379 -a redisCluster</span><br><span class="line"></span><br><span class="line">172.22.0.5:6379 (7186bbf7...) -&gt; 1 keys | 5462 slots | 1 slaves.</span><br><span class="line">172.22.0.2:6379 (3decf740...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.4:6379 (ee76b9f8...) -&gt; 2 keys | 5461 slots | 1 slaves.</span><br><span class="line">172.22.0.8:6379 (0885f85b...) -&gt; 0 keys | 0 slots | 0 slaves.</span><br><span class="line">[OK] 5 keys <span class="keyword">in</span> 4 masters.</span><br><span class="line">0.00 keys per slot on average.</span><br><span class="line">&gt;&gt;&gt; Performing Cluster Check (using node 172.22.0.3:6379)</span><br><span class="line">S: 2c25a1a5d1cb1ba780170685c4f39dfe6f0da8f0 172.22.0.3:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 3decf740935f98a40d2d73416937e63abc3f4781</span><br><span class="line">M: 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f 172.22.0.5:6379</span><br><span class="line">   slots:[5461-10922] (5462 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: 3decf740935f98a40d2d73416937e63abc3f4781 172.22.0.2:6379</span><br><span class="line">   slots:[0-5460] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">M: ee76b9f8f8c261918b44caf856070acab1a5072a 172.22.0.4:6379</span><br><span class="line">   slots:[10923-16383] (5461 slots) master</span><br><span class="line">   1 additional replica(s)</span><br><span class="line">S: c93879a2f37ab14b9bb25f54a8e856a2526e4621 172.22.0.7:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates 7186bbf7a1689d66c94a448cb1a197a7bd9b9e5f</span><br><span class="line">M: 0885f85b94f8ddc186f1eac8f532be532fb7f5b1 172.22.0.8:6379</span><br><span class="line">   slots: (0 slots) master</span><br><span class="line">S: bbeafa6b1e703035c364a2d0f476951268d0a9ff 172.22.0.6:6379</span><br><span class="line">   slots: (0 slots) slave</span><br><span class="line">   replicates ee76b9f8f8c261918b44caf856070acab1a5072a</span><br><span class="line">[OK] All nodes agree about slots configuration.</span><br><span class="line">&gt;&gt;&gt; Check <span class="keyword">for</span> open slots...</span><br><span class="line">&gt;&gt;&gt; Check slots coverage...</span><br><span class="line">[OK] All 16384 slots covered.</span><br></pre></td></tr></table></figure>
 
 <p>目前要做的是把當前 Cluster 上 master 上的 slot 分配給，剛建立 master container，達到資料分擔</p>
-<p>我們可以透過 <code>redis-cli --cluster reshard &#123;被分配 Redis Cluster 節點 IP&#125;</code>，由上面資訊得知新建立 master id 是 <code>172.22.0.8:6379</code></p>
+<p>我們可以透過 <code>redis-cli --cluster reshard {被分配 Redis Cluster 節點 IP}</code>，由上面資訊得知新建立 master id 是 <code>172.22.0.8:6379</code></p>
 <figure class="highlight stata"><table><tr><td class="code"><pre><span class="line">redis-<span class="keyword">cli</span> --<span class="keyword">cluster</span> reshard 172.22.0.8:6379 -a redisCluster</span><br></pre></td></tr></table></figure>
 
 <p>執行後我們會被詢問要轉移多少 slot 數量給新的 master，我們知道 Redis Cluster 有 16384 個 slot 所以為了平均分配 <code>16384/4 = 4096</code> </p>
@@ -17985,7 +18167,7 @@ using (var channel = connection.CreateModel())
 <figure class="highlight c#"><table><tr><td class="code"><pre><span class="line">s = <span class="string">$&quot;<span class="subst">&#123;times&#125;</span>&quot;</span>;</span><br><span class="line">s = <span class="string">$&quot;<span class="subst">&#123;times.ToString()&#125;</span>&quot;</span>;</span><br></pre></td></tr></table></figure>
 
 <h3 id="”-times-”-vs-”-times-ToString-”"><a href="#”-times-”-vs-”-times-ToString-”" class="headerlink" title="$”{times}” vs $”{times.ToString()}”"></a>$”{times}” vs $”{times.ToString()}”</h3><p>在執行下面程式碼會發現兩段程式碼不管怎麼執行</p>
-<p>執行時間<code>$&quot;&#123;times&#125;&quot;;</code>永遠都會比<code>$&quot;&#123;times.ToString()&#125;&quot;;</code>來的多</p>
+<p>執行時間<code>$&quot;{times}&quot;;</code>永遠都會比<code>$&quot;{times.ToString()}&quot;;</code>來的多</p>
 <figure class="highlight c#"><table><tr><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">int</span> times = <span class="number">30000000</span>;</span><br><span class="line">        <span class="built_in">string</span> s = <span class="built_in">string</span>.Empty;</span><br><span class="line">        Stopwatch sw = <span class="keyword">new</span> Stopwatch();</span><br><span class="line">        sw.Start();</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; times ; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            s = <span class="string">$&quot;<span class="subst">&#123;times&#125;</span>&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        sw.Stop();</span><br><span class="line">        Console.WriteLine(sw.ElapsedMilliseconds);</span><br><span class="line"></span><br><span class="line">        sw.Restart();</span><br><span class="line">        <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; times ; i++)</span><br><span class="line">        &#123;</span><br><span class="line">            s = <span class="string">$&quot;<span class="subst">&#123;times.ToString()&#125;</span>&quot;</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        sw.Stop();</span><br><span class="line">        Console.WriteLine(sw.ElapsedMilliseconds);</span><br><span class="line">        Console.ReadKey();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>執行時間如上圖</p>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
+<meta name="generator" content="Hexo 8.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -28,13 +28,13 @@
 <meta property="og:description" content="Agenda 前言 ControllerActionInvoker方法 重要InvokeAction方法 取得ControllerDescriptor(ReflectedControllerDescriptor)   ActionDescriptor(ReflectedActionDescriptor) ReflectedActionDescriptor 取得ActionMethod參數資訊">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2019-09-28T10:00:00.000Z">
-<meta property="article:modified_time" content="2025-09-09T09:40:37.540Z">
+<meta property="article:modified_time" content="2025-10-03T01:25:40.251Z">
 <meta property="article:author" content="Daniel Shih">
-<meta property="article:tag" content="C#">
+<meta property="article:tag" content="11th鐵人賽">
 <meta property="article:tag" content="Asp.net">
 <meta property="article:tag" content="Asp.net-MVC">
+<meta property="article:tag" content="C#">
 <meta property="article:tag" content="SourceCode">
-<meta property="article:tag" content="11th鐵人賽">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://isdaniel.github.io/ithelp-day17/">
@@ -201,17 +201,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">139</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">69</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">188</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -296,7 +296,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-09-09 09:40:37" itemprop="dateModified" datetime="2025-09-09T09:40:37+00:00">2025-09-09</time>
+                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -430,7 +430,7 @@
 <li><code>value</code>：參數值</li>
 </ul>
 <blockquote>
-<p>在<code>ActionFitlerAttribute.OnActionExcuting</code>重載方法,參數<code>ActionExecutingContext</code>物件中有一個屬性<code>public virtual IDictionary&lt;string, object&gt; ActionParameters &#123; get; set; &#125;</code><br>他透過<code>IValueProvider</code>解析完傳入字串轉換成一個存放參數字典.</p>
+<p>在<code>ActionFitlerAttribute.OnActionExcuting</code>重載方法,參數<code>ActionExecutingContext</code>物件中有一個屬性<code>public virtual IDictionary&lt;string, object&gt; ActionParameters { get; set; }</code><br>他透過<code>IValueProvider</code>解析完傳入字串轉換成一個存放參數字典.</p>
 </blockquote>
 <p>讓我們了解一下這部分是如何完成.</p>
 <figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; <span class="title">GetParameterValues</span>(<span class="params">ControllerContext controllerContext, ActionDescriptor actionDescriptor</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">	Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; parametersDict = <span class="keyword">new</span> Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt;(StringComparer.OrdinalIgnoreCase);</span><br><span class="line">	ParameterDescriptor[] parameterDescriptors = actionDescriptor.GetParameters();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">foreach</span> (ParameterDescriptor parameterDescriptor <span class="keyword">in</span> parameterDescriptors)</span><br><span class="line">	&#123;</span><br><span class="line">		parametersDict[parameterDescriptor.ParameterName] = GetParameterValue(controllerContext, parameterDescriptor);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> parametersDict;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -599,20 +599,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">188</span>
+          <span class="site-state-item-count">189</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-count">70</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">139</span>
+        <span class="site-state-item-count">141</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -673,14 +673,14 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">914k</span>
+    <span title="Symbols count total">919k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">13:51</span>
+    <span title="Reading time total">13:56</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.0.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
