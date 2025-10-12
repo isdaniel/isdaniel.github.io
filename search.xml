@@ -11606,153 +11606,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>提供ModelBing幾個重要功臣(Model) (第18天)</title>
-    <url>/ithelp-day18/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#imodelbinderdefaultmodelbinder">IModelBinder(DefaultModelBinder)</a><ul>
-<li><a href="#modelbinders">ModelBinders</a></li>
-<li><a href="#modelbinderdictionary">ModelBinderDictionary</a></li>
-</ul>
-</li>
-<li><a href="#ivalueprovider-%E6%8F%90%E4%BE%9B%E5%8F%83%E6%95%B8%E5%A1%AB%E5%80%BC">IValueProvider 提供參數填值</a><ul>
-<li><a href="#valueprovider%E5%B7%A5%E5%BB%A0%E9%9B%86%E5%90%88valueproviderfactories">ValueProvider工廠集合(ValueProviderFactories)</a></li>
-</ul>
-</li>
-<li><a href="#valueproviderfactory">ValueProviderFactory</a><ul>
-<li><a href="#jsonvalueproviderfactory">JsonValueProviderFactory</a></li>
-</ul>
-</li>
-<li><a href="#%E5%8F%96%E5%BE%97ivalueprovider">取得IValueProvider</a><ul>
-<li><a href="#namevaluecollectionvalueprovider">NameValueCollectionValueProvider</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><strong>MVC</strong>的<code>Model-Binding</code>建立複雜物件(牽扯到複雜模型綁定.)</p>
-<p>這篇會跟大家介紹<strong>MVC</strong>是如何把達成這個複雜的動作</p>
-<blockquote>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="IModelBinder-DefaultModelBinder"><a href="#IModelBinder-DefaultModelBinder" class="headerlink" title="IModelBinder(DefaultModelBinder)"></a>IModelBinder(DefaultModelBinder)</h2><p><code>DefaultModelBinder</code>將Http請求傳來資料轉換為強型別物件,<code>DefaultModelBinder</code>是如何取得使用<code>Model</code>資料呢?</p>
-<blockquote>
-<p>實現<code>IValueProvider</code>來處理。</p>
-</blockquote>
-<h3 id="ModelBinders"><a href="#ModelBinders" class="headerlink" title="ModelBinders"></a>ModelBinders</h3><p><code>IModelBinder.BindModel</code>方法使用兩個參數</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">object</span> <span class="title">BindModel</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext</span>)</span></span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><code>ControllerContext</code>:<code>Controller</code>資訊，</li>
-<li><code>ModelBindingContext</code>:當前參數綁定資訊</li>
-</ol>
-<p><code>BindModel</code>方法機於<code>Http</code>請求傳送資料進行<code>Model</code>綁定(對於<code>Action</code>方法使用參數),其中<code>ModelBindingContext</code>參數會提供綁定使用的重要物件成員.</p>
-<blockquote>
-<p>關於<code>ModelBindingContext</code>建立我們會在後續部分進行的單獨介紹.</p>
-</blockquote>
-<p>在<code>IModelBinder.BindModel</code>方法中主要透過兩個重要<code>internal</code>方法.</p>
-<ul>
-<li><code>BindComplexModel</code>:複雜參數綁定</li>
-<li><code>BindSimpleModel</code>:簡單參數綁定</li>
-</ul>
-<p>下圖可以表示<code>SimpleModel</code>和<code>ComplexModel</code></p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg" alt="BindSimpleModel"></p>
-<blockquote>
-<p><code>ComplexModel</code>一個人可擁有多個房子,所以<code>Person</code>類別擁有<code>HouseCollection</code>引用.<br>取得使用<code>ModelBinder</code>機制。</p>
-</blockquote>
-<p>取得<code>ModelBinder</code>會依照下面順序</p>
-<ol>
-<li>參數掛有<code>ModelBinderAttribute</code>標籤並將<code>BinderType</code>屬性指向一個繼承<code>IModelBinder</code>型別.</li>
-<li>參數掛有繼承<code>CustomModelBinderAttribute</code>類型</li>
-<li>透過<code>ModelBinderProviderCollection</code>(預設<strong>MVC</strong>沒有提供<code>ModelBinderProvider</code>)</li>
-<li>預設<code>DefaultModelBinder</code></li>
-</ol>
-<p>下面兩個使用<code>ModelBinder</code>都是<code>DefaultModelBinder</code>,但一個是使用第一點,另一個使用第四點.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ActionResult <span class="title">HttpModules</span>(<span class="params">Person p</span>)</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> ActionResult <span class="title">HttpModules</span>(<span class="params">[ModelBinder(<span class="keyword">typeof</span>(DefaultModelBinder</span>))]Person p)</span></span><br></pre></td></tr></table></figure>
-
-<p>在<code>Global.cs</code>可透過<code>ModelBinders.Binders.Add</code>方法註冊綁定類型.</p>
-<p>如下面程式碼.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">ModelBinders.Binders.Add(<span class="keyword">typeof</span>(Arg),<span class="keyword">new</span> FooModelBinder());</span><br></pre></td></tr></table></figure>
-
-<h3 id="ModelBinderDictionary"><a href="#ModelBinderDictionary" class="headerlink" title="ModelBinderDictionary"></a>ModelBinderDictionary</h3><p>一般參數透過<code>DefaultModelBinder</code>來幫我們完成參數綁定.</p>
-<p>但有些特別的資料需要透過<code>ModelBinderDictionary</code>取得使用<code>ModelBinder</code>,例如上傳檔案,我們可以使用<code>HttpPostedFileBase</code>來取得檔案資訊流.</p>
-<p>那是因為在<code>ModelBinderDictionary</code>有註冊一個<code>HttpPostedFileBaseModelBinder</code>來幫我們做解析.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> ModelBinderDictionary <span class="title">CreateDefaultBinderDictionary</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    ModelBinderDictionary binders = <span class="keyword">new</span> ModelBinderDictionary()</span><br><span class="line">    &#123;</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(HttpPostedFileBase), <span class="keyword">new</span> HttpPostedFileBaseModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(<span class="built_in">byte</span>[]), <span class="keyword">new</span> ByteArrayModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(Binary), <span class="keyword">new</span> LinqBinaryModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(CancellationToken), <span class="keyword">new</span> CancellationTokenModelBinder() &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">return</span> binders;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="IValueProvider-提供參數填值"><a href="#IValueProvider-提供參數填值" class="headerlink" title="IValueProvider 提供參數填值"></a>IValueProvider 提供參數填值</h2><p><code>IValueProvider</code>介面有一個重要方法<code>GetValue</code>會返回<code>ValueProviderResult</code>物件對於<code>ValueProvider</code>參數封裝</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function">ValueProviderResult <span class="title">GetValue</span>(<span class="params"><span class="built_in">string</span> key</span>)</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="ValueProvider工廠集合-ValueProviderFactories"><a href="#ValueProvider工廠集合-ValueProviderFactories" class="headerlink" title="ValueProvider工廠集合(ValueProviderFactories)"></a>ValueProvider工廠集合(ValueProviderFactories)</h3><p>在<code>ControllerBase</code>類別中有一個屬性<code>ValueProvider</code>設定參數填值動作</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> IValueProvider ValueProvider</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (_valueProvider == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            _valueProvider = ValueProviderFactories.Factories.GetValueProvider(ControllerContext);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> _valueProvider;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">set</span> &#123; _valueProvider = <span class="keyword">value</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Http</strong>傳送參數可能又多種模式(<code>Post Form</code>,<code>Query String</code>,<code>Ajax</code>….)</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title">ValueProviderFactories</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> ValueProviderFactoryCollection _factories = <span class="keyword">new</span> ValueProviderFactoryCollection()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">new</span> ChildActionValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> FormValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> JsonValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> RouteDataValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> QueryStringValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> HttpFileCollectionValueProviderFactory(),</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ValueProviderFactoryCollection Factories</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _factories; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<ol>
-<li><code>ChildActionValueProviderFactory</code>：取得另一個呼叫<code>@Html.Action</code>傳來<strong>Model</strong>資料</li>
-<li><code>FormValueProviderFactory</code>：取得<code>HTTP POST</code>送來的資料</li>
-<li><code>JsonValueProviderFactory</code>：取得<code>JSON</code>資料(<code>Content-Type = application/json</code>)</li>
-<li><code>RouteDataValueProviderFactory</code>：取得從網址路徑取得到路由參數值</li>
-<li><code>QueryStringValueProviderFactory</code>：取得從<code>Http</code>請求的<code>Query String</code>資料</li>
-<li><code>HttpFileCollectionValueProviderFactory</code>：取得檔案上傳功能傳來檔案</li>
-</ol>
-<p>如果此次請求匹配到多個<code>ValueProvider</code>機制會怎處理?</p>
-<blockquote>
-<p>會按照上面<code>ProviderFactory</code>設定順序來排執行優先順序來填值</p>
-</blockquote>
-<h2 id="ValueProviderFactory"><a href="#ValueProviderFactory" class="headerlink" title="ValueProviderFactory"></a>ValueProviderFactory</h2><p><strong>MVC</strong>利用工廠模式透過<code>ValueProviderFactory</code>實現的工廠來<code>IValueProvider</code>填值提供者物件.</p>
-<h3 id="JsonValueProviderFactory"><a href="#JsonValueProviderFactory" class="headerlink" title="JsonValueProviderFactory"></a>JsonValueProviderFactory</h3><p>在<code>ValueProviderFactory</code>IValueProvider GetValueProvider</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">JsonValueProviderFactory</span> : <span class="title">ValueProviderFactory</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">AddToBackingStore</span>(<span class="params">EntryLimitedDictionary backingStore, <span class="built_in">string</span> prefix, <span class="built_in">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; d = <span class="keyword">value</span> <span class="keyword">as</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt;;</span><br><span class="line">		<span class="keyword">if</span> (d != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">foreach</span> (KeyValuePair&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; entry <span class="keyword">in</span> d)</span><br><span class="line">			&#123;</span><br><span class="line">				AddToBackingStore(backingStore, MakePropertyKey(prefix, entry.Key), entry.Value);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		IList l = <span class="keyword">value</span> <span class="keyword">as</span> IList;</span><br><span class="line">		<span class="keyword">if</span> (l != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; l.Count; i++)</span><br><span class="line">			&#123;</span><br><span class="line">				AddToBackingStore(backingStore, MakeArrayKey(prefix, i), l[i]);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// primitive</span></span><br><span class="line">		backingStore.Add(prefix, <span class="keyword">value</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="built_in">object</span> <span class="title">GetDeserializedObject</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (!controllerContext.HttpContext.Request.ContentType.StartsWith(<span class="string">&quot;application/json&quot;</span>, StringComparison.OrdinalIgnoreCase))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// not JSON request</span></span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		StreamReader reader = <span class="keyword">new</span> StreamReader(controllerContext.HttpContext.Request.InputStream);</span><br><span class="line">		<span class="built_in">string</span> bodyText = reader.ReadToEnd();</span><br><span class="line">		<span class="keyword">if</span> (String.IsNullOrEmpty(bodyText))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// no JSON data</span></span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		JavaScriptSerializer serializer = <span class="keyword">new</span> JavaScriptSerializer();</span><br><span class="line">		<span class="built_in">object</span> jsonData = serializer.DeserializeObject(bodyText);</span><br><span class="line">		<span class="keyword">return</span> jsonData;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IValueProvider <span class="title">GetValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (controllerContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;controllerContext&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="built_in">object</span> jsonData = GetDeserializedObject(controllerContext);</span><br><span class="line">		<span class="keyword">if</span> (jsonData == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; backingStore = <span class="keyword">new</span> Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt;(StringComparer.OrdinalIgnoreCase);</span><br><span class="line">		EntryLimitedDictionary backingStoreWrapper = <span class="keyword">new</span> EntryLimitedDictionary(backingStore);</span><br><span class="line">		AddToBackingStore(backingStoreWrapper, String.Empty, jsonData);</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> DictionaryValueProvider&lt;<span class="built_in">object</span>&gt;(backingStore, CultureInfo.CurrentCulture);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/ValueProvider_Factory.jpg" alt="UML_Model"></p>
-<h2 id="取得IValueProvider"><a href="#取得IValueProvider" class="headerlink" title="取得IValueProvider"></a>取得IValueProvider</h2><p>透過<code>ValueProviderFactory</code>返回相對應的<code>IValueProvider</code>物件.</p>
-<p>下面介紹幾個實現<code>ValueProvider</code>物件</p>
-<h3 id="NameValueCollectionValueProvider"><a href="#NameValueCollectionValueProvider" class="headerlink" title="NameValueCollectionValueProvider"></a>NameValueCollectionValueProvider</h3><p><code>NameValueCollectionValueProvider</code>可從<code>NameValueCollection</code>集合取得參數.</p>
-<p>因為<code>Request.Form</code>和<code>Request.QueryString</code>都是<code>NameValueCollection</code>類型集合.</p>
-<blockquote>
-<p>　這個方法很巧妙利用一個共同參數類型簽章來達成多態轉折點</p>
-</blockquote>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">virtual</span> NameValueCollection Form</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//....</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">virtual</span> NameValueCollection QueryString</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//....</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>Http</strong>傳值到<strong>Server</strong>有許多方式,這裡介紹<strong>MVC</strong>利用哪個<strong>ValueProvider</strong>將<code>Form</code>跟<code>QueryString</code>填值到物件上,很巧妙使用<code>NameValueCollectionValueProvider</code>建構子參數<code>NameValueCollection</code>決定是要使用<code>Form</code>或<code>QueryString</code>填充值到參數.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">FormValueProvider</span> : <span class="title">NameValueCollectionValueProvider</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">FormValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">controllerContext, <span class="keyword">new</span> UnvalidatedRequestValuesWrapper(controllerContext.HttpContext.Request.Unvalidated</span>))</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">FormValueProvider</span>(<span class="params">ControllerContext controllerContext, IUnvalidatedRequestValues unvalidatedValues</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext.HttpContext.Request.Form, unvalidatedValues.Form, CultureInfo.CurrentCulture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">QueryStringValueProvider</span> : <span class="title">NameValueCollectionValueProvider</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">QueryStringValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">controllerContext, <span class="keyword">new</span> UnvalidatedRequestValuesWrapper(controllerContext.HttpContext.Request.Unvalidated</span>))</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">QueryStringValueProvider</span>(<span class="params">ControllerContext controllerContext, IUnvalidatedRequestValues unvalidatedValues</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext.HttpContext.Request.QueryString, unvalidatedValues.QueryString, CultureInfo.InvariantCulture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>實現<code>IValueProvider</code>物件主要會依靠<code>GetValue</code>方法取得<code>ValueProviderResult</code>.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">Serializable</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ValueProviderResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> CultureInfo _staticCulture = CultureInfo.InvariantCulture;</span><br><span class="line">	<span class="keyword">private</span> CultureInfo _instanceCulture;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="title">ValueProviderResult</span>()</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ValueProviderResult</span>(<span class="params"><span class="built_in">object</span> rawValue, <span class="built_in">string</span> attemptedValue, CultureInfo culture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		RawValue = rawValue;</span><br><span class="line">		AttemptedValue = attemptedValue;</span><br><span class="line">		Culture = culture;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">string</span> AttemptedValue &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> CultureInfo Culture</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_instanceCulture == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				_instanceCulture = _staticCulture;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _instanceCulture;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">protected</span> <span class="keyword">set</span> &#123; _instanceCulture = <span class="keyword">value</span>; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">object</span> RawValue &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="built_in">object</span> <span class="title">ConvertTo</span>(<span class="params">Type type</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> ConvertTo(type, <span class="literal">null</span> <span class="comment">/* culture */</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="built_in">object</span> <span class="title">ConvertTo</span>(<span class="params">Type type, CultureInfo culture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">//....</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>ValueProviderResult</code>對於<code>ValueProvider</code>物件做封裝，一般存放<code>Http</code>參數擁有兩個只讀屬性</p>
-<ol>
-<li><code>RawValue</code>表示物件值</li>
-<li><code>AttemptedValue</code>主要用於顯示</li>
-</ol>
-<p><code>ValueProviderResult</code>提供兩個<code>ConvertTo</code>重載方法實現向指定目標類型轉換。</p>
-<p>某些類型格式化依賴於相應的語言文化（比如時間、日期和貨幣等），這個語言文化通過<code>Culture</code>屬性來達成.</p>
-<p>最終會呼叫一個<code>UnwrapPossibleArrayType</code>方法來建立物件</p>
-<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>在<code>ControllerActionInvoker.GetParameterValue</code>取得參數方法,<code>ModelBing</code>動作有兩個重要的屬性</p>
-<ul>
-<li><code>IValueProvider</code>:提供如何填值</li>
-<li><code>IModelBinder</code>:建立物件(綁定關聯) 預設使用<code>DefaultModelBinder</code>類別.</li>
-</ul>
-<p>目前分享的<code>IValueProvider</code>和<code>IModelBinder</code> UML類別關聯圖如下</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg" alt="UML_Model"></p>
-<p>下篇會介紹<code>ModelBind</code>模型綁定重點邏輯,有分簡單參數綁定和複雜參數綁定</p>
-<ul>
-<li><code>BindComplexModel</code></li>
-<li><code>BindSimpleModel</code></li>
-</ul>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day18/">https://isdaniel.github.io/ithelp-day18/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)</title>
     <url>/ithelp-day19/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -12086,6 +11939,153 @@ email_url: dog830228@gmail.com
 <li><a href="https://www.codeproject.com/Articles/335968/Implementing-HTTPHandler-and-HTTPModule-in-ASP-NET">Implementing HTTPHandler and HTTPModule in ASP.NET</a></li>
 </ul>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day2/">https://isdaniel.github.io/ithelp-day2/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>提供ModelBing幾個重要功臣(Model) (第18天)</title>
+    <url>/ithelp-day18/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#imodelbinderdefaultmodelbinder">IModelBinder(DefaultModelBinder)</a><ul>
+<li><a href="#modelbinders">ModelBinders</a></li>
+<li><a href="#modelbinderdictionary">ModelBinderDictionary</a></li>
+</ul>
+</li>
+<li><a href="#ivalueprovider-%E6%8F%90%E4%BE%9B%E5%8F%83%E6%95%B8%E5%A1%AB%E5%80%BC">IValueProvider 提供參數填值</a><ul>
+<li><a href="#valueprovider%E5%B7%A5%E5%BB%A0%E9%9B%86%E5%90%88valueproviderfactories">ValueProvider工廠集合(ValueProviderFactories)</a></li>
+</ul>
+</li>
+<li><a href="#valueproviderfactory">ValueProviderFactory</a><ul>
+<li><a href="#jsonvalueproviderfactory">JsonValueProviderFactory</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%96%E5%BE%97ivalueprovider">取得IValueProvider</a><ul>
+<li><a href="#namevaluecollectionvalueprovider">NameValueCollectionValueProvider</a></li>
+</ul>
+</li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
+</ul>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><strong>MVC</strong>的<code>Model-Binding</code>建立複雜物件(牽扯到複雜模型綁定.)</p>
+<p>這篇會跟大家介紹<strong>MVC</strong>是如何把達成這個複雜的動作</p>
+<blockquote>
+<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
+</blockquote>
+<h2 id="IModelBinder-DefaultModelBinder"><a href="#IModelBinder-DefaultModelBinder" class="headerlink" title="IModelBinder(DefaultModelBinder)"></a>IModelBinder(DefaultModelBinder)</h2><p><code>DefaultModelBinder</code>將Http請求傳來資料轉換為強型別物件,<code>DefaultModelBinder</code>是如何取得使用<code>Model</code>資料呢?</p>
+<blockquote>
+<p>實現<code>IValueProvider</code>來處理。</p>
+</blockquote>
+<h3 id="ModelBinders"><a href="#ModelBinders" class="headerlink" title="ModelBinders"></a>ModelBinders</h3><p><code>IModelBinder.BindModel</code>方法使用兩個參數</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">object</span> <span class="title">BindModel</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext</span>)</span></span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><code>ControllerContext</code>:<code>Controller</code>資訊，</li>
+<li><code>ModelBindingContext</code>:當前參數綁定資訊</li>
+</ol>
+<p><code>BindModel</code>方法機於<code>Http</code>請求傳送資料進行<code>Model</code>綁定(對於<code>Action</code>方法使用參數),其中<code>ModelBindingContext</code>參數會提供綁定使用的重要物件成員.</p>
+<blockquote>
+<p>關於<code>ModelBindingContext</code>建立我們會在後續部分進行的單獨介紹.</p>
+</blockquote>
+<p>在<code>IModelBinder.BindModel</code>方法中主要透過兩個重要<code>internal</code>方法.</p>
+<ul>
+<li><code>BindComplexModel</code>:複雜參數綁定</li>
+<li><code>BindSimpleModel</code>:簡單參數綁定</li>
+</ul>
+<p>下圖可以表示<code>SimpleModel</code>和<code>ComplexModel</code></p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg" alt="BindSimpleModel"></p>
+<blockquote>
+<p><code>ComplexModel</code>一個人可擁有多個房子,所以<code>Person</code>類別擁有<code>HouseCollection</code>引用.<br>取得使用<code>ModelBinder</code>機制。</p>
+</blockquote>
+<p>取得<code>ModelBinder</code>會依照下面順序</p>
+<ol>
+<li>參數掛有<code>ModelBinderAttribute</code>標籤並將<code>BinderType</code>屬性指向一個繼承<code>IModelBinder</code>型別.</li>
+<li>參數掛有繼承<code>CustomModelBinderAttribute</code>類型</li>
+<li>透過<code>ModelBinderProviderCollection</code>(預設<strong>MVC</strong>沒有提供<code>ModelBinderProvider</code>)</li>
+<li>預設<code>DefaultModelBinder</code></li>
+</ol>
+<p>下面兩個使用<code>ModelBinder</code>都是<code>DefaultModelBinder</code>,但一個是使用第一點,另一個使用第四點.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ActionResult <span class="title">HttpModules</span>(<span class="params">Person p</span>)</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> ActionResult <span class="title">HttpModules</span>(<span class="params">[ModelBinder(<span class="keyword">typeof</span>(DefaultModelBinder</span>))]Person p)</span></span><br></pre></td></tr></table></figure>
+
+<p>在<code>Global.cs</code>可透過<code>ModelBinders.Binders.Add</code>方法註冊綁定類型.</p>
+<p>如下面程式碼.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">ModelBinders.Binders.Add(<span class="keyword">typeof</span>(Arg),<span class="keyword">new</span> FooModelBinder());</span><br></pre></td></tr></table></figure>
+
+<h3 id="ModelBinderDictionary"><a href="#ModelBinderDictionary" class="headerlink" title="ModelBinderDictionary"></a>ModelBinderDictionary</h3><p>一般參數透過<code>DefaultModelBinder</code>來幫我們完成參數綁定.</p>
+<p>但有些特別的資料需要透過<code>ModelBinderDictionary</code>取得使用<code>ModelBinder</code>,例如上傳檔案,我們可以使用<code>HttpPostedFileBase</code>來取得檔案資訊流.</p>
+<p>那是因為在<code>ModelBinderDictionary</code>有註冊一個<code>HttpPostedFileBaseModelBinder</code>來幫我們做解析.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> ModelBinderDictionary <span class="title">CreateDefaultBinderDictionary</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    ModelBinderDictionary binders = <span class="keyword">new</span> ModelBinderDictionary()</span><br><span class="line">    &#123;</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(HttpPostedFileBase), <span class="keyword">new</span> HttpPostedFileBaseModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(<span class="built_in">byte</span>[]), <span class="keyword">new</span> ByteArrayModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(Binary), <span class="keyword">new</span> LinqBinaryModelBinder() &#125;,</span><br><span class="line">        &#123; <span class="keyword">typeof</span>(CancellationToken), <span class="keyword">new</span> CancellationTokenModelBinder() &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">return</span> binders;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="IValueProvider-提供參數填值"><a href="#IValueProvider-提供參數填值" class="headerlink" title="IValueProvider 提供參數填值"></a>IValueProvider 提供參數填值</h2><p><code>IValueProvider</code>介面有一個重要方法<code>GetValue</code>會返回<code>ValueProviderResult</code>物件對於<code>ValueProvider</code>參數封裝</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function">ValueProviderResult <span class="title">GetValue</span>(<span class="params"><span class="built_in">string</span> key</span>)</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="ValueProvider工廠集合-ValueProviderFactories"><a href="#ValueProvider工廠集合-ValueProviderFactories" class="headerlink" title="ValueProvider工廠集合(ValueProviderFactories)"></a>ValueProvider工廠集合(ValueProviderFactories)</h3><p>在<code>ControllerBase</code>類別中有一個屬性<code>ValueProvider</code>設定參數填值動作</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> IValueProvider ValueProvider</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (_valueProvider == <span class="literal">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            _valueProvider = ValueProviderFactories.Factories.GetValueProvider(ControllerContext);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> _valueProvider;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">set</span> &#123; _valueProvider = <span class="keyword">value</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Http</strong>傳送參數可能又多種模式(<code>Post Form</code>,<code>Query String</code>,<code>Ajax</code>….)</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="title">ValueProviderFactories</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> ValueProviderFactoryCollection _factories = <span class="keyword">new</span> ValueProviderFactoryCollection()</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">new</span> ChildActionValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> FormValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> JsonValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> RouteDataValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> QueryStringValueProviderFactory(),</span><br><span class="line">        <span class="keyword">new</span> HttpFileCollectionValueProviderFactory(),</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ValueProviderFactoryCollection Factories</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">get</span> &#123; <span class="keyword">return</span> _factories; &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><code>ChildActionValueProviderFactory</code>：取得另一個呼叫<code>@Html.Action</code>傳來<strong>Model</strong>資料</li>
+<li><code>FormValueProviderFactory</code>：取得<code>HTTP POST</code>送來的資料</li>
+<li><code>JsonValueProviderFactory</code>：取得<code>JSON</code>資料(<code>Content-Type = application/json</code>)</li>
+<li><code>RouteDataValueProviderFactory</code>：取得從網址路徑取得到路由參數值</li>
+<li><code>QueryStringValueProviderFactory</code>：取得從<code>Http</code>請求的<code>Query String</code>資料</li>
+<li><code>HttpFileCollectionValueProviderFactory</code>：取得檔案上傳功能傳來檔案</li>
+</ol>
+<p>如果此次請求匹配到多個<code>ValueProvider</code>機制會怎處理?</p>
+<blockquote>
+<p>會按照上面<code>ProviderFactory</code>設定順序來排執行優先順序來填值</p>
+</blockquote>
+<h2 id="ValueProviderFactory"><a href="#ValueProviderFactory" class="headerlink" title="ValueProviderFactory"></a>ValueProviderFactory</h2><p><strong>MVC</strong>利用工廠模式透過<code>ValueProviderFactory</code>實現的工廠來<code>IValueProvider</code>填值提供者物件.</p>
+<h3 id="JsonValueProviderFactory"><a href="#JsonValueProviderFactory" class="headerlink" title="JsonValueProviderFactory"></a>JsonValueProviderFactory</h3><p>在<code>ValueProviderFactory</code>IValueProvider GetValueProvider</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">JsonValueProviderFactory</span> : <span class="title">ValueProviderFactory</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">AddToBackingStore</span>(<span class="params">EntryLimitedDictionary backingStore, <span class="built_in">string</span> prefix, <span class="built_in">object</span> <span class="keyword">value</span></span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; d = <span class="keyword">value</span> <span class="keyword">as</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt;;</span><br><span class="line">		<span class="keyword">if</span> (d != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">foreach</span> (KeyValuePair&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; entry <span class="keyword">in</span> d)</span><br><span class="line">			&#123;</span><br><span class="line">				AddToBackingStore(backingStore, MakePropertyKey(prefix, entry.Key), entry.Value);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		IList l = <span class="keyword">value</span> <span class="keyword">as</span> IList;</span><br><span class="line">		<span class="keyword">if</span> (l != <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; l.Count; i++)</span><br><span class="line">			&#123;</span><br><span class="line">				AddToBackingStore(backingStore, MakeArrayKey(prefix, i), l[i]);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// primitive</span></span><br><span class="line">		backingStore.Add(prefix, <span class="keyword">value</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="built_in">object</span> <span class="title">GetDeserializedObject</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (!controllerContext.HttpContext.Request.ContentType.StartsWith(<span class="string">&quot;application/json&quot;</span>, StringComparison.OrdinalIgnoreCase))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// not JSON request</span></span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		StreamReader reader = <span class="keyword">new</span> StreamReader(controllerContext.HttpContext.Request.InputStream);</span><br><span class="line">		<span class="built_in">string</span> bodyText = reader.ReadToEnd();</span><br><span class="line">		<span class="keyword">if</span> (String.IsNullOrEmpty(bodyText))</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">// no JSON data</span></span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		JavaScriptSerializer serializer = <span class="keyword">new</span> JavaScriptSerializer();</span><br><span class="line">		<span class="built_in">object</span> jsonData = serializer.DeserializeObject(bodyText);</span><br><span class="line">		<span class="keyword">return</span> jsonData;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">override</span> IValueProvider <span class="title">GetValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">if</span> (controllerContext == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(<span class="string">&quot;controllerContext&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="built_in">object</span> jsonData = GetDeserializedObject(controllerContext);</span><br><span class="line">		<span class="keyword">if</span> (jsonData == <span class="literal">null</span>)</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; backingStore = <span class="keyword">new</span> Dictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt;(StringComparer.OrdinalIgnoreCase);</span><br><span class="line">		EntryLimitedDictionary backingStoreWrapper = <span class="keyword">new</span> EntryLimitedDictionary(backingStore);</span><br><span class="line">		AddToBackingStore(backingStoreWrapper, String.Empty, jsonData);</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> DictionaryValueProvider&lt;<span class="built_in">object</span>&gt;(backingStore, CultureInfo.CurrentCulture);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/ValueProvider_Factory.jpg" alt="UML_Model"></p>
+<h2 id="取得IValueProvider"><a href="#取得IValueProvider" class="headerlink" title="取得IValueProvider"></a>取得IValueProvider</h2><p>透過<code>ValueProviderFactory</code>返回相對應的<code>IValueProvider</code>物件.</p>
+<p>下面介紹幾個實現<code>ValueProvider</code>物件</p>
+<h3 id="NameValueCollectionValueProvider"><a href="#NameValueCollectionValueProvider" class="headerlink" title="NameValueCollectionValueProvider"></a>NameValueCollectionValueProvider</h3><p><code>NameValueCollectionValueProvider</code>可從<code>NameValueCollection</code>集合取得參數.</p>
+<p>因為<code>Request.Form</code>和<code>Request.QueryString</code>都是<code>NameValueCollection</code>類型集合.</p>
+<blockquote>
+<p>　這個方法很巧妙利用一個共同參數類型簽章來達成多態轉折點</p>
+</blockquote>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">virtual</span> NameValueCollection Form</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//....</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">virtual</span> NameValueCollection QueryString</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">get</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">//....</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Http</strong>傳值到<strong>Server</strong>有許多方式,這裡介紹<strong>MVC</strong>利用哪個<strong>ValueProvider</strong>將<code>Form</code>跟<code>QueryString</code>填值到物件上,很巧妙使用<code>NameValueCollectionValueProvider</code>建構子參數<code>NameValueCollection</code>決定是要使用<code>Form</code>或<code>QueryString</code>填充值到參數.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">FormValueProvider</span> : <span class="title">NameValueCollectionValueProvider</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">FormValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">controllerContext, <span class="keyword">new</span> UnvalidatedRequestValuesWrapper(controllerContext.HttpContext.Request.Unvalidated</span>))</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">FormValueProvider</span>(<span class="params">ControllerContext controllerContext, IUnvalidatedRequestValues unvalidatedValues</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext.HttpContext.Request.Form, unvalidatedValues.Form, CultureInfo.CurrentCulture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">sealed</span> <span class="keyword">class</span> <span class="title">QueryStringValueProvider</span> : <span class="title">NameValueCollectionValueProvider</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">QueryStringValueProvider</span>(<span class="params">ControllerContext controllerContext</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">this</span>(<span class="params">controllerContext, <span class="keyword">new</span> UnvalidatedRequestValuesWrapper(controllerContext.HttpContext.Request.Unvalidated</span>))</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">internal</span> <span class="title">QueryStringValueProvider</span>(<span class="params">ControllerContext controllerContext, IUnvalidatedRequestValues unvalidatedValues</span>)</span></span><br><span class="line"><span class="function">		: <span class="title">base</span>(<span class="params">controllerContext.HttpContext.Request.QueryString, unvalidatedValues.QueryString, CultureInfo.InvariantCulture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>實現<code>IValueProvider</code>物件主要會依靠<code>GetValue</code>方法取得<code>ValueProviderResult</code>.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line">[<span class="meta">Serializable</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">ValueProviderResult</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">readonly</span> CultureInfo _staticCulture = CultureInfo.InvariantCulture;</span><br><span class="line">	<span class="keyword">private</span> CultureInfo _instanceCulture;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">protected</span> <span class="title">ValueProviderResult</span>()</span></span><br><span class="line">	&#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">ValueProviderResult</span>(<span class="params"><span class="built_in">object</span> rawValue, <span class="built_in">string</span> attemptedValue, CultureInfo culture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		RawValue = rawValue;</span><br><span class="line">		AttemptedValue = attemptedValue;</span><br><span class="line">		Culture = culture;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">string</span> AttemptedValue &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> CultureInfo Culture</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">get</span></span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> (_instanceCulture == <span class="literal">null</span>)</span><br><span class="line">			&#123;</span><br><span class="line">				_instanceCulture = _staticCulture;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span> _instanceCulture;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">protected</span> <span class="keyword">set</span> &#123; _instanceCulture = <span class="keyword">value</span>; &#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="built_in">object</span> RawValue &#123; <span class="keyword">get</span>; <span class="keyword">protected</span> <span class="keyword">set</span>; &#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="built_in">object</span> <span class="title">ConvertTo</span>(<span class="params">Type type</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">return</span> ConvertTo(type, <span class="literal">null</span> <span class="comment">/* culture */</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">virtual</span> <span class="built_in">object</span> <span class="title">ConvertTo</span>(<span class="params">Type type, CultureInfo culture</span>)</span></span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">//....</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ValueProviderResult</code>對於<code>ValueProvider</code>物件做封裝，一般存放<code>Http</code>參數擁有兩個只讀屬性</p>
+<ol>
+<li><code>RawValue</code>表示物件值</li>
+<li><code>AttemptedValue</code>主要用於顯示</li>
+</ol>
+<p><code>ValueProviderResult</code>提供兩個<code>ConvertTo</code>重載方法實現向指定目標類型轉換。</p>
+<p>某些類型格式化依賴於相應的語言文化（比如時間、日期和貨幣等），這個語言文化通過<code>Culture</code>屬性來達成.</p>
+<p>最終會呼叫一個<code>UnwrapPossibleArrayType</code>方法來建立物件</p>
+<h2 id="小結："><a href="#小結：" class="headerlink" title="小結："></a>小結：</h2><p>在<code>ControllerActionInvoker.GetParameterValue</code>取得參數方法,<code>ModelBing</code>動作有兩個重要的屬性</p>
+<ul>
+<li><code>IValueProvider</code>:提供如何填值</li>
+<li><code>IModelBinder</code>:建立物件(綁定關聯) 預設使用<code>DefaultModelBinder</code>類別.</li>
+</ul>
+<p>目前分享的<code>IValueProvider</code>和<code>IModelBinder</code> UML類別關聯圖如下</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/17/UML_Model.jpg" alt="UML_Model"></p>
+<p>下篇會介紹<code>ModelBind</code>模型綁定重點邏輯,有分簡單參數綁定和複雜參數綁定</p>
+<ul>
+<li><code>BindComplexModel</code></li>
+<li><code>BindSimpleModel</code></li>
+</ul>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day18/">https://isdaniel.github.io/ithelp-day18/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -13093,6 +13093,117 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
+    <title>鐵人賽完賽＆總結　(第30天)</title>
+    <url>/ithelp-day30/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%AE%8C%E8%B3%BD%E6%84%9F%E6%83%B3">完賽感想</a></li>
+<li><a href="#%E6%84%9F%E8%AC%9D%E9%80%99%E6%AC%A1%E7%9A%84%E5%A4%A5%E4%BC%B4-it%E6%88%90%E9%95%B7%E5%9C%98">感謝這次的夥伴 [IT成長團]</a></li>
+<li><a href="#%E5%AD%B8%E7%BF%92%E5%88%B0%E6%96%B0%E7%9F%A5%E8%AD%98-expression%E8%A1%A8%E9%81%94%E5%BC%8F">學習到新知識 (Expression表達式)</a></li>
+<li><a href="#%E8%A8%AD%E8%A8%88%E6%A8%A1%E5%BC%8F%E9%81%8B%E7%94%A8%E5%9C%A8%E5%AF%A6%E6%88%B0%E4%B8%AD">設計模式運用在實戰中</a></li>
+<li><a href="#%E9%80%8F%E9%81%8Emvc%E6%9F%90%E5%8D%80%E5%A1%8A%E6%A6%82%E5%BF%B5%E5%BC%95%E7%99%BC%E5%BB%BA%E7%AB%8B%E9%96%8B%E6%BA%90%E5%B0%88%E6%A1%88%E6%83%B3%E6%B3%95">透過<strong>MVC</strong>某區塊概念,引發建立開源專案想法</a></li>
+<li><a href="#%E6%96%87%E7%AB%A0%E7%9B%AE%E9%8C%84">文章目錄</a><ul>
+<li><a href="#01--08-day-%E4%BB%8B%E7%B4%B9http%E8%AB%8B%E6%B1%82%E5%88%B0mvc%E5%89%8Daspnet%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E9%BA%BC%E4%BA%8B%E6%83%85">01 ~ 08 Day 介紹Http請求到MVC前Asp.net做了些什麼事情</a></li>
+<li><a href="#09--25-day-%E4%BB%8B%E7%B4%B9mvc%E5%8E%9F%E5%A7%8B%E7%A2%BC">09 ~ 25 Day 介紹MVC原始碼</a></li>
+<li><a href="#26--29-day-%E5%B0%8D%E6%96%BCmvc%E9%80%B2%E8%A1%8C%E6%93%B4%E5%85%85%E6%94%B9%E9%80%A0">26 ~ 29 Day 對於MVC進行擴充改造</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="完賽感想"><a href="#完賽感想" class="headerlink" title="完賽感想"></a>完賽感想</h2><p>這三十天無法對於<strong>MVC</strong>全部原始碼做詳細介紹,我盡量在這三十篇講述<strong>MVC</strong>執行過程中重要知識點,閱讀<strong>MVC</strong>原始碼真不是很簡單事情.</p>
+<p>但閱讀完後我對於OOP和<strong>如何合理</strong>撰寫程式碼一個系統有更深入了解(因為<strong>MVC</strong>很多地方很好運用OOP概念原則)</p>
+<p>希望大家經過閱讀這三十篇文章可以對於<strong>IIS</strong>託管和<strong>Asp.net MVC</strong>原理有更深入了解.</p>
+<ol>
+<li><code>Http</code>對於<code>IIS Server</code>請求如何導向<code>Asp.net MVC</code>執行</li>
+<li><code>Asp.net MVC</code>原始碼有基本了解和知道哪幾個重要類別,了解後能依照系統需要替換改寫.</li>
+<li><code>Asp.net MVC</code>用到很多設計技巧,希望大家能更了解設計模式如何運用在實戰中</li>
+<li>可以嘗試閱讀其他知名的開源框架(<code>Dapper</code>,<code>AutoMapper</code>,<code>Autofac</code>,<code>Json.net</code>…..)</li>
+</ol>
+<blockquote>
+<p>如果想要了解<code>Dapper</code>原理讀者我推薦去閱讀,我隊友<code>暐翰</code>系列文章<a href="https://ithelp.ithome.com.tw/articles/10215127">進階學習 ADO.NET、Dapper、Entity Framework 系列</a>寫得很詳細且有影片教學大推!!</p>
+</blockquote>
+<h2 id="感謝這次的夥伴-IT成長團"><a href="#感謝這次的夥伴-IT成長團" class="headerlink" title="感謝這次的夥伴 [IT成長團]"></a>感謝這次的夥伴 [IT成長團]</h2><p>感謝這次可以跟<strong>IT成長團</strong>的大家一起參與並完成<strong>It邦幫忙</strong>鐵人活動.</p>
+<p>這三十天大家一起鼓勵,互相叮嚀鼓勵.這種感覺真的很棒 :)</p>
+<p>下面是隊友們寫的優質系列文章,推薦大家一同去閱讀.</p>
+<ul>
+<li><p>小魚 :<a href="https://ithelp.ithome.com.tw/users/20105694/ironman/2139">Laravel從入門到放棄…………原生PHP (疑?</a></p>
+</li>
+<li><p>暐翰 :<a href="https://ithelp.ithome.com.tw/users/20105988/ironman/2161">進階學習 ADO.NET、Dapper、Entity Framework </a></p>
+</li>
+<li><p>Peter學程式 :<a href="https://ithelp.ithome.com.tw/users/20110850/ironman/2171">超緊繃!30天Vue.js學習日記</a></p>
+</li>
+<li><p>神Q超人 :<a href="https://ithelp.ithome.com.tw/users/20106935/ironman/2188">在 React 生態圈內打滾的一年 feat. TypeScript</a></p>
+</li>
+<li><p>Victor :<a href="https://ithelp.ithome.com.tw/users/20105865/ironman/2466">使用 Laravel 打造 RESTful API</a></p>
+</li>
+</ul>
+<p>希望明年還有機會可以跟大家一起在參加鐵人賽衝一波,寫文章.</p>
+<h2 id="學習到新知識-Expression表達式"><a href="#學習到新知識-Expression表達式" class="headerlink" title="學習到新知識 (Expression表達式)"></a>學習到新知識 (Expression表達式)</h2><p>以前碰到動態建立物件或動作,我都是使用反射技巧來完成,透過了解<code>ActionMethodDispatcher</code>類別原始碼探討為何<strong>MVC</strong>不使用反射卻,而使用<code>Expression</code>表達式完成動態呼叫需求.</p>
+<p>查了資料進而了解到<code>Expression</code>表達式用法且他想解決的問題,對於未來有多了一項武器可以運用.</p>
+<h2 id="設計模式運用在實戰中"><a href="#設計模式運用在實戰中" class="headerlink" title="設計模式運用在實戰中"></a>設計模式運用在實戰中</h2><p>設計模式不是紙上談兵,某些問題會使用某些方法來解決.</p>
+<blockquote>
+<p>筆者對於設計模式也略有研究,對於<a href="https://github.com/isdaniel/DesignPattern">DesignPattern</a>有一個<code>Repository</code>做介紹,陸陸續續會補上我對於<code>Design Pattern</code>在現實生活上理解</p>
+</blockquote>
+<p><strong>MVC</strong>使用的許多設計模式和技巧,使用這些模式為了可讓程式變得好理解有意義</p>
+<blockquote>
+<p>商業邏輯讓程式變複雜是必然,我們能做的是讓程式碼變得不會太難理解可以更好擴充</p>
+</blockquote>
+<p>每個設計模式都有適合使用場景.</p>
+<ul>
+<li><code>工廠模式</code>: 將使用動作和產生物件做一個區隔(依賴一個抽象).</li>
+<li><code>代理模式</code>: 提供一個代理人不用對於原有程式碼進行修改(<code>AOP</code>就是利用此模式概念)</li>
+<li><code>裝飾者模式</code>: 適合在需要一直改變物件狀態的情境</li>
+<li><code>建立者模式</code>: 提供一個建立管道讓使用的提供要建立物件,最後可透過此模式來方便替換</li>
+</ul>
+<p>還有許多模式就不一一介紹</p>
+<p>像我很久之前就學過組合模式,只是對於此模式運用場景一直找不到.</p>
+<p>直到看到<a href="https://ithelp.ithome.com.tw/articles/10222831#response-311747">複雜模型和簡單模型綁定</a>如何將<strong>組合模式</strong>運用在實戰中.</p>
+<h2 id="透過MVC某區塊概念-引發建立開源專案想法"><a href="#透過MVC某區塊概念-引發建立開源專案想法" class="headerlink" title="透過MVC某區塊概念,引發建立開源專案想法"></a>透過<strong>MVC</strong>某區塊概念,引發建立開源專案想法</h2><p>筆者看完<code>Filter</code>機制後就有感而發,這麼好用的方式可否運用在<code>Service</code>或其他地方(非<code>Asp.net MVC</code>,<code>Web API</code>區域).</p>
+<p>我就依照上面標籤概念建立一個<a href="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net</a>AOP框架基於<code>RealProxy</code>這個物件.</p>
+<p>想知道詳細資訊的讀者可自行查閱<code>AwesomeProxy.Net</code>的<code>Readme.md</code>.</p>
+<p>看完三十篇分享文後,希望台灣會有越來越多大大投入開源社群,我個人感觸是投入社群後我觸碰,接觸事物比我想想遠遠多很多.</p>
+<h2 id="文章目錄"><a href="#文章目錄" class="headerlink" title="文章目錄"></a>文章目錄</h2><p>此系列文分成三大部分</p>
+<h3 id="01-08-Day-介紹Http請求到MVC前Asp-net做了些什麼事情"><a href="#01-08-Day-介紹Http請求到MVC前Asp-net做了些什麼事情" class="headerlink" title="01 ~ 08 Day 介紹Http請求到MVC前Asp.net做了些什麼事情"></a>01 ~ 08 Day 介紹Http請求到MVC前Asp.net做了些什麼事情</h3><p><a href="https://ithelp.ithome.com.tw/articles/10214877">[Day01] (開賽)Http 請求 Asp.net IIS伺服器架構</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10214999">[Day02] Asp.Net支柱 IHttpMoudle &amp; IHttphandler</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10215221">[Day03] 啟動吧!Asp.Net IsapiRunTime &amp; HttpRuntime</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10215400">[Day04] 掌控HttpApplication物件建立 - HttpApplicationFactory</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10215676">[Day05] Asp.Net重要物件HttpApplication(一) 初始化建立IHttpMoudule</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10216299">[Day06] Asp.Net重要物件HttpApplication(二) 建置執行管道</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10216960">[Day07] Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10217375">[Day08] 揭密Mvc使用IHttpHandler by UrlRoutingModule-4.0</a></p>
+<h3 id="09-25-Day-介紹MVC原始碼"><a href="#09-25-Day-介紹MVC原始碼" class="headerlink" title="09 ~ 25 Day 介紹MVC原始碼"></a>09 ~ 25 Day 介紹MVC原始碼</h3><p><a href="https://ithelp.ithome.com.tw/articles/10217973">[Day09] 進入MVC原始碼世界 Route &amp; RouteTable 原始碼解析</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10218521">[Day10] 透過MvcRouteHandler取得呼叫IHttphandler</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10219020">[Day11] Asp.net MVC Controller是怎麼被建立(原始碼揭密)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10219477">[Day12] 談談Controller幾個重要成員</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10219981">[Day13] Asp.net MVC如何實現IOC解析器</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10220510">[Day14] 反轉起來~透過IOC解析來執行依賴反轉</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10220964">[Day15] Action方法如何被執行InvokeAction(一)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10221403">[Day16] MVC Filter 機制解密</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10221908">[Day17] Action方法如何被執行InvokeAction(二)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10222341">[Day18] 提供ModelBing幾個重要功臣(Model)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10222831">[Day19] Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10223247">[Day20] 探討Model上客製化標籤如何被解析使用</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10223704">[Day21] Model 探討驗證標籤(ValidationAttribute)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10224092">[Day22] View是如何被建立(一)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10224542">[Day23] 6個基本(ActionResult) View是如何被建立(二)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10224865">[Day24] 探討ViewEngine機制 View是如何被建立(三)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10225229">[Day25] 動態產生程式碼(WebViewPage) View是如何被建立(四)</a></p>
+<h3 id="26-29-Day-對於MVC進行擴充改造"><a href="#26-29-Day-對於MVC進行擴充改造" class="headerlink" title="26 ~ 29 Day 對於MVC進行擴充改造"></a>26 ~ 29 Day 對於MVC進行擴充改造</h3><p><a href="https://ithelp.ithome.com.tw/articles/10225616">[Day26] 動手DIY改造 Asp.net MVC- Route解析機制</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10225993">[Day27] 動手DIY改造 Asp.net MVC- 自己動作建立一個DependencyResolver解析器(Autofac)</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10226285">[Day28] 動手DIY改造 Asp.net MVC- 建立自己ActionInvoker和Model綁定機制</a></p>
+<p><a href="https://ithelp.ithome.com.tw/articles/10226680">[Day29] 動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制</a></p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day30/">https://isdaniel.github.io/ithelp-day30/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>啟動吧!Asp.Net IsapiRunTime &amp; HttpRuntime (第3天)</title>
     <url>/ithelp-day3/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -13205,205 +13316,6 @@ email_url: dog830228@gmail.com
       </tags>
   </entry>
   <entry>
-    <title>鐵人賽完賽＆總結　(第30天)</title>
-    <url>/ithelp-day30/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%AE%8C%E8%B3%BD%E6%84%9F%E6%83%B3">完賽感想</a></li>
-<li><a href="#%E6%84%9F%E8%AC%9D%E9%80%99%E6%AC%A1%E7%9A%84%E5%A4%A5%E4%BC%B4-it%E6%88%90%E9%95%B7%E5%9C%98">感謝這次的夥伴 [IT成長團]</a></li>
-<li><a href="#%E5%AD%B8%E7%BF%92%E5%88%B0%E6%96%B0%E7%9F%A5%E8%AD%98-expression%E8%A1%A8%E9%81%94%E5%BC%8F">學習到新知識 (Expression表達式)</a></li>
-<li><a href="#%E8%A8%AD%E8%A8%88%E6%A8%A1%E5%BC%8F%E9%81%8B%E7%94%A8%E5%9C%A8%E5%AF%A6%E6%88%B0%E4%B8%AD">設計模式運用在實戰中</a></li>
-<li><a href="#%E9%80%8F%E9%81%8Emvc%E6%9F%90%E5%8D%80%E5%A1%8A%E6%A6%82%E5%BF%B5%E5%BC%95%E7%99%BC%E5%BB%BA%E7%AB%8B%E9%96%8B%E6%BA%90%E5%B0%88%E6%A1%88%E6%83%B3%E6%B3%95">透過<strong>MVC</strong>某區塊概念,引發建立開源專案想法</a></li>
-<li><a href="#%E6%96%87%E7%AB%A0%E7%9B%AE%E9%8C%84">文章目錄</a><ul>
-<li><a href="#01--08-day-%E4%BB%8B%E7%B4%B9http%E8%AB%8B%E6%B1%82%E5%88%B0mvc%E5%89%8Daspnet%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E9%BA%BC%E4%BA%8B%E6%83%85">01 ~ 08 Day 介紹Http請求到MVC前Asp.net做了些什麼事情</a></li>
-<li><a href="#09--25-day-%E4%BB%8B%E7%B4%B9mvc%E5%8E%9F%E5%A7%8B%E7%A2%BC">09 ~ 25 Day 介紹MVC原始碼</a></li>
-<li><a href="#26--29-day-%E5%B0%8D%E6%96%BCmvc%E9%80%B2%E8%A1%8C%E6%93%B4%E5%85%85%E6%94%B9%E9%80%A0">26 ~ 29 Day 對於MVC進行擴充改造</a></li>
-</ul>
-</li>
-</ul>
-<h2 id="完賽感想"><a href="#完賽感想" class="headerlink" title="完賽感想"></a>完賽感想</h2><p>這三十天無法對於<strong>MVC</strong>全部原始碼做詳細介紹,我盡量在這三十篇講述<strong>MVC</strong>執行過程中重要知識點,閱讀<strong>MVC</strong>原始碼真不是很簡單事情.</p>
-<p>但閱讀完後我對於OOP和<strong>如何合理</strong>撰寫程式碼一個系統有更深入了解(因為<strong>MVC</strong>很多地方很好運用OOP概念原則)</p>
-<p>希望大家經過閱讀這三十篇文章可以對於<strong>IIS</strong>託管和<strong>Asp.net MVC</strong>原理有更深入了解.</p>
-<ol>
-<li><code>Http</code>對於<code>IIS Server</code>請求如何導向<code>Asp.net MVC</code>執行</li>
-<li><code>Asp.net MVC</code>原始碼有基本了解和知道哪幾個重要類別,了解後能依照系統需要替換改寫.</li>
-<li><code>Asp.net MVC</code>用到很多設計技巧,希望大家能更了解設計模式如何運用在實戰中</li>
-<li>可以嘗試閱讀其他知名的開源框架(<code>Dapper</code>,<code>AutoMapper</code>,<code>Autofac</code>,<code>Json.net</code>…..)</li>
-</ol>
-<blockquote>
-<p>如果想要了解<code>Dapper</code>原理讀者我推薦去閱讀,我隊友<code>暐翰</code>系列文章<a href="https://ithelp.ithome.com.tw/articles/10215127">進階學習 ADO.NET、Dapper、Entity Framework 系列</a>寫得很詳細且有影片教學大推!!</p>
-</blockquote>
-<h2 id="感謝這次的夥伴-IT成長團"><a href="#感謝這次的夥伴-IT成長團" class="headerlink" title="感謝這次的夥伴 [IT成長團]"></a>感謝這次的夥伴 [IT成長團]</h2><p>感謝這次可以跟<strong>IT成長團</strong>的大家一起參與並完成<strong>It邦幫忙</strong>鐵人活動.</p>
-<p>這三十天大家一起鼓勵,互相叮嚀鼓勵.這種感覺真的很棒 :)</p>
-<p>下面是隊友們寫的優質系列文章,推薦大家一同去閱讀.</p>
-<ul>
-<li><p>小魚 :<a href="https://ithelp.ithome.com.tw/users/20105694/ironman/2139">Laravel從入門到放棄…………原生PHP (疑?</a></p>
-</li>
-<li><p>暐翰 :<a href="https://ithelp.ithome.com.tw/users/20105988/ironman/2161">進階學習 ADO.NET、Dapper、Entity Framework </a></p>
-</li>
-<li><p>Peter學程式 :<a href="https://ithelp.ithome.com.tw/users/20110850/ironman/2171">超緊繃!30天Vue.js學習日記</a></p>
-</li>
-<li><p>神Q超人 :<a href="https://ithelp.ithome.com.tw/users/20106935/ironman/2188">在 React 生態圈內打滾的一年 feat. TypeScript</a></p>
-</li>
-<li><p>Victor :<a href="https://ithelp.ithome.com.tw/users/20105865/ironman/2466">使用 Laravel 打造 RESTful API</a></p>
-</li>
-</ul>
-<p>希望明年還有機會可以跟大家一起在參加鐵人賽衝一波,寫文章.</p>
-<h2 id="學習到新知識-Expression表達式"><a href="#學習到新知識-Expression表達式" class="headerlink" title="學習到新知識 (Expression表達式)"></a>學習到新知識 (Expression表達式)</h2><p>以前碰到動態建立物件或動作,我都是使用反射技巧來完成,透過了解<code>ActionMethodDispatcher</code>類別原始碼探討為何<strong>MVC</strong>不使用反射卻,而使用<code>Expression</code>表達式完成動態呼叫需求.</p>
-<p>查了資料進而了解到<code>Expression</code>表達式用法且他想解決的問題,對於未來有多了一項武器可以運用.</p>
-<h2 id="設計模式運用在實戰中"><a href="#設計模式運用在實戰中" class="headerlink" title="設計模式運用在實戰中"></a>設計模式運用在實戰中</h2><p>設計模式不是紙上談兵,某些問題會使用某些方法來解決.</p>
-<blockquote>
-<p>筆者對於設計模式也略有研究,對於<a href="https://github.com/isdaniel/DesignPattern">DesignPattern</a>有一個<code>Repository</code>做介紹,陸陸續續會補上我對於<code>Design Pattern</code>在現實生活上理解</p>
-</blockquote>
-<p><strong>MVC</strong>使用的許多設計模式和技巧,使用這些模式為了可讓程式變得好理解有意義</p>
-<blockquote>
-<p>商業邏輯讓程式變複雜是必然,我們能做的是讓程式碼變得不會太難理解可以更好擴充</p>
-</blockquote>
-<p>每個設計模式都有適合使用場景.</p>
-<ul>
-<li><code>工廠模式</code>: 將使用動作和產生物件做一個區隔(依賴一個抽象).</li>
-<li><code>代理模式</code>: 提供一個代理人不用對於原有程式碼進行修改(<code>AOP</code>就是利用此模式概念)</li>
-<li><code>裝飾者模式</code>: 適合在需要一直改變物件狀態的情境</li>
-<li><code>建立者模式</code>: 提供一個建立管道讓使用的提供要建立物件,最後可透過此模式來方便替換</li>
-</ul>
-<p>還有許多模式就不一一介紹</p>
-<p>像我很久之前就學過組合模式,只是對於此模式運用場景一直找不到.</p>
-<p>直到看到<a href="https://ithelp.ithome.com.tw/articles/10222831#response-311747">複雜模型和簡單模型綁定</a>如何將<strong>組合模式</strong>運用在實戰中.</p>
-<h2 id="透過MVC某區塊概念-引發建立開源專案想法"><a href="#透過MVC某區塊概念-引發建立開源專案想法" class="headerlink" title="透過MVC某區塊概念,引發建立開源專案想法"></a>透過<strong>MVC</strong>某區塊概念,引發建立開源專案想法</h2><p>筆者看完<code>Filter</code>機制後就有感而發,這麼好用的方式可否運用在<code>Service</code>或其他地方(非<code>Asp.net MVC</code>,<code>Web API</code>區域).</p>
-<p>我就依照上面標籤概念建立一個<a href="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net</a>AOP框架基於<code>RealProxy</code>這個物件.</p>
-<p>想知道詳細資訊的讀者可自行查閱<code>AwesomeProxy.Net</code>的<code>Readme.md</code>.</p>
-<p>看完三十篇分享文後,希望台灣會有越來越多大大投入開源社群,我個人感觸是投入社群後我觸碰,接觸事物比我想想遠遠多很多.</p>
-<h2 id="文章目錄"><a href="#文章目錄" class="headerlink" title="文章目錄"></a>文章目錄</h2><p>此系列文分成三大部分</p>
-<h3 id="01-08-Day-介紹Http請求到MVC前Asp-net做了些什麼事情"><a href="#01-08-Day-介紹Http請求到MVC前Asp-net做了些什麼事情" class="headerlink" title="01 ~ 08 Day 介紹Http請求到MVC前Asp.net做了些什麼事情"></a>01 ~ 08 Day 介紹Http請求到MVC前Asp.net做了些什麼事情</h3><p><a href="https://ithelp.ithome.com.tw/articles/10214877">[Day01] (開賽)Http 請求 Asp.net IIS伺服器架構</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10214999">[Day02] Asp.Net支柱 IHttpMoudle &amp; IHttphandler</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10215221">[Day03] 啟動吧!Asp.Net IsapiRunTime &amp; HttpRuntime</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10215400">[Day04] 掌控HttpApplication物件建立 - HttpApplicationFactory</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10215676">[Day05] Asp.Net重要物件HttpApplication(一) 初始化建立IHttpMoudule</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10216299">[Day06] Asp.Net重要物件HttpApplication(二) 建置執行管道</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10216960">[Day07] Asp.Net重要物件HttpApplication(三) 取得執行的IHttpHandler</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10217375">[Day08] 揭密Mvc使用IHttpHandler by UrlRoutingModule-4.0</a></p>
-<h3 id="09-25-Day-介紹MVC原始碼"><a href="#09-25-Day-介紹MVC原始碼" class="headerlink" title="09 ~ 25 Day 介紹MVC原始碼"></a>09 ~ 25 Day 介紹MVC原始碼</h3><p><a href="https://ithelp.ithome.com.tw/articles/10217973">[Day09] 進入MVC原始碼世界 Route &amp; RouteTable 原始碼解析</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10218521">[Day10] 透過MvcRouteHandler取得呼叫IHttphandler</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10219020">[Day11] Asp.net MVC Controller是怎麼被建立(原始碼揭密)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10219477">[Day12] 談談Controller幾個重要成員</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10219981">[Day13] Asp.net MVC如何實現IOC解析器</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10220510">[Day14] 反轉起來~透過IOC解析來執行依賴反轉</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10220964">[Day15] Action方法如何被執行InvokeAction(一)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10221403">[Day16] MVC Filter 機制解密</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10221908">[Day17] Action方法如何被執行InvokeAction(二)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10222341">[Day18] 提供ModelBing幾個重要功臣(Model)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10222831">[Day19] Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10223247">[Day20] 探討Model上客製化標籤如何被解析使用</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10223704">[Day21] Model 探討驗證標籤(ValidationAttribute)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10224092">[Day22] View是如何被建立(一)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10224542">[Day23] 6個基本(ActionResult) View是如何被建立(二)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10224865">[Day24] 探討ViewEngine機制 View是如何被建立(三)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10225229">[Day25] 動態產生程式碼(WebViewPage) View是如何被建立(四)</a></p>
-<h3 id="26-29-Day-對於MVC進行擴充改造"><a href="#26-29-Day-對於MVC進行擴充改造" class="headerlink" title="26 ~ 29 Day 對於MVC進行擴充改造"></a>26 ~ 29 Day 對於MVC進行擴充改造</h3><p><a href="https://ithelp.ithome.com.tw/articles/10225616">[Day26] 動手DIY改造 Asp.net MVC- Route解析機制</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10225993">[Day27] 動手DIY改造 Asp.net MVC- 自己動作建立一個DependencyResolver解析器(Autofac)</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10226285">[Day28] 動手DIY改造 Asp.net MVC- 建立自己ActionInvoker和Model綁定機制</a></p>
-<p><a href="https://ithelp.ithome.com.tw/articles/10226680">[Day29] 動手DIY改造 Asp.net MVC- 擴充在擴充,強化WebViewPage製作多國貨幣機制</a></p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day30/">https://isdaniel.github.io/ithelp-day30/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>掌控HttpApplication物件建立 - HttpApplicationFactory (第4天)</title>
-    <url>/ithelp-day4/</url>
-    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言：</a></li>
-<li><a href="#httpapplication%E7%89%A9%E4%BB%B6">HttpApplication物件</a></li>
-<li><a href="#%E5%8F%96%E5%BE%97%E4%BD%BF%E7%94%A8-httpapplication%E7%89%A9%E4%BB%B6-getapplicationinstance">取得使用 HttpApplication物件 (GetApplicationInstance)</a><ul>
-<li><a href="#httpapplicationfactory-%E5%88%9D%E5%A7%8B%E5%8C%96-ensureinited%E6%96%B9%E6%B3%95">HttpApplicationFactory 初始化 (EnsureInited方法)</a></li>
-<li><a href="#applicationstart%E6%96%B9%E6%B3%95%E7%82%BA%E4%BB%80%E9%BA%BC%E5%8F%AA%E6%9C%83%E5%91%BC%E5%8F%AB%E4%B8%80%E6%AC%A1-ensureappstartcalled">Application_Start方法為什麼只會呼叫一次? (EnsureAppStartCalled)</a></li>
-</ul>
-</li>
-<li><a href="#%E8%BF%94%E5%9B%9E%E4%B8%80%E5%80%8B-httpapplication-%E7%89%A9%E4%BB%B6-getnormalapplicationinstance">返回一個 HttpApplication 物件 (GetNormalApplicationInstance)</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
-</ul>
-<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>附上<code>Asp.net</code>執行請求流程圖.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png" alt="瀏覽器請求IIS流程"></p>
-<p>在前一篇我們說到<code>HttpRunTime</code>會透過<code>GetApplicationInstance</code>來取得一個<code>IHttpHandler</code>對象.</p>
-<p>今天跟著原始碼來了解到底回傳一個什麼<code>IHttpHandler</code>物件給<code>HttpRunTime</code>使用.</p>
-<blockquote>
-<p>　查看原始碼好站 <a href="https://referencesource.microsoft.com/">Reference Source</a> </p>
-</blockquote>
-<h2 id="HttpApplication物件"><a href="#HttpApplication物件" class="headerlink" title="HttpApplication物件"></a>HttpApplication物件</h2><p>HttpApplication是整個<code>ASP.NET</code>基礎的核心。一個HttpApplication物件在某個時刻只能處理一個請求,只有完成對某個請求處理後,該HttpApplication才能用於後續的請求的處理。</p>
-<p>所以<code>ASP.NET</code>利用物件程序池機制來建立或者取得HttpApplication物件。具體來講,當第一個<code>Http</code>請求抵達的時候,<code>ASP.NET</code>會一次建立多個HttpApplication物件,並將其置於池中,選擇其中一個物件來處理該請求。</p>
-<p>而如果程序池中沒有<code>HttpApplication</code>物件,<code>Asp.net</code>會建立新的<code>HttpApplication</code>物件處理請求</p>
-<p><code>HttpApplication</code>物件處理<code>Http</code>請求整個生命週期是一個相對複雜的過程,在該過程的不同階段會觸發相應的事件。我們可以註冊相應的事件(如同<a href="https://ithelp.ithome.com.tw/articles/10214999">上一篇</a>介紹事件表)</p>
-<p>下圖就是模擬<code>HttpApplication</code>的<code>ObjectPool</code>樣子</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/4/objectPool.png" alt="HttpApplication"></p>
-<h2 id="取得使用-HttpApplication物件-GetApplicationInstance"><a href="#取得使用-HttpApplication物件-GetApplicationInstance" class="headerlink" title="取得使用 HttpApplication物件 (GetApplicationInstance)"></a>取得使用 HttpApplication物件 (GetApplicationInstance)</h2><p>讓我們看看<code>GetApplicationInstan</code>方法做了什麼事情.</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> HttpApplicationFactory _theApplicationFactory = <span class="keyword">new</span> HttpApplicationFactory();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">static</span> IHttpHandler <span class="title">GetApplicationInstance</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (_customApplication != <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">return</span> _customApplication;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Check to see if it&#x27;s a debug auto-attach request</span></span><br><span class="line">    <span class="keyword">if</span> (context.Request.IsDebuggingRequest)</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> HttpDebugHandler();</span><br><span class="line"></span><br><span class="line">    _theApplicationFactory.EnsureInited();</span><br><span class="line"></span><br><span class="line">    _theApplicationFactory.EnsureAppStartCalled(context);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> _theApplicationFactory.GetNormalApplicationInstance(context);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>_theApplicationFactory</code>是一個靜態物件</p>
-<p><code>_theApplicationFactory</code>呼叫三個方法<code>EnsureInited</code>,<code>EnsureAppStartCalled</code>,<code>GetNormalApplicationInstance</code>,讓我們一一來解析做了些什麼事情吧</p>
-<h3 id="HttpApplicationFactory-初始化-EnsureInited方法"><a href="#HttpApplicationFactory-初始化-EnsureInited方法" class="headerlink" title="HttpApplicationFactory 初始化 (EnsureInited方法)"></a>HttpApplicationFactory 初始化 (EnsureInited方法)</h3><p>通過查找Init方法的代碼以及其中2行如下代碼裡的細節,我們可以得知,這2行代碼主要是從global.asax獲取內容,然後進行編譯。</p>
-<p><code>HttpApplicationFactory.EnsureInited()</code>方法檢查<code>HttpApplicationFactory</code>是否已經被初始化,如果沒有就呼叫<code>HttpApplicationFactory.Init()</code>進行初始化。</p>
-<p>在<code>Init()</code>中,先獲取網站下<code>global.asax</code>文件完整路徑(透過<code>GetApplicationFile</code>方法),最後呼叫<code>CompileApplication()</code>方法對<code>global.asax</code>進行編譯.</p>
-<p>在EnsureInited方法</p>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">EnsureInited</span>()</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!_inited) &#123;</span><br><span class="line">        <span class="keyword">lock</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!_inited) &#123;</span><br><span class="line">                Init();</span><br><span class="line">                _inited = <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">CompileApplication</span>()</span> &#123;</span><br><span class="line">    <span class="comment">// Get the Application Type and AppState from the global file</span></span><br><span class="line">    _theApplicationType = BuildManager.GetGlobalAsaxType();</span><br><span class="line"></span><br><span class="line">    BuildResultCompiledGlobalAsaxType result = BuildManager.GetGlobalAsaxBuildResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (result.HasAppOrSessionObjects) &#123;</span><br><span class="line">            GetAppStateByParsingGlobalAsax();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        _fileDependencies = result.VirtualPathDependencies;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (_state == <span class="literal">null</span>) &#123;</span><br><span class="line">        _state = <span class="keyword">new</span> HttpApplicationState();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ReflectOnApplicationType();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><code>ReflectOnApplicationType</code>方法取得目前特別事件方法,並添加到相對應的<code>MethodInfo</code>成員上</p>
-<p>會透過以下三類方法名稱去取方法資訊</p>
-<ul>
-<li><code>Application_OnStart</code> or <code>Application_Start</code></li>
-<li><code>Application_OnEnd</code> or <code>Application_End</code></li>
-<li><code>Session_OnEnd</code> or <code>Session_End</code></li>
-</ul>
-<blockquote>
-<p>取得這些資訊會提供<code>EnsureAppStartCalled</code>去呼叫<code>Application_OnStart</code>方法</p>
-</blockquote>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ReflectOnApplicationType</span>()</span> &#123;</span><br><span class="line">    ArrayList handlers = <span class="keyword">new</span> ArrayList();</span><br><span class="line">    MethodInfo[] methods;</span><br><span class="line"></span><br><span class="line">    Debug.Trace(<span class="string">&quot;PipelineRuntime&quot;</span>, <span class="string">&quot;ReflectOnApplicationType&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// get this class methods</span></span><br><span class="line">    methods = _theApplicationType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);</span><br><span class="line">    <span class="keyword">foreach</span> (MethodInfo m <span class="keyword">in</span> methods) &#123;</span><br><span class="line">        <span class="keyword">if</span> (ReflectOnMethodInfoIfItLooksLikeEventHandler(m))</span><br><span class="line">            handlers.Add(m);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// get base class private methods (GetMethods would not return those)</span></span><br><span class="line">    Type baseType = _theApplicationType.BaseType;</span><br><span class="line">    <span class="keyword">if</span> (baseType != <span class="literal">null</span> &amp;&amp; baseType != <span class="keyword">typeof</span>(HttpApplication)) &#123;</span><br><span class="line">        methods = baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);</span><br><span class="line">        <span class="keyword">foreach</span> (MethodInfo m <span class="keyword">in</span> methods) &#123;</span><br><span class="line">            <span class="keyword">if</span> (m.IsPrivate &amp;&amp; ReflectOnMethodInfoIfItLooksLikeEventHandler(m))</span><br><span class="line">                handlers.Add(m);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// remember as an array</span></span><br><span class="line">    _eventHandlerMethods = <span class="keyword">new</span> MethodInfo[handlers.Count];</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; _eventHandlerMethods.Length; i++)</span><br><span class="line">        _eventHandlerMethods[i] = (MethodInfo)handlers[i];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="Application-Start方法為什麼只會呼叫一次-EnsureAppStartCalled"><a href="#Application-Start方法為什麼只會呼叫一次-EnsureAppStartCalled" class="headerlink" title="Application_Start方法為什麼只會呼叫一次? (EnsureAppStartCalled)"></a>Application_Start方法為什麼只會呼叫一次? (EnsureAppStartCalled)</h3><p><code>HttpApplicationFactory.EnsureAppStartCalled</code>方法建立一個<code>HttpApplication</code>物件並觸發<code>Application_OnStart</code>事件(執行<code>Global.asax</code>中的<code>Application_Start(object sender, EventArgs e)</code>)</p>
-<p>在處理完事件<code>Application_OnStart</code>後<code>HttpApplication</code>物件會立即被回收掉,因為系統初始化只需要一次</p>
-<blockquote>
-<p>但是其中<code>GetSpecialApplicationInstance</code>裡會對<code>IIS7</code>做一些特殊的事情這裡就不多提</p>
-</blockquote>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">EnsureAppStartCalled</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!_appOnStartCalled) &#123;</span><br><span class="line">        <span class="keyword">lock</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!_appOnStartCalled) &#123;</span><br><span class="line">                <span class="keyword">using</span> (<span class="keyword">new</span> DisposableHttpContextWrapper(context)) &#123;</span><br><span class="line"></span><br><span class="line">                    WebBaseEvent.RaiseSystemEvent(<span class="keyword">this</span>, WebEventCodes.ApplicationStart);</span><br><span class="line"></span><br><span class="line">                    FireApplicationOnStart(context);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                _appOnStartCalled = <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">FireApplicationOnStart</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (_onStartMethod != <span class="literal">null</span>) &#123;</span><br><span class="line">        HttpApplication app = GetSpecialApplicationInstance();</span><br><span class="line"></span><br><span class="line">        app.ProcessSpecialRequest(</span><br><span class="line">                                    context,</span><br><span class="line">                                    _onStartMethod,</span><br><span class="line">                                    _onStartParamCount,</span><br><span class="line">                                    <span class="keyword">this</span>, </span><br><span class="line">                                    EventArgs.Empty, </span><br><span class="line">                                    <span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">        RecycleSpecialApplicationInstance(app);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>在處理完事件<code>Application_OnStart</code>呼叫<code>RecycleSpecialApplicationInstance</code>回收<code>HttpApplication</code>物件</p>
-</blockquote>
-<h2 id="返回一個-HttpApplication-物件-GetNormalApplicationInstance"><a href="#返回一個-HttpApplication-物件-GetNormalApplicationInstance" class="headerlink" title="返回一個 HttpApplication 物件 (GetNormalApplicationInstance)"></a>返回一個 HttpApplication 物件 (GetNormalApplicationInstance)</h2><p>方法中主要做.</p>
-<ol>
-<li>判斷<code>_freeList</code>集合中是否有可用<code>HttpApplication</code>物件(物件程序池中),如果沒有就利用<code>HttpRuntime.CreateNonPublicInstance(_theApplicationType)</code>透過反射建立一個新的<code>HttpApplication</code>返回(呼叫完<code>IHttpHandler.ProcessRequst</code>方法後會將這個物件存入<code>_freeList</code>中),最後將</li>
-</ol>
-<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> HttpApplication <span class="title">GetNormalApplicationInstance</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    HttpApplication app = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!_freeList.TryTake(<span class="keyword">out</span> app)) &#123;</span><br><span class="line">        <span class="comment">// If ran out of instances, create a new one</span></span><br><span class="line">        app = (HttpApplication)HttpRuntime.CreateNonPublicInstance(_theApplicationType);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">using</span> (<span class="keyword">new</span> ApplicationImpersonationContext()) &#123;</span><br><span class="line">            app.InitInternal(context, _state, _eventHandlerMethods);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (AppSettings.UseTaskFriendlySynchronizationContext) &#123;</span><br><span class="line">        <span class="comment">// When this HttpApplication instance is no longer in use, recycle it.</span></span><br><span class="line">        app.ApplicationInstanceConsumersCounter = <span class="keyword">new</span> CountdownTask(<span class="number">1</span>); <span class="comment">// representing required call to HttpApplication.ReleaseAppInstance</span></span><br><span class="line">        app.ApplicationInstanceConsumersCounter.Task.ContinueWith((_, o) =&gt; RecycleApplicationInstance((HttpApplication)o), app, TaskContinuationOptions.ExecuteSynchronously);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> app;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>所以最終我們是返回一個<code>HttpApplication</code>物件來使用.</p>
-<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們學到</p>
-<ol>
-<li><code>IHttpHandler GetApplicationInstance(HttpContext context)</code>其實是返回一個<code>HttpApplication</code>物件.</li>
-<li>在<code>EnsureAppStartCalled</code>方法中呼叫<code>FireApplicationOnStart</code>方法動態建立一個<code>HttpApplication</code>物件,呼叫完<code>Application_OnStart</code>事件就回收掉並使用一個<code>flag</code>布林值代表已經呼叫過.</li>
-<li>這個工廠會有一個 <code>_freeList</code> 集合來存取之前用過的<code>HttpApplication</code>物件,如果集合中沒有適合的<code>HttpApplication</code>物件就會使用反射返回一個新的<code>HttpApplication</code>並將他初始化．</li>
-<li>所以<code>HttpRuntime</code>呼叫的是<code>HttpApplication</code>物件的<code>ProcessRequest</code>方法</li>
-</ol>
-<p>下篇會跟大家介紹<code>HttpApplication</code>類別成員詳細資訊</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day4/">https://isdaniel.github.io/ithelp-day4/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
-]]></content>
-      <categories>
-        <category>11th鐵人賽</category>
-      </categories>
-      <tags>
-        <tag>C#</tag>
-        <tag>Asp.net</tag>
-        <tag>Asp.net-MVC</tag>
-        <tag>SourceCode</tag>
-        <tag>11th鐵人賽</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>Asp.Net重要物件HttpApplication(一) 初始化建立IHttpMoudule (第5天)</title>
     <url>/ithelp-day5/</url>
     <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
@@ -13498,6 +13410,94 @@ email_url: dog830228@gmail.com
 <p>很多文章都會提到10多個事件（<code>BeginRequest</code>, <code>EndRequest</code>…..等）</p>
 <p>下篇會介紹<code>StepManager</code>如何建立管道和如何呼叫事件並找尋<code>HttpHandler</code>來執行.</p>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day5/">https://isdaniel.github.io/ithelp-day5/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+]]></content>
+      <categories>
+        <category>11th鐵人賽</category>
+      </categories>
+      <tags>
+        <tag>C#</tag>
+        <tag>Asp.net</tag>
+        <tag>Asp.net-MVC</tag>
+        <tag>SourceCode</tag>
+        <tag>11th鐵人賽</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>掌控HttpApplication物件建立 - HttpApplicationFactory (第4天)</title>
+    <url>/ithelp-day4/</url>
+    <content><![CDATA[<h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E8%A8%80">前言：</a></li>
+<li><a href="#httpapplication%E7%89%A9%E4%BB%B6">HttpApplication物件</a></li>
+<li><a href="#%E5%8F%96%E5%BE%97%E4%BD%BF%E7%94%A8-httpapplication%E7%89%A9%E4%BB%B6-getapplicationinstance">取得使用 HttpApplication物件 (GetApplicationInstance)</a><ul>
+<li><a href="#httpapplicationfactory-%E5%88%9D%E5%A7%8B%E5%8C%96-ensureinited%E6%96%B9%E6%B3%95">HttpApplicationFactory 初始化 (EnsureInited方法)</a></li>
+<li><a href="#applicationstart%E6%96%B9%E6%B3%95%E7%82%BA%E4%BB%80%E9%BA%BC%E5%8F%AA%E6%9C%83%E5%91%BC%E5%8F%AB%E4%B8%80%E6%AC%A1-ensureappstartcalled">Application_Start方法為什麼只會呼叫一次? (EnsureAppStartCalled)</a></li>
+</ul>
+</li>
+<li><a href="#%E8%BF%94%E5%9B%9E%E4%B8%80%E5%80%8B-httpapplication-%E7%89%A9%E4%BB%B6-getnormalapplicationinstance">返回一個 HttpApplication 物件 (GetNormalApplicationInstance)</a></li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
+</ul>
+<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>附上<code>Asp.net</code>執行請求流程圖.</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png" alt="瀏覽器請求IIS流程"></p>
+<p>在前一篇我們說到<code>HttpRunTime</code>會透過<code>GetApplicationInstance</code>來取得一個<code>IHttpHandler</code>對象.</p>
+<p>今天跟著原始碼來了解到底回傳一個什麼<code>IHttpHandler</code>物件給<code>HttpRunTime</code>使用.</p>
+<blockquote>
+<p>　查看原始碼好站 <a href="https://referencesource.microsoft.com/">Reference Source</a> </p>
+</blockquote>
+<h2 id="HttpApplication物件"><a href="#HttpApplication物件" class="headerlink" title="HttpApplication物件"></a>HttpApplication物件</h2><p>HttpApplication是整個<code>ASP.NET</code>基礎的核心。一個HttpApplication物件在某個時刻只能處理一個請求,只有完成對某個請求處理後,該HttpApplication才能用於後續的請求的處理。</p>
+<p>所以<code>ASP.NET</code>利用物件程序池機制來建立或者取得HttpApplication物件。具體來講,當第一個<code>Http</code>請求抵達的時候,<code>ASP.NET</code>會一次建立多個HttpApplication物件,並將其置於池中,選擇其中一個物件來處理該請求。</p>
+<p>而如果程序池中沒有<code>HttpApplication</code>物件,<code>Asp.net</code>會建立新的<code>HttpApplication</code>物件處理請求</p>
+<p><code>HttpApplication</code>物件處理<code>Http</code>請求整個生命週期是一個相對複雜的過程,在該過程的不同階段會觸發相應的事件。我們可以註冊相應的事件(如同<a href="https://ithelp.ithome.com.tw/articles/10214999">上一篇</a>介紹事件表)</p>
+<p>下圖就是模擬<code>HttpApplication</code>的<code>ObjectPool</code>樣子</p>
+<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/4/objectPool.png" alt="HttpApplication"></p>
+<h2 id="取得使用-HttpApplication物件-GetApplicationInstance"><a href="#取得使用-HttpApplication物件-GetApplicationInstance" class="headerlink" title="取得使用 HttpApplication物件 (GetApplicationInstance)"></a>取得使用 HttpApplication物件 (GetApplicationInstance)</h2><p>讓我們看看<code>GetApplicationInstan</code>方法做了什麼事情.</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> HttpApplicationFactory _theApplicationFactory = <span class="keyword">new</span> HttpApplicationFactory();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">static</span> IHttpHandler <span class="title">GetApplicationInstance</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (_customApplication != <span class="literal">null</span>)</span><br><span class="line">        <span class="keyword">return</span> _customApplication;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Check to see if it&#x27;s a debug auto-attach request</span></span><br><span class="line">    <span class="keyword">if</span> (context.Request.IsDebuggingRequest)</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> HttpDebugHandler();</span><br><span class="line"></span><br><span class="line">    _theApplicationFactory.EnsureInited();</span><br><span class="line"></span><br><span class="line">    _theApplicationFactory.EnsureAppStartCalled(context);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> _theApplicationFactory.GetNormalApplicationInstance(context);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>_theApplicationFactory</code>是一個靜態物件</p>
+<p><code>_theApplicationFactory</code>呼叫三個方法<code>EnsureInited</code>,<code>EnsureAppStartCalled</code>,<code>GetNormalApplicationInstance</code>,讓我們一一來解析做了些什麼事情吧</p>
+<h3 id="HttpApplicationFactory-初始化-EnsureInited方法"><a href="#HttpApplicationFactory-初始化-EnsureInited方法" class="headerlink" title="HttpApplicationFactory 初始化 (EnsureInited方法)"></a>HttpApplicationFactory 初始化 (EnsureInited方法)</h3><p>通過查找Init方法的代碼以及其中2行如下代碼裡的細節,我們可以得知,這2行代碼主要是從global.asax獲取內容,然後進行編譯。</p>
+<p><code>HttpApplicationFactory.EnsureInited()</code>方法檢查<code>HttpApplicationFactory</code>是否已經被初始化,如果沒有就呼叫<code>HttpApplicationFactory.Init()</code>進行初始化。</p>
+<p>在<code>Init()</code>中,先獲取網站下<code>global.asax</code>文件完整路徑(透過<code>GetApplicationFile</code>方法),最後呼叫<code>CompileApplication()</code>方法對<code>global.asax</code>進行編譯.</p>
+<p>在EnsureInited方法</p>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">EnsureInited</span>()</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!_inited) &#123;</span><br><span class="line">        <span class="keyword">lock</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!_inited) &#123;</span><br><span class="line">                Init();</span><br><span class="line">                _inited = <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">CompileApplication</span>()</span> &#123;</span><br><span class="line">    <span class="comment">// Get the Application Type and AppState from the global file</span></span><br><span class="line">    _theApplicationType = BuildManager.GetGlobalAsaxType();</span><br><span class="line"></span><br><span class="line">    BuildResultCompiledGlobalAsaxType result = BuildManager.GetGlobalAsaxBuildResult();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (result != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (result.HasAppOrSessionObjects) &#123;</span><br><span class="line">            GetAppStateByParsingGlobalAsax();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        _fileDependencies = result.VirtualPathDependencies;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (_state == <span class="literal">null</span>) &#123;</span><br><span class="line">        _state = <span class="keyword">new</span> HttpApplicationState();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ReflectOnApplicationType();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ReflectOnApplicationType</code>方法取得目前特別事件方法,並添加到相對應的<code>MethodInfo</code>成員上</p>
+<p>會透過以下三類方法名稱去取方法資訊</p>
+<ul>
+<li><code>Application_OnStart</code> or <code>Application_Start</code></li>
+<li><code>Application_OnEnd</code> or <code>Application_End</code></li>
+<li><code>Session_OnEnd</code> or <code>Session_End</code></li>
+</ul>
+<blockquote>
+<p>取得這些資訊會提供<code>EnsureAppStartCalled</code>去呼叫<code>Application_OnStart</code>方法</p>
+</blockquote>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ReflectOnApplicationType</span>()</span> &#123;</span><br><span class="line">    ArrayList handlers = <span class="keyword">new</span> ArrayList();</span><br><span class="line">    MethodInfo[] methods;</span><br><span class="line"></span><br><span class="line">    Debug.Trace(<span class="string">&quot;PipelineRuntime&quot;</span>, <span class="string">&quot;ReflectOnApplicationType&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// get this class methods</span></span><br><span class="line">    methods = _theApplicationType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);</span><br><span class="line">    <span class="keyword">foreach</span> (MethodInfo m <span class="keyword">in</span> methods) &#123;</span><br><span class="line">        <span class="keyword">if</span> (ReflectOnMethodInfoIfItLooksLikeEventHandler(m))</span><br><span class="line">            handlers.Add(m);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// get base class private methods (GetMethods would not return those)</span></span><br><span class="line">    Type baseType = _theApplicationType.BaseType;</span><br><span class="line">    <span class="keyword">if</span> (baseType != <span class="literal">null</span> &amp;&amp; baseType != <span class="keyword">typeof</span>(HttpApplication)) &#123;</span><br><span class="line">        methods = baseType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);</span><br><span class="line">        <span class="keyword">foreach</span> (MethodInfo m <span class="keyword">in</span> methods) &#123;</span><br><span class="line">            <span class="keyword">if</span> (m.IsPrivate &amp;&amp; ReflectOnMethodInfoIfItLooksLikeEventHandler(m))</span><br><span class="line">                handlers.Add(m);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// remember as an array</span></span><br><span class="line">    _eventHandlerMethods = <span class="keyword">new</span> MethodInfo[handlers.Count];</span><br><span class="line">    <span class="keyword">for</span> (<span class="built_in">int</span> i = <span class="number">0</span>; i &lt; _eventHandlerMethods.Length; i++)</span><br><span class="line">        _eventHandlerMethods[i] = (MethodInfo)handlers[i];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Application-Start方法為什麼只會呼叫一次-EnsureAppStartCalled"><a href="#Application-Start方法為什麼只會呼叫一次-EnsureAppStartCalled" class="headerlink" title="Application_Start方法為什麼只會呼叫一次? (EnsureAppStartCalled)"></a>Application_Start方法為什麼只會呼叫一次? (EnsureAppStartCalled)</h3><p><code>HttpApplicationFactory.EnsureAppStartCalled</code>方法建立一個<code>HttpApplication</code>物件並觸發<code>Application_OnStart</code>事件(執行<code>Global.asax</code>中的<code>Application_Start(object sender, EventArgs e)</code>)</p>
+<p>在處理完事件<code>Application_OnStart</code>後<code>HttpApplication</code>物件會立即被回收掉,因為系統初始化只需要一次</p>
+<blockquote>
+<p>但是其中<code>GetSpecialApplicationInstance</code>裡會對<code>IIS7</code>做一些特殊的事情這裡就不多提</p>
+</blockquote>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">EnsureAppStartCalled</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!_appOnStartCalled) &#123;</span><br><span class="line">        <span class="keyword">lock</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!_appOnStartCalled) &#123;</span><br><span class="line">                <span class="keyword">using</span> (<span class="keyword">new</span> DisposableHttpContextWrapper(context)) &#123;</span><br><span class="line"></span><br><span class="line">                    WebBaseEvent.RaiseSystemEvent(<span class="keyword">this</span>, WebEventCodes.ApplicationStart);</span><br><span class="line"></span><br><span class="line">                    FireApplicationOnStart(context);</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                _appOnStartCalled = <span class="literal">true</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">FireApplicationOnStart</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (_onStartMethod != <span class="literal">null</span>) &#123;</span><br><span class="line">        HttpApplication app = GetSpecialApplicationInstance();</span><br><span class="line"></span><br><span class="line">        app.ProcessSpecialRequest(</span><br><span class="line">                                    context,</span><br><span class="line">                                    _onStartMethod,</span><br><span class="line">                                    _onStartParamCount,</span><br><span class="line">                                    <span class="keyword">this</span>, </span><br><span class="line">                                    EventArgs.Empty, </span><br><span class="line">                                    <span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">        RecycleSpecialApplicationInstance(app);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在處理完事件<code>Application_OnStart</code>呼叫<code>RecycleSpecialApplicationInstance</code>回收<code>HttpApplication</code>物件</p>
+</blockquote>
+<h2 id="返回一個-HttpApplication-物件-GetNormalApplicationInstance"><a href="#返回一個-HttpApplication-物件-GetNormalApplicationInstance" class="headerlink" title="返回一個 HttpApplication 物件 (GetNormalApplicationInstance)"></a>返回一個 HttpApplication 物件 (GetNormalApplicationInstance)</h2><p>方法中主要做.</p>
+<ol>
+<li>判斷<code>_freeList</code>集合中是否有可用<code>HttpApplication</code>物件(物件程序池中),如果沒有就利用<code>HttpRuntime.CreateNonPublicInstance(_theApplicationType)</code>透過反射建立一個新的<code>HttpApplication</code>返回(呼叫完<code>IHttpHandler.ProcessRequst</code>方法後會將這個物件存入<code>_freeList</code>中),最後將</li>
+</ol>
+<figure class="highlight csharp"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> HttpApplication <span class="title">GetNormalApplicationInstance</span>(<span class="params">HttpContext context</span>)</span> &#123;</span><br><span class="line">    HttpApplication app = <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!_freeList.TryTake(<span class="keyword">out</span> app)) &#123;</span><br><span class="line">        <span class="comment">// If ran out of instances, create a new one</span></span><br><span class="line">        app = (HttpApplication)HttpRuntime.CreateNonPublicInstance(_theApplicationType);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">using</span> (<span class="keyword">new</span> ApplicationImpersonationContext()) &#123;</span><br><span class="line">            app.InitInternal(context, _state, _eventHandlerMethods);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (AppSettings.UseTaskFriendlySynchronizationContext) &#123;</span><br><span class="line">        <span class="comment">// When this HttpApplication instance is no longer in use, recycle it.</span></span><br><span class="line">        app.ApplicationInstanceConsumersCounter = <span class="keyword">new</span> CountdownTask(<span class="number">1</span>); <span class="comment">// representing required call to HttpApplication.ReleaseAppInstance</span></span><br><span class="line">        app.ApplicationInstanceConsumersCounter.Task.ContinueWith((_, o) =&gt; RecycleApplicationInstance((HttpApplication)o), app, TaskContinuationOptions.ExecuteSynchronously);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> app;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>所以最終我們是返回一個<code>HttpApplication</code>物件來使用.</p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>今天我們學到</p>
+<ol>
+<li><code>IHttpHandler GetApplicationInstance(HttpContext context)</code>其實是返回一個<code>HttpApplication</code>物件.</li>
+<li>在<code>EnsureAppStartCalled</code>方法中呼叫<code>FireApplicationOnStart</code>方法動態建立一個<code>HttpApplication</code>物件,呼叫完<code>Application_OnStart</code>事件就回收掉並使用一個<code>flag</code>布林值代表已經呼叫過.</li>
+<li>這個工廠會有一個 <code>_freeList</code> 集合來存取之前用過的<code>HttpApplication</code>物件,如果集合中沒有適合的<code>HttpApplication</code>物件就會使用反射返回一個新的<code>HttpApplication</code>並將他初始化．</li>
+<li>所以<code>HttpRuntime</code>呼叫的是<code>HttpApplication</code>物件的<code>ProcessRequest</code>方法</li>
+</ol>
+<p>下篇會跟大家介紹<code>HttpApplication</code>類別成員詳細資訊</p>
+<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/ithelp-day4/">https://isdaniel.github.io/ithelp-day4/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>
         <category>11th鐵人賽</category>
@@ -17665,67 +17665,60 @@ using (var channel = connection.CreateModel())
 <li>Educational use to learn Linux sandbox internals</li>
 <li>Building lightweight, Docker-like containers without the overhead</li>
 </ul>
-<h2 id="🧰-Features"><a href="#🧰-Features" class="headerlink" title="🧰 Features"></a>🧰 Features</h2><table>
-<thead>
-<tr>
-<th>Feature</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>🧾 Filesystem isolation</td>
-<td>Uses <code>OverlayFS</code> for a copy-on-write file system</td>
-</tr>
-<tr>
-<td>💾 Memory limits</td>
-<td>Enforced via <code>cgroups v2</code></td>
-</tr>
-<tr>
-<td>🧍 Namespace separation</td>
-<td>Full separation of PID, UTS, NET, USER, IPC</td>
-</tr>
-<tr>
-<td>⚙️ Custom shell or program execution</td>
-<td>You define what runs in the sandbox</td>
-</tr>
-<tr>
-<td>🦀 Built in Rust</td>
-<td>Safe and unsafe Rust for low-level systems control</td>
-</tr>
-</tbody></table>
-<h2 id="📦-Requirements"><a href="#📦-Requirements" class="headerlink" title="📦 Requirements"></a>📦 Requirements</h2><p>To use RustBox, you’ll need:</p>
+<h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p><strong>Rustbox</strong> creates a secure and minimal sandbox environment on Linux. It uses:</p>
 <ul>
-<li>✅ <strong>Linux kernel 5.x+</strong></li>
-<li>✅ <strong>Cgroups v2</strong> and <code>overlayfs</code> support enabled</li>
-<li>✅ <strong>Rust 1.70+</strong></li>
-<li>✅ <strong>Root privileges</strong> (for mounting and namespace operations)</li>
+<li><strong>OverlayFS</strong> for isolated file systems</li>
+<li><strong>Cgroups v2</strong> to restrict memory and CPU usage</li>
+<li><strong>Linux namespaces</strong> to isolate the process (PID, UTS, IPC, NET, USER)</li>
+<li><strong>Double fork</strong> architecture for proper process isolation and resource cleanup</li>
 </ul>
-<h2 id="🔧-Configuration"><a href="#🔧-Configuration" class="headerlink" title="🔧 Configuration"></a>🔧 Configuration</h2><p>RustBox is configured through a simple Rust struct:</p>
-<figure class="highlight rust"><table><tr><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">SandboxConfig</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> base_dir: <span class="type">String</span>,     <span class="comment">// Base directory for OverlayFS, e.g. /tmp/sandbox</span></span><br><span class="line">    <span class="keyword">pub</span> memory_limit: <span class="type">String</span>, <span class="comment">// Memory limit, e.g., &quot;100M&quot;</span></span><br><span class="line">    <span class="keyword">pub</span> shell_path: <span class="type">String</span>,   <span class="comment">// Path to shell or binary inside sandbox</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>This tool is useful for running untrusted code in a controlled environment, testing, or creating lightweight containers.</p>
+<h2 id="Double-Fork-Implementation"><a href="#Double-Fork-Implementation" class="headerlink" title="Double Fork Implementation"></a>Double Fork Implementation</h2><p>RustBox employs a <strong>double fork</strong> pattern to ensure proper process isolation and clean resource management:</p>
+<h3 id="Process-Hierarchy"><a href="#Process-Hierarchy" class="headerlink" title="Process Hierarchy"></a>Process Hierarchy</h3><figure class="highlight tcl"><table><tr><td class="code"><pre><span class="line">[Outer Parent Process]</span><br><span class="line">    └─&gt; fork() #<span class="number">1</span></span><br><span class="line">        ├─&gt; [Namespaced Parent Process]</span><br><span class="line">        │   ├─&gt; unshare() - Creates new namespaces</span><br><span class="line">        │   └─&gt; fork() #<span class="number">2</span></span><br><span class="line">        │       ├─&gt; [Inner Child Process]</span><br><span class="line">        │       │   ├─&gt; Mount /<span class="keyword">proc</span><span class="title"> and</span> /dev</span><br><span class="line">        │       │   ├─&gt;<span class="title"> chroot()</span> to<span class="title"> merged</span> overlay</span><br><span class="line">        │       │   ├─&gt;<span class="title"> chdir()</span> to<span class="title"> working</span> directory</span><br><span class="line">        │       │   └─&gt;<span class="title"> execv()</span> -<span class="title"> Execute</span> shell/binary</span><br><span class="line">        │       └─&gt; [Namespaced<span class="title"> Parent]</span> waits<span class="title"> for</span> inner<span class="title"> child</span></span><br><span class="line">        │           └─&gt;<span class="title"> Unmounts</span> /<span class="keyword">proc</span><span class="title"> and</span> /dev<span class="title"> inside</span> namespace</span><br><span class="line">        └─&gt; [Outer<span class="title"> Parent]</span> waits<span class="title"> for</span> namespaced<span class="title"> parent</span></span><br><span class="line">            ├─&gt;<span class="title"> Unmounts</span> overlay<span class="title"> filesystem</span></span><br><span class="line">            └─&gt;<span class="title"> Cleans</span> up<span class="title"> cgroups</span></span><br></pre></td></tr></table></figure>
 
-<p>You can pass this struct to the sandbox engine to configure the runtime environment.</p>
-<h2 id="🛠️-How-It-Works"><a href="#🛠️-How-It-Works" class="headerlink" title="🛠️ How It Works"></a>🛠️ How It Works</h2><p>Here’s what happens under the hood when you launch a sandbox:</p>
-<ol>
-<li><p><strong>OverlayFS Mounting</strong><br>A new filesystem layer is created using OverlayFS, giving the process an isolated view of <code>/</code>.</p>
+<h3 id="Why-Double-Fork"><a href="#Why-Double-Fork" class="headerlink" title="Why Double Fork?"></a>Why Double Fork?</h3><ol>
+<li><p><strong>First Fork (Outer → Namespaced Parent)</strong>:</p>
+<ul>
+<li>Isolates the namespace creation from the main process</li>
+<li>Allows the outer parent to maintain control over cgroups and overlay mounts</li>
+<li>Ensures cleanup happens outside the namespace context</li>
+</ul>
 </li>
-<li><p><strong>Namespace Cloning</strong><br>Using <code>clone()</code> and <code>unshare()</code>, the process is moved into its own PID, UTS, NET, USER, and IPC namespaces.</p>
+<li><p><strong>Second Fork (Namespaced Parent → Inner Child)</strong>:</p>
+<ul>
+<li>Creates PID 1 inside the new PID namespace</li>
+<li>Provides proper process tree isolation</li>
+<li>Enables the namespaced parent to handle cleanup of namespace-specific resources</li>
+</ul>
 </li>
-<li><p><strong>Memory Confinement</strong><br>Cgroup v2 memory limits are applied by writing to <code>/sys/fs/cgroup</code>.</p>
-</li>
-<li><p><strong>Execution</strong><br>The target binary (e.g., bash or your script) is launched inside this isolated, resource-restricted world.</p>
+<li><p><strong>Cleanup Benefits</strong>:</p>
+<ul>
+<li><strong>Inner Child</strong>: Executes user code in complete isolation</li>
+<li><strong>Namespaced Parent</strong>: Unmounts <code>/proc</code> and <code>/dev</code> after child exits (inside namespace)</li>
+<li><strong>Outer Parent</strong>: Unmounts overlay and removes cgroups (outside namespace)</li>
+<li>Ensures resources are cleaned up in the correct order and context</li>
+</ul>
 </li>
 </ol>
-<h2 id="▶️-Example-Usage"><a href="#▶️-Example-Usage" class="headerlink" title="▶️ Example Usage"></a>▶️ Example Usage</h2><p>Let’s say you want to sandbox <code>/bin/bash</code> with 100MB memory and a custom filesystem:</p>
-<figure class="highlight rust"><table><tr><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="variable">config</span> = SandboxConfig &#123;</span><br><span class="line">    base_dir: <span class="string">&quot;/tmp/sandbox&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">    memory_limit: <span class="string">&quot;100M&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">    shell_path: <span class="string">&quot;/bin/bash&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">rustbox::<span class="title function_ invoke__">run_sandbox</span>(config)?;</span><br></pre></td></tr></table></figure>
+<h2 id="🧰-Features"><a href="#🧰-Features" class="headerlink" title="🧰 Features"></a>🧰 Features</h2><ul>
+<li><strong>Isolated file system</strong> using <code>overlayfs</code> with automatic cleanup</li>
+<li><strong>Memory and CPU constraints</strong> with <code>cgroups v2</code></li>
+<li><strong>Full namespace isolation</strong> (PID, UTS, NET, USER, IPC)</li>
+<li><strong>Double fork architecture</strong> for robust process management and resource cleanup</li>
+<li><strong>Custom shell or binary execution</strong> inside the sandbox</li>
+<li><strong>Automatic resource cleanup</strong> on exit (mounts, cgroups)</li>
+<li>Written in Rust with <code>nix</code> crate for safe syscall wrappers</li>
+</ul>
+<h2 id="📦-Requirements"><a href="#📦-Requirements" class="headerlink" title="📦 Requirements"></a>📦 Requirements</h2><ul>
+<li>Linux kernel 5.x or higher (with overlayfs and cgroups v2 support)</li>
+<li>Rust (1.70+ recommended)</li>
+<li>Root privileges (for mounting and namespace ops)</li>
+</ul>
+<h2 id="🔧-Configuration"><a href="#🔧-Configuration" class="headerlink" title="🔧 Configuration"></a>🔧 Configuration</h2><p>The sandbox is configured via the <code>SandboxConfig</code> struct:</p>
+<figure class="highlight rust"><table><tr><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">SandboxConfig</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> base_dir: <span class="type">String</span>,     <span class="comment">// Base directory for overlayfs (e.g., ./rootfs)</span></span><br><span class="line">    <span class="keyword">pub</span> memory_limit: <span class="type">String</span>, <span class="comment">// Memory limit, e.g., &quot;100M&quot;, &quot;1G&quot;</span></span><br><span class="line">    <span class="keyword">pub</span> cpu_limit: <span class="type">String</span>,    <span class="comment">// CPU limit as fraction, e.g., &quot;0.5&quot; (50% of one core)</span></span><br><span class="line">    <span class="keyword">pub</span> shell_path: <span class="type">String</span>,   <span class="comment">// Path to the shell or binary to execute</span></span><br><span class="line">    <span class="keyword">pub</span> workdir: <span class="type">String</span>,      <span class="comment">// Working directory inside container (e.g., &quot;/&quot;)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>Then run it with:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> ./target/debug/rustbox</span><br></pre></td></tr></table></figure>
+<h3 id="Command-Line-Usage"><a href="#Command-Line-Usage" class="headerlink" title="Command Line Usage"></a>Command Line Usage</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Run with default settings</span></span><br><span class="line"><span class="built_in">sudo</span> ./target/debug/rustbox</span><br><span class="line"></span><br><span class="line"><span class="comment"># Custom configuration</span></span><br><span class="line"><span class="built_in">sudo</span> ./target/debug/rustbox \</span><br><span class="line">    --base-dir ./rootfs \</span><br><span class="line">    --memory 256M \</span><br><span class="line">    --cpu-limit 0.5 \</span><br><span class="line">    --shell /bin/bash \</span><br><span class="line">    --workdir /root</span><br></pre></td></tr></table></figure>
 
-<p>And you’ll drop into a secure, limited environment.</p>
-<h2 id="🐞-Remote-Debugging-Support"><a href="#🐞-Remote-Debugging-Support" class="headerlink" title="🐞 Remote Debugging Support"></a>🐞 Remote Debugging Support</h2><p>RustBox can be remotely debugged using <code>lldb-server</code>:</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="built_in">sudo</span> lldb-server platform --server --listen 127.0.0.1:12345 ./target/debug/rustbox</span><br></pre></td></tr></table></figure>
-
-<p>You can then connect from your IDE (e.g., VSCode with CodeLLDB) for deep debugging sessions inside the sandboxed environment. <a href="https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#connecting-to-lldb-server-agent">Reference</a></p>
 <h2 id="📚-Learn-More"><a href="#📚-Learn-More" class="headerlink" title="📚 Learn More"></a>📚 Learn More</h2><p>If you’re curious about the internals of Linux isolation mechanisms and want to build your own container-like system from scratch, here are some great follow-up resources:</p>
 <ul>
 <li>🔗 <a href="https://man7.org/linux/man-pages/man7/namespaces.7.html">Linux namespaces man pages</a></li>
@@ -17738,7 +17731,6 @@ using (var channel = connection.CreateModel())
 <p>💫 Give it a ⭐ on <a href="https://github.com/isdaniel/RustBox">GitHub</a> and explore the source!</p>
 </blockquote>
 <p>Would you like help turning this into a GitHub Pages site, Dev.to article, or adding diagrams for the sandbox architecture?</p>
-<p>&lt;! Above information summaries from AI. &#x2F;&gt;</p>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/rustbox-introduce/">https://isdaniel.github.io/rustbox-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 ]]></content>
       <categories>

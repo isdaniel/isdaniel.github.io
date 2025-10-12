@@ -28,7 +28,7 @@
 <meta property="og:description" content="Thank you for the clarification! Based on the actual purpose of your project — a Linux sandboxing tool using OverlayFS, cgroups, and namespaces — here’s a corrected and well-structured Markdown tech b">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2025-06-01T23:30:11.000Z">
-<meta property="article:modified_time" content="2025-10-03T01:25:40.255Z">
+<meta property="article:modified_time" content="2025-10-12T06:53:46.455Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="Linux">
 <meta property="article:tag" content="Rust">
@@ -294,7 +294,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-10-03 01:25:40" itemprop="dateModified" datetime="2025-10-03T01:25:40+00:00">2025-10-03</time>
+                <time title="Modified: 2025-10-12 06:53:46" itemprop="dateModified" datetime="2025-10-12T06:53:46+00:00">2025-10-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -330,14 +330,14 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.7k</span>
+              <span>4.5k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
                 <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>3 mins.</span>
+              <span>4 mins.</span>
             </span>
 
         </div>
@@ -365,67 +365,60 @@
 <li>Educational use to learn Linux sandbox internals</li>
 <li>Building lightweight, Docker-like containers without the overhead</li>
 </ul>
-<h2 id="🧰-Features"><a href="#🧰-Features" class="headerlink" title="🧰 Features"></a>🧰 Features</h2><table>
-<thead>
-<tr>
-<th>Feature</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>🧾 Filesystem isolation</td>
-<td>Uses <code>OverlayFS</code> for a copy-on-write file system</td>
-</tr>
-<tr>
-<td>💾 Memory limits</td>
-<td>Enforced via <code>cgroups v2</code></td>
-</tr>
-<tr>
-<td>🧍 Namespace separation</td>
-<td>Full separation of PID, UTS, NET, USER, IPC</td>
-</tr>
-<tr>
-<td>⚙️ Custom shell or program execution</td>
-<td>You define what runs in the sandbox</td>
-</tr>
-<tr>
-<td>🦀 Built in Rust</td>
-<td>Safe and unsafe Rust for low-level systems control</td>
-</tr>
-</tbody></table>
-<h2 id="📦-Requirements"><a href="#📦-Requirements" class="headerlink" title="📦 Requirements"></a>📦 Requirements</h2><p>To use RustBox, you’ll need:</p>
+<h2 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h2><p><strong>Rustbox</strong> creates a secure and minimal sandbox environment on Linux. It uses:</p>
 <ul>
-<li>✅ <strong>Linux kernel 5.x+</strong></li>
-<li>✅ <strong>Cgroups v2</strong> and <code>overlayfs</code> support enabled</li>
-<li>✅ <strong>Rust 1.70+</strong></li>
-<li>✅ <strong>Root privileges</strong> (for mounting and namespace operations)</li>
+<li><strong>OverlayFS</strong> for isolated file systems</li>
+<li><strong>Cgroups v2</strong> to restrict memory and CPU usage</li>
+<li><strong>Linux namespaces</strong> to isolate the process (PID, UTS, IPC, NET, USER)</li>
+<li><strong>Double fork</strong> architecture for proper process isolation and resource cleanup</li>
 </ul>
-<h2 id="🔧-Configuration"><a href="#🔧-Configuration" class="headerlink" title="🔧 Configuration"></a>🔧 Configuration</h2><p>RustBox is configured through a simple Rust struct:</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">SandboxConfig</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> base_dir: <span class="type">String</span>,     <span class="comment">// Base directory for OverlayFS, e.g. /tmp/sandbox</span></span><br><span class="line">    <span class="keyword">pub</span> memory_limit: <span class="type">String</span>, <span class="comment">// Memory limit, e.g., &quot;100M&quot;</span></span><br><span class="line">    <span class="keyword">pub</span> shell_path: <span class="type">String</span>,   <span class="comment">// Path to shell or binary inside sandbox</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>This tool is useful for running untrusted code in a controlled environment, testing, or creating lightweight containers.</p>
+<h2 id="Double-Fork-Implementation"><a href="#Double-Fork-Implementation" class="headerlink" title="Double Fork Implementation"></a>Double Fork Implementation</h2><p>RustBox employs a <strong>double fork</strong> pattern to ensure proper process isolation and clean resource management:</p>
+<h3 id="Process-Hierarchy"><a href="#Process-Hierarchy" class="headerlink" title="Process Hierarchy"></a>Process Hierarchy</h3><figure class="highlight tcl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">[Outer Parent Process]</span><br><span class="line">    └─&gt; fork() #<span class="number">1</span></span><br><span class="line">        ├─&gt; [Namespaced Parent Process]</span><br><span class="line">        │   ├─&gt; unshare() - Creates new namespaces</span><br><span class="line">        │   └─&gt; fork() #<span class="number">2</span></span><br><span class="line">        │       ├─&gt; [Inner Child Process]</span><br><span class="line">        │       │   ├─&gt; Mount /<span class="keyword">proc</span><span class="title"> and</span> /dev</span><br><span class="line">        │       │   ├─&gt;<span class="title"> chroot()</span> to<span class="title"> merged</span> overlay</span><br><span class="line">        │       │   ├─&gt;<span class="title"> chdir()</span> to<span class="title"> working</span> directory</span><br><span class="line">        │       │   └─&gt;<span class="title"> execv()</span> -<span class="title"> Execute</span> shell/binary</span><br><span class="line">        │       └─&gt; [Namespaced<span class="title"> Parent]</span> waits<span class="title"> for</span> inner<span class="title"> child</span></span><br><span class="line">        │           └─&gt;<span class="title"> Unmounts</span> /<span class="keyword">proc</span><span class="title"> and</span> /dev<span class="title"> inside</span> namespace</span><br><span class="line">        └─&gt; [Outer<span class="title"> Parent]</span> waits<span class="title"> for</span> namespaced<span class="title"> parent</span></span><br><span class="line">            ├─&gt;<span class="title"> Unmounts</span> overlay<span class="title"> filesystem</span></span><br><span class="line">            └─&gt;<span class="title"> Cleans</span> up<span class="title"> cgroups</span></span><br></pre></td></tr></table></figure>
 
-<p>You can pass this struct to the sandbox engine to configure the runtime environment.</p>
-<h2 id="🛠️-How-It-Works"><a href="#🛠️-How-It-Works" class="headerlink" title="🛠️ How It Works"></a>🛠️ How It Works</h2><p>Here’s what happens under the hood when you launch a sandbox:</p>
-<ol>
-<li><p><strong>OverlayFS Mounting</strong><br>A new filesystem layer is created using OverlayFS, giving the process an isolated view of <code>/</code>.</p>
+<h3 id="Why-Double-Fork"><a href="#Why-Double-Fork" class="headerlink" title="Why Double Fork?"></a>Why Double Fork?</h3><ol>
+<li><p><strong>First Fork (Outer → Namespaced Parent)</strong>:</p>
+<ul>
+<li>Isolates the namespace creation from the main process</li>
+<li>Allows the outer parent to maintain control over cgroups and overlay mounts</li>
+<li>Ensures cleanup happens outside the namespace context</li>
+</ul>
 </li>
-<li><p><strong>Namespace Cloning</strong><br>Using <code>clone()</code> and <code>unshare()</code>, the process is moved into its own PID, UTS, NET, USER, and IPC namespaces.</p>
+<li><p><strong>Second Fork (Namespaced Parent → Inner Child)</strong>:</p>
+<ul>
+<li>Creates PID 1 inside the new PID namespace</li>
+<li>Provides proper process tree isolation</li>
+<li>Enables the namespaced parent to handle cleanup of namespace-specific resources</li>
+</ul>
 </li>
-<li><p><strong>Memory Confinement</strong><br>Cgroup v2 memory limits are applied by writing to <code>/sys/fs/cgroup</code>.</p>
-</li>
-<li><p><strong>Execution</strong><br>The target binary (e.g., bash or your script) is launched inside this isolated, resource-restricted world.</p>
+<li><p><strong>Cleanup Benefits</strong>:</p>
+<ul>
+<li><strong>Inner Child</strong>: Executes user code in complete isolation</li>
+<li><strong>Namespaced Parent</strong>: Unmounts <code>/proc</code> and <code>/dev</code> after child exits (inside namespace)</li>
+<li><strong>Outer Parent</strong>: Unmounts overlay and removes cgroups (outside namespace)</li>
+<li>Ensures resources are cleaned up in the correct order and context</li>
+</ul>
 </li>
 </ol>
-<h2 id="▶️-Example-Usage"><a href="#▶️-Example-Usage" class="headerlink" title="▶️ Example Usage"></a>▶️ Example Usage</h2><p>Let’s say you want to sandbox <code>/bin/bash</code> with 100MB memory and a custom filesystem:</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="variable">config</span> = SandboxConfig &#123;</span><br><span class="line">    base_dir: <span class="string">&quot;/tmp/sandbox&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">    memory_limit: <span class="string">&quot;100M&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">    shell_path: <span class="string">&quot;/bin/bash&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">rustbox::<span class="title function_ invoke__">run_sandbox</span>(config)?;</span><br></pre></td></tr></table></figure>
+<h2 id="🧰-Features"><a href="#🧰-Features" class="headerlink" title="🧰 Features"></a>🧰 Features</h2><ul>
+<li><strong>Isolated file system</strong> using <code>overlayfs</code> with automatic cleanup</li>
+<li><strong>Memory and CPU constraints</strong> with <code>cgroups v2</code></li>
+<li><strong>Full namespace isolation</strong> (PID, UTS, NET, USER, IPC)</li>
+<li><strong>Double fork architecture</strong> for robust process management and resource cleanup</li>
+<li><strong>Custom shell or binary execution</strong> inside the sandbox</li>
+<li><strong>Automatic resource cleanup</strong> on exit (mounts, cgroups)</li>
+<li>Written in Rust with <code>nix</code> crate for safe syscall wrappers</li>
+</ul>
+<h2 id="📦-Requirements"><a href="#📦-Requirements" class="headerlink" title="📦 Requirements"></a>📦 Requirements</h2><ul>
+<li>Linux kernel 5.x or higher (with overlayfs and cgroups v2 support)</li>
+<li>Rust (1.70+ recommended)</li>
+<li>Root privileges (for mounting and namespace ops)</li>
+</ul>
+<h2 id="🔧-Configuration"><a href="#🔧-Configuration" class="headerlink" title="🔧 Configuration"></a>🔧 Configuration</h2><p>The sandbox is configured via the <code>SandboxConfig</code> struct:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">SandboxConfig</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> base_dir: <span class="type">String</span>,     <span class="comment">// Base directory for overlayfs (e.g., ./rootfs)</span></span><br><span class="line">    <span class="keyword">pub</span> memory_limit: <span class="type">String</span>, <span class="comment">// Memory limit, e.g., &quot;100M&quot;, &quot;1G&quot;</span></span><br><span class="line">    <span class="keyword">pub</span> cpu_limit: <span class="type">String</span>,    <span class="comment">// CPU limit as fraction, e.g., &quot;0.5&quot; (50% of one core)</span></span><br><span class="line">    <span class="keyword">pub</span> shell_path: <span class="type">String</span>,   <span class="comment">// Path to the shell or binary to execute</span></span><br><span class="line">    <span class="keyword">pub</span> workdir: <span class="type">String</span>,      <span class="comment">// Working directory inside container (e.g., &quot;/&quot;)</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>Then run it with:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> ./target/debug/rustbox</span><br></pre></td></tr></table></figure>
+<h3 id="Command-Line-Usage"><a href="#Command-Line-Usage" class="headerlink" title="Command Line Usage"></a>Command Line Usage</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Run with default settings</span></span><br><span class="line"><span class="built_in">sudo</span> ./target/debug/rustbox</span><br><span class="line"></span><br><span class="line"><span class="comment"># Custom configuration</span></span><br><span class="line"><span class="built_in">sudo</span> ./target/debug/rustbox \</span><br><span class="line">    --base-dir ./rootfs \</span><br><span class="line">    --memory 256M \</span><br><span class="line">    --cpu-limit 0.5 \</span><br><span class="line">    --shell /bin/bash \</span><br><span class="line">    --workdir /root</span><br></pre></td></tr></table></figure>
 
-<p>And you’ll drop into a secure, limited environment.</p>
-<h2 id="🐞-Remote-Debugging-Support"><a href="#🐞-Remote-Debugging-Support" class="headerlink" title="🐞 Remote Debugging Support"></a>🐞 Remote Debugging Support</h2><p>RustBox can be remotely debugged using <code>lldb-server</code>:</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">sudo</span> lldb-server platform --server --listen 127.0.0.1:12345 ./target/debug/rustbox</span><br></pre></td></tr></table></figure>
-
-<p>You can then connect from your IDE (e.g., VSCode with CodeLLDB) for deep debugging sessions inside the sandboxed environment. <a href="https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#connecting-to-lldb-server-agent">Reference</a></p>
 <h2 id="📚-Learn-More"><a href="#📚-Learn-More" class="headerlink" title="📚 Learn More"></a>📚 Learn More</h2><p>If you’re curious about the internals of Linux isolation mechanisms and want to build your own container-like system from scratch, here are some great follow-up resources:</p>
 <ul>
 <li>🔗 <a href="https://man7.org/linux/man-pages/man7/namespaces.7.html">Linux namespaces man pages</a></li>
@@ -438,7 +431,6 @@
 <p>💫 Give it a ⭐ on <a href="https://github.com/isdaniel/RustBox">GitHub</a> and explore the source!</p>
 </blockquote>
 <p>Would you like help turning this into a GitHub Pages site, Dev.to article, or adding diagrams for the sandbox architecture?</p>
-<p>&lt;! Above information summaries from AI. &#x2F;&gt;</p>
 <p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/rustbox-introduce/">https://isdaniel.github.io/rustbox-introduce/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
@@ -558,7 +550,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%F0%9F%A7%AA-Introducing-RustBox-Lightweight-Linux-Sandboxing-in-Pure-Rust"><span class="nav-number">1.</span> <span class="nav-text">🧪 Introducing RustBox: Lightweight Linux Sandboxing in Pure Rust</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9A%80-What-Is-RustBox"><span class="nav-number">1.1.</span> <span class="nav-text">🚀 What Is RustBox?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%A7%B0-Features"><span class="nav-number">1.2.</span> <span class="nav-text">🧰 Features</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%A6-Requirements"><span class="nav-number">1.3.</span> <span class="nav-text">📦 Requirements</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%94%A7-Configuration"><span class="nav-number">1.4.</span> <span class="nav-text">🔧 Configuration</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9B%A0%EF%B8%8F-How-It-Works"><span class="nav-number">1.5.</span> <span class="nav-text">🛠️ How It Works</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%96%B6%EF%B8%8F-Example-Usage"><span class="nav-number">1.6.</span> <span class="nav-text">▶️ Example Usage</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%90%9E-Remote-Debugging-Support"><span class="nav-number">1.7.</span> <span class="nav-text">🐞 Remote Debugging Support</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%9A-Learn-More"><span class="nav-number">1.8.</span> <span class="nav-text">📚 Learn More</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%92%AC-Final-Thoughts"><span class="nav-number">1.9.</span> <span class="nav-text">💬 Final Thoughts</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%F0%9F%A7%AA-Introducing-RustBox-Lightweight-Linux-Sandboxing-in-Pure-Rust"><span class="nav-number">1.</span> <span class="nav-text">🧪 Introducing RustBox: Lightweight Linux Sandboxing in Pure Rust</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9A%80-What-Is-RustBox"><span class="nav-number">1.1.</span> <span class="nav-text">🚀 What Is RustBox?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Overview"><span class="nav-number">1.2.</span> <span class="nav-text">Overview</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Double-Fork-Implementation"><span class="nav-number">1.3.</span> <span class="nav-text">Double Fork Implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Process-Hierarchy"><span class="nav-number">1.3.1.</span> <span class="nav-text">Process Hierarchy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Why-Double-Fork"><span class="nav-number">1.3.2.</span> <span class="nav-text">Why Double Fork?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%A7%B0-Features"><span class="nav-number">1.4.</span> <span class="nav-text">🧰 Features</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%A6-Requirements"><span class="nav-number">1.5.</span> <span class="nav-text">📦 Requirements</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%94%A7-Configuration"><span class="nav-number">1.6.</span> <span class="nav-text">🔧 Configuration</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Command-Line-Usage"><span class="nav-number">1.6.1.</span> <span class="nav-text">Command Line Usage</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%9A-Learn-More"><span class="nav-number">1.7.</span> <span class="nav-text">📚 Learn More</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%92%AC-Final-Thoughts"><span class="nav-number">1.8.</span> <span class="nav-text">💬 Final Thoughts</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -648,7 +640,7 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">919k</span>
+    <span title="Symbols count total">920k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
