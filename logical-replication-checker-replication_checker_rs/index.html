@@ -28,7 +28,7 @@
 <meta property="og:description" content="前言大家好，今天要和大家介紹我近期開發的一個開源專案 replication_checker_rs 如果你想用一個輕量、可讀性高的工具實時觀察 PostgreSQL 邏輯複寫（logical replication）流，或想把複寫協議的學習變成可執行的實驗場，replication_checker_rs 是一個不錯的起點：它是 Rust 實現 PostgreSQL logical replicat">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:published_time" content="2025-08-10T10:30:11.000Z">
-<meta property="article:modified_time" content="2025-12-01T13:16:58.116Z">
+<meta property="article:modified_time" content="2025-12-01T14:15:33.367Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="PostgreSQL">
 <meta property="article:tag" content="Rust">
@@ -294,7 +294,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 13:16:58" itemprop="dateModified" datetime="2025-12-01T13:16:58+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -334,14 +334,14 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>6.4k</span>
+              <span>5.9k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
                 <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>6 mins.</span>
+              <span>5 mins.</span>
             </span>
 
         </div>
@@ -353,7 +353,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>大家好，今天要和大家介紹我近期開發的一個開源專案 <a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel/replication_checker_rs">replication_checker_rs</a> 如果你想用一個輕量、可讀性高的工具實時觀察 PostgreSQL 邏輯複寫（logical replication）流，或想把複寫協議的學習變成可執行的實驗場，<code>replication_checker_rs</code> 是一個不錯的起點：它是 Rust 實現 PostgreSQL logical replication protocol 使用 <code>libpq-sys</code> 的實作，能連上資料庫、建立 replication slot，並將 INSERT &#x2F; UPDATE &#x2F; DELETE &#x2F; TRUNCATE 等變更以可讀格式顯示出來。(<a href="https://github.com/isdaniel/replication_checker_rs">https://github.com/isdaniel/replication_checker_rs</a>)</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>大家好，今天要和大家介紹我近期開發的一個開源專案 <a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel&#x2F;replication_checker_rs">replication_checker_rs</a> 如果你想用一個輕量、可讀性高的工具實時觀察 PostgreSQL 邏輯複寫（logical replication）流，或想把複寫協議的學習變成可執行的實驗場，<code>replication_checker_rs</code> 是一個不錯的起點：它是 Rust 實現 PostgreSQL logical replication protocol 使用 <code>libpq-sys</code> 的實作，能連上資料庫、建立 replication slot，並將 INSERT &#x2F; UPDATE &#x2F; DELETE &#x2F; TRUNCATE 等變更以可讀格式顯示出來。(<a href="https://github.com/isdaniel/replication_checker_rs">https://github.com/isdaniel/replication_checker_rs</a>)</p>
 <hr>
 <h2 id="為什麼會想用它？"><a href="#為什麼會想用它？" class="headerlink" title="為什麼會想用它？"></a>為什麼會想用它？</h2><ul>
 <li><strong>學習角度</strong>：它直接實作 PostgreSQL 的 logical replication protocol（WAL message parsing、relation&#x2F;tuple 格式）以可讀、可改造的 Rust 程式碼呈現，適合希望理解底層協議的人。</li>
@@ -471,12 +471,12 @@
 <li>把 <code>replication_checker_rs</code> 包成一個可監控的 service，加上 metrics（Prometheus）與 health-check endpoint。<br>這些方向都屬於從 PoC → production 的典型演進路線。</li>
 </ol>
 <hr>
-<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p><code>replication_checker_rs</code> 是一個很實用的學習與測試工具：它把 PostgreSQL logical replication protocol 的各個重要面向（slot、publication、BEGIN&#x2F;COMMIT、tuple parsing、streaming 交易、feedback）用 Rust + libpq 呈現出來，適合用來做教學、驗證複寫行為或作為你自製複寫處理器的起點。想進一步把它變成 production-ready，需要在錯誤復原、slot 管理、下游整合跟 binary type 處理上補強。(<a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel/replication_checker_rs">GitHub</a>)</p>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p><code>replication_checker_rs</code> 是一個很實用的學習與測試工具：它把 PostgreSQL logical replication protocol 的各個重要面向（slot、publication、BEGIN&#x2F;COMMIT、tuple parsing、streaming 交易、feedback）用 Rust + libpq 呈現出來，適合用來做教學、驗證複寫行為或作為你自製複寫處理器的起點。想進一步把它變成 production-ready，需要在錯誤復原、slot 管理、下游整合跟 binary type 處理上補強。(<a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel&#x2F;replication_checker_rs">GitHub</a>)</p>
 <ul>
-<li><a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel/replication_checker_rs">replication_checker_rs</a></li>
+<li><a href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel&#x2F;replication_checker_rs">replication_checker_rs</a></li>
 <li>歡迎 Star、開 issue、PR 一起改進專案！</li>
 </ul>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/">https://isdaniel.github.io/logical-replication-checker-replication_checker_rs&#x2F;</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/">https://isdaniel.github.io/logical-replication-checker-replication_checker_rs&#x2F;</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -685,12 +685,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">1.1m</span>
+    <span title="Symbols count total">924k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">16:04</span>
+    <span title="Reading time total">14:01</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.1.1
   </div>

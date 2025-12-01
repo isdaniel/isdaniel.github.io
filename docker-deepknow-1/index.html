@@ -29,7 +29,7 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://gblobscdn.gitbook.com/assets%2F-LvLdlWILWa_WXgBI_eY%2F-LvLdmMmmDnQXr_Axo0l%2F-LvLdnbuSZ5KOT0JxN9C%2Fcmd_logic.png?alt=media">
 <meta property="article:published_time" content="2021-03-26T05:30:11.000Z">
-<meta property="article:modified_time" content="2025-12-01T13:16:58.113Z">
+<meta property="article:modified_time" content="2025-12-01T14:15:33.364Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="Container">
 <meta property="article:tag" content="Docker">
@@ -295,7 +295,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 13:16:58" itemprop="dateModified" datetime="2025-12-01T13:16:58+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -327,7 +327,7 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>3.2k</span>
+              <span>3k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
@@ -409,7 +409,7 @@
 <figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#this image create from mssql-server-linux:latest</span></span><br><span class="line"><span class="keyword">FROM</span> microsoft/mssql-server-linux:latest</span><br><span class="line"><span class="comment">#who maintance this file.</span></span><br><span class="line">MAINTANER dog830228@gmail.com</span><br><span class="line"><span class="comment">#execute command in Linux</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apt-get update  \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; apt-get install -y curl \</span></span><br><span class="line"><span class="language-bash">	apt-transport-https</span></span><br><span class="line"><span class="comment">#set environment variable.</span></span><br><span class="line"><span class="keyword">ENV</span> BakDir=<span class="string">&quot;/var/opt/mssql/backup&quot;</span></span><br><span class="line"><span class="keyword">ENV</span> PATH=<span class="string">&quot;/opt/mssql-tools/bin:$&#123;PATH&#125;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \</span></span><br><span class="line"><span class="language-bash">    &amp;&amp; curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list &gt; /etc/apt/sources.list.d/mssql-release.list</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apt-get install -y locales \</span></span><br><span class="line"><span class="language-bash">    &amp;&amp; <span class="built_in">echo</span> <span class="string">&quot;en_US.UTF-8 UTF-8&quot;</span> &gt; /etc/locale.gen \</span></span><br><span class="line"><span class="language-bash">    &amp;&amp; locale-gen \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; apt-get -y install vim</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## copy host file ./script/ to image /var/opt/mssql/backup</span></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> ./script/ <span class="variable">$BakDir</span></span></span><br><span class="line"><span class="comment">## set default path /var/opt/mssql/backup when client into container</span></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> <span class="variable">$BakDir</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">## downland bak file from internet.</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">mkdir</span> -p <span class="variable">$BakDir</span> \</span></span><br><span class="line"><span class="language-bash">	&amp;&amp; curl -L -o AdventureWorksDW2017.bak https://github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorksDW2017.bak</span></span><br><span class="line"></span><br><span class="line"><span class="comment">## execute command after running.</span></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> /bin/bash <span class="string">&quot;<span class="variable">$BakDir</span>/EntryPoint.sh&quot;</span></span></span><br></pre></td></tr></table></figure>
 
 <p>Dockerfile寫下註解，我們能了解到Dockerfile就一個描述Image的檔案.</p>
-<p>__此文作者__：Daniel Shih(石頭)<br />__此文地址__： <a href="https://isdaniel.github.io/docker-deepknow-1/">https://isdaniel.github.io/docker-deepknow-1/</a> <br />__版權聲明__：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/docker-deepknow-1/">https://isdaniel.github.io/docker-deepknow-1/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
 
     </div>
 
@@ -605,12 +605,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">1.1m</span>
+    <span title="Symbols count total">924k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">16:04</span>
+    <span title="Reading time total">14:01</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.1.1
   </div>
