@@ -195,17 +195,17 @@
   </li>
         <li class="menu-item menu-item-tags">
 
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">141</span></a>
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">143</span></a>
 
   </li>
         <li class="menu-item menu-item-categories">
 
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">70</span></a>
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">73</span></a>
 
   </li>
         <li class="menu-item menu-item-archives">
 
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">189</span></a>
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">190</span></a>
 
   </li>
       <li class="menu-item menu-item-search">
@@ -260,6 +260,130 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/c-func-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+      <meta itemprop="name" content="Daniel Shih">
+      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="石頭的coding之路">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/c-func-2/" class="post-title-link" itemprop="url">(C#)委託delegate,Func<>,Action 解說系列(二)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-02 11:06:40" itemprop="dateCreated datePublished" datetime="2019-06-02T11:06:40+00:00">2019-06-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/C/Delegate/" itemprop="url" rel="index"><span itemprop="name">Delegate</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/c-func-2/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="c-func-2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="前文："><a href="#前文：" class="headerlink" title="前文："></a>前文：</h2><p>這個文章和大家分享解說 Func&lt;&gt;和Action&lt;&gt;</p>
+<p>最後帶著大家來實現自己的<code>Linq Where</code></p>
+<p>先來看 <code>Func&lt;&gt; ，Action&lt;&gt;</code>原始定義</p>
+<p>我們發現<code>Func&lt;&gt; ，Action&lt;&gt;</code> 其實本質就是委託 ，雖然有十幾個重載 但大同小異</p>
+<pre><code>public delegate TResult Func&lt;out TResult&gt;();
+
+public delegate void Action&lt;in T&gt;(T obj);
+</code></pre>
+<p><code>Func</code>固定最後一個泛型參數為方法回傳值，其餘是傳入參數</p>
+<pre><code>public delegate TResult Func&lt;in T, out TResult&gt;(T arg);
+</code></pre>
+<h3 id="解說Func："><a href="#解說Func：" class="headerlink" title="解說Func："></a>解說Func：</h3><p>宣告一個<code>Func&lt;Person,string&gt;</code>委託 <code>_thunkCheckAge</code><br><code>_thunkCheckAge</code>委託指向<code>CheckAge</code>方法<br>執行<code>_thunkCheckAge</code>委託 (執行<code>CheckAge</code>方法)</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/c-func-2/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/c-func-1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -291,7 +415,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -414,7 +538,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -546,7 +670,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -678,7 +802,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -800,7 +924,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -919,7 +1043,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1038,7 +1162,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1166,7 +1290,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1294,7 +1418,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
+                <time title="Modified: 2025-12-13 03:16:26" itemprop="dateModified" datetime="2025-12-13T03:16:26+00:00">2025-12-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1357,123 +1481,6 @@
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/AwesomeProxy-Net/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/awesomeproxy-net/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
-      <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="石頭的coding之路">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/awesomeproxy-net/" class="post-title-link" itemprop="url">【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-05-27 22:57:47" itemprop="dateCreated datePublished" datetime="2019-05-27T22:57:47+00:00">2019-05-27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2025-12-01 14:15:33" itemprop="dateModified" datetime="2025-12-01T14:15:33+00:00">2025-12-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-            </span>
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">Disqus: </span>
-    
-    <a title="disqus" href="/awesomeproxy-net/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="awesomeproxy-net/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="Symbols count in article">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>1.5k</span>
-            </span>
-            <span class="post-meta-item" title="Reading time">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>1 mins.</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>今天和大家分享<a href="https://github.com/isdaniel/AwesomeProxy.Net">AwesomeProxy.Net</a>小弟開源AOP輕型框架</p>
-<h2 id="簡單介紹-AOP-Aspect-Oriented-Programming"><a href="#簡單介紹-AOP-Aspect-Oriented-Programming" class="headerlink" title="簡單介紹 AOP (Aspect-Oriented Programming)"></a>簡單介紹 <strong>AOP</strong> (Aspect-Oriented Programming)</h2><p>AOP 是 <strong>OOP(物件導向)一個變化程式撰寫思想。</strong>（非取代OOP而是擴充）</p>
-<p>導入AOP幫助：<br>    可幫我們分離<strong>核心邏輯</strong>跟<strong>非核心邏輯</strong>代碼，很好降低模組間耦合性，已便日後擴充。</p>
-<p>　　非核心邏輯代碼像：(日誌記錄，性能統計，安全控制，事務處理，異常處理等代碼從業務邏輯代碼中劃分出來)</p>
-<p>例如下圖：</p>
-<p><img src="https://ithelp.ithome.com.tw/upload/images/20180209/20096630UyP6I4l2MB.png" alt="https:&#x2F;&#x2F;ithelp.ithome.com.tw&#x2F;upload&#x2F;images&#x2F;20180209&#x2F;20096630UyP6I4l2MB.png"></p>
-<p>　　原本寫法把寫日誌相關程式寫入，業務邏輯方法中。導致此方法非單一職則。我們可以把程式重構改寫成(右圖)，將寫日誌方法抽離出來更有效達成模組化。</p>
-<p><strong>經典例子:</strong></p>
-<p>Asp.Net MVC中Contoller，Action過濾器(FilterAttribute)</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/awesomeproxy-net/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1565,20 +1572,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">189</span>
+          <span class="site-state-item-count">190</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">70</span>
+        <span class="site-state-item-count">73</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">141</span>
+        <span class="site-state-item-count">143</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
@@ -1639,12 +1646,12 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">924k</span>
+    <span title="Symbols count total">936k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">14:01</span>
+    <span title="Reading time total">14:11</span>
 </div>
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.1.1
   </div>
