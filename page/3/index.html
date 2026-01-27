@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="好點子沒價值，有價值的是把好點子實現">
+  <meta name="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:type" content="website">
 <meta property="og:title" content="石頭的coding之路">
 <meta property="og:url" content="https://isdaniel.github.io/page/3/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="好點子沒價值，有價值的是把好點子實現">
+<meta property="og:description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:author" content="Daniel Shih">
-<meta property="article:tag" content="c#,Asp.net,Asp.net MVC,source code,後端,WebApi,SQL,SQL Server">
+<meta property="article:tag" content="postgresql,software engineer,source code,AI,c#,Asp.net,Asp.net MVC,後端,WebApi,SQL,SQL Server, Rust">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://isdaniel.github.io/page/3/">
@@ -164,7 +164,8 @@
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-        <p class="site-subtitle">Hello World</p>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
   </div>
 
   <div class="site-nav-right">
@@ -265,17 +266,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ndepend-code-quality/" class="post-title-link" itemprop="url">Ndepend 靜態分析 .Net 專案好物</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -291,7 +292,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -346,21 +347,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>當一個專案越來越大，在開發新產品時同時要兼顧程式碼品質會越來越困難，今天要介紹的　<a href="https://www.ndepend.com/">Ndepend</a> 是一個很優秀靜態分析 .Net 專案好物</p>
-<p>會幫我們產生一個 DashBoard 來了解目前專案大致上分析後的問題，並提供建議解法和處理方向，讓我們提前更快速抓出未來或目前存在 bug，減少發生需要晚上起來 support 機率，讓客戶，老闆，工程師都開心的三大歡喜</p>
-<p>另外我們也可以透過 <a href="https://www.ndepend.com/">Ndepend</a> 來撰寫我們自己 Code Rule 並在 CI&#x2F;CD 流程中進行靜態掃描，讓我們出產軟體更有品質</p>
-<p>本文我使用我自己的開源專案 <a href="https://github.com/isdaniel/ElectronicInvoice_TW">ElectronicInvoice_TW</a> 來當作分析案例</p>
-<h2 id="建立-Ndepend-開始分析"><a href="#建立-Ndepend-開始分析" class="headerlink" title="建立 Ndepend 開始分析"></a>建立 Ndepend 開始分析</h2><p>安裝完 <code>Ndepend</code> 後我們可以在 virtual studio 上面的[延伸模組] 出現建立 <code>Ndepend</code> 項目，一開始我們利用 Attach New Ndepend Project to Current VS Solution ，來建立分析項目</p>
-<p><img src="https://i.imgur.com/flzNRXR.png"></p>
-<p><code>NDepend</code> 分析完程式後我們會在 sln 檔同級目錄下看到一個 <code>NDependOut</code> 資料夾跟 <code>.ndproj</code> 檔案</p>
-<ul>
-<li><code>.ndproj</code> 是 XML 格式儲存的專案檔，內容包含 <code>NDepend</code> 專案資訊及分析設定資訊</li>
-<li><code>NDependOut</code> 資料夾中會有一個 <code>.ndar</code> 檔案這次一個二進制格式儲存的分析後結果</li>
-<li><code>NDependOut</code> 中有一個 <code>NDependReport.html</code> 是一個分析後 Html 報表</li>
-</ul>
+          <p>當一個專案越來越大，在開發新產品時同時要兼顧程式碼品質會越來越困難，今天要介紹的　Ndepend 是一個很優秀靜態分析 .Net 專案好物</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ndepend-code-quality/#more" rel="contents">
+              <a class="btn" href="/ndepend-code-quality/">
                 Read more &raquo;
               </a>
             </div>
@@ -389,17 +379,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/aws-rds-proxy/" class="post-title-link" itemprop="url">AWS Postgres RDS Proxy</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -415,7 +405,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -470,20 +460,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在 Postgresql 世界裡每建立一個 Connection，都會有一個 process 來服務該請求，Postgresql 沒有 ThreadPool 概念所以在 Connection 使用量大時會發生一些問題</p>
-<ul>
-<li>資源浪費</li>
-<li>超過同時間超過 max_connection 後面連接會無法連接</li>
-</ul>
-<p>一個 open source 插件 <a href="https://www.pgbouncer.org/">PgBouncer</a> 就是幫我們解決上面問題，不過如果你是使用 AWS RDS 來當作 DB 就很適合使用 RDS Proxy</p>
-<p>本次使用免費帳號範圍提供的機器 <code>db.t2.micro</code></p>
-<p><img src="https://i.imgur.com/HClZcwd.png"></p>
-<p>另外因為 RDS Proxy 在 EC2 內網才能連接，所以我也利用免費帳號準備一台 EC2 並安裝 <code>pgbench</code> 進行壓力測試</p>
-<h2 id="壓測前準備-說明"><a href="#壓測前準備-說明" class="headerlink" title="壓測前準備 &amp; 說明"></a>壓測前準備 &amp; 說明</h2><p>我把 <code>max_connections</code> 最大連接數量調整成 550</p>
-<p><img src="https://i.imgur.com/2snNDZo.png"></p>
+          <p>在 Postgresql 世界裡每建立一個 Connection，都會有一個 process 來服務該請求，Postgresql 沒有 ThreadPool 概念所以在 Connection 使用量大時會發生一些問題</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/aws-rds-proxy/#more" rel="contents">
+              <a class="btn" href="/aws-rds-proxy/">
                 Read more &raquo;
               </a>
             </div>
@@ -512,17 +492,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/lru-algorithm/" class="post-title-link" itemprop="url">LRU 演算法解說</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -538,7 +518,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -596,20 +576,10 @@
         <div itemscope itemtype="http://schema.org/ImageGallery">
             <img src="https://i.imgur.com/bd3VgSx.png" itemprop="contentUrl">
         </div>
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>資料結構跟演算法是程式設計師的內功，在中小型系統懂這兩樣東西效用可能有限，但在大型系統中熟不熟用資料結構跟演算法做出來的效益會天差地遠</p>
-<p>對於常使用的物件和變數我們會放置在 Redis 上( cache server )，但記憶體有限，我們想放的東西無限，造就無法將所有物件都存放在 Redis 或 Server Memory 上.</p>
-<p>假如你有設定過 Redis config 你會看到一個 property <code>maxmemory_policy</code> 來管理如何淘汰，記憶體中的物件</p>
-<ul>
-<li>volatile-lru</li>
-<li>allkeys-lru</li>
-</ul>
-<p>上面有個名稱 LRU (Least Recently Used Cache)　代表甚麼意涵呢？稍後會跟大家做解釋</p>
-<p><a href="https://github.com/isdaniel/BlogSample/tree/master/src/Algorithm_DataStructure/LRU_Algorithm">Github Sample Project</a></p>
-<h2 id="LRU-算法概念"><a href="#LRU-算法概念" class="headerlink" title="LRU 算法概念"></a>LRU 算法概念</h2><p>LRU (Least Recently Used Cache) 顧名思義，會記憶體不夠用時優先保留最近常使用的 Cache 資料，並剔除最舊的資料來緩解壓力</p>
-<p>這個算法策略可以確保 Hot Data 在記憶體不足時不會被刪除</p>
+          <p>資料結構跟演算法是程式設計師的內功，在中小型系統懂這兩樣東西效用可能有限，但在大型系統中熟不熟用資料結構跟演算法做出來的效益會天差地遠</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/lru-algorithm/#more" rel="contents">
+              <a class="btn" href="/lru-algorithm/">
                 Read more &raquo;
               </a>
             </div>
@@ -638,17 +608,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/map-theory/" class="post-title-link" itemprop="url">資料庫查詢核心概念-地圖理論</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -664,7 +634,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -719,22 +689,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>我認為 DB query optimizer (QO) 產生執行計畫並執行查詢和 使用地圖找尋最佳路徑很類似</p>
-<p>下面會跟大家分享我心中 <strong>地圖理論</strong> 希望可以對於想了解 DB 運作的人更快上手</p>
-<h2 id="看見全貌"><a href="#看見全貌" class="headerlink" title="看見全貌"></a>看見全貌</h2><p>在了解一個事情跟技術，我們需要先用宏觀的角度來看待事情</p>
-<p>下圖是 postgresql DB 運作核心概念圖</p>
-<p><img src="https://i.imgur.com/shthcpN.png"></p>
-<p>其中在執行語法前後最重要的幾個步驟是</p>
-<ol>
-<li>Parser：檢查語法是否有錯誤，如果錯誤就不執行後續步驟</li>
-<li>ReWriter：嘗試優化改寫 SQL</li>
-<li>Planner：利用<strong>統計資訊</strong> &amp; 演算法建立執行計畫</li>
-<li>Executor：挑選一個成本最低的執行計劃來查找資料</li>
-</ol>
-<p>我認為資料 Search Engine 的 Planner &amp; Executor 核心概念跟查找地圖( google map 很類似 )</p>
+          <p>前文</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/map-theory/#more" rel="contents">
+              <a class="btn" href="/map-theory/">
                 Read more &raquo;
               </a>
             </div>
@@ -763,17 +721,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/redlock-deepknow/" class="post-title-link" itemprop="url">利用Redlock演算法實現自己的分佈式鎖</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -789,7 +747,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -844,21 +802,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>我之前有寫透過 <a href="https://isdaniel.github.io/high-concurrency-atomic-cas-algorithm/">lock or CAS</a> 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>
-<p>下面程式在單體服務或應用程式不會出問題，但如果服務器有多台問題可就大了，因為下面的 lock 只限於單體 Server 上</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">readonly</span> <span class="keyword">static</span> <span class="built_in">object</span> _lock = <span class="keyword">new</span> <span class="built_in">object</span>();</span><br><span class="line">[<span class="meta">HttpGet()</span>]</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="built_in">string</span> <span class="title">Get</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">int</span> remainCount;</span><br><span class="line">    <span class="keyword">lock</span> (_lock)</span><br><span class="line">    &#123;</span><br><span class="line">        </span><br><span class="line">        remainCount = (<span class="built_in">int</span>)RedisConnection.GetDatabase().StringGet(_productId);</span><br><span class="line">        <span class="keyword">if</span> (remainCount &gt; <span class="number">0</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            RedisConnection.GetDatabase().StringSet(_productId, --remainCount);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">string</span> productMsg = remainCount &lt;= <span class="number">0</span> ? <span class="string">&quot;沒貨了賣完了&quot;</span> : <span class="string">$&quot;還剩下 <span class="subst">&#123;remainCount&#125;</span> 商品&quot;</span>;</span><br><span class="line">    <span class="built_in">string</span> result = <span class="string">$&quot;<span class="subst">&#123;Dns.GetHostName()&#125;</span> 處理貨物狀態!! <span class="subst">&#123;productMsg&#125;</span>&quot;</span>;</span><br><span class="line">    _logger.LogInformation(result);</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>如果有聽過 Redis 可能就會聽過 <a href="https://github.com/samcook/RedLock.net">RedLock.net</a> 來處理，但您知道 RedLock.net 底層大致上怎麼實作的嗎?</p>
-<p>本篇文章會帶領大家透過 distlock 算法時做出，自己的Redlock</p>
-<blockquote>
-<p>本篇只介紹核心概念，細部防錯我沒有寫出來，所以建議本篇程式不要用在 prod 環境</p>
-</blockquote>
-<p>我使用 docker-compose 建立問題架構，架構圖如下</p>
-<p><img src="https://i.imgur.com/nt8Q9Sv.png"></p>
-<p>原始碼位置 <a href="https://github.com/isdaniel/Redlock-Csharp">Redlock-Csharp</a></p>
+          <p>我之前有寫透過 lock or CAS 來防治，Racing condition 問題，但如果這個問題延深到多台服務器甚至是 micor-services 架構我們要怎麼處理資料問題呢?</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/redlock-deepknow/#more" rel="contents">
+              <a class="btn" href="/redlock-deepknow/">
                 Read more &raquo;
               </a>
             </div>
@@ -887,17 +834,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/postgresql-cost-factor-tuning/" class="post-title-link" itemprop="url">postgresql 執行計畫重要因子 (成本因子調教)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -913,7 +860,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -971,19 +918,10 @@
         <div itemscope itemtype="http://schema.org/ImageGallery">
             <img src="https://i.imgur.com/ZAs54l8.png" itemprop="contentUrl">
         </div>
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>執行計畫代表此次查詢要怎麼樣的演算法查詢我們的資料，而<strong>成本</strong>是決定使用哪個執行計畫的重要因素</p>
-<p>在 postgreSQL DB query optimizer 會選擇成本最低的執行計劃，當作查詢資料使用算法</p>
-<p>在 Sql-sevrer 成本計算封裝在程式內部，我們無法透過一些因子來調整，但 postgreSQL 可以</p>
-<p>我認為 query optimizer 判斷成本概念有點類似 google map 在找尋最佳路徑</p>
-<blockquote>
-<p>我對於資料庫有定義一個，<strong>地圖理論</strong>來說明 RDBMS 執行計畫相關的事情</p>
-</blockquote>
-<p>本篇成本因子效能調教會涉 Linux kernel systemtap ，國中數學，postgreSQL 運作模型，篇幅可能會有點多且複雜</p>
-<p>但我認為本篇學會可以對於　query optimizer 有更進一步了解</p>
-<h2 id="預設成本因子潛在問題"><a href="#預設成本因子潛在問題" class="headerlink" title="預設成本因子潛在問題"></a>預設成本因子潛在問題</h2><p>下面我使用一個例子來</p>
+          <p>前言</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/postgresql-cost-factor-tuning/#more" rel="contents">
+              <a class="btn" href="/postgresql-cost-factor-tuning/">
                 Read more &raquo;
               </a>
             </div>
@@ -1012,17 +950,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/aws-first-lambda/" class="post-title-link" itemprop="url">AWS Lambda 初體驗 by .net core</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1038,7 +976,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1093,19 +1031,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>AWS 在有眾多服務，其中我對於 Lambda 最有興趣 (因為 .net 有一個 Lambda 表達式 )</p>
-<p>最近申辦帳號可以使用 12 個月部分免費服務(有條件限制)，看我還不玩爆 AWS XD</p>
-<p>經過了解得知 Lambda 是一個 EDA 架構並幫我們解決開發時需要煩惱硬體上配置(記憶體要多少，CPU，是否需要 load balance scale out…)，做一個 serverless 服務</p>
-<p>讓我們可以專心開發程式，本篇會針對 .net core 建立一個 sample 專案到上傳到 AWS Lambda 服務上說明</p>
-<h2 id="安裝aws-cli-設定-profile"><a href="#安裝aws-cli-設定-profile" class="headerlink" title="安裝aws cli &amp; 設定 profile"></a>安裝aws cli &amp; 設定 profile</h2><p>首先我們需要先安裝 <code>aws cli</code>，如果是 windows 我們可以透過 powershell，來完成 </p>
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">C:\&gt; msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$</span> aws <span class="literal">--version</span></span><br><span class="line">aws<span class="literal">-cli</span>/<span class="number">2.2</span>.<span class="number">44</span> Python/<span class="number">3.8</span>.<span class="number">8</span> Windows/<span class="number">10</span> exe/AMD64 prompt/off</span><br></pre></td></tr></table></figure>
-
-<p>確定安裝完後我們可以執行 <code>aws configure</code> 設定我們 AWS 服務相關 <a href="https://docs.aws.amazon.com/zh_tw/IAM/latest/UserGuide/introduction.html">IAM</a> 資訊</p>
+          <p>前言</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/aws-first-lambda/#more" rel="contents">
+              <a class="btn" href="/aws-first-lambda/">
                 Read more &raquo;
               </a>
             </div>
@@ -1134,17 +1063,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/postgresql-wal-introduce/" class="post-title-link" itemprop="url">postgresql WAL (Write-Ahead Logging) 機制</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1160,7 +1089,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1215,24 +1144,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>WAL 是一種 Tx Log實踐機制</p>
-<p>WAL 核心概念是先寫 tx log，在把資料寫資料，資料的修改必须發生在<strong>寫入</strong> Tx Log之後，使用 WAL 紀錄資料庫系統在commit transaction</p>
-<p>使用 WAL 機制後我們不需要在每次 Commit Transaction 後就把資料 flush 到 Disk 上(提高IO效率)， WAL 需要保證 Dirty Block flush 到 Disk 之前，該 Block 對應 Tx log 紀錄已經 flush 到 Disk 中</p>
-<blockquote>
-<p>因為假如系統突然崩潰我們可以藉由 WAL 寫入 Tx Log 來 roll-forward recovery (REDO)</p>
-</blockquote>
-<h2 id="WAL-寫入時機簡介"><a href="#WAL-寫入時機簡介" class="headerlink" title="WAL 寫入時機簡介"></a>WAL 寫入時機簡介</h2><p><code>LSN</code>序號是一個 globale 變數(透過 <code>info_lck</code> 輕量鎖設計避免同一時間取得同一個 LSN )</p>
-<p>寫入資料會經由下面幾個步驟</p>
-<ol>
-<li>Log (LSN–Log) 是一個有順序性標誌的紀錄 (可以想像是一個 sequence ) ，一開始存在 RAM 中，在 RAM 中有一個 flushLSN 位置會記錄 log LSN 寫入 Disk 最後位置.</li>
-<li>每個 block 在 pageheader 會有一個欄位 <code>PageXLogRecPtr pd_lsn;</code> 指到 log 紀錄位置，此位置在 Dirty Block 存在 buffer Pool 時就會決定</li>
-<li>最後把　Dirty Block flush 到 Disk 之前 postgresSQL 會檢查是否滿足此條件 <code>pd_lsn &lt;= flushLSN</code> ，確保 Log 已經寫入 Disk 上才會把資料 flush 到資料庫中</li>
-<li>如果是 <code>synchronous_commit = ON</code> 代表同步提交，在 Transaction commit 時會把對應的 Tx Log 馬上 flush 進 Disk中才能返回成功</li>
-</ol>
-<p>經過上面步驟我們就可以確保 先寫 Tx Log 歷程，後寫 Dirty Block</p>
+          <p>前言</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/postgresql-wal-introduce/#more" rel="contents">
+              <a class="btn" href="/postgresql-wal-introduce/">
                 Read more &raquo;
               </a>
             </div>
@@ -1261,17 +1176,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/postgresql-hotupdate-vacuum/" class="post-title-link" itemprop="url">postgresql HOT (heap only tuple) update 深入淺出</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1287,7 +1202,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1342,22 +1257,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>Postgresql DB 目前預設在更新資料時會在 Heap Table 新增一條新版本資料，舊版本會先存在直到使用 VACUUM 回收</p>
-<p>HOT update 作用在，當資料更新時通過 Heap Block 內部串聯所有 tuple 版本，則 Index 索引不變</p>
-<p>HOT update 必須滿足以下兩個條件:</p>
-<ol>
-<li>索引欄位值不變。(其中任意一個索引字段的值發生了變化，則所有索引都需要新增版本)</li>
-<li>新版本資料和舊版本資料在同一個HEAP Block中。</li>
-</ol>
-<p>在測試前我們要先開啟 <code>pageinspect</code> 了解查看 block 底層訊息</p>
-<h2 id="sample-data"><a href="#sample-data" class="headerlink" title="sample data"></a>sample data</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> extension pageinspect <span class="comment">-- 打開可以查看底層 Page 功能，需要有 admin 權限</span></span><br></pre></td></tr></table></figure>
-
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> tt2(id <span class="type">int</span>,a <span class="type">int</span>,b <span class="type">int</span>);  </span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> tt2 </span><br><span class="line"><span class="keyword">SELECT</span> generate_series(<span class="number">1</span>,<span class="number">10</span>), random()<span class="operator">*</span><span class="number">100</span>, random()<span class="operator">*</span><span class="number">100</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> INDEX ix_tt2_id <span class="keyword">ON</span> tt2 (ID);</span><br><span class="line"><span class="keyword">CREATE</span> INDEX ix_tt2_a <span class="keyword">ON</span> tt2 (a);</span><br></pre></td></tr></table></figure>
-
-<p>接著我們透過 <code>bt_page_items</code> 查看 Index 儲存資料，<code>heap_page_items</code> 查看 heap table 儲存資料</p>
+          <p>Postgresql DB 目前預設在更新資料時會在 Heap Table 新增一條新版本資料，舊版本會先存在直到使用 VACUUM 回收</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/postgresql-hotupdate-vacuum/#more" rel="contents">
+              <a class="btn" href="/postgresql-hotupdate-vacuum/">
                 Read more &raquo;
               </a>
             </div>
@@ -1386,17 +1289,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/postgresql-page-deepknow/" class="post-title-link" itemprop="url">postgresql Page 深入淺出</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1412,7 +1315,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1470,18 +1373,10 @@
         <div itemscope itemtype="http://schema.org/ImageGallery">
             <img src="https://i.imgur.com/mYYjXFg.jpg" itemprop="contentUrl">
         </div>
-          <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異</p>
-<p>在postgresql DB Page size 預設是 8KB</p>
-<p>我們想要看page使用大小在 Sql-Server 可以用 <code>DBCC</code>命令在 postgresql DB 沒有 <code>DBCC</code> 還好有其他方式可以查看 Page 儲存原理</p>
-<p>如果要了解存儲怎麼辦呢?</p>
-<h2 id="關於-page-存儲"><a href="#關於-page-存儲" class="headerlink" title="關於 page 存儲"></a>關於 page 存儲</h2><p>使用sample data</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> t1 (id <span class="type">int</span> <span class="keyword">PRIMARY KEY</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert into</span> t1 <span class="keyword">select</span> generate_series(<span class="number">1</span>,<span class="number">2000</span>);</span><br><span class="line"><span class="keyword">insert into</span> t1 <span class="keyword">select</span> generate_series(<span class="number">2001</span>,<span class="number">4000</span>);</span><br></pre></td></tr></table></figure>
-
-<p>建立完表後我們透過 <code>\d+ t1</code> 指令查看資料表訊息，可以看到PK成功被建立</p>
-<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">postgres=# \d+ t1</span><br><span class="line">                                    Table &quot;public.t1&quot;</span><br><span class="line"> Column |  <span class="built_in">Type</span>   | Collation | Nullable | Default | Storage | Stats target | Description</span><br><span class="line">--------+---------+-----------+----------+---------+---------+--------------+-------------</span><br><span class="line"> id     | integer |           | <span class="keyword">not</span> null |         | plain   |              |</span><br><span class="line"><span class="function">Indexes:</span></span><br><span class="line"><span class="function">    &quot;<span class="title">t1_pkey</span>&quot; <span class="title">PRIMARY</span> <span class="title">KEY</span>, <span class="title">btree</span> (<span class="title">id</span>)</span></span><br></pre></td></tr></table></figure>
+          <p>因為工作需要最近在研究 postgresql DB，發現跟 sql-server 相比有許多不同之處，所以一開始就先研究 Page 差別，沒想到還真的有不少細節上的差異</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/postgresql-page-deepknow/#more" rel="contents">
+              <a class="btn" href="/postgresql-page-deepknow/">
                 Read more &raquo;
               </a>
             </div>
@@ -1566,7 +1461,7 @@
     <img class="site-author-image" itemprop="image" alt="Daniel Shih"
       src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
   <p class="site-author-name" itemprop="name">Daniel Shih</p>
-  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">

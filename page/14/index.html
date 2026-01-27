@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="好點子沒價值，有價值的是把好點子實現">
+  <meta name="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:type" content="website">
 <meta property="og:title" content="石頭的coding之路">
 <meta property="og:url" content="https://isdaniel.github.io/page/14/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="好點子沒價值，有價值的是把好點子實現">
+<meta property="og:description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:author" content="Daniel Shih">
-<meta property="article:tag" content="c#,Asp.net,Asp.net MVC,source code,後端,WebApi,SQL,SQL Server">
+<meta property="article:tag" content="postgresql,software engineer,source code,AI,c#,Asp.net,Asp.net MVC,後端,WebApi,SQL,SQL Server, Rust">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://isdaniel.github.io/page/14/">
@@ -164,7 +164,8 @@
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-        <p class="site-subtitle">Hello World</p>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
   </div>
 
   <div class="site-nav-right">
@@ -265,17 +266,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day3/" class="post-title-link" itemprop="url">啟動吧!Asp.Net IsapiRunTime & HttpRuntime (第3天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -291,7 +292,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -342,29 +343,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言:</a></li>
-<li><a href="#iis-%E8%88%87-asp-net-w3svc%E6%9C%8D%E5%8B%99">IIS 與 Asp net (W3SVC服務)</a></li>
-<li><a href="#iisapiruntime%E4%BB%8B%E9%9D%A2">IISAPIRuntime介面</a></li>
-<li><a href="#isapiruntimeprocessrequest">IsapiRunTime.ProcessRequest</a></li>
-<li><a href="#httpruntimeprocessrequestnodemand">HttpRuntime.ProcessRequestNoDemand</a><ul>
-<li><a href="#processrequestinternal">ProcessRequestInternal</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p>上一篇我們介紹<code>HttpModule &amp; HttpHandler</code>對於</p>
-<p>今天正式進入<code>.Net CLR</code>處理Http請求的世界.</p>
-<p>先附上<code>Asp.net</code>執行請求流程圖.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/IIS_Asp.net_Process.png" alt="瀏覽器請求IIS流程"></p>
-<p>現在開始講解藍色區塊.</p>
-<blockquote>
-<p>　查看原始碼好站 <a href="https://referencesource.microsoft.com/">Reference Source</a> </p>
-</blockquote>
-<h2 id="IIS-與-Asp-net-W3SVC服務"><a href="#IIS-與-Asp-net-W3SVC服務" class="headerlink" title="IIS 與 Asp net (W3SVC服務)"></a>IIS 與 Asp net (W3SVC服務)</h2>
+          <p>Agenda 前言: IIS 與 Asp net (W3SVC服務) IISAPIRuntime介面 IsapiRunTime.ProcessRequest HttpRuntime.ProcessRequestNoDemand ProcessRequestInternal 小結</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day3/#more" rel="contents">
+              <a class="btn" href="/ithelp-day3/">
                 Read more &raquo;
               </a>
             </div>
@@ -393,17 +375,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day2/" class="post-title-link" itemprop="url">Asp.Net支柱 IHttpMoudle & IHttphandler (第2天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -419,7 +401,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -543,17 +525,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day2/" class="post-title-link" itemprop="url">Asp.Net支柱 IHttpMoudle & IHttphandler (第2天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -569,7 +551,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -620,51 +602,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言：</a><ul>
-<li><a href="#ihttphandler%E5%92%8Chttpmodule%E9%97%9C%E4%BF%82">IHttpHandler和HttpModule關係</a></li>
-</ul>
-</li>
-<li><a href="#aspnetapplicationevent%E7%94%9F%E5%91%BD%E9%80%B1%E6%9C%9F">Asp.net_Application_Event生命週期</a><ul>
-<li><a href="#event%E4%BA%8B%E4%BB%B6%E5%90%8D%E7%A8%B1">Event事件名稱：</a></li>
-<li><a href="#%E4%BA%8B%E4%BB%B6%E6%96%B9%E6%B3%95%E8%AA%AA%E6%98%8E">事件方法說明：</a></li>
-</ul>
-</li>
-<li><a href="#ihttphandler">IHttpHandler</a></li>
-<li><a href="#ihttpmodule">IHttpModule</a></li>
-<li><a href="#%E8%87%AA%E5%B7%B1%E5%BB%BA%E7%AB%8B%E4%B8%80%E5%80%8B-ihttphandler">自己建立一個 IHttpHandler</a><ul>
-<li><a href="#webconfig%E8%A8%BB%E5%86%8A%E4%B8%8A%E9%9D%A2%E6%92%B0%E5%AF%AB%E7%9A%84ihttphandler">Web.Config註冊上面撰寫的IHttpHandler</a></li>
-</ul>
-</li>
-<li><a href="#%E8%87%AA%E5%B7%B1%E5%BB%BA%E7%AB%8B%E4%B8%80%E5%80%8B-ihttpmodule">自己建立一個 IHttpModule</a><ul>
-<li><a href="#%E5%BB%BA%E7%AB%8B%E4%B8%80%E5%80%8B%E9%A1%9E%E5%88%A5%E5%AF%A6%E7%8F%BEihttpmodule">建立一個類別實現IHttpModule</a></li>
-<li><a href="#webconfig%E8%A8%BB%E5%86%8A%E4%B8%8A%E9%9D%A2%E6%92%B0%E5%AF%AB%E7%9A%84ihttpmodule">Web.Config註冊上面撰寫的IHttpModule</a></li>
-<li><a href="#%E7%A8%8B%E5%BC%8F%E7%A2%BC">程式碼</a><ul>
-<li><a href="#%E5%BB%BA%E7%AB%8B%E4%B8%80%E5%80%8B%E9%A1%9E%E5%88%A5%E5%AF%A6%E7%8F%BEihttphander">建立一個類別實現IHttpHander</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#applicationhostconfig-%E8%A8%AD%E5%AE%9A%E6%93%8B">ApplicationHost.config 設定擋</a><ul>
-<li><a href="#iis%E9%A0%90%E8%A8%AD%E8%A8%AD%E5%AE%9Amodule%E5%9C%A8%E5%93%AA%E9%82%8A">IIS預設設定Module在哪邊?</a><ul>
-<li><a href="#iis">IIS</a></li>
-<li><a href="#iisexpress">IISExpress</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
-<li><a href="#%E5%8F%83%E8%80%83%E8%B3%87%E6%96%99">參考資料：</a></li>
-</ul>
-<h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>上一篇文章我們有說 Asp.net 有兩個核心組件 <code>IHttpMoudle &amp; IHttphandler</code></p>
-<p><code>Asp.net</code> 是一個<code>pipeline</code>的模型，理解這些管道除了可以讓我們節省許多不必要的資源浪費也可讓我們程式架構更加有條理.</p>
-<p>就像我們在<code>Asp.net MVC</code>如果要寫權限驗證程式碼,雖然可以寫在<code>Controller</code>的<code>Action</code>中</p>
-<p>但更好做法是我可以寫一個類別繼承<code>AuthorizeAttribute</code>並<code>override</code> <code>OnAuthorization</code>方法並掛上此標籤.</p>
-<p>更了解這些原理可以讓我們寫程式事半功倍.</p>
-<h3 id="IHttpHandler和HttpModule關係"><a href="#IHttpHandler和HttpModule關係" class="headerlink" title="IHttpHandler和HttpModule關係"></a>IHttpHandler和HttpModule關係</h3><p>Http請求像是一個旅客身上帶著行李拿著票來搭火車.</p>
+          <p>Agenda 前言： IHttpHandler和HttpModule關係 Asp.net_Application_Event生命週期 Event事件名稱： 事件方法說明： IHttpHandler IHttpModule 自己建立一個 IH</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day2/#more" rel="contents">
+              <a class="btn" href="/ithelp-day2/">
                 Read more &raquo;
               </a>
             </div>
@@ -693,17 +634,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day1/" class="post-title-link" itemprop="url">(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -719,7 +660,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -831,17 +772,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day1/" class="post-title-link" itemprop="url">(開賽)Http 請求 Asp.net IIS伺服器架構 (第1天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -857,7 +798,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -908,39 +849,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E9%96%8B%E8%B3%BD%E5%89%8D%E8%A8%80">開賽前言：</a><ul>
-<li><a href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E6%83%B3%E8%A6%81%E9%81%B8%E6%93%87%E6%AD%A4%E4%B8%BB%E9%A1%8C">為什麼想要選擇此主題</a></li>
-<li><a href="#%E9%96%B1%E8%AE%80%E6%99%82%E5%BB%BA%E8%AD%B0%E4%BA%8B%E9%A0%85">閱讀時建議事項</a></li>
-<li><a href="#%E6%96%87%E7%AB%A0%E6%94%B6%E7%A9%AB">文章收穫</a></li>
-</ul>
-</li>
-<li><a href="#%E9%80%B2%E5%85%A5%E4%B8%BB%E9%A1%8C">進入主題</a><ul>
-<li><a href="#%E7%80%8F%E8%A6%BD%E5%99%A8%E8%AB%8B%E6%B1%82iis%E6%B5%81%E7%A8%8B">瀏覽器請求IIS流程</a></li>
-<li><a href="#%E5%A6%82%E4%BD%95%E8%BE%A8%E5%88%A5%E6%98%AF%E5%90%A6%E7%82%BA%E9%9D%9C%E6%85%8B%E6%AA%94%E6%A1%88">如何辨別是否為靜態檔案?</a></li>
-<li><a href="#net-clr-httpmodule--httphandler-%E6%A0%B8%E5%BF%83%E6%A8%A1%E7%B5%84">.Net CLR Httpmodule &amp; Httphandler 核心模組</a></li>
-<li><a href="#w3wp%E6%87%89%E7%94%A8%E7%A8%8B%E5%BC%8F">W3WP應用程式</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
-</ul>
-<h2 id="開賽前言："><a href="#開賽前言：" class="headerlink" title="開賽前言："></a>開賽前言：</h2><p>三十篇文章架構基本遵循:</p>
-<ol>
-<li>**前言:**前情提要，閱讀此文建議使用工具或知識.</li>
-<li>標出大主題(大字體+錨點)之後在細項列出要說明的細節</li>
-<li>小結：每篇都有一個小結快速總結今天重點</li>
-</ol>
-<h3 id="為什麼想要選擇此主題"><a href="#為什麼想要選擇此主題" class="headerlink" title="為什麼想要選擇此主題"></a>為什麼想要選擇此主題</h3><p>選擇這個主題主要原因是</p>
-<ol>
-<li>沒有人整理一套較完整的Asp.net執行原始碼解析文章(從<code>Http</code>請求<code>IIS Server</code>,進入<code>CLR</code>前置動作),<strong>asp.net mvc</strong>原始碼解析</li>
-<li>台灣大部分的文章都是分享如何使用，很少文章有介紹如何運作．</li>
-<li>利用微軟開原後站在巨人肩膀上可以看更遠，理解<strong>MVC</strong>框架如何去設計具有一定的彈性.</li>
-<li>了解核心運作流程，更好改善或擴充現有專案架構（讓系統變得更有條理）</li>
-</ol>
-<h3 id="閱讀時建議事項"><a href="#閱讀時建議事項" class="headerlink" title="閱讀時建議事項"></a>閱讀時建議事項</h3><p>我在文章中會盡量寫出我看到精華部分,但此系列文可能對於<strong>MVC</strong>新手不太容易閱讀,因為<strong>MVC</strong>框架中運用到許多設計模式和OOP觀念(當初我在閱讀上也花了不少功夫)</p>
+          <p>Agenda 開賽前言： 為什麼想要選擇此主題 閱讀時建議事項 文章收穫 進入主題 瀏覽器請求IIS流程 如何辨別是否為靜態檔案? .Net CLR Httpmodule & Httphandler 核心模組 W3WP應用程式 小結</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day1/#more" rel="contents">
+              <a class="btn" href="/ithelp-day1/">
                 Read more &raquo;
               </a>
             </div>
@@ -969,17 +881,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/HttpHandler-HttpModule/" class="post-title-link" itemprop="url">Asp.net HttpHandler vs HttpModule 詳細解說.</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -995,7 +907,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1091,17 +1003,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/httphandler-httpmodule/" class="post-title-link" itemprop="url">Asp.net HttpHandler vs HttpModule 詳細解說.</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1117,7 +1029,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1172,19 +1084,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p><code>Asp.net</code> 是一個<code>pipeline</code>的模型</p>
-<p>我覺得<code>.Net Web工程師</code>對於這個模型和<code>IHttpHanlder</code>,<code>IHttpModule</code> 要有基本的概念和理解.</p>
-<p>理解這些管道除了可以讓我們節省許多不必要的資源浪費也可讓我們程式架構更加有條理.</p>
-<p>就像我們在<code>Asp.net MVC</code>如果要寫權限驗證程式碼,雖然可以寫在<code>Controller</code>的<code>Action</code>中</p>
-<p>但更好做法是我可以寫一個類別繼承<code>AuthorizeAttribute</code>並<code>override</code> <code>OnAuthorization</code>方法並掛上此標籤.</p>
-<p>所以更了解這些原理可以讓我們寫程式事半功倍.</p>
-<h2 id="Asp-net-Application-Event-生命週期"><a href="#Asp-net-Application-Event-生命週期" class="headerlink" title="Asp.net Application Event 生命週期"></a>Asp.net Application Event 生命週期</h2><p>前面我們知道Asp.net是一個請求處理響應的管道而這個管道中微軟有提供許多點可以讓我們進行客製化的擴充程式撰寫</p>
-<blockquote>
-<p>事件可藉由<code>IHttpModule</code>來擴充註冊</p>
-</blockquote>
+          <p>前言：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/httphandler-httpmodule/#more" rel="contents">
+              <a class="btn" href="/httphandler-httpmodule/">
                 Read more &raquo;
               </a>
             </div>
@@ -1213,17 +1116,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/AutoMapperInit/" class="post-title-link" itemprop="url">(AutoMapper)反射自動註冊AutoMapper Profile</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1239,7 +1142,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1331,17 +1234,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Deploy-OwnNuget/" class="post-title-link" itemprop="url">發布自己的Nuget專案</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1357,7 +1260,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1442,22 +1345,22 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/StatusPattern/">
+    <link itemprop="mainEntityOfPage" href="https://isdaniel.github.io/SQL-Gaps-and-Islands-problem/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
-            <a href="/StatusPattern/" class="post-title-link" itemprop="url">State Pattern(狀態者模式)</a>
-        </h1>
+            <a href="/SQL-Gaps-and-Islands-problem/" class="post-title-link" itemprop="url">Gaps and Islands problem (SQL) 連續範圍</a>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1473,7 +1376,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1481,11 +1384,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/" itemprop="url" rel="index"><span itemprop="name">C#</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/C/DesignPattern/" itemprop="url" rel="index"><span itemprop="name">DesignPattern</span></a>
+                  <a href="/categories/SQL/" itemprop="url" rel="index"><span itemprop="name">SQL</span></a>
                 </span>
             </span>
 
@@ -1498,8 +1397,8 @@
       </span>
       <span class="post-meta-item-text">Disqus: </span>
     
-    <a title="disqus" href="/StatusPattern/#disqus_thread" itemprop="discussionUrl">
-      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="StatusPattern/" itemprop="commentCount"></span>
+    <a title="disqus" href="/SQL-Gaps-and-Islands-problem/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="SQL-Gaps-and-Islands-problem/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -1509,14 +1408,14 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">Symbols count in article: </span>
-              <span>4.6k</span>
+              <span>1.8k</span>
             </span>
             <span class="post-meta-item" title="Reading time">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
                 <span class="post-meta-item-text">Reading time &asymp;</span>
-              <span>4 mins.</span>
+              <span>2 mins.</span>
             </span>
 
         </div>
@@ -1528,17 +1427,17 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>狀態者模式</p>
-<p>優勢在可將複雜的物件狀態條件,以物件方式來減少條件式的判斷程式</p>
-<p>可由物件自身的狀態，決定之後的動作行為.</p>
-<h2 id="狀態者模式-說明："><a href="#狀態者模式-說明：" class="headerlink" title="狀態者模式 說明："></a>狀態者模式 說明：</h2><p>需求簡易流程如下</p>
-<p>這是一個簡單的訂單流程圖</p>
-<p><img src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/c83df7da-1425-4410-9df3-a45bf9e35c1a/1542429110_98117.png"></p>
-<p>我們可看到從建立訂單開始-&gt;最後判斷成功或取消訂單 看似簡單但需要寫一定程度的判斷條件式,而且也要做一定程度的逆向流程防呆.</p>
-<p>這裡先貼上 未使用狀態者模式的程式碼: <code>PaymentContext.cs</code></p>
+          <h2 id="前言："><a href="#前言：" class="headerlink" title="前言："></a>前言：</h2><p>SO 發現蠻多人有遇到 <code>Gaps and Islands problem</code></p>
+<p><a href="https://stackoverflow.com/questions/52059682/count-of-last-continuous-inserted-records-based-on-date">count of last continuous inserted records based on date</a> </p>
+<p>之前有跟大家分享過 解決連續範圍的思路  <a href="https://dotblogs.com.tw/daniel/2018/03/27/180710">[SQL連續範圍] 數字，日期連續範圍</a></p>
+<p>今天針對發問者實際例子來一步步 解決問題…</p>
+<p>提問出處:<a href="https://stackoverflow.com/questions/52059682/count-of-last-continuous-inserted-records-based-on-date">count of last continuous inserted records based on date</a> </p>
+<hr>
+<h2 id="問題說明"><a href="#問題說明" class="headerlink" title="問題說明:"></a>問題說明:</h2><p>提問者希望可以獲得最近一次連續日期的次數</p>
+<p>例如:</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/StatusPattern/#more" rel="contents">
+              <a class="btn" href="/SQL-Gaps-and-Islands-problem/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -1623,7 +1522,7 @@
     <img class="site-author-image" itemprop="image" alt="Daniel Shih"
       src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
   <p class="site-author-name" itemprop="name">Daniel Shih</p>
-  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">

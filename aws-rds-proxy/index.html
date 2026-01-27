@@ -20,19 +20,19 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="前言在 Postgresql 世界裡每建立一個 Connection，都會有一個 process 來服務該請求，Postgresql 沒有 ThreadPool 概念所以在 Connection 使用量大時會發生一些問題  資源浪費 超過同時間超過 max_connection 後面連接會無法連接  一個 open source 插件 PgBouncer 就是幫我們解決上面問題，不過如果你是使用">
+  <meta name="description" content="在 Postgresql 世界裡每建立一個 Connection，都會有一個 process 來服務該請求，Postgresql 沒有 ThreadPool 概念所以在 Connection 使用量大時會發生一些問題">
 <meta property="og:type" content="article">
 <meta property="og:title" content="AWS Postgres RDS Proxy">
 <meta property="og:url" content="https://isdaniel.github.io/aws-rds-proxy/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="前言在 Postgresql 世界裡每建立一個 Connection，都會有一個 process 來服務該請求，Postgresql 沒有 ThreadPool 概念所以在 Connection 使用量大時會發生一些問題  資源浪費 超過同時間超過 max_connection 後面連接會無法連接  一個 open source 插件 PgBouncer 就是幫我們解決上面問題，不過如果你是使用">
+<meta property="og:description" content="在 Postgresql 世界裡每建立一個 Connection，都會有一個 process 來服務該請求，Postgresql 沒有 ThreadPool 概念所以在 Connection 使用量大時會發生一些問題">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://i.imgur.com/HClZcwd.png">
 <meta property="og:image" content="https://i.imgur.com/2snNDZo.png">
 <meta property="og:image" content="https://i.imgur.com/PsnxBAZ.png">
 <meta property="og:image" content="https://i.imgur.com/1uZjGgU.png">
 <meta property="article:published_time" content="2021-11-22T22:30:11.000Z">
-<meta property="article:modified_time" content="2026-01-15T03:08:05.408Z">
+<meta property="article:modified_time" content="2026-01-27T02:07:21.627Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="AWS">
 <meta property="article:tag" content="Proxy">
@@ -173,7 +173,8 @@
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-        <p class="site-subtitle">Hello World</p>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
   </div>
 
   <div class="site-nav-right">
@@ -274,16 +275,16 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           AWS Postgres RDS Proxy
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -299,7 +300,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -344,6 +345,7 @@
                 <span class="post-meta-item-text">Reading time &asymp;</span>
               <span>8 mins.</span>
             </span>
+            <div class="post-description">在 Postgresql 世界裡每建立一個 Connection，都會有一個 process 來服務該請求，Postgresql 沒有 ThreadPool 概念所以在 Connection 使用量大時會發生一些問題</div>
 
         </div>
       </header>
@@ -408,12 +410,15 @@
   <ul class="popular-posts">
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="/aws-certified-ssa-experience/" rel="bookmark">AWS Certified Solutions Architect - Associate (SAA-C02) 考試重點與心得</a></div>
+        <div class="popular-posts-excerpt"><p>前言</p></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="/aws-first-lambda/" rel="bookmark">AWS Lambda 初體驗 by .net core</a></div>
+        <div class="popular-posts-excerpt"><p>前言</p></div>
     </li>
     <li class="popular-posts-item">
       <div class="popular-posts-title"><a href="/aws-serverless/" rel="bookmark">Serverless + CloudFormation 撰寫 lambda</a></div>
+        <div class="popular-posts-excerpt"><p>AWS lambda 作為 serverless 服務，之前有介紹過 AWS Lambda 初體驗 by .net core，本次要介紹 serverless 框架搭配 AWS CloudFormation (IaC)</p></div>
     </li>
   </ul>
 <div style="text-align: center;">
@@ -518,7 +523,7 @@
     <img class="site-author-image" itemprop="image" alt="Daniel Shih"
       src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
   <p class="site-author-name" itemprop="name">Daniel Shih</p>
-  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">

@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="好點子沒價值，有價值的是把好點子實現">
+  <meta name="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:type" content="website">
 <meta property="og:title" content="石頭的coding之路">
 <meta property="og:url" content="https://isdaniel.github.io/page/10/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="好點子沒價值，有價值的是把好點子實現">
+<meta property="og:description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:author" content="Daniel Shih">
-<meta property="article:tag" content="c#,Asp.net,Asp.net MVC,source code,後端,WebApi,SQL,SQL Server">
+<meta property="article:tag" content="postgresql,software engineer,source code,AI,c#,Asp.net,Asp.net MVC,後端,WebApi,SQL,SQL Server, Rust">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://isdaniel.github.io/page/10/">
@@ -164,7 +164,8 @@
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-        <p class="site-subtitle">Hello World</p>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
   </div>
 
   <div class="site-nav-right">
@@ -265,17 +266,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day23/" class="post-title-link" itemprop="url">6個基本(ActionResult) View是如何被建立(二) (第23天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -291,7 +292,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -342,31 +343,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#6%E7%A8%AE%E5%9F%BA%E6%9C%AC%E7%9A%84actionresult">6種基本的ActionResult</a></li>
-<li><a href="#contentresult">ContentResult</a></li>
-<li><a href="#redirectresult--redirecttorouteresult">RedirectResult &amp; RedirectToRouteResult</a></li>
-<li><a href="#emptyresult">EmptyResult</a></li>
-<li><a href="#fileresult">FileResult</a><ul>
-<li><a href="#filecontentresult">FileContentResult</a></li>
-<li><a href="#filepathresult">FilePathResult</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇介紹到<code>CreateActionResult</code>方法會產生一個<code>ActionResult</code>物件利用<code>MethodInfo</code>資訊.</p>
-<p>最後透過<code>InvokeActionResult</code>來呼叫<code>ExecuteResult</code>方法來執行<code>ActionResult</code>的<code>ExecuteResult</code>方法,基本上<strong>MVC</strong>找到且執行<strong>Action</strong>方法後面就沒再做甚麼特別的事情了(後面做資源釋放…)</p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">virtual</span> <span class="keyword">void</span> <span class="title">InvokeActionResult</span>(<span class="params">ControllerContext controllerContext, ActionResult actionResult</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">	actionResult.ExecuteResult(controllerContext);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>本篇來介紹常用的<code>ActionResult</code>其內部運作程式碼</p>
-<blockquote>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="6種基本的ActionResult"><a href="#6種基本的ActionResult" class="headerlink" title="6種基本的ActionResult"></a>6種基本的ActionResult</h2><p>下面這六個類別是直接繼承於<code>ActionResult</code>的類別(其中有標註<strong>Base class</strong>代表這是抽象類別另外有類別繼承它)</p>
+          <p>Agenda 前言 6種基本的ActionResult ContentResult RedirectResult & RedirectToRouteResult EmptyResult FileResult FileContentResult FilePathResult 小結:</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day23/#more" rel="contents">
+              <a class="btn" href="/ithelp-day23/">
                 Read more &raquo;
               </a>
             </div>
@@ -395,17 +375,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day22/" class="post-title-link" itemprop="url">View是如何被建立(一) (第22天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -421,7 +401,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -530,17 +510,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day22/" class="post-title-link" itemprop="url">View是如何被建立(一) (第22天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -556,7 +536,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -607,36 +587,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#action%E6%96%B9%E6%B3%95%E6%98%AF%E5%A6%82%E4%BD%95%E8%A2%AB%E5%91%BC%E5%8F%AB%E5%BF%AB%E9%80%9F%E6%95%B4%E7%90%86">Action方法是如何被呼叫(快速整理)</a></li>
-<li><a href="#actionmethoddispatcher-%E5%8F%96%E5%BE%97%E5%9F%B7%E8%A1%8Caction%E6%96%B9%E6%B3%95">ActionMethodDispatcher 取得(執行Action方法)</a><ul>
-<li><a href="#expression%E5%8B%95%E6%85%8B%E7%94%A2%E7%94%9F%E5%91%BC%E5%8F%ABaction%E6%96%B9%E6%B3%95-getexecutor">Expression動態產生呼叫Action方法 (GetExecutor)</a><ul>
-<li><a href="#getexecutor%E6%96%B9%E6%B3%95-expression%E7%94%A2%E7%94%9F%E5%91%BC%E5%8F%AB%E7%A8%8B%E5%BC%8F%E7%A2%BC%E8%A7%A3%E8%AA%AA">GetExecutor方法 Expression產生呼叫程式碼解說</a></li>
-</ul>
-</li>
-<li><a href="#dispatchercache">DispatcherCache</a></li>
-</ul>
-</li>
-<li><a href="#createactionresult">CreateActionResult</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>不知道大家有沒有點暈頭轉向XD,<strong>MVC</strong>的<code>Model</code>綁定機制真的蠻複雜,希望大家有跟上來</p>
-<p>透過<code>DefaultModelBinder</code>的<code>BindComplexElementalModel</code>方法綁定複雜模型的值.</p>
-<p>在<code>BindProperty</code>方法時填充子節點<code>ModelMetadata</code>的<code>Model</code>屬性,透過<code>(DefaultModelBinder)</code>再次綁定物件動作如下</p>
-<ul>
-<li><code>ModelMetadata</code>是簡單模型就會把值填充給此次<code>ModelMetadata.Model</code></li>
-<li><code>ModelMetadata</code>是複雜模型就建立一個物件後呼叫<code>BindProperty</code>直到找到最後的簡單模型.</li>
-</ul>
-<p>在<code>BindComplexElementalModel</code>方法做幾個主要動作</p>
-<ol>
-<li><code>BindProperties</code>:透過<code>MetaData</code>取得屬性資訊並利用反射把值添加上去.</li>
-<li><code>OnModelUpdated</code>:找尋<code>Model</code>上<code>MetaData</code>的<code>ModelValidator</code>進行屬性驗證,如果驗證失敗會把資料資訊加到<code>ModelState.AddModelError</code>(<code>ModelStateDictionary</code>)可在<code>View</code>搭配顯示<code>error</code>訊息</li>
-</ol>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">internal</span> <span class="keyword">void</span> <span class="title">BindComplexElementalModel</span>(<span class="params">ControllerContext controllerContext, ModelBindingContext bindingContext, <span class="built_in">object</span> model</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    ModelBindingContext newBindingContext = CreateComplexElementalModelBindingContext(controllerContext, bindingContext, model);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (OnModelUpdating(controllerContext, newBindingContext))</span><br><span class="line">    &#123;</span><br><span class="line">        BindProperties(controllerContext, newBindingContext);</span><br><span class="line">        OnModelUpdated(controllerContext, newBindingContext);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <p>Agenda 前言 Action方法是如何被呼叫(快速整理) ActionMethodDispatcher 取得(執行Action方法) Expression動態產生呼叫Action方法 (GetExecutor) GetExecutor方</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day22/#more" rel="contents">
+              <a class="btn" href="/ithelp-day22/">
                 Read more &raquo;
               </a>
             </div>
@@ -665,17 +619,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day21/" class="post-title-link" itemprop="url">探討Model驗證標籤(ValidationAttribute) (第21天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -691,7 +645,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -795,17 +749,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day21/" class="post-title-link" itemprop="url">探討Model驗證標籤(ValidationAttribute) (第21天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -821,7 +775,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -872,31 +826,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#validationattribute">ValidationAttribute</a><ul>
-<li><a href="#modelvalidatorproviders">ModelValidatorProviders</a></li>
-<li><a href="#modelvalidator">ModelValidator</a></li>
-</ul>
-</li>
-<li><a href="#compositemodelvalidator">CompositeModelValidator</a></li>
-<li><a href="#dataannotationsmodelvalidator">DataAnnotationsModelValidator</a><ul>
-<li><a href="#dataannotationsmodelvalidatorprovider">DataAnnotationsModelValidatorProvider</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>CachedDataAnnotationsMetadataAttributes</code>這個類別攔截某些標籤可被攔截驗證.</p>
-<p>本篇會介紹另一個可以客製化驗證<code>ValidationAttribute</code>,常用驗證標籤並講述是如何參數屬性是如何取得這個標籤和使用過程.</p>
-<blockquote>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="ValidationAttribute"><a href="#ValidationAttribute" class="headerlink" title="ValidationAttribute"></a>ValidationAttribute</h2><p><code>ValidationAttribute</code>類別在<code>System.ComponentModel.DataAnnotations</code>命名空間下.</p>
-<p>我們可以建立一個類別繼承<code>ValidationAttribute</code>並<code>bool IsValid(object value)</code>重載方法來製做我們客制化驗證機制.</p>
-<p><code>IsValid</code>方法有一個<code>Bool</code>回傳值回傳<code>true</code>代表驗證通過<code>false</code>反之</p>
+          <p>Agenda 前言 ValidationAttribute ModelValidatorProviders ModelValidator CompositeModelValidator DataAnnotationsModelValidat</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day21/#more" rel="contents">
+              <a class="btn" href="/ithelp-day21/">
                 Read more &raquo;
               </a>
             </div>
@@ -925,17 +858,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day20/" class="post-title-link" itemprop="url">探討Model上客製化標籤如何被解析使用 (第20天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -951,7 +884,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1054,17 +987,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day20/" class="post-title-link" itemprop="url">探討Model上客製化標籤如何被解析使用 (第20天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1080,7 +1013,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1131,30 +1064,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#imetadataaware%E4%BB%8B%E9%9D%A2">IMetadataAware介面</a><ul>
-<li><a href="#allowhtmlattribute%E6%A8%99%E7%B1%A4">AllowHtmlAttribute標籤</a></li>
-<li><a href="#%E7%82%BA%E4%BD%95%E5%8F%AF%E4%BB%A5%E9%80%8F%E9%81%8E%E5%AF%A6%E7%8F%BEimetadataaware%E4%BB%8B%E9%9D%A2%E4%BE%86%E6%93%B4%E5%85%85%E5%B0%8D%E6%96%BCmetadata%E6%93%8D%E4%BD%9C">為何可以透過實現IMetadataAware介面來擴充對於metadata操作</a></li>
-</ul>
-</li>
-<li><a href="#cacheddataannotationsmodelmetadataprovider">CachedDataAnnotationsModelMetadataProvider</a><ul>
-<li><a href="#cacheddataannotationsmodelmetadata">CachedDataAnnotationsModelMetadata</a></li>
-<li><a href="#cacheddataannotationsmetadataattributes">CachedDataAnnotationsMetadataAttributes</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇有介紹<code>ModelMetadata</code>和參數<code>Model</code>之間的關係.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/18/metadata_uml.png" alt="UML_Model"></p>
-<p><strong>MVC</strong>提供我們一個<code>IMetadataAware</code>介面,讓我們可以對最終生成<code>ModelMetadata</code>進行自由設定.</p>
-<h2 id="IMetadataAware介面"><a href="#IMetadataAware介面" class="headerlink" title="IMetadataAware介面"></a>IMetadataAware介面</h2><p>在<code>IMetadataAware</code>介面有一個<code>OnMetadataCreated</code>方法</p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title">IMetadataAware</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">OnMetadataCreated</span>(<span class="params">ModelMetadata metadata</span>)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>在<strong>MVC</strong>有預設兩個實現<code>IMetadataAware</code>介面的標籤.</p>
+          <p>Agenda 前言 IMetadataAware介面 AllowHtmlAttribute標籤 為何可以透過實現IMetadataAware介面來擴充對於metadata操作 CachedDataAnnotationsModelMetada</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day20/#more" rel="contents">
+              <a class="btn" href="/ithelp-day20/">
                 Read more &raquo;
               </a>
             </div>
@@ -1183,17 +1096,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day19/" class="post-title-link" itemprop="url">Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1209,7 +1122,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1308,17 +1221,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day19/" class="post-title-link" itemprop="url">Http參數如何綁定到Action參數上(簡單和複雜模型綁定探討) (第19天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1334,7 +1247,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1385,26 +1298,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#modelmetadata-%E5%85%83%E6%95%B8%E6%93%9A%E5%84%B2%E5%AD%98%E5%8F%83%E6%95%B8%E8%B3%87%E6%96%99">ModelMetadata 元數據儲存參數資料</a></li>
-<li><a href="#bindsimplemodel-%E7%B0%A1%E5%96%AE%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A">BindSimpleModel 簡單模型綁定</a></li>
-<li><a href="#bindcomplexmodel-%E8%A4%87%E9%9B%9C%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A">BindComplexModel 複雜模型綁定</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a><ul>
-<li><a href="#%E7%B0%A1%E5%96%AE%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A-vs-%E8%A4%87%E9%9B%9C%E6%A8%A1%E5%9E%8B%E7%B6%81%E5%AE%9A">簡單模型綁定 vs 複雜模型綁定</a></li>
-</ul>
-</li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>IValueProvider</code>物件透過一個<code>ValueProviderFactory</code>工廠來產生</p>
-<p><code>Action</code>方法綁定<code>Model</code>参数由實現<code>IModelBinder</code>的介面<code>ModelBinder（DefaultModelBinder）</code>物件來實現</p>
-<p>在<code>IModelBinder</code>介面中有一個重要的方法<code>object BindModel</code>取得<code>Model</code>參數資料.</p>
-<p>但在<code>Http</code>請求傳送參數極為複雜是如何將參數動態綁定在<code>Action</code>參數上呢?</p>
-<p>最常見的<strong>Json</strong>參數透過<code>POST Body</code>傳到AP端,經由<strong>MVC</strong> <code>BindModel</code>來取得參數物件資料.</p>
-<p>如下方資料.</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">   <span class="attr">&quot;Key&quot;</span><span class="punctuation">:</span><span class="string">&quot;123&quot;</span><span class="punctuation">,</span></span><br><span class="line">   <span class="attr">&quot;value&quot;</span><span class="punctuation">:</span><span class="string">&quot;&quot;</span><span class="punctuation">,</span></span><br><span class="line">   <span class="attr">&quot;Adress&quot;</span><span class="punctuation">:</span><span class="punctuation">[</span><span class="string">&quot;test133&quot;</span><span class="punctuation">,</span><span class="string">&quot;e2424&quot;</span><span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+          <p>Agenda 前言 ModelMetadata 元數據儲存參數資料 BindSimpleModel 簡單模型綁定 BindComplexModel 複雜模型綁定 小結： 簡單模型綁定 vs 複雜模型綁定</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day19/#more" rel="contents">
+              <a class="btn" href="/ithelp-day19/">
                 Read more &raquo;
               </a>
             </div>
@@ -1433,17 +1330,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day18/" class="post-title-link" itemprop="url">提供ModelBing幾個重要功臣(Model) (第18天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1459,7 +1356,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1628,7 +1525,7 @@
     <img class="site-author-image" itemprop="image" alt="Daniel Shih"
       src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
   <p class="site-author-name" itemprop="name">Daniel Shih</p>
-  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">

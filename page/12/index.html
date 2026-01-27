@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="好點子沒價值，有價值的是把好點子實現">
+  <meta name="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:type" content="website">
 <meta property="og:title" content="石頭的coding之路">
 <meta property="og:url" content="https://isdaniel.github.io/page/12/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
-<meta property="og:description" content="好點子沒價值，有價值的是把好點子實現">
+<meta property="og:description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
 <meta property="og:locale" content="zh_TW">
 <meta property="article:author" content="Daniel Shih">
-<meta property="article:tag" content="c#,Asp.net,Asp.net MVC,source code,後端,WebApi,SQL,SQL Server">
+<meta property="article:tag" content="postgresql,software engineer,source code,AI,c#,Asp.net,Asp.net MVC,後端,WebApi,SQL,SQL Server, Rust">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://isdaniel.github.io/page/12/">
@@ -164,7 +164,8 @@
         <span class="logo-line-after"><i></i></span>
       </a>
     </div>
-        <p class="site-subtitle">Hello World</p>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
   </div>
 
   <div class="site-nav-right">
@@ -265,17 +266,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day13/" class="post-title-link" itemprop="url">Asp.net MVC如何實現IOC解析器 (第13天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -291,7 +292,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -342,32 +343,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#ioc%E4%BB%8B%E7%B4%B9">IOC介紹</a><ul>
-<li><a href="#%E7%A8%8B%E5%BC%8F%E7%A2%BC%E4%BB%8B%E7%B4%B9ioc-by-autofac">程式碼介紹IOC by Autofac</a></li>
-</ul>
-</li>
-<li><a href="#autofac-ioc%E5%AE%B9%E5%99%A8-%E5%92%8C-aspnet-mvc%E9%97%9C%E4%BF%82">AutoFac IOC容器 和 Asp.net mvc關係</a></li>
-<li><a href="#dependencyresolver-%E6%8F%AD%E5%AF%86">DependencyResolver 揭密</a></li>
-<li><a href="#mvc-%E8%A3%A1idependencyresolver">MVC 裡IDependencyResolver</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p><code>IOC</code>依賴反轉是<code>oop</code>重要程式設計思想。</p>
-<blockquote>
-<p><code>Ioc—Inversion of Control</code> 控制反轉</p>
-</blockquote>
-<p>控制反轉是一個設計思想 ，把對於某個物件的控制權移轉給第三方容器.</p>
-<p>詳細資訊可以查看小弟另一篇文章 <a href="https://isdaniel.github.io/ioc-di">IOC(控制反轉)，DI(依賴注入) 深入淺出~~</a></p>
-<blockquote>
-<p>有沒有人會很好奇說為什麼只需要透過<code>DependencyResolver.SetResolver</code>方法我就可以直接使用<code>AutoFac</code>或其他IOC容器?</p>
-</blockquote>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//....</span></span><br><span class="line"><span class="comment">// 建立相依解析器</span></span><br><span class="line">IContainer container = <span class="keyword">new</span> builder.Build();</span><br><span class="line">DependencyResolver.SetResolver(container);</span><br></pre></td></tr></table></figure>
-
-<p>今天跟大家分享<code>Asp.net MVC</code>利用什麼設計技巧,讓外部<code>IOC</code>容器可以很方便融入系統中.</p>
+          <p>Agenda 前言 IOC介紹 程式碼介紹IOC by Autofac AutoFac IOC容器 和 Asp.net mvc關係 DependencyResolver 揭密 MVC 裡IDependencyResolver 小結:</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day13/#more" rel="contents">
+              <a class="btn" href="/ithelp-day13/">
                 Read more &raquo;
               </a>
             </div>
@@ -396,17 +375,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day12/" class="post-title-link" itemprop="url">談談Controller幾個重要成員 (第12天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -422,7 +401,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -534,17 +513,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day12/" class="post-title-link" itemprop="url">談談Controller幾個重要成員 (第12天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -560,7 +539,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -611,39 +590,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#controllerbasecontroller%E5%9F%BA%E7%A4%8E%E9%A1%9E%E5%88%A5">ControllerBase(Controller基礎類別)</a><ul>
-<li><a href="#sessionstatetempdataprovider-%E6%8E%A7%E5%88%B6%E5%84%B2%E5%AD%98tempdata">SessionStateTempDataProvider 控制儲存TempData</a></li>
-</ul>
-</li>
-<li><a href="#controllerbase-excute%E6%96%B9%E6%B3%95">ControllerBase Excute方法</a></li>
-<li><a href="#controller">Controller</a><ul>
-<li><a href="#executecore">ExecuteCore</a></li>
-</ul>
-</li>
-<li><a href="#controllercontext">ControllerContext</a><ul>
-<li><a href="#controllercontext-1">ControllerContext</a></li>
-<li><a href="#authorizationcontext">AuthorizationContext</a></li>
-</ul>
-</li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上篇得知MVC預設透過<code>DefaultControllerFactory</code>反射方式動態建立<code>Controller</code>物件</p>
-<p>本篇會分享我們常用到<code>Controller</code>基礎類別和相關物件.</p>
-<blockquote>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-</blockquote>
-<h2 id="ControllerBase-Controller基礎類別"><a href="#ControllerBase-Controller基礎類別" class="headerlink" title="ControllerBase(Controller基礎類別)"></a>ControllerBase(Controller基礎類別)</h2><p><code>ControllerBase</code>具有如下幾個重要的屬性</p>
-<ol>
-<li><code>TempData</code>：將設置資料存於<code>Session</code>中,生命週期除了當下請求, 導頁後仍可續存.</li>
-<li><code>ViewBag</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>dynamic</code>)</li>
-<li><code>ViewData</code>：儲存<code>Controller</code>向<code>view</code>傳遞資料或變數 (型別<code>ViewDataDictionary</code>)</li>
-</ol>
-<p>雖說<code>ViewBag</code>和<code>ViewData</code>看起來使用不同的物件,但從程式碼了解到其實<code>ViewBag</code>也是使用<code>ViewData</code>引用.</p>
+          <p>Agenda 前言 ControllerBase(Controller基礎類別) SessionStateTempDataProvider 控制儲存TempData ControllerBase Excute方法 Controller Ex</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day12/#more" rel="contents">
+              <a class="btn" href="/ithelp-day12/">
                 Read more &raquo;
               </a>
             </div>
@@ -672,17 +622,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day11/" class="post-title-link" itemprop="url">Asp.net MVC Controller是怎麼被建立 (第11天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -698,7 +648,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -797,17 +747,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day11/" class="post-title-link" itemprop="url">Asp.net MVC Controller是怎麼被建立 (第11天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -823,7 +773,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -874,26 +824,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#%E5%8F%96%E5%BE%97%E5%9F%B7%E8%A1%8Ccontroller">取得執行Controller</a><ul>
-<li><a href="#controllerbuilder">ControllerBuilder</a></li>
-<li><a href="#icontrollerfactory%E4%BB%8B%E9%9D%A2">IControllerFactory介面</a></li>
-<li><a href="#controllerfactorydefaultcontrollerfactorycs">ControllerFactory(DefaultControllerFactory.cs)</a></li>
-</ul>
-</li>
-<li><a href="#%E5%BB%BA%E7%AB%8Bcontroller%E7%9A%84icontrolleractivator">建立Controller的IControllerActivator</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結:</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前篇介紹MVC使用<code>HttpHandler</code>是<code>MvcHandler</code>透過並<code>MvcRouteHandler</code>物件來返回.</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/10/relationship_pic.PNG" alt="relationship_pic.PNG"></p>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-<p>大家介紹如何取得<code>Controller</code>執行物件</p>
-<h2 id="取得執行Controller"><a href="#取得執行Controller" class="headerlink" title="取得執行Controller"></a>取得執行Controller</h2><p>在<code>ProcessRequest</code>方法是透過<code>ProcessRequestInit</code>取得執行<code>controller</code>物件,讓我們看看是這個方法如何<code>controller</code>物件.</p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">ProcessRequestInit</span>(<span class="params">HttpContextBase httpContext, <span class="keyword">out</span> IController controller, <span class="keyword">out</span> IControllerFactory factory</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    HttpContext currentContext = HttpContext.Current;</span><br><span class="line">    <span class="keyword">if</span> (currentContext != <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">bool</span>? isRequestValidationEnabled = ValidationUtility.IsValidationEnabled(currentContext);</span><br><span class="line">        <span class="keyword">if</span> (isRequestValidationEnabled == <span class="literal">true</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            ValidationUtility.EnableDynamicValidation(currentContext);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    AddVersionHeader(httpContext);</span><br><span class="line">    RemoveOptionalRoutingParameters();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Get the controller type</span></span><br><span class="line">    <span class="built_in">string</span> controllerName = RequestContext.RouteData.GetRequiredString(<span class="string">&quot;controller&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Instantiate the controller and call Execute</span></span><br><span class="line">    factory = ControllerBuilder.GetControllerFactory();</span><br><span class="line">    controller = factory.CreateController(RequestContext, controllerName);</span><br><span class="line">    <span class="keyword">if</span> (controller == <span class="literal">null</span>)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> InvalidOperationException(</span><br><span class="line">            String.Format(</span><br><span class="line">                CultureInfo.CurrentCulture,</span><br><span class="line">                MvcResources.ControllerBuilder_FactoryReturnedNull,</span><br><span class="line">                factory.GetType(),</span><br><span class="line">                controllerName));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+          <p>Agenda 前言 取得執行Controller ControllerBuilder IControllerFactory介面 ControllerFactory(DefaultControllerFactory.cs) 建立Controller的IControllerActivator 小結:</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day11/#more" rel="contents">
+              <a class="btn" href="/ithelp-day11/">
                 Read more &raquo;
               </a>
             </div>
@@ -922,17 +856,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day10/" class="post-title-link" itemprop="url">透過MvcRouteHandler取得呼叫IHttphandler (第10天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -948,7 +882,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1042,17 +976,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day10/" class="post-title-link" itemprop="url">透過MvcRouteHandler取得呼叫IHttphandler (第10天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1068,7 +1002,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1119,21 +1053,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#mvc%E5%8F%96%E5%BE%97%E4%BD%BF%E7%94%A8httphandler-ihttphandler">MVC取得使用HttpHandler (IHttpHandler)</a></li>
-<li><a href="#mvc%E5%91%BC%E5%8F%AB%E7%9A%84httphandler-mvchandler">MVC呼叫的HttpHandler (MvcHandler)</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>前一篇介紹路由封裝了Http請求路徑資訊可以讓我們找到相對應的<code>Action</code>和<code>Controller</code>並呼叫執行外，也可透過<code>MapPageRoute</code>來將請求教給<code>.aspx</code>實體檔案來處理請求.</p>
-<p><code>Route</code>甚至可以讓我們自己客製化處理<code>HttpHandler</code> 在Route中建立處理客製化HttpHandler可謂很有彈性</p>
-<p>本篇介紹<code>Route</code>物件建立<code>MvcRouteHandler</code>物件且如何取到<code>IHttpHandler</code>.</p>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-<h2 id="MVC取得使用HttpHandler-IHttpHandler"><a href="#MVC取得使用HttpHandler-IHttpHandler" class="headerlink" title="MVC取得使用HttpHandler (IHttpHandler)"></a>MVC取得使用HttpHandler (IHttpHandler)</h2><p>之前說到我們透過<code>MapRoute</code>擴展方法加入一個<code>Route</code>物件給<code>RouteCollection</code><strong>全域路由集合</strong>.</p>
-<p>在<code>Route</code>使用的<code>IRouteHandler</code>介面是由<code>MvcRouteHandler</code>來實現</p>
+          <p>Agenda 前言 MVC取得使用HttpHandler (IHttpHandler) MVC呼叫的HttpHandler (MvcHandler) 小結</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day10/#more" rel="contents">
+              <a class="btn" href="/ithelp-day10/">
                 Read more &raquo;
               </a>
             </div>
@@ -1162,17 +1085,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day9/" class="post-title-link" itemprop="url">進入MVC原始碼世界 Route & RouteTable 原始碼解析 (第9天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1188,7 +1111,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1288,17 +1211,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/ithelp-day9/" class="post-title-link" itemprop="url">進入MVC原始碼世界 Route & RouteTable 原始碼解析 (第9天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1314,7 +1237,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1365,27 +1288,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
-<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
-<li><a href="#%E4%BB%8B%E7%B4%B9route">介紹Route</a><ul>
-<li><a href="#routetableroutes">RouteTable.Routes</a></li>
-<li><a href="#maproute%E6%93%B4%E5%B1%95%E6%96%B9%E6%B3%95">MapRoute擴展方法</a></li>
-<li><a href="#route%E7%89%A9%E4%BB%B6">Route物件</a></li>
-<li><a href="#mappageroute-%E6%93%B4%E5%B1%95%E6%96%B9%E6%B3%95">MapPageRoute 擴展方法</a></li>
-</ul>
-</li>
-<li><a href="#%E5%9C%A8-route%E4%B8%AD%E5%BB%BA%E7%AB%8B%E8%99%95%E7%90%86%E5%AE%A2%E8%A3%BD%E5%8C%96httphandler">在 Route中建立處理客製化HttpHandler</a></li>
-<li><a href="#%E5%B0%8F%E7%B5%90">小結：</a></li>
-</ul>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>現在開始進入Asp.net MVC原始碼世界，我們從路由開始切入一步一步進入MVC核心.</p>
-<p>我有做一個可以針對於<a href="https://github.com/isdaniel/Asp.net-MVC-Debuger">Asp.net MVC Debugger</a>的專案，只要下中斷點就可輕易進入Asp.net MVC原始碼.</p>
-<p>如下面動畫</p>
-<p><img src="https://raw.githubusercontent.com/isdaniel/MyBlog/master/source/images/itHelp/9/Debugger.gif"></p>
-<h2 id="介紹Route"><a href="#介紹Route" class="headerlink" title="介紹Route"></a>介紹Route</h2><p>每個HTTP請求<code>MVC</code>使用路由的目標是<code>Controller</code>和<code>Action</code>，不像<code>ASP.NET Web Form</code>處理物理文件(<code>.aspx</code>文件)，要執行<code>Controller</code>和<code>Action</code>名稱包含在HTTP請求中，<code>ASP.NET MVC</code>需要通過解析HTTP請求得到正確的<code>Controller</code>和<code>Action</code>的名稱。</p>
-<p>使用<code>Route</code>比<strong>處理物理文件</strong>有以下幾個優勢：</p>
+          <p>Agenda 前言 介紹Route RouteTable.Routes MapRoute擴展方法 Route物件 MapPageRoute 擴展方法 在 Route中建立處理客製化HttpHandler 小結：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/ithelp-day9/#more" rel="contents">
+              <a class="btn" href="/ithelp-day9/">
                 Read more &raquo;
               </a>
             </div>
@@ -1414,17 +1320,17 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
       <meta itemprop="name" content="Daniel Shih">
-      <meta itemprop="description" content="好點子沒價值，有價值的是把好點子實現">
+      <meta itemprop="description" content="專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
       <meta itemprop="name" content="石頭的coding之路">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h2 class="post-title" itemprop="name headline">
           
             <a href="/Ithelp-day8/" class="post-title-link" itemprop="url">揭密Mvc使用IHttpHandler by UrlRoutingModule-4.0 (第8天)</a>
-        </h1>
+        </h2>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -1440,7 +1346,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-01-15 03:08:05" itemprop="dateModified" datetime="2026-01-15T03:08:05+00:00">2026-01-15</time>
+                <time title="Modified: 2026-01-27 02:07:21" itemprop="dateModified" datetime="2026-01-27T02:07:21+00:00">2026-01-27</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1595,7 +1501,7 @@
     <img class="site-author-image" itemprop="image" alt="Daniel Shih"
       src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
   <p class="site-author-name" itemprop="name">Daniel Shih</p>
-  <div class="site-description" itemprop="description">好點子沒價值，有價值的是把好點子實現</div>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
