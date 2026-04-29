@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="資料庫索引深入淺出第一篇：解析 Index 第一個欄位對統計值的影響、B+ Tree 結構，以及如何正確選擇查詢條件欄位建立索引">
+<meta property="og:type" content="article">
+<meta property="og:title" content="資料庫索引深入淺出(一) — SQL Server Index Fundamentals">
+<meta property="og:url" content="https://isdaniel.github.io/dbindex-1/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="資料庫索引深入淺出第一篇：解析 Index 第一個欄位對統計值的影響、B+ Tree 結構，以及如何正確選擇查詢條件欄位建立索引">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2020-01-20T03:12:43.000Z">
+<meta property="article:modified_time" content="2026-04-28T10:45:33.150Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="SQL-Server">
+<meta property="article:tag" content="Index">
+<meta property="article:tag" content="Performance-Tuning">
+<meta property="article:tag" content="B-Tree">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/dbindex-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/dbindex-1/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/dbindex-1/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>資料庫索引深入淺出(一) — SQL Server Index Fundamentals | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="SQL-Server,Index,B-Tree,Clustered-Index,Non-Clustered-Index,Statistics,Performance-Tuning">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/dbindex-1/"},"headline":"資料庫索引深入淺出(一) — SQL Server Index Fundamentals","description":"資料庫索引深入淺出第一篇：解析 Index 第一個欄位對統計值的影響、B+ Tree 結構，以及如何正確選擇查詢條件欄位建立索引","datePublished":"2020-01-20T03:12:43.000Z","dateModified":"2026-04-28T10:45:33.150Z","wordCount":1572,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/dbindex-1/","inLanguage":"zh-tw","articleSection":"SQL-Server","keywords":"SQL-Server,Index,B-Tree,Clustered-Index,Non-Clustered-Index,Statistics,Performance-Tuning"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"SQL-Server","item":"https://isdaniel.github.io/categories/SQL-Server/"},{"@type":"ListItem","position":3,"name":"Index","item":"https://isdaniel.github.io/categories/SQL-Server/Index/"},{"@type":"ListItem","position":4,"name":"資料庫索引深入淺出(一) — SQL Server Index Fundamentals","item":"https://isdaniel.github.io/dbindex-1/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          資料庫索引深入淺出(一) — SQL Server Index Fundamentals
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-01-20 11:12:43" datetime="2020-01-20T11:12:43+08:00">2020-01-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 18:45:33" datetime="2026-04-28T18:45:33+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/SQL-Server/" rel="index"><span>SQL-Server</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/SQL-Server/Index/" rel="index"><span>Index</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/dbindex-1/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="dbindex-1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>4.2k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>4 mins.</span>
+            </span>
+            <div class="post-description">資料庫索引深入淺出第一篇：解析 Index 第一個欄位對統計值的影響、B+ Tree 結構，以及如何正確選擇查詢條件欄位建立索引</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p><code>Index</code>第一個欄位至關重要它會影響資料<strong>統計值</strong>結果，<code>Index</code>一般建立在查詢條件的欄位</p>
+<blockquote>
+<p>每個<code>Index</code>都擁有自己的<code>B+ tree</code>.</p>
+</blockquote>
+<h2 id="Index使用的資料結構-B-tree"><a href="#Index使用的資料結構-B-tree" class="headerlink" title="Index使用的資料結構(B+ tree)"></a>Index使用的資料結構(B+ tree)</h2><p><code>B+ tree</code>是一種資料結構這個資料結構被<code>Index</code>拿來使用，關於<code>B+ tree</code>網路上有很多資源可再自行尋找，所以我們來談談為什麼<code>DataBase</code>會使用<code>B+ tree</code></p>
+<p>在<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/B%2B%E6%A0%91">Wiki</a>講述<code>B+ tree</code>有其中一段</p>
+<blockquote>
+<p><code>B+ tree</code>是能夠保持資料穩定有序，其插入與修改擁有較穩定的對數時間複雜度。<code>B+ tree</code>元素由下而上插入，通過最大化在每個內部節點內的子節點的數目減少樹的高度，平衡操作不經常發生，而且效率增加了。這種價值得以確立通常需要每個節點在次級儲存中占據完整的磁碟塊或近似的大小。</p>
+</blockquote>
+<p>簡白來說<code>B+ tree</code>有一個特性是他會把資料存在子頁(Leaf Page)中透過一個參考把每個子頁串聯起來，提高穩定度.</p>
+<p><code>B+ tree</code>資料結構如下圖，這個資料結在在範圍查詢時較<code>B tree</code>來的更穩定</p>
+<p><img data-src="https://i.imgur.com/8CDe0Ms.png"></p>
+<p>Index真正在使用<code>B+ tree</code>儲存類似於下圖</p>
+<p>此圖來自(Pro SQL Server Internals, 2nd edition)</p>
+<p><img data-src="https://i.imgur.com/FnQlBUl.png"></p>
+<h2 id="Index優缺點"><a href="#Index優缺點" class="headerlink" title="Index優缺點"></a>Index優缺點</h2><p><code>Index</code>可以加快查詢速度，因為<code>Index</code>是以<strong>空間</strong>換取<strong>時間</strong>。</p>
+<p>基本上它使用的資源如下:</p>
+<ol>
+<li>每個<code>Index</code>都會建立一顆<code>b+ tree</code></li>
+<li>每次新增、更新資料時都會異動到有使用的<code>b+ tree</code></li>
+</ol>
+<blockquote>
+<p>所以當你<code>Index</code>越多時，你需要維護的<code>Index</code>越多(代表需要更多資源來維護)</p>
+</blockquote>
+<p>建立太多<code>Index</code>，小心降低(新增、更新)效率</p>
+<blockquote>
+<p>因為SQLServer會對於這次新增、更新使用<code>Index</code>做異動</p>
+</blockquote>
+<p>下面有一個<code>T98</code>資料表擁有兩個Index</p>
+<ul>
+<li><code>CIX_T98</code> Clustered Index</li>
+<li><code>IX_T98</code> Convering Index</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">IF <span class="keyword">EXISTS</span>(</span><br><span class="line">    <span class="keyword">SELECT</span> <span class="number">1</span></span><br><span class="line">    <span class="keyword">FROM</span> sys.tables</span><br><span class="line">    <span class="keyword">WHERE</span> name <span class="operator">=</span> <span class="string">&#x27;T98&#x27;</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line">    <span class="keyword">CREATE TABLE</span> T98(</span><br><span class="line">        ID <span class="type">int</span>,</span><br><span class="line">        COL1 <span class="type">VARCHAR</span>(<span class="number">50</span>),</span><br><span class="line">        COL2 <span class="type">VARCHAR</span>(<span class="number">50</span>)</span><br><span class="line">    )</span><br><span class="line"><span class="keyword">END</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">insert into</span> T98 <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="string">&#x27;Hello&#x27;</span>,<span class="string">&#x27;Hello1&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> CLUSTERED  INDEX CIX_T98 <span class="keyword">ON</span> T98(</span><br><span class="line">    ID </span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> INDEX IX_T98 <span class="keyword">ON</span> T98(</span><br><span class="line">    ID </span><br><span class="line">) INCLUDE (COL1)</span><br></pre></td></tr></table></figure>
+
+<p>當我們要執行更新<code>COL1</code>欄位時(打開執行計畫)</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> T98</span><br><span class="line"><span class="keyword">SET</span> COL1 <span class="operator">=</span> <span class="string">&#x27;Test1&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>可以發現此次更新,我們會對於這兩個Index異動</p>
+<ul>
+<li><code>CIX_T98</code> Clustered Index</li>
+<li><code>IX_T98</code> Convering Index</li>
+</ul>
+<p><img data-src="https://i.imgur.com/XrVqq2q.png"></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> T98</span><br><span class="line"><span class="keyword">SET</span> COL1 <span class="operator">=</span> <span class="string">&#x27;Test1&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>但當我只更新<code>COL2</code>時,只會異動<code>CIX_T98</code> Index</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> T98</span><br><span class="line"><span class="keyword">SET</span> COL2 <span class="operator">=</span> <span class="string">&#x27;Test1&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img data-src="https://i.imgur.com/iDZPu76.png"></p>
+<p>這是為什麼?</p>
+<blockquote>
+<p>因為<code>IX_T98</code> Index <code>B+ Tree</code>沒有包含<code>COL2</code>欄位相關資訊,所以不需要更新</p>
+</blockquote>
+<h2 id="Clustered-Index-叢集索引"><a href="#Clustered-Index-叢集索引" class="headerlink" title="Clustered Index(叢集索引)"></a>Clustered Index(叢集索引)</h2><p>每個資料表只能有一個<code>Clustered index</code>，資料表會依照<code>Clustered index</code>方式存放排列資料，<code>Clustered Index</code>會把資料放置在<code>Left</code>子頁層</p>
+<blockquote>
+<p><code>Cluster index</code>好比書籍頁碼目錄。每本書只能有一個目錄</p>
+</blockquote>
+<p>建立<code>Clustered Index</code>欄位有幾個重點</p>
+<ol>
+<li>常用於查詢欄位</li>
+<li>可識別度高(唯一性較高)</li>
+</ol>
+<h2 id="NonClustered-Index-非叢集索引"><a href="#NonClustered-Index-非叢集索引" class="headerlink" title="NonClustered Index(非叢集索引)"></a>NonClustered Index(非叢集索引)</h2><p>每個資料表能有許多<code>NonClustered Index</code>，像每本書可以有很多種附錄</p>
+<ol>
+<li>例如依照字母排序</li>
+<li>依照附錄A</li>
+<li>附錄B</li>
+</ol>
+<blockquote>
+<p><code>NonClustered Index</code>按照<code>Key Column</code>排序，</p>
+</blockquote>
+<p><code>NonClustered Index</code>(index page)上所有分葉節點存放指標，如果資料表已存在<code>Clustered Index</code>(<code>KeyID</code>)，那麼該指標將會指<code>Clustered Index</code>，如不存在將指向資料真實存放位置(<code>RID</code>)</p>
+<blockquote>
+<p>this is a very important point to remember. Nonclustered indexes do not store information about physical row location when a table has a clustered index. They store the value of the clustered index key instead.</p>
+</blockquote>
+<p>上面簡單來說如果<code>NonClustered Index</code>沒有包含所有要查詢欄位</p>
+<ol>
+<li>有<code>Clustered Index</code>，會執行<code>Key Lookup</code></li>
+<li>沒有<code>Clustered Index</code>，會執行<code>RID Lookup</code></li>
+</ol>
+<blockquote>
+<p>這裡的<code>RID</code>是指向真實資料位子<code>RowID</code></p>
+</blockquote>
+<blockquote>
+<p>如果Nonclustered index可以建立Unique盡量宣告成Unique,因為Leaf page就可以減少製造Unique的<code>Row-id</code>欄位,減少儲存空間.</p>
+</blockquote>
+<h3 id="RID-Lookup"><a href="#RID-Lookup" class="headerlink" title="RID Lookup"></a>RID Lookup</h3><p>資料表沒有<code>Clustered Index</code>且使用<code>Index</code>所有查詢欄位不包含在<code>Converting Index</code>中就會透過<code>RID Lookup</code>查找確切Page上的Row(藉由<code>Row-Id</code>)</p>
+<blockquote>
+<p>RID Key的大小8 byte</p>
+</blockquote>
+<p><code>lookup</code>會消耗<code>Disk I/O</code>，所以消耗成本相對會比較大.</p>
+<blockquote>
+<p>沒有<code>Clustered Index</code>的資料表我們稱為<code>Heap</code>資料表</p>
+</blockquote>
+<p><img data-src="https://i.imgur.com/e87YROd.png"></p>
+<p>我們可以透過下面語法利用上圖 <code>HEAP RID</code> 找到資料儲存位置</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--HEAP RID:0x40110F0001002900</span></span><br><span class="line"><span class="comment">--共8 bytes FID（2 bytes）,PID（4 bytes）,slot（2 bytes）。</span></span><br><span class="line"></span><br><span class="line"><span class="comment">--轉換RID為 FID:PID:slot格式</span></span><br><span class="line"><span class="keyword">declare</span> <span class="variable">@Heaprid</span> <span class="type">binary</span>(<span class="number">8</span>)</span><br><span class="line"><span class="keyword">set</span> <span class="variable">@Heaprid</span> <span class="operator">=</span> <span class="number">0x40110F0001002900</span></span><br><span class="line"><span class="keyword">select</span> [FID:PID:Slot]<span class="operator">=</span>      </span><br><span class="line">       <span class="keyword">CONVERT</span> (<span class="type">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="type">INT</span>, <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">6</span>, <span class="number">1</span>)</span><br><span class="line">       <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">5</span>, <span class="number">1</span>)))</span><br><span class="line">     <span class="operator">+</span> <span class="string">&#x27;:&#x27;</span></span><br><span class="line">     <span class="operator">+</span> <span class="keyword">CONVERT</span>(<span class="type">VARCHAR</span>(<span class="number">10</span>),</span><br><span class="line">       <span class="keyword">CONVERT</span>(<span class="type">INT</span>, <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">4</span>, <span class="number">1</span>)</span><br><span class="line">        <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">3</span>, <span class="number">1</span>)</span><br><span class="line">        <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">2</span>, <span class="number">1</span>)</span><br><span class="line">        <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">1</span>, <span class="number">1</span>)))</span><br><span class="line">     <span class="operator">+</span> <span class="string">&#x27;:&#x27;</span></span><br><span class="line">          <span class="operator">+</span> <span class="keyword">CONVERT</span>(<span class="type">VARCHAR</span>(<span class="number">5</span>),</span><br><span class="line">          <span class="keyword">CONVERT</span>(<span class="type">INT</span>, <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">8</span>, <span class="number">1</span>)</span><br><span class="line">          <span class="operator">+</span> <span class="built_in">SUBSTRING</span>(<span class="variable">@Heaprid</span>, <span class="number">7</span>, <span class="number">1</span>)))</span><br><span class="line"><span class="comment">--1:987456:41--找到c3和c4完整資料</span></span><br><span class="line">DBCC PAGE(AdventureWorks2012_Data,<span class="number">1</span>,<span class="number">987456</span>,<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>Heap RID Key:8 byte.(FID 2 Bytes,PID 4 Bytes,SLOT 2 Bytes)</p>
+</blockquote>
+<h3 id="Key-Lookup"><a href="#Key-Lookup" class="headerlink" title="Key Lookup"></a>Key Lookup</h3><p><code>NonClustered Index</code>中會存放此Row在<code>Clustered Index</code>相對位置，假如單單靠搜尋<code>Non-Clustered Index</code>沒有辦法滿足所有查詢需要資料就會去<code>Key Lookup</code>(by Clustered key)回找<code>Clustered Index</code>取出相對應的資料.</p>
+<p>Nonclustered Index Lookup I&#x2F;O 操作計算公式</p>
+<p><code>Index層數 + 讀取幾個Page + (幾筆資料 * clustered index層數)</code></p>
+<p>此存取就稱為<code>Lookup</code>，<code>lookup</code>會消耗<code>Disk I/O</code>，所以所耗的時間相對會比較大</p>
+<blockquote>
+<p>在<code>NonClustered Index</code>中頁層會包含<code>Clustered Index</code>的<code>Key</code></p>
+</blockquote>
+<h2 id="範例演示"><a href="#範例演示" class="headerlink" title="範例演示"></a>範例演示</h2><p>我們先準備10000筆樣本資料</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T(</span><br><span class="line">	Id <span class="type">INT</span> <span class="keyword">identity</span>(<span class="number">1</span>,<span class="number">1</span>),</span><br><span class="line">	UserId <span class="type">INT</span>,</span><br><span class="line">	UserGroup <span class="type">INT</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T (UserId,UserGroup)</span><br><span class="line"><span class="keyword">SELECT</span> TOP <span class="number">10000</span> <span class="number">1.0</span> <span class="operator">+</span> <span class="built_in">floor</span>(<span class="number">10000</span> <span class="operator">*</span> RAND(<span class="keyword">convert</span>(<span class="type">varbinary</span>, newid()))),</span><br><span class="line">	   (<span class="number">1.0</span> <span class="operator">+</span> <span class="built_in">floor</span>(<span class="number">10000</span> <span class="operator">*</span> RAND(<span class="keyword">convert</span>(<span class="type">varbinary</span>, newid())))<span class="operator">/</span><span class="number">1000</span>)<span class="operator">+</span><span class="number">1</span></span><br><span class="line"><span class="keyword">FROM</span> sys.all_columns t1 <span class="keyword">CROSS</span> <span class="keyword">JOIN</span>  sys.all_columns t2</span><br></pre></td></tr></table></figure>
+
+<p>建立完資料後我們利用下面條件來查找資料.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T</span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">10000</span></span><br></pre></td></tr></table></figure>
+
+<p>因為沒有建立<code>Index</code>，導致我明明只需要撈取一筆資料,但資料庫卻全表掃描</p>
+<p><img data-src="https://i.imgur.com/J2BctqU.png"><br><img data-src="https://i.imgur.com/37rnlmn.png"></p>
+<h2 id="建立一個-NonClustered-Index"><a href="#建立一個-NonClustered-Index" class="headerlink" title="建立一個 NonClustered Index"></a>建立一個 NonClustered Index</h2><p>我們在表中建立了一個<code>NonClustered Index</code>，並利用相同查詢語法查詢資料</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> NONCLUSTERED INDEX IX_T_Id <span class="keyword">on</span>  dbo.T(</span><br><span class="line">	id</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>建立完<code>NonClustered Index</code>後從原本的全表掃描變成<code>RID Lookup</code>和<code>Index Seek</code>，因為<code>NonClustered Index</code>的<code>B+ Tree</code>沒有包含所有需要撈取的資料.所以透過<code>RID</code>回去<code>Heap</code>資料表查找出所需要的欄位</p>
+<p><code>RID Lookup</code>在執行計畫中呈現如下圖，</p>
+<p><img data-src="https://i.imgur.com/E6WS5qL.png"></p>
+<h2 id="建立一個-Clustered-Index"><a href="#建立一個-Clustered-Index" class="headerlink" title="建立一個 Clustered Index"></a>建立一個 Clustered Index</h2><p>我們在<code>T</code>資料表中建立一個<code>Clustered Index</code>，並且執行相同查詢</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> CLUSTERED INDEX CIX_T_UserId <span class="keyword">on</span>  dbo.T(</span><br><span class="line">	UserId</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>能看到執行計畫的不同了，已經透過<code>Key Lookup</code>回去查找資料，原因是目前資料表已經有<code>Clustered Index</code>但此查詢使用條件使用<code>NonClustered Index</code>所以導致需要<code>Lookup</code>回去<code>Clustered Index</code>的<code>B+ Tree</code>查找資料</p>
+<p><img data-src="https://i.imgur.com/PPTDYcG.png"></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dbindex-1/">https://isdaniel.github.io/dbindex-1/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\dbindex-2\" rel="bookmark">資料庫索引深入淺出(二) — Covering Index & Index Design</a></div>
+        <div class="popular-posts-excerpt"><p>資料庫索引深入淺出第二篇：介紹 Covering Index (INCLUDE)、Filter Index、Index Intersection 與索引設計重點</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\join-index-improve\" rel="bookmark">JOIN範圍條件Index優化</a></div>
+        <div class="popular-posts-excerpt"><p>解決 SQL Server JOIN 範圍條件時索引效能問題：當執行計畫預估值不準確時，如何透過 Index 設計讓 JOIN 條件範圍查詢發揮最佳效能</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\sqlquerystress-intro\" rel="bookmark">資料庫壓測好工具-SQLQueryStress</a></div>
+        <div class="popular-posts-excerpt"><p>SQLQueryStress 資料庫壓測工具教學：在 Dev 環境模擬高併發查詢，找出 SQL Server 效能瓶頸與 Lock 問題的實戰案例</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\acid\" rel="bookmark">ACID</a></div>
+        <div class="popular-posts-excerpt"><p>ACID 資料庫交易特性介紹：原子性、一致性、隔離性與持久性，以及 SQL Server 中 XACT_ABORT 對交易錯誤處理的影響</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\db-heaptable\" rel="bookmark">Sqlserver不可不知道Heap Table.</a></div>
+        <div class="popular-posts-excerpt"><p>深入解析 SQL Server Heap Table 的特性與常見問題，包含 forwarding pointer 造成的 Logic Read 增加、Allocation Scan 機制，以及何時該使用 Heap Table</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/SQL-Server/" rel="tag"># SQL-Server</a>
+              <a href="/tags/Index/" rel="tag"># Index</a>
+              <a href="/tags/Performance-Tuning/" rel="tag"># Performance-Tuning</a>
+              <a href="/tags/B-Tree/" rel="tag"># B-Tree</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/nullobjectpattern/" rel="prev" title="Null Object Pattern">
+      <i class="fa fa-chevron-left"></i> Null Object Pattern
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/dbindex-2/" rel="next" title="資料庫索引深入淺出(二) — Covering Index & Index Design">
+      資料庫索引深入淺出(二) — Covering Index & Index Design <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E6%96%87"><span class="nav-number">1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Index%E4%BD%BF%E7%94%A8%E7%9A%84%E8%B3%87%E6%96%99%E7%B5%90%E6%A7%8B-B-tree"><span class="nav-number">2.</span> <span class="nav-text">Index使用的資料結構(B+ tree)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Index%E5%84%AA%E7%BC%BA%E9%BB%9E"><span class="nav-number">3.</span> <span class="nav-text">Index優缺點</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Clustered-Index-%E5%8F%A2%E9%9B%86%E7%B4%A2%E5%BC%95"><span class="nav-number">4.</span> <span class="nav-text">Clustered Index(叢集索引)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NonClustered-Index-%E9%9D%9E%E5%8F%A2%E9%9B%86%E7%B4%A2%E5%BC%95"><span class="nav-number">5.</span> <span class="nav-text">NonClustered Index(非叢集索引)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#RID-Lookup"><span class="nav-number">5.1.</span> <span class="nav-text">RID Lookup</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Lookup"><span class="nav-number">5.2.</span> <span class="nav-text">Key Lookup</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AF%84%E4%BE%8B%E6%BC%94%E7%A4%BA"><span class="nav-number">6.</span> <span class="nav-text">範例演示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E4%B8%80%E5%80%8B-NonClustered-Index"><span class="nav-number">7.</span> <span class="nav-text">建立一個 NonClustered Index</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E4%B8%80%E5%80%8B-Clustered-Index"><span class="nav-number">8.</span> <span class="nav-text">建立一個 Clustered Index</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/dbindex-1/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/dbindex-1/";
+    this.page.identifier = "dbindex-1/";
+    this.page.title = "資料庫索引深入淺出(一) — SQL Server Index Fundamentals";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

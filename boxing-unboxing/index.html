@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="深入了解 C# Boxing 與 UnBoxing 機制，值類型與參考類型的差異，以及 Stack、Heap 記憶體配置對效能的影響">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C# Boxing vs UnBoxing">
+<meta property="og:url" content="https://isdaniel.github.io/boxing-unboxing/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="深入了解 C# Boxing 與 UnBoxing 機制，值類型與參考類型的差異，以及 Stack、Heap 記憶體配置對效能的影響">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2020-05-02T14:30:11.000Z">
+<meta property="article:modified_time" content="2026-04-28T08:08:45.501Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="C#">
+<meta property="article:tag" content="Boxing">
+<meta property="article:tag" content="UnBoxing">
+<meta property="article:tag" content="Performance">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/boxing-unboxing/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/boxing-unboxing/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/boxing-unboxing/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>C# Boxing vs UnBoxing | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="C#,Boxing,UnBoxing,值類型,參考類型,Stack,Heap,performance">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/boxing-unboxing/"},"headline":"C# Boxing vs UnBoxing","description":"深入了解 C# Boxing 與 UnBoxing 機制，值類型與參考類型的差異，以及 Stack、Heap 記憶體配置對效能的影響","datePublished":"2020-05-02T14:30:11.000Z","dateModified":"2026-04-28T08:08:45.501Z","wordCount":1013,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/boxing-unboxing/","inLanguage":"zh-tw","articleSection":"C#","keywords":"C#,Boxing,UnBoxing,值類型,參考類型,Stack,Heap,performance"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"C#","item":"https://isdaniel.github.io/categories/C/"},{"@type":"ListItem","position":3,"name":"Boxing-UnBoxing","item":"https://isdaniel.github.io/categories/C/Boxing-UnBoxing/"},{"@type":"ListItem","position":4,"name":"C# Boxing vs UnBoxing","item":"https://isdaniel.github.io/boxing-unboxing/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          C# Boxing vs UnBoxing
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-05-02 22:30:11" datetime="2020-05-02T22:30:11+08:00">2020-05-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 16:08:45" datetime="2026-04-28T16:08:45+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/C/" rel="index"><span>C#</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/C/Boxing-UnBoxing/" rel="index"><span>Boxing-UnBoxing</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/boxing-unboxing/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="boxing-unboxing/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.1k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">深入了解 C# Boxing 與 UnBoxing 機制，值類型與參考類型的差異，以及 Stack、Heap 記憶體配置對效能的影響</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言:"></a>前言:</h2><p><code>Boxing</code>跟<code>UnBoxing</code>在.net中,我們可能在無意識使用到但這個事情確會造成一些效能影響…</p>
+<h2 id="NET兩種類型"><a href="#NET兩種類型" class="headerlink" title=".NET兩種類型"></a>.NET兩種類型</h2><p>在.NET有分兩種類型</p>
+<ol>
+<li>值類型(int,double,char….)</li>
+<li>參考類型(自行宣告的類別,string….)</li>
+</ol>
+<p>而存放資料的方式也有兩種:</p>
+<ol>
+<li>堆疊Stack  </li>
+<li>堆積Heap</li>
+</ol>
+<p>談談Boxing和UnBoxing之前，我們先來了解<code>Stack</code>和<code>Heap</code></p>
+<p>值類型(Value Type)會存取在<code>Stack</code>記憶體區塊中</p>
+<p>參考類型(Reference Type)內容會在<code>Heap</code>記憶體區塊上，Stack會指向Heap上記憶體位置(有點像c++傳址)</p>
+<p>如下圖</p>
+<p><img data-src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/dc60b613-5aab-4031-b07e-ba95b3eb8c59/1519278342_30764.png"></p>
+<p>了解<code>Stack</code>和<code>Heap</code>後</p>
+<p>我們來談談<code>Boxing</code>和<code>UnBoxing</code></p>
+<h2 id="Boxing"><a href="#Boxing" class="headerlink" title="Boxing:"></a>Boxing:</h2><p>型態由大轉小</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">int</span> i=<span class="number">20</span>;</span><br><span class="line"><span class="built_in">object</span> o=(<span class="built_in">object</span>)i;</span><br></pre></td></tr></table></figure>
+
+<div class="note note--normal"> int強制轉型為object 因為我們所有物件都是繼承於object物件</div>
+
+<p>原本值類型存在<code>Stack</code>中,但因為我們強轉成<code>Object = 20</code>會存在Heap記憶體區塊中.</p>
+<blockquote>
+<p>因為Object是ReferType型別,這個現象就是<code>Boxing</code></p>
+</blockquote>
+<p>如下圖</p>
+<p><img data-src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/62a967a6-4b35-4ca6-a9d1-90318cd12cdc/1556535346_2245.png"></p>
+<h2 id="UnBoxing"><a href="#UnBoxing" class="headerlink" title="UnBoxing:"></a>UnBoxing:</h2><p>型態由小轉大(小轉大會有轉型出錯的問題)</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">int</span> i=<span class="number">20</span>;</span><br><span class="line"><span class="built_in">object</span> o=(<span class="built_in">object</span>)i;</span><br><span class="line"><span class="built_in">int</span> j=(<span class="built_in">int</span>)o;</span><br></pre></td></tr></table></figure>
+
+<p>將<code>Object</code>強轉成<code>int</code>在這個案例不會有問題，但如果是將o轉為char就會有問題<br>在執行<code>UnBoxing</code>如下圖</p>
+<p>可以看到原本存在<code>Heap</code>上值 我們會把他搬回<code>Stack</code>並附值給<code>J</code></p>
+<p><img data-src="https://dotblogsfile.blob.core.windows.net/user/%E4%B9%9D%E6%A1%83/62a967a6-4b35-4ca6-a9d1-90318cd12cdc/1556535644_50214.png"></p>
+<blockquote>
+<p>把<code>Heap</code>上直搬回<code>Stake</code>上就會遇到UnBoxing.</p>
+</blockquote>
+<h2 id="Net現實生活中常遇到的案例"><a href="#Net現實生活中常遇到的案例" class="headerlink" title=".Net現實生活中常遇到的案例"></a>.Net現實生活中常遇到的案例</h2><ul>
+<li><code>String.Format</code></li>
+<li><code>DataTable</code></li>
+</ul>
+<h3 id="String-Format的Boxing"><a href="#String-Format的Boxing" class="headerlink" title="String.Format的Boxing"></a>String.Format的Boxing</h3><figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="built_in">string</span> <span class="title">Format</span>(<span class="params"><span class="built_in">string</span> format, <span class="keyword">params</span> <span class="built_in">object</span>[] <span class="keyword">args</span></span>)</span></span><br></pre></td></tr></table></figure>
+
+<p>我們常使用上面<code>String.Format</code>重載方法,但使用這個方法會不小心遇到Boxing問題</p>
+<p>我們在呼叫方法時假如參數是一個<code>Value Type</code>,<code>.Net</code>會在呼叫前把此值<strong>複製</strong>在傳入方法中(如果是<code>Refer Type</code>傳入此物件<code>Heap</code>記憶體位置).</p>
+<p><code>String.Format</code>吃參數是<code>Object</code>,所以如果傳入參數是<code>Value Type</code>如(<code>1</code>,<code>1.1m</code>)就會遇到<code>Boxing</code>.</p>
+<blockquote>
+<p>但如果我們在呼叫<code>String.Format</code>前使用<code>ToString</code>方法就可以避免Boxing的動作,<code> $&quot;&#123;times.ToString()&#125;&quot;</code>.</p>
+</blockquote>
+<h3 id="DataTable的Boxing-UnBoxing"><a href="#DataTable的Boxing-UnBoxing" class="headerlink" title="DataTable的Boxing UnBoxing"></a>DataTable的Boxing UnBoxing</h3><p>我們在<code>ADO.Net</code>將資料存放在<code>DataTable</code>就會經歷一次<code>Boxing</code>在利用<code>DataTable.Row[][]</code>返回是一個<code>Object</code>型態資料(因為會把ValueType型別資料放進Heap中).</p>
+<p>我們在取用時會把<code>Object</code>轉成我們希望型態(UnBoxing).</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DataTable dt= <span class="keyword">new</span> DataTable();</span><br><span class="line">dt.Rows[<span class="number">0</span>][<span class="string">&quot;col1&quot;</span>] <span class="comment">//返回一個object型態的物件</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>所以我在讀取DB資料時建議使用<code>DataReader</code>而不是使用<code>DataTable</code>,因為使用DataReader可以直接去得使用型態(避免Boxing and UnBoxing).</p>
+</blockquote>
+<h3 id="常使用誤區string-format-Boxing-UnBoxing"><a href="#常使用誤區string-format-Boxing-UnBoxing" class="headerlink" title="常使用誤區string.format Boxing UnBoxing"></a>常使用誤區string.format Boxing UnBoxing</h3><p>在開始說明之前先問問大家兩個問題</p>
+<p>下面兩段程式碼是否是一樣?</p>
+<p>如果不一樣是哪裡不一樣?</p>
+<blockquote>
+<p><code>$&quot;&quot;</code>是<code>string.format</code>語法糖.</p>
+</blockquote>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">int</span> intVal = <span class="number">1</span>;</span><br><span class="line"><span class="built_in">int</span> intVal1 = <span class="number">2</span>;</span><br><span class="line"><span class="built_in">int</span> intVal2 = <span class="number">2</span>;</span><br><span class="line"><span class="built_in">int</span> intVal3 = <span class="number">3</span>;</span><br><span class="line"><span class="string">$&quot;<span class="subst">&#123;intVal.ToString()&#125;</span> <span class="subst">&#123;intVal2.ToString()&#125;</span> <span class="subst">&#123;intVal3.ToString()&#125;</span>&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">int</span> intVal = <span class="number">1</span>;</span><br><span class="line"><span class="built_in">int</span> intVal1 = <span class="number">2</span>;</span><br><span class="line"><span class="built_in">int</span> intVal2 = <span class="number">2</span>;</span><br><span class="line"><span class="built_in">int</span> intVal3 = <span class="number">3</span>;</span><br><span class="line"><span class="string">$&quot;<span class="subst">&#123;intVal&#125;</span> <span class="subst">&#123;intVal2&#125;</span> <span class="subst">&#123;intVal3&#125;</span>&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>上面答案非常明顯是不一樣,但不一樣在哪裡呢?</p>
+<blockquote>
+<p>Boxing和UnBoxing.</p>
+</blockquote>
+<p>要了解<code>String.Format</code> Boxing和UnBoxing之前我們要先了解function是如何傳參數的.</p>
+<h4 id="Function如何傳參數"><a href="#Function如何傳參數" class="headerlink" title="Function如何傳參數"></a>Function如何傳參數</h4><p>在.net我們常常在寫function但你有注意參數是如何被傳的嗎?</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">var</span> a = <span class="keyword">new</span> A()</span><br><span class="line">    &#123;</span><br><span class="line">        Age = <span class="number">100</span></span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    FunctionA(a);</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;main a.Age <span class="subst">&#123;a.Age&#125;</span>&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> i = <span class="number">100</span>;</span><br><span class="line">    FunctionInt(i);</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;main i <span class="subst">&#123;i&#125;</span>&quot;</span>); </span><br><span class="line"></span><br><span class="line">    Console.Read();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">FunctionA</span>(<span class="params">A a</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;FunctionA <span class="subst">&#123;a.Age&#125;</span>&quot;</span>);</span><br><span class="line">    a.Age = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">FunctionInt</span>(<span class="params"><span class="built_in">int</span> a</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    Console.WriteLine(<span class="string">$&quot;FunctionInt <span class="subst">&#123;a&#125;</span>&quot;</span>);</span><br><span class="line">    a = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>執行結果如下圖</p>
+<p><img data-src="https://i.imgur.com/7aGOpZJ.png" alt="alt"></p>
+<p>那是因為.net在傳參數時</p>
+<ul>
+<li>如果<strong>方法參數</strong>是Ref Type會copy address當作參數進去</li>
+<li>如果<strong>方法參數</strong>是Value Type會copy value當作參數進去</li>
+</ul>
+<p>我們看<code>String.Format</code>其中一個重載方法,是傳入<code>object[]</code>當作參數.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="built_in">string</span> <span class="title">Format</span>(<span class="params"><span class="built_in">string</span> format, <span class="keyword">params</span> <span class="built_in">object</span>[] <span class="keyword">args</span></span>)</span> =&gt; <span class="keyword">args</span> != <span class="literal">null</span> ? <span class="built_in">string</span>.FormatHelper((IFormatProvider) <span class="literal">null</span>, format, <span class="keyword">new</span> ParamsArray(<span class="keyword">args</span>)) : <span class="keyword">throw</span> <span class="keyword">new</span> ArgumentNullException(format == <span class="literal">null</span> ? <span class="keyword">nameof</span> (format) : <span class="keyword">nameof</span> (<span class="keyword">args</span>));</span><br></pre></td></tr></table></figure>
+
+<p>因為單純傳入value type會導致參數需要boxing(因為方法參數吃<code>object</code>)</p>
+<p>所以value type使用<code>ToString</code>方法傳入<code>String.Format</code>方法,先把value type轉成refer type的<code>string</code>就不會造成boxing unboxing效能問題了.</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/isdaniel/BlogSample/tree/master/src/Samples/Box_UnBoxing">Box_UnBoxing Sample Code</a></p>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>希望本篇文章可以讓大家對於Boxing和UnBoxing更了解，避免踏入這個問題中。</p>
+<h2 id="參考連結"><a href="#參考連結" class="headerlink" title="參考連結"></a>參考連結</h2><blockquote>
+<p>參考 MSDN <a target="_blank" rel="noopener" href="https://msdn.microsoft.com/zh-tw/library/yz2be5wk.aspx">https://msdn.microsoft.com/zh-tw/library/yz2be5wk.aspx</a></p>
+</blockquote>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/boxing-unboxing/">https://isdaniel.github.io/boxing-unboxing/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\aop-lock-mechanism\" rel="bookmark">AOP Lock Architecture</a></div>
+        <div class="popular-posts-excerpt"><p>使用 Autofac Interceptor 實作 AOP Lock 架構：透過 LockAttribute 宣告式互斥鎖機制，解決多執行緒交易 DeadLock 問題</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\autofac-aop\" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
+        <div class="popular-posts-excerpt"><p>使用 Autofac DynamicProxy 實現 AOP 動態代理，透過 Interceptor 攔截方法呼叫實作快取、日誌等橫切關注點</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\automapperinit\" rel="bookmark">(AutoMapper)反射自動註冊AutoMapper Profile</a></div>
+        <div class="popular-posts-excerpt"><p>使用反射自動掃描並註冊 AutoMapper Profile，免除手動逐一設定物件對應，簡化大型專案的 DTO 轉換管理</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\awesomeproxy-net\" rel="bookmark">【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</a></div>
+        <div class="popular-posts-excerpt"><p>【C#】 AOP輕型框架 AwesomeProxy.Net 介紹使用 - 今天和大家分享AwesomeProxy.Net小弟開源AOP輕型框架</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\autofac-introduce\" rel="bookmark">Autofac (IOC)容器介紹</a></div>
+        <div class="popular-posts-excerpt"><p>Autofac IoC 容器入門教學：了解控制反轉與物件生命週期管理，比較 Ninject、Unity 等容器並實作依賴注入</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C#</a>
+              <a href="/tags/Boxing/" rel="tag"># Boxing</a>
+              <a href="/tags/UnBoxing/" rel="tag"># UnBoxing</a>
+              <a href="/tags/Performance/" rel="tag"># Performance</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/sqlserver-statistics/" rel="prev" title="影響Query Optimizer產生執行計畫的關鍵(統計值)">
+      <i class="fa fa-chevron-left"></i> 影響Query Optimizer產生執行計畫的關鍵(統計值)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/stringformat-compare/" rel="next" title="那些年String.Format中的Boxing和UnBoxing">
+      那些年String.Format中的Boxing和UnBoxing <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NET%E5%85%A9%E7%A8%AE%E9%A1%9E%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">.NET兩種類型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Boxing"><span class="nav-number">3.</span> <span class="nav-text">Boxing:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UnBoxing"><span class="nav-number">4.</span> <span class="nav-text">UnBoxing:</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Net%E7%8F%BE%E5%AF%A6%E7%94%9F%E6%B4%BB%E4%B8%AD%E5%B8%B8%E9%81%87%E5%88%B0%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">.Net現實生活中常遇到的案例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#String-Format%E7%9A%84Boxing"><span class="nav-number">5.1.</span> <span class="nav-text">String.Format的Boxing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DataTable%E7%9A%84Boxing-UnBoxing"><span class="nav-number">5.2.</span> <span class="nav-text">DataTable的Boxing UnBoxing</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E4%BD%BF%E7%94%A8%E8%AA%A4%E5%8D%80string-format-Boxing-UnBoxing"><span class="nav-number">5.3.</span> <span class="nav-text">常使用誤區string.format Boxing UnBoxing</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Function%E5%A6%82%E4%BD%95%E5%82%B3%E5%8F%83%E6%95%B8"><span class="nav-number">5.3.1.</span> <span class="nav-text">Function如何傳參數</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">6.</span> <span class="nav-text">小結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%83%E8%80%83%E9%80%A3%E7%B5%90"><span class="nav-number">7.</span> <span class="nav-text">參考連結</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/boxing-unboxing/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/boxing-unboxing/";
+    this.page.identifier = "boxing-unboxing/";
+    this.page.title = "C# Boxing vs UnBoxing";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

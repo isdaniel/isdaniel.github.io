@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="OpenTelemetry SideCar 是獨立的 sidecar proxy，無需修改程式碼即可匯出 metrics 與 traces，適合監控 legacy 或封閉原始碼應用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Instrument Any App Instantly Using OpenTelemetry_SideCar">
+<meta property="og:url" content="https://isdaniel.github.io/opentelemetry-sidecar/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="OpenTelemetry SideCar 是獨立的 sidecar proxy，無需修改程式碼即可匯出 metrics 與 traces，適合監控 legacy 或封閉原始碼應用">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2025-06-01T14:30:11.000Z">
+<meta property="article:modified_time" content="2026-04-28T10:46:02.544Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="C#">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="OpenTelemetry">
+<meta property="article:tag" content="Sidecar">
+<meta property="article:tag" content="Observability">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/opentelemetry-sidecar/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="en" href="https://isdaniel.github.io/opentelemetry-sidecar/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/opentelemetry-sidecar/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>Instrument Any App Instantly Using OpenTelemetry_SideCar | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="OpenTelemetry,Sidecar,Rust,C#,observability,metrics,traces,Prometheus,Jaeger,non-intrusive-instrumentation">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/opentelemetry-sidecar/"},"headline":"Instrument Any App Instantly Using OpenTelemetry_SideCar","description":"OpenTelemetry SideCar 是獨立的 sidecar proxy，無需修改程式碼即可匯出 metrics 與 traces，適合監控 legacy 或封閉原始碼應用","datePublished":"2025-06-01T14:30:11.000Z","dateModified":"2026-04-28T10:46:02.544Z","wordCount":914,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/opentelemetry-sidecar/","inLanguage":"en","articleSection":"Rust","keywords":"OpenTelemetry,Sidecar,Rust,C#,observability,metrics,traces,Prometheus,Jaeger,non-intrusive-instrumentation"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"Rust","item":"https://isdaniel.github.io/categories/Rust/"},{"@type":"ListItem","position":3,"name":"C#","item":"https://isdaniel.github.io/categories/Rust/C/"},{"@type":"ListItem","position":4,"name":"OpenTelemetry","item":"https://isdaniel.github.io/categories/Rust/C/OpenTelemetry/"},{"@type":"ListItem","position":5,"name":"Instrument Any App Instantly Using OpenTelemetry_SideCar","item":"https://isdaniel.github.io/opentelemetry-sidecar/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="en">
+      <header class="post-header">
+        <h2 class="post-title">
+          Instrument Any App Instantly Using OpenTelemetry_SideCar
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-06-01 22:30:11" datetime="2025-06-01T22:30:11+08:00">2025-06-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 18:46:02" datetime="2026-04-28T18:46:02+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/Rust/" rel="index"><span>Rust</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/C/" rel="index"><span>C#</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/C/OpenTelemetry/" rel="index"><span>OpenTelemetry</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/opentelemetry-sidecar/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="opentelemetry-sidecar/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>6.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>6 mins.</span>
+            </span>
+            <div class="post-description">OpenTelemetry SideCar 是獨立的 sidecar proxy，無需修改程式碼即可匯出 metrics 與 traces，適合監控 legacy 或封閉原始碼應用</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="introduce"><a href="#introduce" class="headerlink" title="introduce"></a>introduce</h2><p>If you’ve ever struggled to instrument legacy apps or non-standard services for observability, <code>OpenTelemetry_SideCar</code> is here to help. This project offers a <strong>non-intrusive way to export metrics and traces</strong> via <strong>OpenTelemetry</strong> using a <strong>sidecar approach</strong> — no SDK required in your main app.</p>
+<hr>
+<h2 id="🌐-Project-Overview"><a href="#🌐-Project-Overview" class="headerlink" title="🌐 Project Overview"></a>🌐 Project Overview</h2><p>📦 <strong>Repo:</strong> <a target="_blank" rel="noopener" href="https://github.com/isdaniel/OpenTelemetry_SideCar">isdaniel&#x2F;OpenTelemetry_SideCar</a></p>
+<p><code>OpenTelemetry_SideCar</code> is a standalone proxy service that collects metrics and traces <strong>outside of your application</strong> and forwards them to a telemetry backend (e.g., Prometheus, Jaeger, or Azure Monitor).</p>
+<h3 id="💡-Why-a-Sidecar"><a href="#💡-Why-a-Sidecar" class="headerlink" title="💡 Why a Sidecar?"></a>💡 Why a Sidecar?</h3><p>In cloud-native systems, a <em>sidecar</em> is a helper container or process that runs alongside your main application. It can observe, extend, or enhance app behavior <strong>without changing application code</strong>. This pattern is ideal for adding <strong>observability</strong> when:</p>
+<ul>
+<li>You can’t modify the original code (e.g., closed-source, legacy binaries).</li>
+<li>You want to centralize telemetry logic.</li>
+<li>You’re aiming for a unified instrumentation strategy.</li>
+</ul>
+<hr>
+<h2 id="🧠-Key-Concepts"><a href="#🧠-Key-Concepts" class="headerlink" title="🧠 Key Concepts"></a>🧠 Key Concepts</h2><h3 id="📊-OpenTelemetry"><a href="#📊-OpenTelemetry" class="headerlink" title="📊 OpenTelemetry"></a>📊 OpenTelemetry</h3><p>OpenTelemetry is the CNCF-backed observability framework offering a vendor-neutral standard to collect metrics, logs, and traces.</p>
+<p>This project leverages:</p>
+<ul>
+<li><strong>OTLP (OpenTelemetry Protocol)</strong> for data transport</li>
+<li><strong>Push-based metrics</strong> collection via HTTP endpoints</li>
+<li><strong>Custom trace generation</strong> from event messages</li>
+</ul>
+<h3 id="🧱-Sidecar-Design-Pattern"><a href="#🧱-Sidecar-Design-Pattern" class="headerlink" title="🧱 Sidecar Design Pattern"></a>🧱 Sidecar Design Pattern</h3><p>This service runs in parallel with your main app and exposes lightweight endpoints for:</p>
+<ul>
+<li>Sending <strong>metrics</strong> via <code>/metrics</code></li>
+<li>Sending <strong>traces</strong> via <code>/trace</code></li>
+</ul>
+<p>Apps interact with the sidecar using simple HTTP POST requests.</p>
+<hr>
+<h2 id="⚙️-How-It-Works"><a href="#⚙️-How-It-Works" class="headerlink" title="⚙️ How It Works"></a>⚙️ How It Works</h2><h2 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h2><p>The project consists of the following components:</p>
+<ul>
+<li><strong>.NET Web Application</strong>: A simple web service with custom metrics and tracing- <strong>OpenTelemetry Collector</strong>: Receives telemetry data and exports it to backends</li>
+<li><strong>Prometheus</strong>: Time-series database for storing and querying metrics- <strong>Jaeger</strong>: Distributed tracing system for monitoring and troubleshooting</li>
+<li><strong>Grafana</strong>: Visualization and dashboarding platform</li>
+</ul>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐</span><br><span class="line">│  Rust We        │     │                 │     │                 │</span><br><span class="line">│  .<span class="keyword">NET</span> <span class="keyword">App</span>       │────▶│  OTel Collector │────▶│  Prometheus     │</span><br><span class="line">│                 │     │                 │     │                 │</span><br><span class="line">└─────────────────┘     └────────┬────────┘     └─────────────────┘</span><br><span class="line">                                 │                        ▲</span><br><span class="line">                                 │                        │</span><br><span class="line">                                 ▼                        │</span><br><span class="line">                        ┌─────────────────┐      ┌────────┴────────┐</span><br><span class="line">                        │                 │      │                 │</span><br><span class="line">                        │  Jaeger         │      │  Grafana        │</span><br><span class="line">                        │                 │      │                 │</span><br><span class="line">                        └─────────────────┘      └─────────────────┘</span><br></pre></td></tr></table></figure>
+
+<h2 id="Features"><a href="#Features" class="headerlink" title="Features"></a>Features</h2><ul>
+<li>Custom metrics using OpenTelemetry Metrics API- Distributed tracing with OpenTelemetry Tracing API</li>
+<li>Nested HTTP calls with context propagation- Prometheus metrics collection</li>
+<li>Jaeger trace visualization- Grafana dashboards for metrics visualization</li>
+</ul>
+<h2 id="Prerequisites"><a href="#Prerequisites" class="headerlink" title="Prerequisites"></a>Prerequisites</h2><ul>
+<li>Docker and Docker Compose</li>
+<li>.NET 9.0 SDK (for local development)</li>
+</ul>
+<h2 id="Getting-Started"><a href="#Getting-Started" class="headerlink" title="Getting Started"></a>Getting Started</h2><h3 id="Running-the-Application"><a href="#Running-the-Application" class="headerlink" title="Running the Application"></a>Running the Application</h3><p>Clone the repository:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/yourusername/OpenTelemetry_SideCar.git</span><br><span class="line"><span class="built_in">cd</span> OpenTelemetry_SideCar</span><br></pre></td></tr></table></figure>
+
+<p>Start the services using Docker Compose:<br> <figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">docker-compose up -d</span></span><br></pre></td></tr></table></figure></p>
+<ol>
+<li>Access the application: Web Application: <a target="_blank" rel="noopener" href="http://localhost:8080/">http://localhost:8080</a>   - Nested Greeting: <a target="_blank" rel="noopener" href="http://localhost:8080/NestedGreeting?nestlevel=3">http://localhost:8080/NestedGreeting?nestlevel=3</a></li>
+</ol>
+<h3 id="Accessing-Observability-Tools"><a href="#Accessing-Observability-Tools" class="headerlink" title="Accessing Observability Tools"></a>Accessing Observability Tools</h3><ul>
+<li><strong>Prometheus</strong>: <a target="_blank" rel="noopener" href="http://localhost:9090/">http://localhost:9090</a><ul>
+<li>Query metrics with PromQL  - Example: <code>greetings_count_total</code></li>
+</ul>
+</li>
+<li><strong>Jaeger UI</strong>: <a target="_blank" rel="noopener" href="http://localhost:16686/">http://localhost:16686</a><ul>
+<li>View distributed traces  - Filter by service: <code>telemetry_example</code></li>
+</ul>
+</li>
+<li><strong>Grafana</strong>: <a target="_blank" rel="noopener" href="http://localhost:3000/">http://localhost:3000</a><ul>
+<li>Default credentials: admin&#x2F;admin  - Pre-configured dashboards for application metrics</li>
+</ul>
+</li>
+</ul>
+<h2 id="Application-Endpoints"><a href="#Application-Endpoints" class="headerlink" title="Application Endpoints"></a>Application Endpoints</h2><ul>
+<li><strong>&#x2F;</strong> - Returns a simple greeting and increments the greeting counter</li>
+<li><strong>&#x2F;NestedGreeting?nestlevel&#x3D;N</strong> - Creates a chain of N nested HTTP calls, demonstrating trace context propagation</li>
+</ul>
+<h2 id="Configuration-Files"><a href="#Configuration-Files" class="headerlink" title="Configuration Files"></a>Configuration Files</h2><ul>
+<li><strong>docker-compose.yml</strong>: Defines all services and their connections- <strong>otel-collector-config.yaml</strong>: Configures the OpenTelemetry Collector</li>
+<li><strong>prometheus.yml</strong>: Prometheus scraping configuration- <strong>Dockerfile</strong>: Builds the .NET application</li>
+</ul>
+<h2 id="Troubleshooting"><a href="#Troubleshooting" class="headerlink" title="Troubleshooting"></a>Troubleshooting</h2><h3 id="Common-Issues"><a href="#Common-Issues" class="headerlink" title="Common Issues"></a>Common Issues</h3><ol>
+<li><strong>No metrics in Prometheus</strong>:<ul>
+<li>Verify the OpenTelemetry Collector is running: <code>docker-compose ps</code>   - Check collector logs: <code>docker-compose logs otel-collector</code></li>
+<li>Ensure Prometheus is scraping the collector: <a target="_blank" rel="noopener" href="http://localhost:9090/targets">http://localhost:9090/targets</a></li>
+</ul>
+</li>
+<li><strong>No traces in Jaeger</strong>:   - Verify Jaeger is running: <code>docker-compose ps jaeger</code><ul>
+<li>Check that OTLP is enabled in Jaeger   - Generate some traces by accessing the application endpoints</li>
+</ul>
+</li>
+<li><strong>Application errors</strong>:<ul>
+<li>Check application logs: <code>docker-compose logs app</code></li>
+</ul>
+</li>
+</ol>
+<h2 id="Development"><a href="#Development" class="headerlink" title="Development"></a>Development</h2><h3 id="Local-Development"><a href="#Local-Development" class="headerlink" title="Local Development"></a>Local Development</h3><p>To run the application locally:</p>
+<ol>
+<li>Navigate to the src directory2. Run <code>dotnet run</code><br>Note: When running locally, you’ll need to update the OTLP endpoint in Program.cs to point to your local OpenTelemetry Collector.</li>
+</ol>
+<h3 id="Adding-Custom-Metrics"><a href="#Adding-Custom-Metrics" class="headerlink" title="Adding Custom Metrics"></a>Adding Custom Metrics</h3><ol>
+<li>Create a new meter:<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> myMeter = <span class="keyword">new</span> Meter(<span class="string">&quot;MyApp.Metrics&quot;</span>, <span class="string">&quot;1.0.0&quot;</span>);</span><br></pre></td></tr></table></figure></li>
+<li>Create metrics instruments:<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> myCounter = myMeter.CreateCounter&lt;<span class="built_in">int</span>&gt;(<span class="string">&quot;my.counter&quot;</span>, <span class="string">&quot;Count of operations&quot;</span>);</span><br></pre></td></tr></table></figure></li>
+<li>Record measurements:<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">myCounter.Add(<span class="number">1</span>);</span><br></pre></td></tr></table></figure></li>
+<li>Register the meter in the OpenTelemetry configuration:<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">metricsProviderBuilder.AddMeter(<span class="string">&quot;MyApp.Metrics&quot;</span>);</span><br></pre></td></tr></table></figure></li>
+</ol>
+<hr>
+<h2 id="📥-Example-Sending-Metrics"><a href="#📥-Example-Sending-Metrics" class="headerlink" title="📥 Example: Sending Metrics"></a>📥 Example: Sending Metrics</h2><p>Suppose your app wants to record a counter metric for user logins. All it needs to do is POST to the sidecar:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST http://localhost:8080/metrics \</span><br><span class="line">  -H <span class="string">&quot;Content-Type: application/json&quot;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&#123;</span></span><br><span class="line"><span class="string">    &quot;name&quot;: &quot;user_login_total&quot;,</span></span><br><span class="line"><span class="string">    &quot;kind&quot;: &quot;counter&quot;,</span></span><br><span class="line"><span class="string">    &quot;value&quot;: 1,</span></span><br><span class="line"><span class="string">    &quot;attributes&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;service&quot;: &quot;auth-service&quot;,</span></span><br><span class="line"><span class="string">      &quot;status&quot;: &quot;success&quot;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>📌 This will be transformed into an OpenTelemetry metric and pushed to your configured OTLP collector.</p>
+<hr>
+<h2 id="📡-Example-Sending-Traces"><a href="#📡-Example-Sending-Traces" class="headerlink" title="📡 Example: Sending Traces"></a>📡 Example: Sending Traces</h2><p>To record a trace span (e.g., for a request to <code>/api/data</code>), POST to <code>/trace</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">curl -X POST http://localhost:8080/trace \</span><br><span class="line">  -H <span class="string">&quot;Content-Type: application/json&quot;</span> \</span><br><span class="line">  -d <span class="string">&#x27;&#123;</span></span><br><span class="line"><span class="string">    &quot;trace_id&quot;: &quot;abc123&quot;,</span></span><br><span class="line"><span class="string">    &quot;span_id&quot;: &quot;def456&quot;,</span></span><br><span class="line"><span class="string">    &quot;name&quot;: &quot;GET /api/data&quot;,</span></span><br><span class="line"><span class="string">    &quot;kind&quot;: &quot;server&quot;,</span></span><br><span class="line"><span class="string">    &quot;start_time&quot;: &quot;2024-01-01T00:00:00Z&quot;,</span></span><br><span class="line"><span class="string">    &quot;end_time&quot;: &quot;2024-01-01T00:00:01Z&quot;,</span></span><br><span class="line"><span class="string">    &quot;attributes&quot;: &#123;</span></span><br><span class="line"><span class="string">      &quot;http.method&quot;: &quot;GET&quot;,</span></span><br><span class="line"><span class="string">      &quot;http.status_code&quot;: 200</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">  &#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>The sidecar will:</p>
+<ul>
+<li>Create the span</li>
+<li>Set its metadata and timing</li>
+<li>Export it via OTLP to your backend (e.g., Jaeger or Zipkin)</li>
+</ul>
+<hr>
+<h2 id="🛠️-Configuration"><a href="#🛠️-Configuration" class="headerlink" title="🛠️ Configuration"></a>🛠️ Configuration</h2><p>Set the following environment variables:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317</span><br><span class="line">OTEL_SERVICE_NAME=my-sidecar</span><br><span class="line">OTEL_METRICS_EXPORT_INTERVAL=1000</span><br></pre></td></tr></table></figure>
+
+<p>These control how frequently data is flushed and where it’s sent.</p>
+<hr>
+<h2 id="🔒-No-SDK-No-Problem"><a href="#🔒-No-SDK-No-Problem" class="headerlink" title="🔒 No SDK, No Problem"></a>🔒 No SDK, No Problem</h2><p>One of the biggest benefits of <code>OpenTelemetry_SideCar</code> is that your main app doesn’t need to:</p>
+<ul>
+<li>Link or compile with any OpenTelemetry SDK</li>
+<li>Maintain exporter or collector logic</li>
+<li>Handle telemetry lifecycle</li>
+</ul>
+<p>Your app stays clean — just send HTTP!</p>
+<hr>
+<h2 id="🚀-Get-Started"><a href="#🚀-Get-Started" class="headerlink" title="🚀 Get Started"></a>🚀 Get Started</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/OpenTelemetry_SideCar.git</span><br><span class="line"><span class="built_in">cd</span> OpenTelemetry_SideCar</span><br><span class="line">cargo run</span><br></pre></td></tr></table></figure>
+
+<p>Then, start POSTing traces and metrics from your apps.</p>
+<hr>
+<h2 id="🙌-Final-Thoughts"><a href="#🙌-Final-Thoughts" class="headerlink" title="🙌 Final Thoughts"></a>🙌 Final Thoughts</h2><p><code>OpenTelemetry_SideCar</code> empowers teams to <strong>add observability with zero code changes</strong> to their applications. It’s perfect for teams looking to modernize telemetry practices without touching production binaries.</p>
+<p>If you’re working with mixed environments or maintaining legacy services, give it a try!</p>
+<blockquote>
+<p>⭐️ Star the repo: <a target="_blank" rel="noopener" href="https://github.com/isdaniel/OpenTelemetry_SideCar">isdaniel&#x2F;OpenTelemetry_SideCar</a></p>
+</blockquote>
+<p>&lt;! Above information summaries from AI. &#x2F;&gt;</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/opentelemetry-sidecar/">https://isdaniel.github.io/opentelemetry-sidecar/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\aop-lock-mechanism\" rel="bookmark">AOP Lock Architecture</a></div>
+        <div class="popular-posts-excerpt"><p>使用 Autofac Interceptor 實作 AOP Lock 架構：透過 LockAttribute 宣告式互斥鎖機制，解決多執行緒交易 DeadLock 問題</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\autofac-aop\" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
+        <div class="popular-posts-excerpt"><p>使用 Autofac DynamicProxy 實現 AOP 動態代理，透過 Interceptor 攔截方法呼叫實作快取、日誌等橫切關注點</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\automapperinit\" rel="bookmark">(AutoMapper)反射自動註冊AutoMapper Profile</a></div>
+        <div class="popular-posts-excerpt"><p>使用反射自動掃描並註冊 AutoMapper Profile，免除手動逐一設定物件對應，簡化大型專案的 DTO 轉換管理</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\awesomeproxy-net\" rel="bookmark">【C#】 AOP輕型框架  AwesomeProxy.Net 介紹使用</a></div>
+        <div class="popular-posts-excerpt"><p>【C#】 AOP輕型框架 AwesomeProxy.Net 介紹使用 - 今天和大家分享AwesomeProxy.Net小弟開源AOP輕型框架</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\autofac-introduce\" rel="bookmark">Autofac (IOC)容器介紹</a></div>
+        <div class="popular-posts-excerpt"><p>Autofac IoC 容器入門教學：了解控制反轉與物件生命週期管理，比較 Ninject、Unity 等容器並實作依賴注入</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C#</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+              <a href="/tags/OpenTelemetry/" rel="tag"># OpenTelemetry</a>
+              <a href="/tags/Sidecar/" rel="tag"># Sidecar</a>
+              <a href="/tags/Observability/" rel="tag"># Observability</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/pgtuner-mcp-ai-powered-postgresql-performance/" rel="prev" title="AI-Powered PostgreSQL Performance Tuning with MCP - Introducing pgtuner_mcp">
+      <i class="fa fa-chevron-left"></i> AI-Powered PostgreSQL Performance Tuning with MCP - Introducing pgtuner_mcp
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/rustbox-introduce/" rel="next" title="RustBox - Docker-Lite Sandbox for Hackers and Learners">
+      RustBox - Docker-Lite Sandbox for Hackers and Learners <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#introduce"><span class="nav-number">1.</span> <span class="nav-text">introduce</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%8C%90-Project-Overview"><span class="nav-number">2.</span> <span class="nav-text">🌐 Project Overview</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%F0%9F%92%A1-Why-a-Sidecar"><span class="nav-number">2.1.</span> <span class="nav-text">💡 Why a Sidecar?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%A7%A0-Key-Concepts"><span class="nav-number">3.</span> <span class="nav-text">🧠 Key Concepts</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%F0%9F%93%8A-OpenTelemetry"><span class="nav-number">3.1.</span> <span class="nav-text">📊 OpenTelemetry</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%F0%9F%A7%B1-Sidecar-Design-Pattern"><span class="nav-number">3.2.</span> <span class="nav-text">🧱 Sidecar Design Pattern</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E2%9A%99%EF%B8%8F-How-It-Works"><span class="nav-number">4.</span> <span class="nav-text">⚙️ How It Works</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Architecture"><span class="nav-number">5.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Features"><span class="nav-number">6.</span> <span class="nav-text">Features</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Prerequisites"><span class="nav-number">7.</span> <span class="nav-text">Prerequisites</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Getting-Started"><span class="nav-number">8.</span> <span class="nav-text">Getting Started</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Running-the-Application"><span class="nav-number">8.1.</span> <span class="nav-text">Running the Application</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Accessing-Observability-Tools"><span class="nav-number">8.2.</span> <span class="nav-text">Accessing Observability Tools</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Application-Endpoints"><span class="nav-number">9.</span> <span class="nav-text">Application Endpoints</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Configuration-Files"><span class="nav-number">10.</span> <span class="nav-text">Configuration Files</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Troubleshooting"><span class="nav-number">11.</span> <span class="nav-text">Troubleshooting</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Common-Issues"><span class="nav-number">11.1.</span> <span class="nav-text">Common Issues</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Development"><span class="nav-number">12.</span> <span class="nav-text">Development</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Local-Development"><span class="nav-number">12.1.</span> <span class="nav-text">Local Development</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Adding-Custom-Metrics"><span class="nav-number">12.2.</span> <span class="nav-text">Adding Custom Metrics</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%A5-Example-Sending-Metrics"><span class="nav-number">13.</span> <span class="nav-text">📥 Example: Sending Metrics</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%93%A1-Example-Sending-Traces"><span class="nav-number">14.</span> <span class="nav-text">📡 Example: Sending Traces</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9B%A0%EF%B8%8F-Configuration"><span class="nav-number">15.</span> <span class="nav-text">🛠️ Configuration</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%94%92-No-SDK-No-Problem"><span class="nav-number">16.</span> <span class="nav-text">🔒 No SDK, No Problem</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%9A%80-Get-Started"><span class="nav-number">17.</span> <span class="nav-text">🚀 Get Started</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%F0%9F%99%8C-Final-Thoughts"><span class="nav-number">18.</span> <span class="nav-text">🙌 Final Thoughts</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/opentelemetry-sidecar/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/opentelemetry-sidecar/";
+    this.page.identifier = "opentelemetry-sidecar/";
+    this.page.title = "Instrument Any App Instantly Using OpenTelemetry_SideCar";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

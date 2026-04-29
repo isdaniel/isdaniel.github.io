@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="深入介紹 PostgreSQL AutoVacuum 機制，解析 dead tuple 回收、MVCC 與 autovacuum worker 運作原理，了解為什麼 AutoVacuum 是 PostgreSQL 最重要的背景維護機制">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Postgresql AutoVacuum 介紹">
+<meta property="og:url" content="https://isdaniel.github.io/postgresql-autovacuum/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="深入介紹 PostgreSQL AutoVacuum 機制，解析 dead tuple 回收、MVCC 與 autovacuum worker 運作原理，了解為什麼 AutoVacuum 是 PostgreSQL 最重要的背景維護機制">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://i.imgur.com/U1iC4ez.png">
+<meta property="article:published_time" content="2022-01-21T00:12:43.000Z">
+<meta property="article:modified_time" content="2026-04-28T11:24:19.253Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Vacuum">
+<meta property="article:tag" content="AutoVacuum">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.imgur.com/U1iC4ez.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/postgresql-autovacuum/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/postgresql-autovacuum/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/postgresql-autovacuum/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>Postgresql AutoVacuum 介紹 | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="PostgreSQL,Vacuum,AutoVacuum,dead-tuple,MVCC,maintenance">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/postgresql-autovacuum/"},"headline":"Postgresql AutoVacuum 介紹","description":"深入介紹 PostgreSQL AutoVacuum 機制，解析 dead tuple 回收、MVCC 與 autovacuum worker 運作原理，了解為什麼 AutoVacuum 是 PostgreSQL 最重要的背景維護機制","datePublished":"2022-01-21T00:12:43.000Z","dateModified":"2026-04-28T11:24:19.253Z","wordCount":1761,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://i.imgur.com/U1iC4ez.png"},"url":"https://isdaniel.github.io/postgresql-autovacuum/","inLanguage":"zh-tw","articleSection":"PostgreSQL","keywords":"PostgreSQL,Vacuum,AutoVacuum,dead-tuple,MVCC,maintenance"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"PostgreSQL","item":"https://isdaniel.github.io/categories/PostgreSQL/"},{"@type":"ListItem","position":3,"name":"Vacuum","item":"https://isdaniel.github.io/categories/PostgreSQL/Vacuum/"},{"@type":"ListItem","position":4,"name":"Postgresql AutoVacuum 介紹","item":"https://isdaniel.github.io/postgresql-autovacuum/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          Postgresql AutoVacuum 介紹
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-01-21 08:12:43" datetime="2022-01-21T08:12:43+08:00">2022-01-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 19:24:19" datetime="2026-04-28T19:24:19+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/PostgreSQL/" rel="index"><span>PostgreSQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/PostgreSQL/Vacuum/" rel="index"><span>Vacuum</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/postgresql-autovacuum/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-autovacuum/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+            <div class="post-description">深入介紹 PostgreSQL AutoVacuum 機制，解析 dead tuple 回收、MVCC 與 autovacuum worker 運作原理，了解為什麼 AutoVacuum 是 PostgreSQL 最重要的背景維護機制</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <div class="post-gallery">
+            <img src="https://i.imgur.com/U1iC4ez.png">
+        </div>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>AutoVacuum 在 Postgresql 是一個很重要的機制(甚至可以說最重要也不為過)，但裡面有些地方需要了解今天就帶大家初探</p>
+<h2 id="資料-測試資料資訊"><a href="#資料-測試資料資訊" class="headerlink" title="資料 &amp; 測試資料資訊"></a>資料 &amp; 測試資料資訊</h2><p>本次執行 Sample Data</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> T1 (</span><br><span class="line">    ID <span class="type">INT</span> <span class="keyword">NOT NULL</span> <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">	val <span class="type">INT</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col1 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col2 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col3 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col4 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col5 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col6 UUID <span class="keyword">NOT NULL</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T1</span><br><span class="line"><span class="keyword">SELECT</span> i,</span><br><span class="line">       RANDOM() <span class="operator">*</span> <span class="number">1000000</span>,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid</span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">20000000</span>) i;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> T2 (</span><br><span class="line">    ID <span class="type">INT</span> <span class="keyword">NOT NULL</span> <span class="keyword">PRIMARY KEY</span>,</span><br><span class="line">	val <span class="type">INT</span> <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col1 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col2 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col3 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col4 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col5 UUID <span class="keyword">NOT NULL</span>,</span><br><span class="line">	col6 UUID <span class="keyword">NOT NULL</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T2</span><br><span class="line"><span class="keyword">SELECT</span> i,</span><br><span class="line">       RANDOM() <span class="operator">*</span> <span class="number">1000000</span>,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid,</span><br><span class="line">	   md5(random()::text <span class="operator">||</span> clock_timestamp()::text)::uuid</span><br><span class="line"><span class="keyword">FROM</span> generate_series(<span class="number">1</span>,<span class="number">1000000</span>) i;</span><br><span class="line"></span><br><span class="line">vacuum ANALYZE T1;</span><br><span class="line">vacuum ANALYZE T2;</span><br></pre></td></tr></table></figure>
+
+<p>查詢 sample code</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN (ANALYZE,TIMING <span class="keyword">ON</span>,BUFFERS <span class="keyword">ON</span>)</span><br><span class="line"><span class="keyword">SELECT</span> t1.<span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> T1 </span><br><span class="line"><span class="keyword">INNER</span> <span class="keyword">JOIN</span> T2 <span class="keyword">ON</span> t1.id <span class="operator">=</span> t2.id </span><br><span class="line"><span class="keyword">WHERE</span> t1.id <span class="operator">&lt;</span> <span class="number">1000000</span> </span><br></pre></td></tr></table></figure>
+
+<p>此次查詢如期走 <code>Merge Join</code></p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&quot;Gather  (cost=1016.37..30569.85 rows=53968 width=104) (actual time=0.278..837.297 rows=999999 loops=1)&quot;</span><br><span class="line">&quot;  Workers Planned: 2&quot;</span><br><span class="line">&quot;  Workers Launched: 2&quot;</span><br><span class="line">&quot;  Buffers: shared hit=38273 read=21841&quot;</span><br><span class="line">&quot;  -&gt;  <span class="keyword">Merge</span> <span class="keyword">Join</span>  (cost=<span class="number">16.37</span>.<span class="number">.24173</span><span class="number">.05</span> rows=<span class="number">22487</span> width=<span class="number">104</span>) (actual time=<span class="number">11.993</span>.<span class="number">.662</span><span class="number">.770</span> rows=<span class="number">333333</span> loops=<span class="number">3</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        <span class="keyword">Merge</span> Cond: (t2.id = t1.id)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        Buffers: shared hit=<span class="number">38273</span> read=<span class="number">21841</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        -&gt;  Parallel <span class="keyword">Index</span> Only Scan <span class="keyword">using</span> t2_pkey <span class="keyword">on</span> t2  (cost=<span class="number">0.42</span>.<span class="number">.20147</span><span class="number">.09</span> rows=<span class="number">416667</span> width=<span class="number">4</span>) (actual time=<span class="number">0.041</span>.<span class="number">.69</span><span class="number">.947</span> rows=<span class="number">333333</span> loops=<span class="number">3</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              Heap Fetches: <span class="number">0</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              Buffers: shared hit=<span class="number">6</span> read=<span class="number">2732</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>        -&gt;  <span class="keyword">Index</span> Scan <span class="keyword">using</span> t1_pkey <span class="keyword">on</span> t1  (cost=<span class="number">0.44</span>.<span class="number">.48427</span><span class="number">.24</span> rows=<span class="number">1079360</span> width=<span class="number">104</span>) (actual time=<span class="number">0.041</span>.<span class="number">.329</span><span class="number">.874</span> rows=<span class="number">999819</span> loops=<span class="number">3</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              <span class="keyword">Index</span> Cond: (id &lt; <span class="number">1000000</span>)<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>              Buffers: shared hit=<span class="number">38267</span> read=<span class="number">19109</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>Planning:<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>  Buffers: shared hit=<span class="number">4</span> read=<span class="number">8</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>Planning Time: <span class="number">0.228</span> ms<span class="string">&quot;</span></span><br><span class="line"><span class="string">&quot;</span>Execution Time: <span class="number">906.760</span> ms<span class="string">&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>假如更新如多資料，但未觸發臨界值</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> T1</span><br><span class="line"><span class="keyword">set</span> id <span class="operator">=</span> id <span class="operator">+</span> <span class="number">100000000</span></span><br><span class="line"><span class="keyword">where</span> id <span class="operator">&lt;</span> <span class="number">1000000</span></span><br></pre></td></tr></table></figure>
+
+<p>在查詢可以發現使用執行計畫，還是 <code>Merge Join</code> (但依照現在資料量，理當不走 <code>Merge Join</code>) 那是甚麼原因造成的呢?</p>
+<p>那是因為目前統計資訊並未與最新資料量對齊</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">&quot;Gather  (cost=1016.37..30707.83 rows=53968 width=104) (actual time=51.403..55.517 rows=0 loops=1)&quot;</span><br><span class="line">&quot;  Workers Planned: 2&quot;</span><br><span class="line">&quot;  Workers Launched: 2&quot;</span><br><span class="line">&quot;  Buffers: shared hit=8215&quot;</span><br><span class="line">&quot;  -&gt;  Merge Join  (cost=16.37..24311.03 rows=22487 width=104) (actual time=6.736..6.738 rows=0 loops=3)&quot;</span><br><span class="line">&quot;        Merge Cond: (t2.id = t1.id)&quot;</span><br><span class="line">&quot;        Buffers: shared hit=8215&quot;</span><br><span class="line">&quot;        -&gt;  Parallel Index Only Scan using t2_pkey on t2  (cost=0.42..20147.09 rows=416667 width=4) (actual time=0.024..0.024 rows=1 loops=3)&quot;</span><br><span class="line">&quot;              Heap Fetches: 0&quot;</span><br><span class="line">&quot;              Buffers: shared hit=8&quot;</span><br><span class="line">&quot;        -&gt;  Index Scan using t1_pkey on t1  (cost=0.44..50848.71 rows=1133330 width=104) (actual time=6.710..6.710 rows=0 loops=3)&quot;</span><br><span class="line">&quot;              Index Cond: (id &lt; 1000000)&quot;</span><br><span class="line">&quot;              Buffers: shared hit=8207&quot;</span><br><span class="line">&quot;Planning:&quot;</span><br><span class="line">&quot;  Buffers: shared hit=2745&quot;</span><br><span class="line">&quot;Planning Time: 3.938 ms&quot;</span><br><span class="line">&quot;Execution Time: 55.550 ms&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="ANALYZE-VACUUM"><a href="#ANALYZE-VACUUM" class="headerlink" title="ANALYZE &amp; VACUUM"></a>ANALYZE &amp; VACUUM</h3><ul>
+<li>ANALYZE：<ol>
+<li>主要是更統計資訊，可以提供 QO 更好執行計畫</li>
+<li>建立 &amp; 更新 visibility map 檔案</li>
+</ol>
+</li>
+<li>VACUUM：<ol>
+<li>將 dead tuple 空出來，但硬碟空間不會釋放出來（如果要釋放硬碟空間需要使用 FULL Vacuum)</li>
+<li>更新 transaction ID 序號 (避免 transaction wraparound )</li>
+</ol>
+</li>
+</ul>
+<h3 id="使用-ANALYZE-VACUUM-後續"><a href="#使用-ANALYZE-VACUUM-後續" class="headerlink" title="使用 ANALYZE &amp; VACUUM 後續"></a>使用 ANALYZE &amp; VACUUM 後續</h3><p>執行 <code>vacuum ANALYZE T1;</code>，再次執行就可發現目前執行計畫就很正確了，跑 <code>Nested Loop</code> 演算法，並且只有 read 3 個 block &amp; 執行時間也大幅降低</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">&quot;QUERY PLAN&quot;</span><br><span class="line">&quot;Nested Loop  (cost=0.86..8.90 rows=1 width=104) (actual time=0.004..0.004 rows=0 loops=1)&quot;</span><br><span class="line">&quot;  Buffers: shared hit=3&quot;</span><br><span class="line">&quot;  -&gt;  Index Scan using t1_pkey on t1  (cost=0.44..4.46 rows=1 width=104) (actual time=0.003..0.003 rows=0 loops=1)&quot;</span><br><span class="line">&quot;        Index Cond: (id &lt; 1000000)&quot;</span><br><span class="line">&quot;        Buffers: shared hit=3&quot;</span><br><span class="line">&quot;  -&gt;  Index Only Scan using t2_pkey on t2  (cost=0.42..4.44 rows=1 width=4) (never executed)&quot;</span><br><span class="line">&quot;        Index Cond: (id = t1.id)&quot;</span><br><span class="line">&quot;        Heap Fetches: 0&quot;</span><br><span class="line">&quot;Planning:&quot;</span><br><span class="line">&quot;  Buffers: shared hit=20&quot;</span><br><span class="line">&quot;Planning Time: 0.232 ms&quot;</span><br><span class="line">&quot;Execution Time: 0.027 ms&quot;</span><br></pre></td></tr></table></figure>
+
+<p>所以擁有正常的統計資訊，可以讓QO選擇正確決策</p>
+<h2 id="Auto-vacuum-時機"><a href="#Auto-vacuum-時機" class="headerlink" title="Auto vacuum 時機"></a>Auto vacuum 時機</h2><p>如果不了解 Auto vacuum 觸發時機的人會詢問， Postgresql 不是會自動幫我們做 <code>vacuum</code> 為什麼上面例子還需要自己執行?</p>
+<blockquote>
+<p>因為上面案例還沒觸發閥值，所以不會做 Vacuum</p>
+</blockquote>
+<p>我們可以用 <code>pg_settings</code> 查看當前 postgres 關於 AutoVacuum 關鍵資訊設定</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> name,setting</span><br><span class="line"><span class="keyword">from</span> pg_settings </span><br><span class="line"><span class="keyword">where</span> name <span class="keyword">in</span> (<span class="string">&#x27;autovacuum_vacuum_scale_factor&#x27;</span>,<span class="string">&#x27;autovacuum_analyze_scale_factor&#x27;</span>,<span class="string">&#x27;autovacuum_analyze_threshold&#x27;</span>,<span class="string">&#x27;autovacuum_vacuum_threshold&#x27;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>AutoVacuum 主要是由下面兩個公式判斷是否需要執行 vacuum 或 analyze，會有一個類似累積池概念，累績目前資料表 dead tuple 數量</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">觸發 auto_analyze = autovacuum_analyze_scale_factor * number of tuples + autovacuum_analyze_threshold</span><br><span class="line">觸發 auto_vacuum = autovacuum_vacuum_scale_factor * number of tuples + autovacuum_vacuum_threshold</span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/routine-vacuuming.html#AUTOVACUUM">Autovacuum Daemon</a></p>
+<hr>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>setting</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>autovacuum_analyze_scale_factor</td>
+<td>0.05</td>
+</tr>
+<tr>
+<td>autovacuum_analyze_threshold</td>
+<td>50</td>
+</tr>
+<tr>
+<td>autovacuum_vacuum_scale_factor</td>
+<td>0.1</td>
+</tr>
+<tr>
+<td>autovacuum_vacuum_threshold</td>
+<td>50</td>
+</tr>
+</tbody></table>
+<p>舉個例子上面 <code>T1</code> 資料表目前有 <code>20000000</code> 筆資料</p>
+<p><code>0.05 * 20000000 + 50 = 1000050</code> 所以觸發 <code>auto_analyze</code> 資料表需要有 <code>1000050</code> 筆 dead tuple 資料</p>
+<p><code>0.1 * 20000000 + 50 = 2000050</code> 所以觸發 <code>auto_vacuum</code> 資料表需要有 <code>2000050</code> 筆 dead tuple 資料</p>
+<p>我們能發現一個問題是如果資料量越大，觸發的條件越困難….</p>
+<p>所以假如線上執行計畫跑掉可以利用下面語法查詢，上次更新執行 vacuum 時間</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">  schemaname, relname,</span><br><span class="line">  last_vacuum, last_autovacuum,</span><br><span class="line">  <span class="comment">--vacuum_count, autovacuum_count,</span></span><br><span class="line">  last_analyze,last_autoanalyze</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_user_tables</span><br><span class="line"><span class="keyword">where</span> relname <span class="operator">=</span> <span class="string">&#x27;t2&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img data-src="https://i.imgur.com/OadcNdT.png"></p>
+<h3 id="By-Table-設定-autovacuum"><a href="#By-Table-設定-autovacuum" class="headerlink" title="By Table 設定 autovacuum"></a>By Table 設定 autovacuum</h3><p>因為每張資料表都有不一樣情境邏輯．postgres 可以針對每個 Table 設定閥值</p>
+<p>我把們 t2 的 <code>auto_analyze</code> &amp; <code>auto_vacuum</code> 閥值改成修改 1000，讓 autovacuum 更容易觸發</p>
+<blockquote>
+<p>為了更好理解我把 <code>autovacuum_vacuum_threshold</code> 和 <code>autovacuum_analyze_threshold</code> 設定成 0</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_vacuum_scale_factor <span class="operator">=</span> <span class="number">0.001</span>);</span><br><span class="line"><span class="keyword">ALTER TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_vacuum_threshold <span class="operator">=</span> <span class="number">0</span>);</span><br><span class="line"><span class="keyword">ALTER TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_analyze_scale_factor <span class="operator">=</span> <span class="number">0.001</span>);</span><br><span class="line"><span class="keyword">ALTER TABLE</span> t2 <span class="keyword">SET</span> (autovacuum_analyze_threshold <span class="operator">=</span> <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>autovacuum_analyze &#x3D; <code>0.001 * 1000000 + 0 = 1000</code></li>
+<li>autovacuum_vacuum &#x3D; <code>0.001 * 1000000 + 0 = 1000</code></li>
+</ul>
+<p>我利用下面語法查詢，了解某張資料表 dead tuple 數量</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> relname,schemaname,n_dead_tup <span class="keyword">as</span> &quot;死元組數&quot;,</span><br><span class="line">(<span class="keyword">case</span>  <span class="keyword">when</span> n_live_tup <span class="operator">&gt;</span> <span class="number">0</span> <span class="keyword">then</span> </span><br><span class="line">	 n_dead_tup::float8<span class="operator">/</span>n_live_tup::float8</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">	 <span class="number">0</span></span><br><span class="line"><span class="keyword">end</span>) <span class="keyword">as</span> &quot;死/活元組的比例&quot;</span><br><span class="line"><span class="keyword">from</span> pg_stat_all_tables</span><br><span class="line"><span class="keyword">where</span> relname <span class="operator">=</span> <span class="string">&#x27;t2&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>換句話說 t2 資料表只需要有超過 1000 個 dead tuple 就會出發更新 (就類似所謂的校正回歸XDD)</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> t2</span><br><span class="line"><span class="keyword">SET</span> val <span class="operator">=</span> <span class="number">20000</span></span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">&lt;</span> <span class="number">1002</span></span><br></pre></td></tr></table></figure>
+
+<p>在過一陣子後 postgrsql console log 會在背景執行 autovacuum 並把那些資料 mark</p>
+<p><img data-src="https://i.imgur.com/4hec84Q.png"></p>
+<p>假如我們更新的資料還沒到臨界值就會造成，造成統計資訊和 dead tuple 過多</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> t2</span><br><span class="line"><span class="keyword">SET</span> val <span class="operator">=</span> <span class="number">100</span></span><br><span class="line"><span class="keyword">WHERE</span> id <span class="operator">&lt;=</span> <span class="number">999</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="auto-vaccum-與-insert-data"><a href="#auto-vaccum-與-insert-data" class="headerlink" title="auto vaccum 與 insert data"></a>auto vaccum 與 insert data</h3><p>上面都是講述 daed tuple 假如是新增是否會觸發 auto vaccum 呢?</p>
+<p>答案：是要看你使用 Postgresql 版本是多少，假如是 PG 13 之前新增資料超過 thresholds 不會執行,但 PG 13 之後會執行 auto vaccum</p>
+<p>假如你的場景是常常大量 Insert PG 版本我會建議更新到 PG 13 以上，這樣才會比較規律更新統計資訊</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://postgrespro.com/list/id/CAODZiv5M+g7DmtVYi2VqXWh44FNgnBNMkwEFbC_WCLLDKn+=7g@mail.gmail.com#head">https://postgrespro.com/list/id/CAODZiv5M+g7DmtVYi2VqXWh44FNgnBNMkwEFbC_WCLLDKn+=7g@mail.gmail.com#head</a></p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>經過查找一系列資料跟比較之前使用 sql-server 經驗，postgres 可以針對每個 Table 特性設定他適合的 <code>autovacuum</code> 閥值，來定期更新統計資訊</p>
+<p>執行 <code>vacuum</code> 會針對資料表上 <code>SHARE UPDATE EXCLUSIVE</code> lock 且會有少許 IO 操作</p>
+<blockquote>
+<p>雖然資料表可以照常 CRUD 但還是對於資料表會有些許負擔</p>
+</blockquote>
+<p>所以我會建議做 vacuum 時，最好在系統離峰，但如果統計值偏差很大要更新還是更新不然會造成問題更大</p>
+<p>至於是否要 by table 去做 autovacuum 閥值設定，就可以看情況</p>
+<p>假如我們資料量大到一定程度，需要讀寫分離．在 Read DB 建議在每天離峰時做一次 <code>VACUUM</code> and <code>ANALYZE</code>.</p>
+<blockquote>
+<p>A common strategy for read-mostly databases is to run VACUUM and ANALYZE once a day during a low-usage time of day. (This will not be sufficient if there is heavy update activity.)</p>
+</blockquote>
+<p>參考 : <a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/14/sql-analyze.html">https://www.postgresql.org/docs/14/sql-analyze.html</a></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-autovacuum/">https://isdaniel.github.io/postgresql-autovacuum/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\postgresql-hotupdate-vacuum\" rel="bookmark">postgresql HOT (heap only tuple) update 深入淺出</a></div>
+        <div class="popular-posts-excerpt"><p>深入解析 PostgreSQL HOT (Heap Only Tuple) update 機制，了解更新資料時如何在 Heap Table 建立新版本、舊版本如何透過 VACUUM 回收，以及 HOT update 如何減少索引維護開銷提升效能</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\azure-flexible-longterm-backup\" rel="bookmark">Azure PostgreSQL Flexible long term backup with Managed Identity</a></div>
+        <div class="popular-posts-excerpt"><p>Step-by-step guide to configure long-term backup (beyond 35 days) on Azure PostgreSQL Flexible Server using Managed Identity, pg_dump, and Azure Blob Storage</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\map-theory\" rel="bookmark">資料庫查詢核心概念-地圖理論</a></div>
+        <div class="popular-posts-excerpt"><p>深入理解資料庫查詢優化器運作原理：用地圖理論解析 PostgreSQL 執行計畫生成機制，從 Parser、Planner 到 Executor，掌握統計資訊與成本估算，優化 SQL 查詢效能</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\logical-replication-checker-replication_checker_rs\" rel="bookmark">Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)</a></div>
+        <div class="popular-posts-excerpt"><p>Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-pidstat-real-time-postgresql-backend-monitoring\" rel="bookmark">pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL</a></div>
+        <div class="popular-posts-excerpt"><p>pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Vacuum/" rel="tag"># Vacuum</a>
+              <a href="/tags/AutoVacuum/" rel="tag"># AutoVacuum</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/redis-cluster-introduce-01/" rel="prev" title="Redis Cluster 介紹">
+      <i class="fa fa-chevron-left"></i> Redis Cluster 介紹
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/aws-serverless/" rel="next" title="Serverless + CloudFormation 撰寫 lambda">
+      Serverless + CloudFormation 撰寫 lambda <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B3%87%E6%96%99-%E6%B8%AC%E8%A9%A6%E8%B3%87%E6%96%99%E8%B3%87%E8%A8%8A"><span class="nav-number">2.</span> <span class="nav-text">資料 &amp; 測試資料資訊</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ANALYZE-VACUUM"><span class="nav-number">2.1.</span> <span class="nav-text">ANALYZE &amp; VACUUM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-ANALYZE-VACUUM-%E5%BE%8C%E7%BA%8C"><span class="nav-number">2.2.</span> <span class="nav-text">使用 ANALYZE &amp; VACUUM 後續</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Auto-vacuum-%E6%99%82%E6%A9%9F"><span class="nav-number">3.</span> <span class="nav-text">Auto vacuum 時機</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#By-Table-%E8%A8%AD%E5%AE%9A-autovacuum"><span class="nav-number">3.1.</span> <span class="nav-text">By Table 設定 autovacuum</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#auto-vaccum-%E8%88%87-insert-data"><span class="nav-number">3.2.</span> <span class="nav-text">auto vaccum 與 insert data</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">4.</span> <span class="nav-text">小結</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/postgresql-autovacuum/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/postgresql-autovacuum/";
+    this.page.identifier = "postgresql-autovacuum/";
+    this.page.title = "Postgresql AutoVacuum 介紹";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

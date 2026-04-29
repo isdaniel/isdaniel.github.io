@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="最近我開發了 MessageWorkerPool 專案。其主要概念是提供一個平台框架，使使用者能夠快速且輕鬆地在 Worker 內實作邏輯。該設計高度靈活，允許基於我創建的 Worker 通訊協議，以多種程式語言實作 Worker。目前，我已提供使用 C#、Rust 和 Python 編寫的 Worker 範例。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MessageWorkerPool framework introduction">
+<meta property="og:url" content="https://isdaniel.github.io/mq-workerpool-introduction/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="最近我開發了 MessageWorkerPool 專案。其主要概念是提供一個平台框架，使使用者能夠快速且輕鬆地在 Worker 內實作邏輯。該設計高度靈活，允許基於我創建的 Worker 通訊協議，以多種程式語言實作 Worker。目前，我已提供使用 C#、Rust 和 Python 編寫的 Worker 範例。">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2025-06-02T08:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-28T08:14:05.004Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="C#">
+<meta property="article:tag" content="OOP">
+<meta property="article:tag" content="Process">
+<meta property="article:tag" content="workerpool">
+<meta property="article:tag" content="message-queue">
+<meta property="article:tag" content="open-source">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/mq-workerpool-introduction/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/mq-workerpool-introduction/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/mq-workerpool-introduction/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>MessageWorkerPool framework introduction | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="C#,Rust,Python,MessageWorkerPool,worker-pool,message-queue,open-source">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/mq-workerpool-introduction/"},"headline":"MessageWorkerPool framework introduction","description":"最近我開發了 MessageWorkerPool 專案。其主要概念是提供一個平台框架，使使用者能夠快速且輕鬆地在 Worker 內實作邏輯。該設計高度靈活，允許基於我創建的 Worker 通訊協議，以多種程式語言實作 Worker。目前，我已提供使用 C#、Rust 和 Python 編寫的 Worker 範例。","datePublished":"2025-06-02T08:00:00.000Z","dateModified":"2026-04-28T08:14:05.004Z","wordCount":1620,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/mq-workerpool-introduction/","inLanguage":"zh-tw","articleSection":"C#","keywords":"C#,Rust,Python,MessageWorkerPool,worker-pool,message-queue,open-source"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"C#","item":"https://isdaniel.github.io/categories/C/"},{"@type":"ListItem","position":3,"name":"OOP","item":"https://isdaniel.github.io/categories/C/OOP/"},{"@type":"ListItem","position":4,"name":"framework","item":"https://isdaniel.github.io/categories/C/OOP/framework/"},{"@type":"ListItem","position":5,"name":"MessageWorkerPool framework introduction","item":"https://isdaniel.github.io/mq-workerpool-introduction/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          MessageWorkerPool framework introduction
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-06-02 16:00:00" datetime="2025-06-02T16:00:00+08:00">2025-06-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 16:14:05" datetime="2026-04-28T16:14:05+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/C/" rel="index"><span>C#</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/C/OOP/" rel="index"><span>OOP</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/C/OOP/framework/" rel="index"><span>framework</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/mq-workerpool-introduction/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="mq-workerpool-introduction/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+            <div class="post-description">最近我開發了 MessageWorkerPool 專案。其主要概念是提供一個平台框架，使使用者能夠快速且輕鬆地在 Worker 內實作邏輯。該設計高度靈活，允許基於我創建的 Worker 通訊協議，以多種程式語言實作 Worker。目前，我已提供使用 C#、Rust 和 Python 編寫的 Worker 範例。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="簡介"><a href="#簡介" class="headerlink" title="簡介"></a>簡介</h2><p>最近我開發了 <code>MessageWorkerPool</code> 專案。其主要概念是提供一個平台框架，使使用者能夠快速且輕鬆地在 <code>Worker</code> 內實作邏輯。該設計高度靈活，允許基於我創建的 Worker 通訊協議，以多種程式語言實作 <code>Worker</code>。目前，我已提供使用 C#、Rust 和 Python 編寫的 Worker 範例。</p>
+<p>這個函式庫在多進程環境中處理任務表現優異。此外，它還支援優雅關閉 (graceful shutdown)，確保在隨時 consumer worker 能順利終止處理程序。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/isdaniel/MessageWorkerPool">MessageWorkerPool GitHub</a></p>
+<h2 id="為什麼選擇-ProcessPool-而非-ThreadPool"><a href="#為什麼選擇-ProcessPool-而非-ThreadPool" class="headerlink" title="為什麼選擇 ProcessPool 而非 ThreadPool?"></a>為什麼選擇 ProcessPool 而非 ThreadPool?</h2><p>當你需要強大的隔離性，以防止某個任務影響其他任務時，應該選擇 ProcessPool，特別是針對關鍵操作或容易崩潰的任務。雖然 ThreadPool 較為輕量（因為執行緒共用記憶體並且具有較低的上下文切換開銷），但 ProcessPool 能夠提供更靈活的解決方案，允許使用不同的程式語言來實作 Worker。</p>
+<h2 id="安裝"><a href="#安裝" class="headerlink" title="安裝"></a>安裝</h2><p>要安裝 <code>MessageWorkerPool</code> 套件，請使用以下 NuGet 指令：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">PM &gt; Install-Package MessageWorkerPool</span><br></pre></td></tr></table></figure>
+
+<p>若要手動安裝此函式庫，可克隆儲存庫並建置專案：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/MessageWorkerPool.git</span><br><span class="line"><span class="built_in">cd</span> MessageWorkerPool</span><br><span class="line">dotnet build</span><br></pre></td></tr></table></figure>
+
+<h2 id="架構概覽"><a href="#架構概覽" class="headerlink" title="架構概覽"></a>架構概覽</h2><p><img data-src="https://raw.githubusercontent.com/isdaniel/MessageWorkerPool/refs/heads/main/images/arhc-overview.png"></p>
+<h2 id="快速開始"><a href="#快速開始" class="headerlink" title="快速開始"></a>快速開始</h2><p>這是部署 RabbitMQ 和相關服務的快速開始指南，使用提供的 docker-compose.yml 檔案和 .env 中的環境變數。</p>
+<figure class="highlight mel"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose --<span class="keyword">env</span>-<span class="keyword">file</span> .\<span class="keyword">env</span>\.<span class="keyword">env</span> up --build -d</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>檢查 RabbitMQ 健康狀態：在瀏覽器中開啟 <a target="_blank" rel="noopener" href="http://localhost:8888/">http://localhost:8888</a> 以訪問 RabbitMQ 管理面板。</li>
+</ol>
+<ul>
+<li>使用者名稱: guest</li>
+<li>密碼: guest</li>
+</ul>
+<ol start="2">
+<li>檢查 OrleansDashboard <a target="_blank" rel="noopener" href="http://localhost:8899/">http://localhost:8899</a></li>
+</ol>
+<ul>
+<li>使用者名稱: admin</li>
+<li>密碼: test.123</li>
+</ul>
+<h2 id="程式結構"><a href="#程式結構" class="headerlink" title="程式結構"></a>程式結構</h2><p>以下是創建並配置與 RabbitMQ 互動的 workerpool 的範例程式碼。以下是其功能的解析：workerpool 將根據您的 RabbitMqSetting 設定從 RabbitMQ 伺服器獲取訊息，並通過 Process.StandardInput 將訊息傳遞給用戶創建的真實 worker node</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">Program</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">async</span> Task <span class="title">Main</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span></span><br><span class="line">    &#123;</span><br><span class="line">        CreateHostBuilder(<span class="keyword">args</span>).Build().Run();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> IHostBuilder <span class="title">CreateHostBuilder</span>(<span class="params"><span class="built_in">string</span>[] <span class="keyword">args</span></span>)</span> =&gt;</span><br><span class="line">        Host.CreateDefaultBuilder(<span class="keyword">args</span>)</span><br><span class="line">            .ConfigureLogging(logging =&gt;</span><br><span class="line">            &#123;</span><br><span class="line">                logging.ClearProviders();</span><br><span class="line">                logging.AddConsole(options =&gt; &#123;</span><br><span class="line">                    options.FormatterName = ConsoleFormatterNames.Simple;</span><br><span class="line">                &#125;);</span><br><span class="line">                logging.Services.Configure&lt;SimpleConsoleFormatterOptions&gt;(options =&gt; &#123;</span><br><span class="line">                    options.IncludeScopes = <span class="literal">true</span>;</span><br><span class="line">                    options.TimestampFormat = <span class="string">&quot; yyyy-MM-dd HH:mm:ss &quot;</span>;</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125;).AddRabbitMqWorkerPool(<span class="keyword">new</span> RabbitMqSetting</span><br><span class="line">            &#123;</span><br><span class="line">                UserName = Environment.GetEnvironmentVariable(<span class="string">&quot;USERNAME&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                Password = Environment.GetEnvironmentVariable(<span class="string">&quot;PASSWORD&quot;</span>) ?? <span class="string">&quot;guest&quot;</span>,</span><br><span class="line">                HostName = Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_HOSTNAME&quot;</span>),</span><br><span class="line">                Port = <span class="built_in">ushort</span>.TryParse(Environment.GetEnvironmentVariable(<span class="string">&quot;RABBITMQ_PORT&quot;</span>), <span class="keyword">out</span> <span class="built_in">ushort</span> p) ? p : (<span class="built_in">ushort</span>) <span class="number">5672</span>,</span><br><span class="line">                PrefetchTaskCount = <span class="number">3</span></span><br><span class="line">            &#125;, <span class="keyword">new</span> WorkerPoolSetting() &#123; WorkerUnitCount = <span class="number">9</span>, CommandLine = <span class="string">&quot;dotnet&quot;</span>, Arguments = <span class="string">@&quot;./ProcessBin/WorkerProcessSample.dll&quot;</span>, QueueName = Environment.GetEnvironmentVariable(<span class="string">&quot;QUEUENAME&quot;</span>), &#125;</span><br><span class="line">            );</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="worker-process-與-workerPool-之間的協議"><a href="#worker-process-與-workerPool-之間的協議" class="headerlink" title="worker process 與 workerPool 之間的協議"></a>worker process 與 workerPool 之間的協議</h2><p>worker node 與任務進程之間的協議使用 MessagePack 二進制格式來進行更快且更小的資料傳輸，標準輸入將發送信號來控制 worker process。</p>
+<p>一開始 workerPool 將通過標準輸入傳遞 NamedPipe 名稱，因此 worker node 需要接收該名稱並建立 worker process 和 workerPool 之間的 NamedPipe。</p>
+<h3 id="workerPool-發送的操作指令"><a href="#workerPool-發送的操作指令" class="headerlink" title="workerPool 發送的操作指令"></a>workerPool 發送的操作指令</h3><p>目前，workerPool將通過標準輸入向 worker process 發送操作信號或指令。</p>
+<ul>
+<li>CLOSED_SIGNAL (<code>__quit__</code>): 代表 workerPool 發送關閉或關機信號給 worker node，worker process 應盡快執行優雅關機。<br>通過 (Data Named Pipe Stream) 進行資料傳輸<br>命名管道是一種強大的進程間通信 (IPC) 機制，它允許兩個或更多的進程之間進行通信，即使它們運行在不同的機器上（例如 Windows 等支持的平台）。我們的 worker 使用此方式在 worker node 與 workerPool 之間傳輸資料。</li>
+</ul>
+<p>msgpack 協議支持的資料類型如下類別與 byte[] 格式。</p>
+<p>對應的 byte[] 資料是：</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[<span class="number">132,161,48,179</span>,<span class="number">78,101,119,32</span>,<span class="number">79,117,116,80</span>,<span class="number">117,116,32,77</span>,<span class="number">101,115,115,97</span>,<span class="number">103,101,33,161</span>,<span class="number">49,204,200,161</span>,<span class="number">50,129,164,116</span>,<span class="number">101,115,116,167</span>,<span class="number">116,101,115,116</span>,<span class="number">118,97,108,161</span>,<span class="number">51,169,116,101</span>,<span class="number">115,116,81,117</span>,<span class="number">101,117,101</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>要將提供的偽 JSON 結構表示為 <code>MsgPack</code> 格式（byte[]），我們可以分解過程如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Edit</span><br><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;0&quot;</span><span class="punctuation">:</span> <span class="string">&quot;New OutPut Message!&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;1&quot;</span><span class="punctuation">:</span> <span class="number">200</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;2&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;test&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testval&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;3&quot;</span><span class="punctuation">:</span> <span class="string">&quot;testQueue&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>更多資訊，您可以使用 <a target="_blank" rel="noopener" href="https://ref45638.github.io/msgpack-converter/">msgpack-converter</a> 來解碼和編碼。</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"> <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> 封裝來自 MQ 服務的訊息</span></span><br><span class="line"><span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">[<span class="meta">MessagePackObject</span>]</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title">MessageOutputTask</span></span><br><span class="line">&#123;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> 來自進程的輸出訊息</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;0&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> Message &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;1&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> MessageStatus Status &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> 我們希望儲存的回應資訊以便繼續執行訊息。</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;2&quot;</span>)</span>]</span><br><span class="line">   [<span class="meta">MessagePackFormatter(typeof(PrimitiveObjectResolver))</span>]</span><br><span class="line">   <span class="keyword">public</span> IDictionary&lt;<span class="built_in">string</span>, <span class="built_in">object</span>&gt; Headers &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> 預設使用 BasicProperties.Reply To 隊列名稱，任務處理器可以覆寫回應隊列名稱。</span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;/summary&gt;</span></span></span><br><span class="line">   <span class="comment"><span class="doctag">///</span> <span class="doctag">&lt;value&gt;</span>預設使用 BasicProperties.Reply<span class="doctag">&lt;/value&gt;</span></span></span><br><span class="line">   [<span class="meta">Key(<span class="string">&quot;3&quot;</span>)</span>]</span><br><span class="line">   <span class="keyword">public</span> <span class="built_in">string</span> ReplyQueueName &#123; <span class="keyword">get</span>; <span class="keyword">set</span>; &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>我將在此介紹 MessageStatus 的含義。</p>
+<ul>
+<li>IGNORE_MESSAGE (-1) : 將訊息附加到資料流管道中，而不進行進一步處理。<ul>
+<li>Status &#x3D; -1: 任務處理告訴 worker process 這不是回應或確認訊息，只是回饋到資料流管道。</li>
+</ul>
+</li>
+<li>MESSAGE_DONE (200) : 通知 worker process 該案件可以由訊息隊列服務進行確認。<ul>
+<li>Status &#x3D; 200 任務處理告訴 worker process 該任務已完成並且可以確認。</li>
+</ul>
+</li>
+<li>MESSAGE_DONE_WITH_REPLY (201) : 請確保我們滿足以下步驟以支援 RPC。<ul>
+<li>客戶端代碼必須提供 ReplyTo 資訊。</li>
+<li>任務處理將使用 JSON 負載中的 Message 欄位來回應隊列資訊。</li>
+<li>例如：當 Status &#x3D; 201 透過資料流管道發送時，任務處理指示 worker process 輸出，例如 1010，該數據必須然後發送到回應隊列。</li>
+</ul>
+</li>
+</ul>
+<p>我們可以通過不同的程式語言來編寫自己的 worker node （我已經在此 github 提供了 Python, .NET, rust example code）。</p>
+<h2 id="如何處理長時間運行的任務或涉及處理大量數據行的任務？"><a href="#如何處理長時間運行的任務或涉及處理大量數據行的任務？" class="headerlink" title="如何處理長時間運行的任務或涉及處理大量數據行的任務？"></a>如何處理長時間運行的任務或涉及處理大量數據行的任務？</h2><p>類似於操作系統中的進程，發生上下文切換（中斷等）。</p>
+<p>客戶端可以通過 Header 發送一個 <code>TimeoutMilliseconds</code> 值：在取消之前等待的時間（毫秒）。如果任務執行超過該值，worker process 可以使用該值來設置中斷，例如 CancellationToken。</p>
+<p>例如，<code>MessageOutputTask</code> 的 JSON 可以如下所示，<code>status=201</code> 代表此訊息將重新入隊以便下次處理，並且訊息將攜帶 <code>Headers</code> 資訊再次重新入隊。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;Message&quot;</span><span class="punctuation">:</span> <span class="string">&quot;This is Mock Json Data&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Status&quot;</span><span class="punctuation">:</span> <span class="number">201</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Headers&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;CreateTimestamp&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2025-01-01T14:35:00Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PreviousProcessingTimestamp&quot;</span><span class="punctuation">:</span> <span class="string">&quot;2025-01-01T14:40:00Z&quot;</span><span class="punctuation">,</span></span><br><span class="line">	<span class="attr">&quot;Source&quot;</span><span class="punctuation">:</span> <span class="string">&quot;OrderProcessingService&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;PreviousExecutedRows&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;RequeueTimes&quot;</span><span class="punctuation">:</span> <span class="string">&quot;3&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>此專案還包括 integration、unit test 和 github action pipeline。雖然 API 文件（專案仍在 beta 階段），但我計劃在未來逐步添加。如果您對此專案有任何想法或建議，請隨時創建問題或發送 PR。</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/mq-workerpool-introduction/">https://isdaniel.github.io/mq-workerpool-introduction/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\expression-vs-reflection\" rel="bookmark">Reflection在進化-淺談Expression表達式</a></div>
+        <div class="popular-posts-excerpt"><p>稍微有經驗的.net工程師一定聽過或使用過Reflection,Reflection雖然好用(能動態處理很多事情)但對於效能會有些影響.</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\invoicetw-framework\" rel="bookmark">【財政部查詢類電子發票API】框架解說 C#</a></div>
+        <div class="popular-posts-excerpt"><p>台灣財政部電子發票查詢 API 開源框架 C# 解說：參數排序、簽章產生、時間戳記處理與 HTTP 請求實作細節</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\aop-lock-mechanism\" rel="bookmark">AOP Lock Architecture</a></div>
+        <div class="popular-posts-excerpt"><p>使用 Autofac Interceptor 實作 AOP Lock 架構：透過 LockAttribute 宣告式互斥鎖機制，解決多執行緒交易 DeadLock 問題</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\autofac-aop\" rel="bookmark">Autofac + Interceptors(AOP) 動態代理</a></div>
+        <div class="popular-posts-excerpt"><p>使用 Autofac DynamicProxy 實現 AOP 動態代理，透過 Interceptor 攔截方法呼叫實作快取、日誌等橫切關注點</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\automapperinit\" rel="bookmark">(AutoMapper)反射自動註冊AutoMapper Profile</a></div>
+        <div class="popular-posts-excerpt"><p>使用反射自動掃描並註冊 AutoMapper Profile，免除手動逐一設定物件對應，簡化大型專案的 DTO 轉換管理</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C/" rel="tag"># C#</a>
+              <a href="/tags/OOP/" rel="tag"># OOP</a>
+              <a href="/tags/Process/" rel="tag"># Process</a>
+              <a href="/tags/workerpool/" rel="tag"># workerpool</a>
+              <a href="/tags/message-queue/" rel="tag"># message-queue</a>
+              <a href="/tags/open-source/" rel="tag"># open-source</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/rustbox-introduce/" rel="prev" title="RustBox - Docker-Lite Sandbox for Hackers and Learners">
+      <i class="fa fa-chevron-left"></i> RustBox - Docker-Lite Sandbox for Hackers and Learners
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/mcp-server-weather/" rel="next" title="使用 Model Context Protocol 以 Weather MCP Server 為例">
+      使用 Model Context Protocol 以 Weather MCP Server 為例 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B0%A1%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">簡介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E9%81%B8%E6%93%87-ProcessPool-%E8%80%8C%E9%9D%9E-ThreadPool"><span class="nav-number">2.</span> <span class="nav-text">為什麼選擇 ProcessPool 而非 ThreadPool?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%9D"><span class="nav-number">3.</span> <span class="nav-text">安裝</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%A7%8B%E6%A6%82%E8%A6%BD"><span class="nav-number">4.</span> <span class="nav-text">架構概覽</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E9%96%8B%E5%A7%8B"><span class="nav-number">5.</span> <span class="nav-text">快速開始</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A8%8B%E5%BC%8F%E7%B5%90%E6%A7%8B"><span class="nav-number">6.</span> <span class="nav-text">程式結構</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#worker-process-%E8%88%87-workerPool-%E4%B9%8B%E9%96%93%E7%9A%84%E5%8D%94%E8%AD%B0"><span class="nav-number">7.</span> <span class="nav-text">worker process 與 workerPool 之間的協議</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#workerPool-%E7%99%BC%E9%80%81%E7%9A%84%E6%93%8D%E4%BD%9C%E6%8C%87%E4%BB%A4"><span class="nav-number">7.1.</span> <span class="nav-text">workerPool 發送的操作指令</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E8%99%95%E7%90%86%E9%95%B7%E6%99%82%E9%96%93%E9%81%8B%E8%A1%8C%E7%9A%84%E4%BB%BB%E5%8B%99%E6%88%96%E6%B6%89%E5%8F%8A%E8%99%95%E7%90%86%E5%A4%A7%E9%87%8F%E6%95%B8%E6%93%9A%E8%A1%8C%E7%9A%84%E4%BB%BB%E5%8B%99%EF%BC%9F"><span class="nav-number">8.</span> <span class="nav-text">如何處理長時間運行的任務或涉及處理大量數據行的任務？</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/mq-workerpool-introduction/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/mq-workerpool-introduction/";
+    this.page.identifier = "mq-workerpool-introduction/";
+    this.page.title = "MessageWorkerPool framework introduction";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

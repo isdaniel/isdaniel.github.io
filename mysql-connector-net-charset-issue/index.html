@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="深入分析 MySQL character_set_server 修改後為何需要重啟：從 mysql-connector-net 原始碼與 MySQL Handshake 機制解析字元集設定的陷阱，避免驅動端解碼錯誤">
+<meta property="og:type" content="article">
+<meta property="og:title" content="為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱">
+<meta property="og:url" content="https://isdaniel.github.io/mysql-connector-net-charset-issue/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="深入分析 MySQL character_set_server 修改後為何需要重啟：從 mysql-connector-net 原始碼與 MySQL Handshake 機制解析字元集設定的陷阱，避免驅動端解碼錯誤">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2025-07-09T15:10:43.000Z">
+<meta property="article:modified_time" content="2026-04-28T11:24:54.469Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="Charset">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/mysql-connector-net-charset-issue/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/mysql-connector-net-charset-issue/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/mysql-connector-net-charset-issue/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱 | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="MySQL,character_set_server,mysql-connector-net,charset,Handshake,encoding,character-set">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/mysql-connector-net-charset-issue/"},"headline":"為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱","description":"深入分析 MySQL character_set_server 修改後為何需要重啟：從 mysql-connector-net 原始碼與 MySQL Handshake 機制解析字元集設定的陷阱，避免驅動端解碼錯誤","datePublished":"2025-07-09T15:10:43.000Z","dateModified":"2026-04-28T11:24:54.469Z","wordCount":991,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/mysql-connector-net-charset-issue/","inLanguage":"zh-tw","articleSection":"MySQL","keywords":"MySQL,character_set_server,mysql-connector-net,charset,Handshake,encoding,character-set"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"MySQL","item":"https://isdaniel.github.io/categories/MySQL/"},{"@type":"ListItem","position":3,"name":"Database","item":"https://isdaniel.github.io/categories/MySQL/Database/"},{"@type":"ListItem","position":4,"name":"為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱","item":"https://isdaniel.github.io/mysql-connector-net-charset-issue/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-07-09 23:10:43" datetime="2025-07-09T23:10:43+08:00">2025-07-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 19:24:54" datetime="2026-04-28T19:24:54+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/MySQL/" rel="index"><span>MySQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/MySQL/Database/" rel="index"><span>Database</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/mysql-connector-net-charset-issue/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="mysql-connector-net-charset-issue/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>2.3k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+            <div class="post-description">深入分析 MySQL character_set_server 修改後為何需要重啟：從 mysql-connector-net 原始碼與 MySQL Handshake 機制解析字元集設定的陷阱，避免驅動端解碼錯誤</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h1 id="為什麼修改-MySQL-的-character-set-server-後仍需重啟？從-mysql-connector-net-探討字元集的陷阱"><a href="#為什麼修改-MySQL-的-character-set-server-後仍需重啟？從-mysql-connector-net-探討字元集的陷阱" class="headerlink" title="為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱"></a>為什麼修改 MySQL 的 <code>character_set_server</code> 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱</h1><p>在近期處理一個與 MySQL 字元集相關的問題時，我深入研究了 MySQL Server 的 Handshake 機制以及 <code>mysql-connector-net</code> 原始碼，發現了一個容易被忽略但可能會造成重大錯誤的細節——<strong>即使 <code>character_set_server</code> 是動態參數，但實際上修改後仍需要重啟 MySQL Server，否則會造成驅動端的解碼錯誤。</strong></p>
+<h2 id="問題背景：為什麼驅動程式仍使用舊的字元集？"><a href="#問題背景：為什麼驅動程式仍使用舊的字元集？" class="headerlink" title="問題背景：為什麼驅動程式仍使用舊的字元集？"></a>問題背景：為什麼驅動程式仍使用舊的字元集？</h2><p>根據 MySQL Server 的設計，當 client 端連線時，Server 會在 Handshake Initial Packet 中回傳一些基本資訊，其中就包括伺服器的預設字元集（<code>character_set_server</code>）。這段資訊是透過以下的程式碼取得：</p>
+<p>🔗 <a target="_blank" rel="noopener" href="https://github.com/mysql/mysql-server/blob/61a3a1d8ef15512396b4c2af46e922a19bf2b174/sql/auth/sql_authentication.cc#L1872">MySQL Source Code 參考連結</a></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">packet-&gt;<span class="built_in">append_int1</span>(default_charset_info-&gt;number);</span><br></pre></td></tr></table></figure>
+
+<p>根據 MySQL 官方文件，這段資訊會被封裝在 Handshake v10 Protocol 中傳送（<a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/dev/mysql-server/latest/page_protocol_connection_phase_packets_protocol_handshake_v10.html">官方文件</a>）。</p>
+<p>然而，這個值其實是在 MySQL Server 啟動時就被載入的，<strong>即使你在執行中動態修改 <code>character_set_server</code>，重新連線後 greeting packet 裡的字元集值仍然不會更新。</strong></p>
+<p><img data-src="/../images/2025-07-10_12h42_13.png" alt="img"></p>
+<h2 id="驅動程式的行為：根據-Greeting-決定後續欄位解碼"><a href="#驅動程式的行為：根據-Greeting-決定後續欄位解碼" class="headerlink" title="驅動程式的行為：根據 Greeting 決定後續欄位解碼"></a>驅動程式的行為：根據 Greeting 決定後續欄位解碼</h2><p><code>mysql-connector-net</code> 在收到 greeting packet 時，會將字元集儲存在 <code>ConnectionCharSetIndex</code>：</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* New protocol with 16 bytes to describe server characteristics */</span></span><br><span class="line">owner.ConnectionCharSetIndex = (<span class="built_in">int</span>)packet.ReadByte(); <span class="comment">// e.g. 54 = UTF16</span></span><br></pre></td></tr></table></figure>
+<p>🔗 <a target="_blank" rel="noopener" href="https://github.com/mysql/mysql-connector-net/blob/9.1.0/MySQL.Data/src/NativeDriver.cs#L241">連結程式碼位置</a></p>
+<p>接下來，在處理每個欄位的資料時，若欄位的 charset 為 binary (63)，會 fallback 回 connection 的預設值：</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (CharacterSetIndex == <span class="number">63</span>)</span><br><span class="line">    CharacterSetIndex = driver.ConnectionCharSetIndex;</span><br></pre></td></tr></table></figure>
+
+<p>🔗 <a target="_blank" rel="noopener" href="https://github.com/mysql/mysql-connector-net/blob/9.1.0/MySQL.Data/src/Field.cs#L250">欄位處理程式碼位置</a></p>
+<p>這裡的問題就產生了：在 MySQL protocol 中，即使是整數、時間戳等 binary 類型欄位，也會設定 charset 為 binary (63)。這意味著實際 decode 資料時會 fallback 到 UTF-16（預設 greeting 的字元集），導致錯誤解碼，產生亂碼或例外。</p>
+<h2 id="實驗觀察與錯誤範例"><a href="#實驗觀察與錯誤範例" class="headerlink" title="實驗觀察與錯誤範例"></a>實驗觀察與錯誤範例</h2><p>以下是我透過封包擷取與實際執行觀察到的問題：</p>
+<h3 id="Greeting-Packet："><a href="#Greeting-Packet：" class="headerlink" title="Greeting Packet："></a>Greeting Packet：</h3><p>在連線時，我們觀察到 greeting charset 設為 54（UTF-16）：</p>
+<figure class="highlight node-repl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Server Greeting</span><br><span class="line"><span class="meta prompt_">...</span></span><br><span class="line">    Language: utf16 COLLATE utf16_general_ci (54)</span><br></pre></td></tr></table></figure>
+
+<p><img data-src="/../images/2025-07-10_12h42_49.png" alt="img"></p>
+<h3 id="整數欄位錯誤解析："><a href="#整數欄位錯誤解析：" class="headerlink" title="整數欄位錯誤解析："></a>整數欄位錯誤解析：</h3><p>欄位的 <code>characterSet</code> 是 63 (binary)，fallback 到 54（UTF-16）解碼，造成如下的 <code>System.FormatException</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">System.FormatException: Input string was not in a correct format.</span><br><span class="line">   at System.Int32.Parse(String s, IFormatProvider provider)</span><br></pre></td></tr></table></figure>
+
+<p><img data-src="/../images/2025-07-10_12h43_10.png" alt="img"></p>
+<p>因為目前 mysql-connector-net client library 尚未完全支援 UTF16, 未來可能會處理此問題</p>
+<h2 id="修正建議與討論"><a href="#修正建議與討論" class="headerlink" title="修正建議與討論"></a>修正建議與討論</h2><h3 id="為什麼需要重啟？"><a href="#為什麼需要重啟？" class="headerlink" title="為什麼需要重啟？"></a>為什麼需要重啟？</h3><p>雖然 <code>character_set_server</code> 是 dynamic parameter，但 greeting 中的字元集是在啟動時就定義的（由 <code>default_charset_info</code> 載入）。因此如果你修改這個參數 <strong>但未重啟 MySQL Server</strong>，那麼新的連線仍然會收到舊的 greeting charset 資訊。</p>
+<p>在使用 <code>mysql-connector-net</code> 這種驅動時，由於 greeting charset 會被 fallback 作為 binary 欄位的 decode 基準，這會導致我們解析數值型資料時發生錯誤或亂碼。</p>
+<h2 id="建議改善方向"><a href="#建議改善方向" class="headerlink" title="建議改善方向"></a>建議改善方向</h2><ol>
+<li><p><strong>驅動程式修正建議</strong>：</p>
+<ul>
+<li>應該判斷 field type 是否為 binary 前，再決定是否 fallback 到 greeting charset。</li>
+<li>例如：對於 Int32、Int64、Timestamp 等欄位，可跳過 charset fallback。</li>
+</ul>
+</li>
+<li><p><strong>伺服器端操作建議</strong>：</p>
+<ul>
+<li>若需更改 <code>character_set_server</code>，務必搭配重新啟動 MySQL server，確保 greeting packet 同步更新。</li>
+<li>如果您是使用 mysql-connector-net library 請使用 utf8mb4 取代 UTF16</li>
+</ul>
+</li>
+</ol>
+<h2 id="總結"><a href="#總結" class="headerlink" title="總結"></a>總結</h2><p>這次調查突顯了 MySQL greeting packet 與驅動解碼邏輯間的一個不易察覺的錯誤來源。特別是在使用 <code>mysql-connector-net</code> 驅動、並處理 binary 或整數類型資料時，若伺服器端未重新啟動而 greeting charset 未更新，就可能引發解碼錯誤與系統例外。</p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/mysql-connector-net-charset-issue/">https://isdaniel.github.io/mysql-connector-net-charset-issue/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\acid\" rel="bookmark">ACID</a></div>
+        <div class="popular-posts-excerpt"><p>ACID 資料庫交易特性介紹：原子性、一致性、隔離性與持久性，以及 SQL Server 中 XACT_ABORT 對交易錯誤處理的影響</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\db-heaptable\" rel="bookmark">Sqlserver不可不知道Heap Table.</a></div>
+        <div class="popular-posts-excerpt"><p>深入解析 SQL Server Heap Table 的特性與常見問題，包含 forwarding pointer 造成的 Logic Read 增加、Allocation Scan 機制，以及何時該使用 Heap Table</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\dblock-1\" rel="bookmark">淺談SqlServer Lock(一)</a></div>
+        <div class="popular-posts-excerpt"><p>淺談 SQL Server Lock 機制第一篇：從 ACID 交易特性延伸，了解 SQL Server 中 Shared Lock、Exclusive Lock、Update Lock 等鎖定類型與鎖定粒度</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\dbtable\" rel="bookmark">SqlServer資料表深入淺出</a></div>
+        <div class="popular-posts-excerpt"><p>SQL Server 資料表深入淺出：Page 儲存結構 (8K/Page)、子頁層概念、Clustered Index 與 Heap Table 的差異比較</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\dbnote\" rel="bookmark">撰寫SQL的建議</a></div>
+        <div class="popular-posts-excerpt"><p>撰寫 SQL 效能建議：SARG 條件寫法、避免欄位運算、LIKE 前綴搜尋、COUNT vs EXISTS 效能比較等實用技巧</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/Charset/" rel="tag"># Charset</a>
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/rust-pgrx-extension-fdw/" rel="prev" title="Building a PostgreSQL Foreign Data Wrapper (FDW) in Rust with pgrx">
+      <i class="fa fa-chevron-left"></i> Building a PostgreSQL Foreign Data Wrapper (FDW) in Rust with pgrx
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/logical-replication-checker-replication_checker_rs/" rel="next" title="Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)">
+      Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E4%BF%AE%E6%94%B9-MySQL-%E7%9A%84-character-set-server-%E5%BE%8C%E4%BB%8D%E9%9C%80%E9%87%8D%E5%95%9F%EF%BC%9F%E5%BE%9E-mysql-connector-net-%E6%8E%A2%E8%A8%8E%E5%AD%97%E5%85%83%E9%9B%86%E7%9A%84%E9%99%B7%E9%98%B1"><span class="nav-number">1.</span> <span class="nav-text">為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%95%8F%E9%A1%8C%E8%83%8C%E6%99%AF%EF%BC%9A%E7%82%BA%E4%BB%80%E9%BA%BC%E9%A9%85%E5%8B%95%E7%A8%8B%E5%BC%8F%E4%BB%8D%E4%BD%BF%E7%94%A8%E8%88%8A%E7%9A%84%E5%AD%97%E5%85%83%E9%9B%86%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">問題背景：為什麼驅動程式仍使用舊的字元集？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A9%85%E5%8B%95%E7%A8%8B%E5%BC%8F%E7%9A%84%E8%A1%8C%E7%82%BA%EF%BC%9A%E6%A0%B9%E6%93%9A-Greeting-%E6%B1%BA%E5%AE%9A%E5%BE%8C%E7%BA%8C%E6%AC%84%E4%BD%8D%E8%A7%A3%E7%A2%BC"><span class="nav-number">1.2.</span> <span class="nav-text">驅動程式的行為：根據 Greeting 決定後續欄位解碼</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%A6%E9%A9%97%E8%A7%80%E5%AF%9F%E8%88%87%E9%8C%AF%E8%AA%A4%E7%AF%84%E4%BE%8B"><span class="nav-number">1.3.</span> <span class="nav-text">實驗觀察與錯誤範例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Greeting-Packet%EF%BC%9A"><span class="nav-number">1.3.1.</span> <span class="nav-text">Greeting Packet：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B4%E6%95%B8%E6%AC%84%E4%BD%8D%E9%8C%AF%E8%AA%A4%E8%A7%A3%E6%9E%90%EF%BC%9A"><span class="nav-number">1.3.2.</span> <span class="nav-text">整數欄位錯誤解析：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%AD%A3%E5%BB%BA%E8%AD%B0%E8%88%87%E8%A8%8E%E8%AB%96"><span class="nav-number">1.4.</span> <span class="nav-text">修正建議與討論</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E9%9C%80%E8%A6%81%E9%87%8D%E5%95%9F%EF%BC%9F"><span class="nav-number">1.4.1.</span> <span class="nav-text">為什麼需要重啟？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%BA%E8%AD%B0%E6%94%B9%E5%96%84%E6%96%B9%E5%90%91"><span class="nav-number">1.5.</span> <span class="nav-text">建議改善方向</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B8%BD%E7%B5%90"><span class="nav-number">1.6.</span> <span class="nav-text">總結</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/mysql-connector-net-charset-issue/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/mysql-connector-net-charset-issue/";
+    this.page.identifier = "mysql-connector-net-charset-issue/";
+    this.page.title = "為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

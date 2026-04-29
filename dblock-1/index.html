@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="淺談 SQL Server Lock 機制第一篇：從 ACID 交易特性延伸，了解 SQL Server 中 Shared Lock、Exclusive Lock、Update Lock 等鎖定類型與鎖定粒度">
+<meta property="og:type" content="article">
+<meta property="og:title" content="淺談SqlServer Lock(一)">
+<meta property="og:url" content="https://isdaniel.github.io/dblock-1/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="淺談 SQL Server Lock 機制第一篇：從 ACID 交易特性延伸，了解 SQL Server 中 Shared Lock、Exclusive Lock、Update Lock 等鎖定類型與鎖定粒度">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://i.imgur.com/3WWvSXp.png">
+<meta property="article:published_time" content="2020-08-16T03:12:43.000Z">
+<meta property="article:modified_time" content="2026-04-28T11:24:36.390Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="Lock">
+<meta property="article:tag" content="SQL-Server">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="Tuning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.imgur.com/3WWvSXp.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/dblock-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/dblock-1/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/dblock-1/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>淺談SqlServer Lock(一) | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="SQL-Server,Lock,Shared-Lock,Exclusive-Lock,Update-Lock,Deadlock,Transaction">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/dblock-1/"},"headline":"淺談SqlServer Lock(一)","description":"淺談 SQL Server Lock 機制第一篇：從 ACID 交易特性延伸，了解 SQL Server 中 Shared Lock、Exclusive Lock、Update Lock 等鎖定類型與鎖定粒度","datePublished":"2020-08-16T03:12:43.000Z","dateModified":"2026-04-28T11:24:36.390Z","wordCount":1448,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://i.imgur.com/3WWvSXp.png"},"url":"https://isdaniel.github.io/dblock-1/","inLanguage":"zh-tw","articleSection":"Database","keywords":"SQL-Server,Lock,Shared-Lock,Exclusive-Lock,Update-Lock,Deadlock,Transaction"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"Database","item":"https://isdaniel.github.io/categories/Database/"},{"@type":"ListItem","position":3,"name":"Tuning","item":"https://isdaniel.github.io/categories/Database/Tuning/"},{"@type":"ListItem","position":4,"name":"淺談SqlServer Lock(一)","item":"https://isdaniel.github.io/dblock-1/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          淺談SqlServer Lock(一)
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-08-16 11:12:43" datetime="2020-08-16T11:12:43+08:00">2020-08-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 19:24:36" datetime="2026-04-28T19:24:36+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/Database/" rel="index"><span>Database</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Database/Tuning/" rel="index"><span>Tuning</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/dblock-1/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="dblock-1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>3.5k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>3 mins.</span>
+            </span>
+            <div class="post-description">淺談 SQL Server Lock 機制第一篇：從 ACID 交易特性延伸，了解 SQL Server 中 Shared Lock、Exclusive Lock、Update Lock 等鎖定類型與鎖定粒度</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <div class="post-gallery">
+            <img src="https://i.imgur.com/3WWvSXp.png">
+        </div>
+        <h1 id="Agenda"><a href="#Agenda" class="headerlink" title="Agenda"></a>Agenda<!-- omit in toc --></h1><ul>
+<li><a href="#%E5%89%8D%E6%96%87">前文</a></li>
+<li><a href="#%E5%85%A9%E7%A8%AE%E5%9C%8D%E5%BA%A6%E7%9A%84lock">兩種圍度的Lock</a><ul>
+<li><a href="#lock%E7%AF%84%E5%9C%8D">Lock範圍</a></li>
+<li><a href="#lock%E9%A1%9E%E5%9E%8B">Lock類型</a><ul>
+<li><a href="#update-lock-%E5%AD%98%E5%9C%A8%E7%9A%84%E6%84%8F%E7%BE%A9">Update Lock 存在的意義</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#lock-%E4%BA%92%E6%96%A5-demo">Lock 互斥 Demo</a><ul>
+<li><a href="#locking-optimization">Locking Optimization</a></li>
+<li><a href="#nolock%E7%9A%84%E9%9A%B1%E6%86%82">NoLock的隱憂</a><ul>
+<li><a href="#read-uncommitted-%E9%AB%92%E8%AE%80%E5%8F%96">Read Uncommitted 髒讀取</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E5%B0%8F%E7%B5%90">小結</a></li>
+</ul>
+<h2 id="前文"><a href="#前文" class="headerlink" title="前文"></a>前文</h2><p>之前有跟大家介紹資料庫交易中的<a href="https://isdaniel.github.io/ACID/">ACID</a>,今天我們就來談談常常聽到<strong>Lock</strong></p>
+<p>在討論Lock前我們必須先了解,為什麼會有Lock?</p>
+<p>假如你的系統能保證只有一個使用著操作每個資源,其實也就不用lock存在,但現實生活中往往有個命令對於同一個資源操作.這時候我們為了確保資料正確性,必須使用lock來避免<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Race_condition">Racing Condition</a>.</p>
+<p>在早期系統我們要儲存資料會存放檔案在Disk並使用類似Excel方式來儲存,但這會導致每次讀取只有有一個使用者(因為對於檔案上Lock),被lock資源其他人就無法存入</p>
+<h2 id="兩種圍度的Lock"><a href="#兩種圍度的Lock" class="headerlink" title="兩種圍度的Lock"></a>兩種圍度的Lock</h2><p>在<code>Sql-Server</code> Lock有分兩種圍度</p>
+<ol>
+<li>Lock範圍</li>
+<li>Lock類型</li>
+</ol>
+<h3 id="Lock範圍"><a href="#Lock範圍" class="headerlink" title="Lock範圍"></a>Lock範圍</h3><p><code>Sql-Server</code>支援我們在同一時間能建立不同交易執行命令<br>是因為<code>Sql-Server</code>有許多不一樣力度範圍Lock.</p>
+<blockquote>
+<p>下表表示鎖範圍等級由上到下越來越大.</p>
+</blockquote>
+<ul>
+<li>Key (•KEY)</li>
+<li>Page (•PAG)</li>
+<li>Extent (•EXT)</li>
+<li>Heap or B-tree (•HoBT)</li>
+<li>Table (•TAB)</li>
+<li>File (•FIL)</li>
+<li>Application (•APP)</li>
+<li>MetaData (•MDT)</li>
+<li>Allocation Unit (•AU)</li>
+<li>Database (•DB)</li>
+</ul>
+<h3 id="Lock類型"><a href="#Lock類型" class="headerlink" title="Lock類型"></a>Lock類型</h3><p>在SqlServer有許多類型Lock</p>
+<ul>
+<li>Shared Locks (s)</li>
+<li>Update Locks (U)</li>
+<li>Exclusive Locks (X)</li>
+<li>Intent Locks (I)</li>
+<li>Schema Locks (Sch)</li>
+<li>Bulk Update Locks (BU)</li>
+<li>Key-range</li>
+</ul>
+<p>下表是Lock類型互斥或相容對應表</p>
+<p><img data-src="https://i.imgur.com/YaBZcaT.png" alt="ss"></p>
+<p>例如:你在使用查詢(Shared Lock),除了上XLock資源外其餘資料都可同步被查找出來.</p>
+<h4 id="Update-Lock-存在的意義"><a href="#Update-Lock-存在的意義" class="headerlink" title="Update Lock 存在的意義"></a>Update Lock 存在的意義</h4><p>我們在更新資料時使用Lock類型會如下</p>
+<blockquote>
+<p>Shared Lock &#x3D;&gt; Update Lock &#x3D;&gt; XLock</p>
+</blockquote>
+<ul>
+<li>Shared Lock：查詢更新的資料.</li>
+<li>Update Lock：更新前把資料改成Update Lock.</li>
+<li>XLock：確定要更新當下改成XLock.</li>
+</ul>
+<p>但為什麼會多一個Update Lock呢?</p>
+<blockquote>
+<p>因為可以避免DeadLock產生機率.</p>
+</blockquote>
+<p>假如有一個Update語法同時被執行.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Update</span> T</span><br><span class="line"><span class="keyword">Set</span> Val <span class="operator">=</span> <span class="variable">@Val</span></span><br><span class="line"><span class="keyword">Where</span> id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>如果只有Shared Lock &#x3D;&gt; XLock</p>
+<ol>
+<li>語法1 產生Shared Lock</li>
+<li>語法2 產生Shared Lock</li>
+<li>因為Shared Lock 和 XLock 互斥,所以互相等待對方Shared Lock釋放，造成死結(Dead Lock)</li>
+</ol>
+<p>假如我們多一個ULock會變成</p>
+<ol>
+<li>語法1 產生Shared Lock</li>
+<li>語法2 產生Shared Lock</li>
+<li>語法1 產生ULock(釋放Shared Lock)</li>
+<li>語法2 想要產生ULock發現語法1已經先產生(ULock)，所以等待語法1執行完畢(Block)</li>
+<li>語法1 Update完後產生XLock直到Commit結束才釋放XLock</li>
+<li>語法2 產生ULock執行後面更新動作.</li>
+</ol>
+<blockquote>
+<p>Shared Lock執行完查詢後立即釋放資源<br>關鍵在於Shared Lcok不互斥,ULock互斥</p>
+</blockquote>
+<h2 id="Lock-互斥-Demo"><a href="#Lock-互斥-Demo" class="headerlink" title="Lock 互斥 Demo"></a>Lock 互斥 Demo</h2><p>我們建立一張<code>T2</code>資料表</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">TABLE</span> IF <span class="keyword">EXISTS</span> T2</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE TABLE</span> T2 (Id <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT INTO</span> T2 <span class="keyword">VALUES</span> (<span class="number">1</span>)</span><br><span class="line"><span class="keyword">INSERT INTO</span> T2 <span class="keyword">VALUES</span> (<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+
+<p>在使用Transaction + XLOCK hint在查詢語法(這時T2查詢的資料就會被上XLock了)</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
+<p>我們馬上開另一個Session,執行查詢<code>ID=1</code>語法</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>會發現我們需要等上面語法執行完才能查出資料，那是因為 X Lock 跟X Lock會互斥我們，必須等到XLock執行完我們才可以得到資料.</p>
+<h3 id="Locking-Optimization"><a href="#Locking-Optimization" class="headerlink" title="Locking Optimization"></a>Locking Optimization</h3><p>如果沒有髒讀取且是 Row 的 ShardLock，SQL-Server 會有個優化動作不對於此 ROW 上 SharedLock</p>
+<blockquote>
+<p>SQL Server contains an optimization that allows it to avoid taking row-level shared (S) locks in the right circumstances. Specifically, it can skip shared locks if there is no risk of reading uncommitted data without them.</p>
+</blockquote>
+<p>我們一樣可以開兩個視窗來跑下面語法，會發現 Session2 並<strong>不會</strong>被 Block</p>
+<p>Session1</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
+<p>Session2</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>但如果是使用 PageLock 就會導致 <code>Session2</code> 被 block，因為 Session2 會嘗試上 IX Lock 在 Page 上，但 Session1 已經把 Page 上 XLOCK (IX Lock 和 XLOCK 互斥)</p>
+<p>Session1</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> </span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">WITH</span>(XLOCK,PAGLOCK) </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
+<p>Session2</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 </span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">1</span></span><br></pre></td></tr></table></figure>
+
+<p>參考資料：<a href="read-committed-shared-locks-and-rollbacks">read-committed-shared-locks-and-rollbacks</a></p>
+<h3 id="NoLock的隱憂"><a href="#NoLock的隱憂" class="headerlink" title="NoLock的隱憂"></a>NoLock的隱憂</h3><p>上文有提到Shard Lock會被XLock給Block住,如果我非得在資料上XLock時查詢資料有辦法嗎?</p>
+<p>有,我們在第二句查詢加上<code>With(Nolock)</code>hint或者是(設定<code>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED</code>)不然 Shard Lock 會被 XLock 給 Block 住.</p>
+<blockquote>
+<p>但使用<code>With(Nolock)</code> Read Uncommitted要慎用,因為是髒讀取,(Read Uncommitted顧名思義就是讀取未<code>commite</code>資料)</p>
+</blockquote>
+<h4 id="Read-Uncommitted-髒讀取"><a href="#Read-Uncommitted-髒讀取" class="headerlink" title="Read Uncommitted 髒讀取"></a>Read Uncommitted 髒讀取</h4><p>我們試著把上面範例稍微修改一下第一個查詢語法</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> TRAN</span><br><span class="line"></span><br><span class="line"><span class="keyword">UPDATE</span> dbo.T2</span><br><span class="line"><span class="keyword">Set</span> id <span class="operator">=</span> <span class="number">100</span></span><br><span class="line"><span class="keyword">where</span> id <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"></span><br><span class="line">WAITFOR DELAY <span class="string">&#x27;00:00:10&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ROLLBACK</span> TRAN</span><br></pre></td></tr></table></figure>
+
+<p>第二個查詢語法</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span></span><br><span class="line"><span class="keyword">FROM</span> dbo.T2 <span class="keyword">with</span>(nolock)</span><br><span class="line"><span class="keyword">WHERE</span> Id <span class="operator">=</span> <span class="number">100</span></span><br></pre></td></tr></table></figure>
+
+<p>在資料上XLock時使用<code>with(nolock)</code>來查詢資料,會發現可以查詢出Id&#x3D;100資訊</p>
+<p><img data-src="https://i.imgur.com/aMvPo4W.png" alt="ss"></p>
+<p>但因為第一句語法因為一些原因RollBack,過段時間再查詢</p>
+<p><img data-src="https://i.imgur.com/5BqG419.png" alt="ss"></p>
+<p>我們會得到空的結果集…那是因為<code>with(nolock)</code>是髒讀取,在查詢時他會直接拿取目前資料最新狀態(這個資料狀態可能不一定,最後結果),假如RollBack就會導致資料錯誤問題.</p>
+<blockquote>
+<p>有時候NoLock會讀到重複資料<br>所以建議在跟算錢或交易有關程式碼,請別使用<code>with(nolock)</code></p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>本篇對於Lock做了基本介紹</p>
+<ol>
+<li>Lock範圍</li>
+<li>Lock類型</li>
+</ol>
+<p><code>with(nolock)</code>記得要慎用,他會造成資料讀取上有誤差,建議在高併發系統且交易有關程式碼,請別使用<code>with(nolock)</code>,這會造成資料不正確(有資料執行到一半RollBack,剛好被NoLock查詢讀到)</p>
+<p>日後有機會再慢慢介紹更多Lock運用時間和注意事項.</p>
+<p><a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide?view=sql-server-2017">Transaction Locking and Row Versioning Guide</a></p>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/dblock-1/">https://isdaniel.github.io/dblock-1/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\dbtable\" rel="bookmark">SqlServer資料表深入淺出</a></div>
+        <div class="popular-posts-excerpt"><p>SQL Server 資料表深入淺出：Page 儲存結構 (8K/Page)、子頁層概念、Clustered Index 與 Heap Table 的差異比較</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\dbnote\" rel="bookmark">撰寫SQL的建議</a></div>
+        <div class="popular-posts-excerpt"><p>撰寫 SQL 效能建議：SARG 條件寫法、避免欄位運算、LIKE 前綴搜尋、COUNT vs EXISTS 效能比較等實用技巧</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\join-index-improve\" rel="bookmark">JOIN範圍條件Index優化</a></div>
+        <div class="popular-posts-excerpt"><p>解決 SQL Server JOIN 範圍條件時索引效能問題：當執行計畫預估值不準確時，如何透過 Index 設計讓 JOIN 條件範圍查詢發揮最佳效能</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\sqlquerystress-intro\" rel="bookmark">資料庫壓測好工具-SQLQueryStress</a></div>
+        <div class="popular-posts-excerpt"><p>SQLQueryStress 資料庫壓測工具教學：在 Dev 環境模擬高併發查詢，找出 SQL Server 效能瓶頸與 Lock 問題的實戰案例</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\sqlserver-statistics\" rel="bookmark">影響Query Optimizer產生執行計畫的關鍵(統計值)</a></div>
+        <div class="popular-posts-excerpt"><p>深入了解 SQL Server 統計值 (Statistics) 如何影響 Query Optimizer 產生執行計畫，包含基數估計 (Cardinality Estimation)、cost-based model 與統計值更新機制</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Lock/" rel="tag"># Lock</a>
+              <a href="/tags/SQL-Server/" rel="tag"># SQL-Server</a>
+              <a href="/tags/Database/" rel="tag"># Database</a>
+              <a href="/tags/Tuning/" rel="tag"># Tuning</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/join-index-improve/" rel="prev" title="JOIN範圍條件Index優化">
+      <i class="fa fa-chevron-left"></i> JOIN範圍條件Index優化
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/heap-stack-globle/" rel="next" title=".Net 三種區塊記憶體位置 Heap , Stack , Globle??">
+      .Net 三種區塊記憶體位置 Heap , Stack , Globle?? <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Agenda"><span class="nav-number">1.</span> <span class="nav-text">Agenda</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E6%96%87"><span class="nav-number">1.1.</span> <span class="nav-text">前文</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A9%E7%A8%AE%E5%9C%8D%E5%BA%A6%E7%9A%84Lock"><span class="nav-number">1.2.</span> <span class="nav-text">兩種圍度的Lock</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Lock%E7%AF%84%E5%9C%8D"><span class="nav-number">1.2.1.</span> <span class="nav-text">Lock範圍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Lock%E9%A1%9E%E5%9E%8B"><span class="nav-number">1.2.2.</span> <span class="nav-text">Lock類型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Update-Lock-%E5%AD%98%E5%9C%A8%E7%9A%84%E6%84%8F%E7%BE%A9"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">Update Lock 存在的意義</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Lock-%E4%BA%92%E6%96%A5-Demo"><span class="nav-number">1.3.</span> <span class="nav-text">Lock 互斥 Demo</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Locking-Optimization"><span class="nav-number">1.3.1.</span> <span class="nav-text">Locking Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NoLock%E7%9A%84%E9%9A%B1%E6%86%82"><span class="nav-number">1.3.2.</span> <span class="nav-text">NoLock的隱憂</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Read-Uncommitted-%E9%AB%92%E8%AE%80%E5%8F%96"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">Read Uncommitted 髒讀取</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">1.4.</span> <span class="nav-text">小結</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/dblock-1/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/dblock-1/";
+    this.page.identifier = "dblock-1/";
+    this.page.title = "淺談SqlServer Lock(一)";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

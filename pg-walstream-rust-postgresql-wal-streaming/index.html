@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="A high-performance Rust library for parsing and streaming PostgreSQL WAL messages via logical replication — with load testing results showing 200K+ events&#x2F;sec.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust">
+<meta property="og:url" content="https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="A high-performance Rust library for parsing and streaming PostgreSQL WAL messages via logical replication — with load testing results showing 200K+ events&#x2F;sec.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2026-04-21T14:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-28T06:24:37.596Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="logical-replication">
+<meta property="article:tag" content="WAL">
+<meta property="article:tag" content="CDC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="en" href="https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="Rust,PostgreSQL,WAL,logical-replication,CDC,Change-Data-Capture,pg-walstream,real-time,event-driven">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/"},"headline":"pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust","description":"A high-performance Rust library for parsing and streaming PostgreSQL WAL messages via logical replication — with load testing results showing 200K+ events/sec.","datePublished":"2026-04-21T14:00:00.000Z","dateModified":"2026-04-28T06:24:37.596Z","wordCount":1862,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/","inLanguage":"en","articleSection":"Rust","keywords":"Rust,PostgreSQL,WAL,logical-replication,CDC,Change-Data-Capture,pg-walstream,real-time,event-driven"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"Rust","item":"https://isdaniel.github.io/categories/Rust/"},{"@type":"ListItem","position":3,"name":"PostgreSQL","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/"},{"@type":"ListItem","position":4,"name":"logical-replication","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/logical-replication/"},{"@type":"ListItem","position":5,"name":"pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust","item":"https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="en">
+      <header class="post-header">
+        <h2 class="post-title">
+          pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-04-21 22:00:00" datetime="2026-04-21T22:00:00+08:00">2026-04-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 14:24:37" datetime="2026-04-28T14:24:37+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/Rust/" rel="index"><span>Rust</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/" rel="index"><span>PostgreSQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/logical-replication/" rel="index"><span>logical-replication</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/pg-walstream-rust-postgresql-wal-streaming/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="pg-walstream-rust-postgresql-wal-streaming/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>14k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>12 mins.</span>
+            </span>
+            <div class="post-description">A high-performance Rust library for parsing and streaming PostgreSQL WAL messages via logical replication — with load testing results showing 200K+ events/sec.</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h1 id="pg-walstream-High-Performance-PostgreSQL-WAL-Streaming-in-Rust"><a href="#pg-walstream-High-Performance-PostgreSQL-WAL-Streaming-in-Rust" class="headerlink" title="pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust"></a>pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust</h1><p><a target="_blank" rel="noopener" href="https://github.com/isdaniel/pg-walstream">pg-walstream</a> is a Rust library for parsing and streaming PostgreSQL Write-Ahead Log (WAL) messages through logical and physical replication protocols. It provides a type-safe, async-first interface for building real-time Change Data Capture (CDC) pipelines.</p>
+<p>If you need to react to database changes in real-time — event-driven architectures, data pipelines, audit logging, cache invalidation, or search index syncing — pg-walstream abstracts the complex PostgreSQL replication protocol into a clean Rust API.</p>
+<p><a target="_blank" rel="noopener" href="https://crates.io/crates/pg_walstream">crates.io</a> | <a target="_blank" rel="noopener" href="https://docs.rs/pg-walstream">API Docs</a></p>
+<h2 id="Background-PostgreSQL-WAL-and-Replication"><a href="#Background-PostgreSQL-WAL-and-Replication" class="headerlink" title="Background: PostgreSQL WAL and Replication"></a>Background: PostgreSQL WAL and Replication</h2><p>Before diving into pg-walstream, it helps to understand how PostgreSQL replication works at a fundamental level.</p>
+<h3 id="What-is-WAL-Write-Ahead-Logging"><a href="#What-is-WAL-Write-Ahead-Logging" class="headerlink" title="What is WAL (Write-Ahead Logging)?"></a>What is WAL (Write-Ahead Logging)?</h3><p>WAL is PostgreSQL’s mechanism for ensuring data durability. The core idea: <strong>write the transaction log first, then write the actual data</strong>. Every INSERT, UPDATE, DELETE, and DDL change is recorded sequentially in WAL files before the corresponding data pages are flushed to disk.</p>
+<p>This design provides two key benefits:</p>
+<ol>
+<li><strong>Crash recovery</strong> — if the system crashes, PostgreSQL can replay (REDO) the WAL to recover committed transactions that weren’t yet flushed to disk.</li>
+<li><strong>I&#x2F;O efficiency</strong> — sequential WAL writes are much faster than random page writes, so PostgreSQL doesn’t need to flush dirty pages on every commit.</li>
+</ol>
+<p>Each WAL record is identified by a <strong>Log Sequence Number (LSN)</strong> — a monotonically increasing pointer into the WAL stream. LSN is the backbone of replication: it tells both the sender and receiver exactly where they are in the change history.</p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">               WAL Stream</span><br><span class="line">┌───────┬───────┬───────┬───────┬───────┐</span><br><span class="line">│ BEGIN │<span class="keyword">INSERT</span> │<span class="keyword">UPDATE</span> │<span class="keyword">DELETE</span> │<span class="keyword">COMMIT</span> │  ...</span><br><span class="line">│LSN: <span class="number">1</span> │LSN: <span class="number">2</span> │LSN: <span class="number">3</span> │LSN: <span class="number">4</span> │LSN: <span class="number">5</span> │</span><br><span class="line">└───────┴───────┴───────┴───────┴───────┘</span><br><span class="line">                      │</span><br><span class="line">           Replayed <span class="keyword">by</span> standby / consumed <span class="keyword">by</span> CDC</span><br></pre></td></tr></table></figure>
+
+<p>For a deeper dive into WAL internals, see my earlier post: <a href="https://isdaniel.github.io/postgresql-wal-introduce/">PostgreSQL WAL (Write-Ahead Logging) mechanism</a>.</p>
+<h3 id="Physical-vs-Logical-Replication"><a href="#Physical-vs-Logical-Replication" class="headerlink" title="Physical vs. Logical Replication"></a>Physical vs. Logical Replication</h3><p>PostgreSQL supports two replication modes, each serving different use cases:</p>
+<p><strong>Physical Replication</strong> streams raw WAL bytes — the exact disk-level changes — to a standby server. The standby replays these byte-for-byte, producing an identical copy of the primary. This is what powers read replicas and high-availability setups.</p>
+<p><strong>Logical Replication</strong> decodes WAL into higher-level change events (INSERT, UPDATE, DELETE) using an output plugin (e.g., <code>pgoutput</code>). Instead of raw disk blocks, consumers receive structured messages like “row X was inserted into table Y with these column values.” This is what powers CDC pipelines.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Physical Replication:</span><br><span class="line">  <span class="keyword">Primary</span> ──[raw WAL bytes]──▶ Standby (byte<span class="operator">-</span>identical <span class="keyword">copy</span>)</span><br><span class="line"></span><br><span class="line">Logical Replication:</span><br><span class="line">  <span class="keyword">Primary</span> ──[pgoutput plugin]──▶ Decoded Change Events ──▶ CDC Consumer</span><br><span class="line">                                  (<span class="keyword">INSERT</span><span class="operator">/</span><span class="keyword">UPDATE</span><span class="operator">/</span><span class="keyword">DELETE</span>)</span><br></pre></td></tr></table></figure>
+
+<p>pg-walstream supports <strong>both</strong> modes — physical replication for standby&#x2F;backup scenarios and logical replication for CDC.</p>
+<h3 id="The-Logical-Replication-Protocol"><a href="#The-Logical-Replication-Protocol" class="headerlink" title="The Logical Replication Protocol"></a>The Logical Replication Protocol</h3><p>When a client connects to PostgreSQL in replication mode, they communicate via the <strong>Streaming Replication Protocol</strong>. For logical replication, the flow works as follows:</p>
+<ol>
+<li><strong>Client creates a replication slot</strong> — this tells PostgreSQL to retain WAL segments needed by this consumer, preventing them from being recycled.</li>
+<li><strong>Client starts replication</strong> from a slot, specifying the output plugin (<code>pgoutput</code>) and which publication to subscribe to.</li>
+<li><strong>PostgreSQL streams messages</strong> — the server continuously sends WAL data messages (<code>XLogData</code>) containing decoded change events.</li>
+<li><strong>Client sends feedback</strong> — periodically, the client reports its progress (flushed LSN, applied LSN) back to the server. This lets PostgreSQL know which WAL segments can be safely recycled.</li>
+</ol>
+<p>The decoded messages follow the <strong>logical replication message format</strong>, which has evolved across four protocol versions:</p>
+<table>
+<thead>
+<tr>
+<th align="center">Protocol Version</th>
+<th align="center">PostgreSQL</th>
+<th>Key Additions</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">v1</td>
+<td align="center">14+</td>
+<td>Core messages: BEGIN, COMMIT, INSERT, UPDATE, DELETE, TRUNCATE, RELATION, TYPE, ORIGIN</td>
+</tr>
+<tr>
+<td align="center">v2</td>
+<td align="center">14+</td>
+<td><strong>Streaming transactions</strong>: STREAM_START, STREAM_STOP, STREAM_COMMIT, STREAM_ABORT — allows consuming large, in-progress transactions before COMMIT</td>
+</tr>
+<tr>
+<td align="center">v3</td>
+<td align="center">14+</td>
+<td><strong>Two-phase commit</strong>: BEGIN_PREPARE, PREPARE, COMMIT_PREPARED, ROLLBACK_PREPARED, STREAM_PREPARE</td>
+</tr>
+<tr>
+<td align="center">v4</td>
+<td align="center">17+</td>
+<td><strong>Parallel streaming</strong>, <code>abort_lsn</code> field for more precise abort handling</td>
+</tr>
+</tbody></table>
+<p>Each message type carries specific data. For example, an INSERT message contains:</p>
+<ul>
+<li><strong>Relation ID</strong> — which table the row belongs to</li>
+<li><strong>Tuple data</strong> — the column values of the new row, typed by OID</li>
+</ul>
+<p>The RELATION message (sent once per table, or when a schema changes) maps the relation ID to a table name, namespace, and column definitions — so the consumer can interpret the tuple data.</p>
+<h3 id="Why-Build-a-Library-for-This"><a href="#Why-Build-a-Library-for-This" class="headerlink" title="Why Build a Library for This?"></a>Why Build a Library for This?</h3><p>Implementing the replication protocol from scratch involves:</p>
+<ul>
+<li>Managing the PostgreSQL wire protocol and authentication (cleartext, MD5, SCRAM-SHA-256)</li>
+<li>Parsing binary WAL messages with protocol-version-specific formats</li>
+<li>Tracking LSN positions and sending periodic feedback to avoid WAL bloat</li>
+<li>Handling connection drops, retries, and replication slot lifecycle</li>
+<li>Dealing with streaming transactions that may arrive interleaved</li>
+</ul>
+<p>pg-walstream encapsulates all of this complexity into a type-safe Rust API, so you can focus on what to <strong>do</strong> with the change events rather than how to <strong>receive</strong> them.</p>
+<h2 id="Key-Features"><a href="#Key-Features" class="headerlink" title="Key Features"></a>Key Features</h2><ul>
+<li><strong>Protocol v1–v4 support</strong> including streaming transactions (v2), two-phase commit (v3), and parallel streaming (v4)</li>
+<li><strong>Two connection backends</strong>: <code>libpq</code> (C FFI, default) and <code>rustls-tls</code> (pure Rust, no runtime C deps)</li>
+<li><strong>Zero-copy buffers</strong> via the <code>bytes</code> crate — no unnecessary data cloning</li>
+<li><strong>Serde-based deserialization</strong> — map WAL events directly to Rust structs</li>
+<li><strong>Automatic retry</strong> with exponential backoff for transient failures</li>
+<li><strong>Async&#x2F;await</strong> with <code>tokio</code> and <code>futures::Stream</code> integration</li>
+<li><strong>Memory efficient</strong> — all configurations stay under 18 MB RSS</li>
+</ul>
+<h2 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h2><figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">┌──────────────────────────────────────────┐</span><br><span class="line">│          Application Layer               │</span><br><span class="line">│  (Your CDC / <span class="keyword">Replication</span> Logic)          │</span><br><span class="line">└──────────────┬───────────────────────────┘</span><br><span class="line">               │</span><br><span class="line">┌──────────────▼───────────────────────────┐</span><br><span class="line">│    LogicalReplicationStream              │</span><br><span class="line">│  - <span class="keyword">Connection</span> management &amp; retry         │</span><br><span class="line">│  - Event processing &amp; LSN feedback       │</span><br><span class="line">│  - <span class="keyword">Snapshot</span> export support               │</span><br><span class="line">└──────────────┬───────────────────────────┘</span><br><span class="line">               │</span><br><span class="line">┌──────────────▼───────────────────────────┐</span><br><span class="line">│  LogicalReplicationParser                │</span><br><span class="line">│  - Protocol v1-v4 parsing                │</span><br><span class="line">│  - Zero-<span class="keyword">copy</span> message deserialization     │</span><br><span class="line">│  - Streaming <span class="keyword">transaction</span> support         │</span><br><span class="line">└──────────────┬───────────────────────────┘</span><br><span class="line">               │</span><br><span class="line">┌──────────────▼───────────────────────────┐</span><br><span class="line">│     PgReplicationConnection              │</span><br><span class="line">│  ┌─────────────────┬──────────────────┐  │</span><br><span class="line">│  │  libpq backend  │ rustls-tls       │  │</span><br><span class="line">│  │  (C FFI)        │ (pure Rust)      │  │</span><br><span class="line">│  └─────────────────┴──────────────────┘  │</span><br><span class="line">│  Compile-<span class="type">time</span> feature flag selection     │</span><br><span class="line">└──────────────┬───────────────────────────┘</span><br><span class="line">               │</span><br><span class="line">┌──────────────▼───────────────────────────┐</span><br><span class="line">│     BufferReader / BufferWriter          │</span><br><span class="line">│  - Zero-<span class="keyword">copy</span> operations (bytes crate)    │</span><br><span class="line">│  - Binary protocol handling              │</span><br><span class="line">└──────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p>The library has two connection backends selected at compile time:</p>
+<table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Feature Flag</th>
+<th>Dependencies</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>libpq (default)</td>
+<td><code>libpq</code></td>
+<td><code>libpq-dev</code>, <code>libclang-dev</code></td>
+<td>FFI wrapper around PostgreSQL’s C client library</td>
+</tr>
+<tr>
+<td>rustls-tls</td>
+<td><code>rustls-tls</code></td>
+<td><code>cmake</code> (build-time only)</td>
+<td>Pure-Rust TLS via rustls + aws-lc-rs (hardware-accelerated)</td>
+</tr>
+</tbody></table>
+<p>When both features are enabled, <code>rustls-tls</code> takes priority automatically.</p>
+<h2 id="Getting-Started"><a href="#Getting-Started" class="headerlink" title="Getting Started"></a>Getting Started</h2><h3 id="Installation"><a href="#Installation" class="headerlink" title="Installation"></a>Installation</h3><figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Default (libpq backend)</span></span><br><span class="line"><span class="section">[dependencies]</span></span><br><span class="line"><span class="attr">pg_walstream</span> = <span class="string">&quot;0.6.2&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Pure-Rust backend (no C runtime deps)</span></span><br><span class="line"><span class="attr">pg_walstream</span> = &#123; version = <span class="string">&quot;0.6.2&quot;</span>, default-features = <span class="literal">false</span>, features = [<span class="string">&quot;rustls-tls&quot;</span>] &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="PostgreSQL-Setup"><a href="#PostgreSQL-Setup" class="headerlink" title="PostgreSQL Setup"></a>PostgreSQL Setup</h3><p>Enable logical replication in <code>postgresql.conf</code>:</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">wal_level</span> = logical</span><br><span class="line"><span class="attr">max_replication_slots</span> = <span class="number">4</span></span><br><span class="line"><span class="attr">max_wal_senders</span> = <span class="number">4</span></span><br></pre></td></tr></table></figure>
+
+<p>Create a publication and replication user:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> PUBLICATION my_publication <span class="keyword">FOR</span> <span class="keyword">TABLE</span> users, orders;</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">USER</span> replication_user <span class="keyword">WITH</span> REPLICATION PASSWORD <span class="string">&#x27;secure_password&#x27;</span>;</span><br><span class="line"><span class="keyword">GRANT</span> <span class="keyword">SELECT</span> <span class="keyword">ON</span> <span class="keyword">ALL</span> TABLES <span class="keyword">IN</span> SCHEMA public <span class="keyword">TO</span> replication_user;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Basic-Streaming-Example"><a href="#Basic-Streaming-Example" class="headerlink" title="Basic Streaming Example"></a>Basic Streaming Example</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> pg_walstream::&#123;</span><br><span class="line">    LogicalReplicationStream, ReplicationStreamConfig, RetryConfig,</span><br><span class="line">    StreamingMode, CancellationToken,</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">use</span> std::time::Duration;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[tokio::main]</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">fn</span> <span class="title function_">main</span>() <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">config</span> = ReplicationStreamConfig::<span class="title function_ invoke__">new</span>(</span><br><span class="line">        <span class="string">&quot;my_slot&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        <span class="string">&quot;my_publication&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        <span class="number">2</span>,                              <span class="comment">// Protocol version</span></span><br><span class="line">        StreamingMode::On,</span><br><span class="line">        Duration::<span class="title function_ invoke__">from_secs</span>(<span class="number">10</span>),        <span class="comment">// Feedback interval</span></span><br><span class="line">        Duration::<span class="title function_ invoke__">from_secs</span>(<span class="number">30</span>),        <span class="comment">// Connection timeout</span></span><br><span class="line">        Duration::<span class="title function_ invoke__">from_secs</span>(<span class="number">60</span>),        <span class="comment">// Health check interval</span></span><br><span class="line">        RetryConfig::<span class="title function_ invoke__">default</span>(),</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">stream</span> = LogicalReplicationStream::<span class="title function_ invoke__">new</span>(</span><br><span class="line">        <span class="string">&quot;postgresql://postgres:password@localhost:5432/mydb?replication=database&quot;</span>,</span><br><span class="line">        config,</span><br><span class="line">    ).<span class="keyword">await</span>?;</span><br><span class="line"></span><br><span class="line">    stream.<span class="title function_ invoke__">start</span>(<span class="literal">None</span>).<span class="keyword">await</span>?;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">cancel_token</span> = CancellationToken::<span class="title function_ invoke__">new</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">loop</span> &#123;</span><br><span class="line">        <span class="keyword">match</span> stream.<span class="title function_ invoke__">next_event_with_retry</span>(&amp;cancel_token).<span class="keyword">await</span> &#123;</span><br><span class="line">            <span class="title function_ invoke__">Ok</span>(event) =&gt; &#123;</span><br><span class="line">                <span class="built_in">println!</span>(<span class="string">&quot;Received: &#123;:?&#125;&quot;</span>, event);</span><br><span class="line">                stream.shared_lsn_feedback.<span class="title function_ invoke__">update_applied_lsn</span>(event.lsn.<span class="title function_ invoke__">value</span>());</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(e) <span class="keyword">if</span> matches!(e, pg_walstream::ReplicationError::<span class="title function_ invoke__">Cancelled</span>(_)) =&gt; &#123;</span><br><span class="line">                <span class="built_in">println!</span>(<span class="string">&quot;Shutting down gracefully&quot;</span>);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(e) =&gt; &#123;</span><br><span class="line">                <span class="built_in">eprintln!</span>(<span class="string">&quot;Error: &#123;&#125;&quot;</span>, e);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="title function_ invoke__">Ok</span>(())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Typed-Deserialization"><a href="#Typed-Deserialization" class="headerlink" title="Typed Deserialization"></a>Typed Deserialization</h3><p>pg-walstream supports mapping WAL events directly to Rust structs via Serde:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> serde::Deserialize;</span><br><span class="line"><span class="keyword">use</span> pg_walstream::EventType;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[derive(Debug, Deserialize)]</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">User</span> &#123;</span><br><span class="line">    id: <span class="type">i64</span>,</span><br><span class="line">    username: <span class="type">String</span>,</span><br><span class="line">    email: <span class="type">Option</span>&lt;<span class="type">String</span>&gt;,</span><br><span class="line">    score: <span class="type">f64</span>,</span><br><span class="line">    active: <span class="type">bool</span>,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Inside your event loop:</span></span><br><span class="line"><span class="keyword">match</span> &amp;event.event_type &#123;</span><br><span class="line">    EventType::Insert &#123; .. &#125; =&gt; &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">user</span>: User = event.<span class="title function_ invoke__">deserialize_insert</span>()?;</span><br><span class="line">        <span class="built_in">println!</span>(<span class="string">&quot;New user: &#123;:?&#125;&quot;</span>, user);</span><br><span class="line">    &#125;</span><br><span class="line">    EventType::Update &#123; .. &#125; =&gt; &#123;</span><br><span class="line">        <span class="keyword">let</span> (old, new): (<span class="type">Option</span>&lt;User&gt;, User) = event.<span class="title function_ invoke__">deserialize_update</span>()?;</span><br><span class="line">        <span class="built_in">println!</span>(<span class="string">&quot;Updated: &#123;:?&#125; -&gt; &#123;:?&#125;&quot;</span>, old, new);</span><br><span class="line">    &#125;</span><br><span class="line">    EventType::Delete &#123; .. &#125; =&gt; &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">user</span>: User = event.<span class="title function_ invoke__">deserialize_delete</span>()?;</span><br><span class="line">        <span class="built_in">println!</span>(<span class="string">&quot;Deleted: &#123;:?&#125;&quot;</span>, user);</span><br><span class="line">    &#125;</span><br><span class="line">    _ =&gt; &#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Producer-Consumer-Pattern-with-tokio-spawn"><a href="#Producer-Consumer-Pattern-with-tokio-spawn" class="headerlink" title="Producer&#x2F;Consumer Pattern with tokio::spawn"></a>Producer&#x2F;Consumer Pattern with tokio::spawn</h3><p>For high-throughput scenarios, decouple WAL reading from event processing using channels:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> tokio::sync::mpsc;</span><br><span class="line"><span class="keyword">use</span> pg_walstream::&#123;ChangeEvent, ReplicationError&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">fn</span> <span class="title function_">run_producer</span>(</span><br><span class="line">    <span class="keyword">mut</span> stream: LogicalReplicationStream,</span><br><span class="line">    cancel_token: CancellationToken,</span><br><span class="line">    tx: mpsc::Sender&lt;ChangeEvent&gt;,</span><br><span class="line">) &#123;</span><br><span class="line">    stream.<span class="title function_ invoke__">start</span>(<span class="literal">None</span>).<span class="keyword">await</span>.<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line">    <span class="keyword">loop</span> &#123;</span><br><span class="line">        <span class="keyword">match</span> stream.<span class="title function_ invoke__">next_event_with_retry</span>(&amp;cancel_token).<span class="keyword">await</span> &#123;</span><br><span class="line">            <span class="title function_ invoke__">Ok</span>(event) =&gt; &#123;</span><br><span class="line">                stream.shared_lsn_feedback.<span class="title function_ invoke__">update_applied_lsn</span>(event.lsn.<span class="title function_ invoke__">value</span>());</span><br><span class="line">                <span class="keyword">if</span> tx.<span class="title function_ invoke__">send</span>(event).<span class="keyword">await</span>.<span class="title function_ invoke__">is_err</span>() &#123; <span class="keyword">break</span>; &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(ReplicationError::<span class="title function_ invoke__">Cancelled</span>(_)) =&gt; <span class="keyword">break</span>,</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(e) =&gt; &#123;</span><br><span class="line">                <span class="built_in">eprintln!</span>(<span class="string">&quot;Fatal: &#123;e&#125;&quot;</span>);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    stream.<span class="title function_ invoke__">stop</span>().<span class="keyword">await</span>.<span class="title function_ invoke__">ok</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Load-Testing-Results"><a href="#Load-Testing-Results" class="headerlink" title="Load Testing Results"></a>Load Testing Results</h2><p>The library was benchmarked on an 8-core Intel Xeon Platinum 8370C (16 GB RAM, Ubuntu 22.04) across three PostgreSQL configurations:</p>
+<ul>
+<li><strong>PG16</strong> with protocol v4 + parallel streaming (rustls-tls backend)</li>
+<li><strong>PG18</strong> with binary mode + direct TLS negotiation</li>
+<li><strong>PG18 + COPY</strong> with COPY generator optimization</li>
+</ul>
+<h3 id="DML-Throughput-events-sec"><a href="#DML-Throughput-events-sec" class="headerlink" title="DML Throughput (events&#x2F;sec)"></a>DML Throughput (events&#x2F;sec)</h3><table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th align="right">PG16</th>
+<th align="right">PG18 Binary+DirectTLS</th>
+<th align="right">PG18 +COPY</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Baseline</td>
+<td align="right">148,533</td>
+<td align="right">168,205</td>
+<td align="right"><strong>209,193</strong></td>
+</tr>
+<tr>
+<td>Batch-5000</td>
+<td align="right">132,623</td>
+<td align="right">151,820</td>
+<td align="right"><strong>190,687</strong></td>
+</tr>
+<tr>
+<td>4-Writers</td>
+<td align="right">135,036</td>
+<td align="right">159,233</td>
+<td align="right"><strong>193,354</strong></td>
+</tr>
+<tr>
+<td>Mixed-DML</td>
+<td align="right">42,198</td>
+<td align="right">176,580</td>
+<td align="right"><strong>186,019</strong></td>
+</tr>
+<tr>
+<td>Batch-100</td>
+<td align="right">22,270</td>
+<td align="right">141,597</td>
+<td align="right"><strong>199,780</strong></td>
+</tr>
+<tr>
+<td>Wide-20col</td>
+<td align="right">18,917</td>
+<td align="right">172,772</td>
+<td align="right"><strong>173,283</strong></td>
+</tr>
+<tr>
+<td>Payload-2KB</td>
+<td align="right">14,017</td>
+<td align="right">114,884</td>
+<td align="right"><strong>134,323</strong></td>
+</tr>
+</tbody></table>
+<p>Peak throughput: <strong>209,193 events&#x2F;sec</strong> (PG18 + COPY, Baseline scenario).</p>
+<h3 id="Data-Throughput-MB-s"><a href="#Data-Throughput-MB-s" class="headerlink" title="Data Throughput (MB&#x2F;s)"></a>Data Throughput (MB&#x2F;s)</h3><table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th align="right">PG16</th>
+<th align="right">PG18 Binary+DirectTLS</th>
+<th align="right">PG18 +COPY</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Baseline</td>
+<td align="right">30.4</td>
+<td align="right">31.1</td>
+<td align="right"><strong>38.7</strong></td>
+</tr>
+<tr>
+<td>Wide-20col</td>
+<td align="right">21.3</td>
+<td align="right">50.7</td>
+<td align="right"><strong>51.5</strong></td>
+</tr>
+<tr>
+<td>Payload-2KB</td>
+<td align="right">28.3</td>
+<td align="right">43.9</td>
+<td align="right"><strong>57.1</strong></td>
+</tr>
+<tr>
+<td>Mixed-DML</td>
+<td align="right">7.9</td>
+<td align="right">32.1</td>
+<td align="right"><strong>33.8</strong></td>
+</tr>
+<tr>
+<td>Batch-100</td>
+<td align="right">4.6</td>
+<td align="right">26.2</td>
+<td align="right"><strong>37.0</strong></td>
+</tr>
+</tbody></table>
+<p>Best data throughput: <strong>57.1 MB&#x2F;s</strong> (PG18 + COPY, Payload-2KB scenario).</p>
+<h3 id="Stress-Scaling-16-to-192-Concurrent-Writers"><a href="#Stress-Scaling-16-to-192-Concurrent-Writers" class="headerlink" title="Stress Scaling: 16 to 192 Concurrent Writers"></a>Stress Scaling: 16 to 192 Concurrent Writers</h3><table>
+<thead>
+<tr>
+<th align="right">Writers</th>
+<th align="right">PG16</th>
+<th align="right">PG18 Binary+DirectTLS</th>
+<th align="right">PG18 +COPY</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="right">16</td>
+<td align="right">125,657</td>
+<td align="right">130,625</td>
+<td align="right"><strong>185,044</strong></td>
+</tr>
+<tr>
+<td align="right">32</td>
+<td align="right">111,970</td>
+<td align="right">133,880</td>
+<td align="right"><strong>184,718</strong></td>
+</tr>
+<tr>
+<td align="right">64</td>
+<td align="right">103,937</td>
+<td align="right">125,082</td>
+<td align="right"><strong>182,349</strong></td>
+</tr>
+<tr>
+<td align="right">128</td>
+<td align="right">87,352</td>
+<td align="right">109,594</td>
+<td align="right"><strong>160,293</strong></td>
+</tr>
+<tr>
+<td align="right">192</td>
+<td align="right">71,316</td>
+<td align="right">98,482</td>
+<td align="right"><strong>171,585</strong></td>
+</tr>
+</tbody></table>
+<p>Under high concurrency (16 to 192 writers), PG16 degrades by <strong>43%</strong> while PG18 + COPY only degrades by <strong>~7%</strong>, demonstrating significantly better scalability.</p>
+<h3 id="CPU-Efficiency-events-sec-per-1-CPU"><a href="#CPU-Efficiency-events-sec-per-1-CPU" class="headerlink" title="CPU Efficiency (events&#x2F;sec per 1% CPU)"></a>CPU Efficiency (events&#x2F;sec per 1% CPU)</h3><table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th align="right">PG16</th>
+<th align="right">PG18 Binary+DirectTLS</th>
+<th align="right">PG18 +COPY</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Baseline</td>
+<td align="right">5,689</td>
+<td align="right">5,637</td>
+<td align="right"><strong>5,920</strong></td>
+</tr>
+<tr>
+<td>Batch-5000</td>
+<td align="right">5,379</td>
+<td align="right"><strong>5,733</strong></td>
+<td align="right">5,440</td>
+</tr>
+<tr>
+<td>Wide-20col</td>
+<td align="right">2,369</td>
+<td align="right">5,059</td>
+<td align="right"><strong>5,517</strong></td>
+</tr>
+<tr>
+<td>Batch-100</td>
+<td align="right">3,966</td>
+<td align="right">5,572</td>
+<td align="right"><strong>5,693</strong></td>
+</tr>
+</tbody></table>
+<p>PG18 variants deliver consistently higher CPU efficiency, averaging <strong>5,200+ events&#x2F;sec per 1% CPU</strong> compared to PG16’s <strong>~4,700</strong>.</p>
+<h3 id="Memory-Usage"><a href="#Memory-Usage" class="headerlink" title="Memory Usage"></a>Memory Usage</h3><p>All configurations remain extremely lightweight — between <strong>15–18 MB RSS</strong> regardless of load. Memory stays flat even under 192 concurrent writers, demonstrating the zero-copy buffer design pays off.</p>
+<h3 id="Key-Takeaways-from-Load-Tests"><a href="#Key-Takeaways-from-Load-Tests" class="headerlink" title="Key Takeaways from Load Tests"></a>Key Takeaways from Load Tests</h3><ol>
+<li><strong>PG18 + COPY + binary mode</strong> is the clear winner, peaking at <strong>209K events&#x2F;sec</strong></li>
+<li><strong>Stress resilience</strong> — PG18 + COPY maintains throughput under heavy concurrency where PG16 degrades sharply</li>
+<li><strong>CPU efficient</strong> — the rustls-tls backend uses ~3x less CPU than libpq in prior benchmarks (4,252 vs 1,628 events&#x2F;sec per 1% CPU)</li>
+<li><strong>Memory stable</strong> — sub-18 MB footprint under all tested conditions</li>
+<li><strong>Binary mode + direct TLS</strong> provide significant improvements even without COPY optimization</li>
+</ol>
+<h2 id="Performance-Design-Decisions"><a href="#Performance-Design-Decisions" class="headerlink" title="Performance Design Decisions"></a>Performance Design Decisions</h2><p>Several design choices contribute to pg-walstream’s performance:</p>
+<ul>
+<li><strong>SmallVec</strong> for tuple data — up to 16 columns stored inline on the stack, avoiding heap allocation for common cases</li>
+<li><strong>Custom OidHasher</strong> — eliminates SipHash overhead for 32-bit OID integer keys</li>
+<li><strong>Arc&lt;str&gt;</strong> for column&#x2F;namespace names — shared immutable strings across events</li>
+<li><strong>CachePadded atomics</strong> for LSN feedback — avoids false sharing in concurrent scenarios</li>
+<li><strong>Feedback throttling</strong> — time checks only every 128 events via bitmask (<code>count &amp; 0x7F == 0</code>)</li>
+</ul>
+<h2 id="TCP-Tuning-for-Production"><a href="#TCP-Tuning-for-Production" class="headerlink" title="TCP Tuning for Production"></a>TCP Tuning for Production</h2><p>For high-throughput deployments, the following Linux kernel parameters are recommended:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">net.core.rmem_max = 67108864</span><br><span class="line">net.core.wmem_max = 67108864</span><br><span class="line">net.ipv4.tcp_rmem = 4096 262144 67108864</span><br><span class="line">net.ipv4.tcp_wmem = 4096 262144 67108864</span><br><span class="line">net.ipv4.tcp_congestion_control = bbr</span><br><span class="line">net.core.netdev_max_backlog = 5000</span><br></pre></td></tr></table></figure>
+
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>pg-walstream fills a gap in the Rust ecosystem for a production-grade PostgreSQL WAL streaming library. With protocol v1–v4 support, dual connection backends, zero-copy parsing, and throughput exceeding 200K events&#x2F;sec, it provides a solid foundation for building CDC pipelines, event-driven systems, and real-time data synchronization.</p>
+<p>The load testing results demonstrate that pairing pg-walstream with PostgreSQL 18’s binary mode and COPY optimization delivers exceptional performance and scalability — maintaining high throughput even under 192 concurrent writers while keeping memory usage under 18 MB.</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/isdaniel/pg-walstream">pg-walstream GitHub Repository</a></li>
+<li><a target="_blank" rel="noopener" href="https://crates.io/crates/pg_walstream">pg-walstream on crates.io</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.rs/pg-walstream">API Documentation on docs.rs</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/isdaniel/pg-walstream/blob/main/LOAD_TEST_COMPARISON.md">Load Test Comparison Report</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/logical-replication.html">PostgreSQL Logical Replication Documentation</a></li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/">https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg2any-rust-introduce\" rel="bookmark">pg2any: A Rust CDC Library for Streaming PostgreSQL Changes to Any Database</a></div>
+        <div class="popular-posts-excerpt"><p>pg2any is a Rust CDC library that streams PostgreSQL changes via logical replication to MySQL, SQL Server, or SQLite with crash-safe persistence</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\logical-replication-checker-replication_checker_rs\" rel="bookmark">Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)</a></div>
+        <div class="popular-posts-excerpt"><p>Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-pidstat-real-time-postgresql-backend-monitoring\" rel="bookmark">pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL</a></div>
+        <div class="popular-posts-excerpt"><p>pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-where-guard-rust-postgresql-extension\" rel="bookmark">Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</a></div>
+        <div class="popular-posts-excerpt"><p>pg_where_guard is a Rust/pgrx PostgreSQL extension that blocks unsafe UPDATE and DELETE without WHERE clauses, preventing accidental data loss</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\postgresql-wal-introduce\" rel="bookmark">postgresql WAL (Write-Ahead Logging) 機制</a></div>
+        <div class="popular-posts-excerpt"><p>深入解析 PostgreSQL WAL (Write-Ahead Logging) 機制，包含 LSN 寫入流程、synchronous_commit 設定、Dirty Block flush 順序，以及如何確保資料庫崩潰後的 roll-forward recovery</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+              <a href="/tags/logical-replication/" rel="tag"># logical-replication</a>
+              <a href="/tags/WAL/" rel="tag"># WAL</a>
+              <a href="/tags/CDC/" rel="tag"># CDC</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/pg2any-rust-introduce/" rel="prev" title="pg2any: A Rust CDC Library for Streaming PostgreSQL Changes to Any Database">
+      <i class="fa fa-chevron-left"></i> pg2any: A Rust CDC Library for Streaming PostgreSQL Changes to Any Database
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/pg-pidstat-real-time-postgresql-backend-monitoring/" rel="next" title="pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL">
+      pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#pg-walstream-High-Performance-PostgreSQL-WAL-Streaming-in-Rust"><span class="nav-number">1.</span> <span class="nav-text">pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background-PostgreSQL-WAL-and-Replication"><span class="nav-number">1.1.</span> <span class="nav-text">Background: PostgreSQL WAL and Replication</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#What-is-WAL-Write-Ahead-Logging"><span class="nav-number">1.1.1.</span> <span class="nav-text">What is WAL (Write-Ahead Logging)?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Physical-vs-Logical-Replication"><span class="nav-number">1.1.2.</span> <span class="nav-text">Physical vs. Logical Replication</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-Logical-Replication-Protocol"><span class="nav-number">1.1.3.</span> <span class="nav-text">The Logical Replication Protocol</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Why-Build-a-Library-for-This"><span class="nav-number">1.1.4.</span> <span class="nav-text">Why Build a Library for This?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Key-Features"><span class="nav-number">1.2.</span> <span class="nav-text">Key Features</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Architecture"><span class="nav-number">1.3.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Getting-Started"><span class="nav-number">1.4.</span> <span class="nav-text">Getting Started</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Installation"><span class="nav-number">1.4.1.</span> <span class="nav-text">Installation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PostgreSQL-Setup"><span class="nav-number">1.4.2.</span> <span class="nav-text">PostgreSQL Setup</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Basic-Streaming-Example"><span class="nav-number">1.4.3.</span> <span class="nav-text">Basic Streaming Example</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Typed-Deserialization"><span class="nav-number">1.4.4.</span> <span class="nav-text">Typed Deserialization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Producer-Consumer-Pattern-with-tokio-spawn"><span class="nav-number">1.4.5.</span> <span class="nav-text">Producer&#x2F;Consumer Pattern with tokio::spawn</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Load-Testing-Results"><span class="nav-number">1.5.</span> <span class="nav-text">Load Testing Results</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DML-Throughput-events-sec"><span class="nav-number">1.5.1.</span> <span class="nav-text">DML Throughput (events&#x2F;sec)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Throughput-MB-s"><span class="nav-number">1.5.2.</span> <span class="nav-text">Data Throughput (MB&#x2F;s)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Stress-Scaling-16-to-192-Concurrent-Writers"><span class="nav-number">1.5.3.</span> <span class="nav-text">Stress Scaling: 16 to 192 Concurrent Writers</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CPU-Efficiency-events-sec-per-1-CPU"><span class="nav-number">1.5.4.</span> <span class="nav-text">CPU Efficiency (events&#x2F;sec per 1% CPU)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Memory-Usage"><span class="nav-number">1.5.5.</span> <span class="nav-text">Memory Usage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Key-Takeaways-from-Load-Tests"><span class="nav-number">1.5.6.</span> <span class="nav-text">Key Takeaways from Load Tests</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Design-Decisions"><span class="nav-number">1.6.</span> <span class="nav-text">Performance Design Decisions</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TCP-Tuning-for-Production"><span class="nav-number">1.7.</span> <span class="nav-text">TCP Tuning for Production</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">1.8.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#References"><span class="nav-number">1.9.</span> <span class="nav-text">References</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/pg-walstream-rust-postgresql-wal-streaming/";
+    this.page.identifier = "pg-walstream-rust-postgresql-wal-streaming/";
+    this.page.title = "pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

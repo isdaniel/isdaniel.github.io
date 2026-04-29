@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)">
+<meta property="og:url" content="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2025-08-10T02:30:11.000Z">
+<meta property="article:modified_time" content="2026-04-28T10:46:02.588Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="logical-replication">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs) | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="Rust,PostgreSQL,logical-replication,replication-checker,WAL,libpq,CDC,replication-slot">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/"},"headline":"Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)","description":"Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定","datePublished":"2025-08-10T02:30:11.000Z","dateModified":"2026-04-28T10:46:02.588Z","wordCount":1938,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/","inLanguage":"zh-tw","articleSection":"Rust","keywords":"Rust,PostgreSQL,logical-replication,replication-checker,WAL,libpq,CDC,replication-slot"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"Rust","item":"https://isdaniel.github.io/categories/Rust/"},{"@type":"ListItem","position":3,"name":"PostgreSQL","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/"},{"@type":"ListItem","position":4,"name":"logical-replication","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/logical-replication/"},{"@type":"ListItem","position":5,"name":"Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)","item":"https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2025-08-10 10:30:11" datetime="2025-08-10T10:30:11+08:00">2025-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 18:46:02" datetime="2026-04-28T18:46:02+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/Rust/" rel="index"><span>Rust</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/" rel="index"><span>PostgreSQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/logical-replication/" rel="index"><span>logical-replication</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/logical-replication-checker-replication_checker_rs/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="logical-replication-checker-replication_checker_rs/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>5.9k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>5 mins.</span>
+            </span>
+            <div class="post-description">Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>大家好，今天要和大家介紹我近期開發的一個開源專案 <a target="_blank" rel="noopener" href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel&#x2F;replication_checker_rs">replication_checker_rs</a> 如果你想用一個輕量、可讀性高的工具實時觀察 PostgreSQL 邏輯複寫（logical replication）流，或想把複寫協議的學習變成可執行的實驗場，<code>replication_checker_rs</code> 是一個不錯的起點：它是 Rust 實現 PostgreSQL logical replication protocol 使用 <code>libpq-sys</code> 的實作，能連上資料庫、建立 replication slot，並將 INSERT &#x2F; UPDATE &#x2F; DELETE &#x2F; TRUNCATE 等變更以可讀格式顯示出來。(<a target="_blank" rel="noopener" href="https://github.com/isdaniel/replication_checker_rs">https://github.com/isdaniel/replication_checker_rs</a>)</p>
+<hr>
+<h2 id="為什麼會想用它？"><a href="#為什麼會想用它？" class="headerlink" title="為什麼會想用它？"></a>為什麼會想用它？</h2><ul>
+<li><strong>學習角度</strong>：它直接實作 PostgreSQL 的 logical replication protocol（WAL message parsing、relation&#x2F;tuple 格式）以可讀、可改造的 Rust 程式碼呈現，適合希望理解底層協議的人。</li>
+<li><strong>快速驗證</strong>：想知道 publication 有沒有正確產生事件、或某些 schema 變更會如何呈現時，可以直接跑這個工具觀察實際輸出。</li>
+<li><strong>Rust + libpq 真實範例</strong>：展示如何用 <code>libpq-sys</code> 與 Tokio 做低階連線管理與 parser 實作</li>
+<li><strong>延伸空間大</strong>：可以把它當作 PoC（proof of concept），加上 JSON 化、推到 Kafka&#x2F;Redis、做到可重啟的 consumer。</li>
+</ul>
+<hr>
+<h2 id="功能與限制（快速掃描）"><a href="#功能與限制（快速掃描）" class="headerlink" title="功能與限制（快速掃描）"></a>功能與限制（快速掃描）</h2><p><strong>主要功能</strong></p>
+<ul>
+<li>用作邏輯複寫客戶端（logical replication client），可建立 replication slot 並接收變更。</li>
+<li>支援顯示 <code>BEGIN</code>、<code>COMMIT</code>、<code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code>、<code>TRUNCATE</code> 以及 relation／tuple 資訊，並能處理 streaming（大型）交易。</li>
+</ul>
+<p><strong>目前限制</strong></p>
+<ul>
+<li>目前只把變更<strong>顯示為人類可讀格式</strong>，沒有把事件推到 Kafka&#x2F;Redis 等下游處理器。</li>
+<li>只對文字型別（text types）有良好處理；binary 類型會以 raw 形式顯示。</li>
+<li>slot 管理、錯誤復原邏輯較簡單（遇到大部分錯誤會結束程式）</li>
+</ul>
+<hr>
+<h2 id="實作前準備（PostgreSQL-與系統）"><a href="#實作前準備（PostgreSQL-與系統）" class="headerlink" title="實作前準備（PostgreSQL 與系統）"></a>實作前準備（PostgreSQL 與系統）</h2><ol>
+<li><strong>PostgreSQL 必須開啟 logical WAL</strong>：<code>wal_level = logical</code>（修改後需重啟 PostgreSQL）。這是 logical replication 的必要條件。</li>
+<li><strong>建立 publication</strong>（只複寫你想要的 table，或 <code>FOR ALL TABLES</code>）：<code>CREATE PUBLICATION my_publication FOR TABLE table1, table2;</code>。</li>
+<li><strong>建立有 replication 權限的 user</strong>：例如 <code>CREATE USER replicator WITH REPLICATION LOGIN PASSWORD &#39;password&#39;;</code> 並給予必要的 SELECT 權限。</li>
+<li><strong>系統相依套件</strong>：需要 <code>libpq</code> 開發檔（例如 Debian&#x2F;Ubuntu 的 <code>libpq-dev</code>、macOS 用 Homebrew 安裝 <code>postgresql</code>），並使用 Rust 1.70+。</li>
+</ol>
+<blockquote>
+<p>請注意：PostgreSQL DB 版本必須等於或高於版本 14，更多資訊請參閱以下連結。</p>
+</blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/14/protocol-replication.html">https://www.postgresql.org/docs/14/protocol-replication.html</a><br><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/protocol-logical-replication.html#PROTOCOL-LOGICAL-REPLICATION-PARAMS">https://www.postgresql.org/docs/current/protocol-logical-replication.html#PROTOCOL-LOGICAL-REPLICATION-PARAMS</a></p>
+<h3 id="PostgreSQL-設定（必要）"><a href="#PostgreSQL-設定（必要）" class="headerlink" title="PostgreSQL 設定（必要）"></a>PostgreSQL 設定（必要）</h3><ol>
+<li><code>postgresql.conf</code>：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wal_level = logical</span><br><span class="line">max_replication_slots = 10    # 視需求調整</span><br><span class="line">max_wal_senders = 10</span><br></pre></td></tr></table></figure>
+
+<p>修改後重啟 PostgreSQL。</p>
+<ol start="2">
+<li>建 publication 與 replication user（在 psql 下執行）：</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 建 replication user</span></span><br><span class="line"><span class="keyword">CREATE</span> ROLE replicator <span class="keyword">WITH</span> REPLICATION LOGIN PASSWORD <span class="string">&#x27;replicator_pw&#x27;</span>;</span><br><span class="line"><span class="comment">-- 建 publication（只複寫特定 table 或使用 FOR ALL TABLES）</span></span><br><span class="line"><span class="keyword">CREATE</span> PUBLICATION my_publication <span class="keyword">FOR</span> <span class="keyword">TABLE</span> public.my_table;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：不要無限制地建立 replication slot（未刪除會造成 WAL 快速累積），測試時留意 WAL 使用量。</p>
+</blockquote>
+<hr>
+<h2 id="快速上手（編譯-執行）"><a href="#快速上手（編譯-執行）" class="headerlink" title="快速上手（編譯 &amp; 執行）"></a>快速上手（編譯 &amp; 執行）</h2><p><strong>從原始碼編譯</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/isdaniel/replication_checker_rs.git</span><br><span class="line"><span class="built_in">cd</span> replication_checker_rs</span><br><span class="line">cargo build --release</span><br></pre></td></tr></table></figure>
+
+<p>（注意系統需先安裝 libpq 開發庫）。</p>
+<p><strong>範例執行方式</strong>（README 範例改寫，實務上把 db 參數用空格分開的 key-value 傳入）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 設定 slot / publication 名稱（可用環境變數）</span></span><br><span class="line"><span class="built_in">export</span> slot_name=<span class="string">&quot;my_slot&quot;</span></span><br><span class="line"><span class="built_in">export</span> pub_name=<span class="string">&quot;my_publication&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 執行（參數順序為 key value key value ...）</span></span><br><span class="line">./target/release/pg_replica_rs user azureuser **replication database** host 127.0.0.1 dbname redis_fdw_rs port 5432</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>連接字串需要使用 replication database 代表是 replication 操作<br>你也可以用 <code>RUST_LOG</code> 控制日誌等級（例：<code>RUST_LOG=debug</code>）。</p>
+</blockquote>
+<p><strong>Docker 方式</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker build -t pg_replica_rs .</span><br><span class="line">docker run -e slot_name=my_slot -e pub_name=my_pub \</span><br><span class="line">  pg_replica_rs user postgres password secret host host.docker.internal port 5432 dbname mydb</span><br></pre></td></tr></table></figure>
+
+<p>方便在隔離環境做測試。</p>
+<h2 id="實戰：建立-publication、產生測試資料、觀察輸出"><a href="#實戰：建立-publication、產生測試資料、觀察輸出" class="headerlink" title="實戰：建立 publication、產生測試資料、觀察輸出"></a>實戰：建立 publication、產生測試資料、觀察輸出</h2><h3 id="在資料庫上建立測試-table-與-publication"><a href="#在資料庫上建立測試-table-與-publication" class="headerlink" title="在資料庫上建立測試 table 與 publication"></a>在資料庫上建立測試 table 與 publication</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> public.my_table (</span><br><span class="line">  id serial <span class="keyword">primary key</span>,</span><br><span class="line">  msg text</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> PUBLICATION my_publication <span class="keyword">FOR</span> <span class="keyword">TABLE</span> public.my_table;</span><br></pre></td></tr></table></figure>
+
+<h3 id="在另一個-psql-session-產生變更"><a href="#在另一個-psql-session-產生變更" class="headerlink" title="在另一個 psql session 產生變更"></a>在另一個 psql session 產生變更</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> public.my_table (msg) <span class="keyword">VALUES</span> (<span class="string">&#x27;hello replication&#x27;</span>);</span><br><span class="line"><span class="keyword">UPDATE</span> public.my_table <span class="keyword">SET</span> msg <span class="operator">=</span> <span class="string">&#x27;altered&#x27;</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">FROM</span> public.my_table <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="觀察-replication-checker-rs-的輸出（示例）"><a href="#觀察-replication-checker-rs-的輸出（示例）" class="headerlink" title="觀察 replication_checker_rs 的輸出（示例）"></a>觀察 <code>replication_checker_rs</code> 的輸出（示例）</h3><figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">57</span>:<span class="number">54</span>.<span class="number">417412</span>Z  INFO Started receiving data from database server</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">488499</span>Z  INFO BEGIN: Xid <span class="number">1522</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489158</span>Z  INFO Received relation info for public.t1</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489235</span>Z  INFO TRUNCATE</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489255</span>Z  INFO public.t1</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">01</span>.<span class="number">489318</span>Z  INFO COMMIT: flags: <span class="number">0</span>, lsn: <span class="number">43614824</span>, end_lsn: <span class="number">43614944</span>, commit_time: <span class="number">2025</span>-<span class="number">08</span>-<span class="number">10</span> <span class="number">02</span>:<span class="number">58</span>:<span class="number">01</span>.<span class="number">484</span> UTC</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">583760</span>Z  INFO BEGIN: Xid <span class="number">1523</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">583925</span>Z  INFO Received relation info for public.t1</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584000</span>Z  INFO table public.t1: INSERT:</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584012</span>Z  INFO a: <span class="number">1</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584040</span>Z  INFO table public.t1: INSERT:</span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584062</span>Z  INFO a: <span class="number">2</span></span><br><span class="line"><span class="attribute">2025</span>-<span class="number">08</span>-<span class="number">10</span>T02:<span class="number">58</span>:<span class="number">07</span>.<span class="number">584104</span>Z  INFO COMMIT: flags: <span class="number">0</span>, lsn: <span class="number">43615128</span>, end_lsn: <span class="number">43615176</span>, commit_time: <span class="number">2025</span>-<span class="number">08</span>-<span class="number">10</span> <span class="number">02</span>:<span class="number">58</span>:<span class="number">07</span>.<span class="number">580</span> UTC</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="程式碼結構與關鍵模組導覽"><a href="#程式碼結構與關鍵模組導覽" class="headerlink" title="程式碼結構與關鍵模組導覽"></a>程式碼結構與關鍵模組導覽</h2><p>（以 repo 常見的檔案分佈為範例）</p>
+<ul>
+<li><code>main.rs</code>：啟動、參數解析、log 設定</li>
+<li><code>server.rs</code> &#x2F; <code>connection.rs</code>：與 Postgres 建立 replication 連線、處理 libpq loop</li>
+<li><code>parser.rs</code>：負責把 raw WAL message 解析成內部事件（BEGIN&#x2F;RELATION&#x2F;INSERT&#x2F;UPDATE&#x2F;DELETE&#x2F;TRUNCATE&#x2F;COMMIT）</li>
+<li><code>types.rs</code>：定義 relation、tuple 與欄位型別</li>
+<li><code>utils.rs</code>：byte 解析、LSN 處理、輔助 function</li>
+</ul>
+<hr>
+<h2 id="深入：實踐中的概念與操作建議"><a href="#深入：實踐中的概念與操作建議" class="headerlink" title="深入：實踐中的概念與操作建議"></a>深入：實踐中的概念與操作建議</h2><p>下面幾點是把工具從「觀察器」進化到「可實際應用」時會用到的概念與工程建議。</p>
+<ol>
+<li><p><strong>Replication Slot</strong></p>
+<ul>
+<li>Slot 決定了你從哪個 WAL LSN 開始讀，並讓 PostgreSQL 保留 WAL（直到被確認消費）。測試時注意不要無限建立未刪除的 slot（會造成 WAL 累積）。<code>replication_checker_rs</code> 可建立 slot，但目前在程式中 slot cleanup 還是簡單處理，所以測試環境中你要管理好。</li>
+</ul>
+</li>
+<li><p><strong>Publication 與 Schema 一致性</strong></p>
+<ul>
+<li>Publication 決定哪些 table 的變更會被發送。上線前請確認 schema（尤其 REPLICA IDENTITY、nullable、type 改動）在 source 與 downstream 處理端的一致性，否則解析或重放會有問題。<code>replication_checker_rs</code> 會顯示 relation 資訊，能幫你驗證。</li>
+</ul>
+</li>
+<li><p><strong>Streaming 交易</strong></p>
+<ul>
+<li>對大交易（very large transactions），Postgres 可能以 streaming 模式傳送。此專案已處理 streaming 交易，這讓它在面對大批量資料變更時不會輕易崩潰。(</li>
+</ul>
+</li>
+<li><p><strong>Feedback（ack）機制</strong></p>
+<ul>
+<li>Logical replication protocol 支援回報已處理的 WAL 位置（可用於讓 primary safe remove WAL）。專案實作有 feedback 機制，但在 production 要確保回報策略（多久 ack、持久化 LSN 等）與你下游同步策略一致。</li>
+<li></li>
+</ul>
+</li>
+<li><p><strong>從「顯示」到「處理」：把事件送到下游</strong></p>
+<ul>
+<li>如果你要把變更送到 Kafka、Redis 或寫入另一個 DB，建議把 parser 與 message handling 拆成兩層：<strong>（1）可靠地接收並 ack WAL（LSN）</strong>、<strong>（2）異步或批次地把事件轉送到下游並重試</strong>。目前 <code>replication_checker_rs</code> 主要做第（1）與可視化，延伸第（2）需要你加上連線池、backpressure 與錯誤重試。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="實務上常見問題（與排解）"><a href="#實務上常見問題（與排解）" class="headerlink" title="實務上常見問題（與排解）"></a>實務上常見問題（與排解）</h2><ul>
+<li><code>libpq not found</code>：請安裝系統的 PostgreSQL 開發套件（如 <code>libpq-dev</code>、<code>postgresql-devel</code> 或 Homebrew 的 <code>postgresql</code>）。</li>
+<li>權限錯誤：Replication user 需要 <code>REPLICATION</code> 權限，且 publication 應包含你想觀察的 tables。</li>
+<li>Slot 已存在：若 slot 名稱衝突，請手動刪除舊 slot 或指定不同名稱再試。</li>
+</ul>
+<hr>
+<h2 id="延伸建議（如果你想把它用到更真實的場景）"><a href="#延伸建議（如果你想把它用到更真實的場景）" class="headerlink" title="延伸建議（如果你想把它用到更真實的場景）"></a>延伸建議（如果你想把它用到更真實的場景）</h2><ol>
+<li>將輸出轉成 <strong>structured JSON</strong> 並發到 Kafka 或 Event Hub（便於 downstream consumer 處理）。</li>
+<li>增加 <strong>slot cleanup &amp; resume 機制</strong>：遇錯不要直接停，保存最後 ack 的 LSN，重啟時從該位置恢復。</li>
+<li>支援 binary 類型與更完整的 type mapping（目前以 raw 顯示 binary）。</li>
+<li>把 <code>replication_checker_rs</code> 包成一個可監控的 service，加上 metrics（Prometheus）與 health-check endpoint。<br>這些方向都屬於從 PoC → production 的典型演進路線。</li>
+</ol>
+<hr>
+<h2 id="結語"><a href="#結語" class="headerlink" title="結語"></a>結語</h2><p><code>replication_checker_rs</code> 是一個很實用的學習與測試工具：它把 PostgreSQL logical replication protocol 的各個重要面向（slot、publication、BEGIN&#x2F;COMMIT、tuple parsing、streaming 交易、feedback）用 Rust + libpq 呈現出來，適合用來做教學、驗證複寫行為或作為你自製複寫處理器的起點。想進一步把它變成 production-ready，需要在錯誤復原、slot 管理、下游整合跟 binary type 處理上補強。(<a target="_blank" rel="noopener" href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel&#x2F;replication_checker_rs">GitHub</a>)</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/isdaniel/replication_checker_rs" title="GitHub - isdaniel&#x2F;replication_checker_rs">replication_checker_rs</a></li>
+<li>歡迎 Star、開 issue、PR 一起改進專案！</li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/">https://isdaniel.github.io/logical-replication-checker-replication_checker_rs&#x2F;</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-walstream-rust-postgresql-wal-streaming\" rel="bookmark">pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust</a></div>
+        <div class="popular-posts-excerpt"><p>A high-performance Rust library for parsing and streaming PostgreSQL WAL messages via logical replication — with load testing results showing 200K+ events/sec.</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg2any-rust-introduce\" rel="bookmark">pg2any: A Rust CDC Library for Streaming PostgreSQL Changes to Any Database</a></div>
+        <div class="popular-posts-excerpt"><p>pg2any is a Rust CDC library that streams PostgreSQL changes via logical replication to MySQL, SQL Server, or SQLite with crash-safe persistence</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-pidstat-real-time-postgresql-backend-monitoring\" rel="bookmark">pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL</a></div>
+        <div class="popular-posts-excerpt"><p>pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-where-guard-rust-postgresql-extension\" rel="bookmark">Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</a></div>
+        <div class="popular-posts-excerpt"><p>pg_where_guard is a Rust/pgrx PostgreSQL extension that blocks unsafe UPDATE and DELETE without WHERE clauses, preventing accidental data loss</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\redis-fdw-rs\" rel="bookmark">【開源介紹】redis_fdw_rs：讓 PostgreSQL 直接查 Redis 的 FDW 擴充套件（Rust 編寫）</a></div>
+        <div class="popular-posts-excerpt"><p>介紹開源專案 redis_fdw_rs，使用 Rust 與 pgrx 實作的 Redis FDW，讓 PostgreSQL 直接查詢 Redis 資料如同操作一般資料表</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+              <a href="/tags/logical-replication/" rel="tag"># logical-replication</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/mysql-connector-net-charset-issue/" rel="prev" title="為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱">
+      <i class="fa fa-chevron-left"></i> 為什麼修改 MySQL 的 character_set_server 後仍需重啟？從 mysql-connector-net 探討字元集的陷阱
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/redis-fdw-rs/" rel="next" title="【開源介紹】redis_fdw_rs：讓 PostgreSQL 直接查 Redis 的 FDW 擴充套件（Rust 編寫）">
+      【開源介紹】redis_fdw_rs：讓 PostgreSQL 直接查 Redis 的 FDW 擴充套件（Rust 編寫） <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%82%BA%E4%BB%80%E9%BA%BC%E6%9C%83%E6%83%B3%E7%94%A8%E5%AE%83%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">為什麼會想用它？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%9F%E8%83%BD%E8%88%87%E9%99%90%E5%88%B6%EF%BC%88%E5%BF%AB%E9%80%9F%E6%8E%83%E6%8F%8F%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">功能與限制（快速掃描）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%A6%E4%BD%9C%E5%89%8D%E6%BA%96%E5%82%99%EF%BC%88PostgreSQL-%E8%88%87%E7%B3%BB%E7%B5%B1%EF%BC%89"><span class="nav-number">4.</span> <span class="nav-text">實作前準備（PostgreSQL 與系統）</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PostgreSQL-%E8%A8%AD%E5%AE%9A%EF%BC%88%E5%BF%85%E8%A6%81%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">PostgreSQL 設定（必要）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B%EF%BC%88%E7%B7%A8%E8%AD%AF-%E5%9F%B7%E8%A1%8C%EF%BC%89"><span class="nav-number">5.</span> <span class="nav-text">快速上手（編譯 &amp; 執行）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%A6%E6%88%B0%EF%BC%9A%E5%BB%BA%E7%AB%8B-publication%E3%80%81%E7%94%A2%E7%94%9F%E6%B8%AC%E8%A9%A6%E8%B3%87%E6%96%99%E3%80%81%E8%A7%80%E5%AF%9F%E8%BC%B8%E5%87%BA"><span class="nav-number">6.</span> <span class="nav-text">實戰：建立 publication、產生測試資料、觀察輸出</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E8%B3%87%E6%96%99%E5%BA%AB%E4%B8%8A%E5%BB%BA%E7%AB%8B%E6%B8%AC%E8%A9%A6-table-%E8%88%87-publication"><span class="nav-number">6.1.</span> <span class="nav-text">在資料庫上建立測試 table 與 publication</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E5%8F%A6%E4%B8%80%E5%80%8B-psql-session-%E7%94%A2%E7%94%9F%E8%AE%8A%E6%9B%B4"><span class="nav-number">6.2.</span> <span class="nav-text">在另一個 psql session 產生變更</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%80%E5%AF%9F-replication-checker-rs-%E7%9A%84%E8%BC%B8%E5%87%BA%EF%BC%88%E7%A4%BA%E4%BE%8B%EF%BC%89"><span class="nav-number">6.3.</span> <span class="nav-text">觀察 replication_checker_rs 的輸出（示例）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A8%8B%E5%BC%8F%E7%A2%BC%E7%B5%90%E6%A7%8B%E8%88%87%E9%97%9C%E9%8D%B5%E6%A8%A1%E7%B5%84%E5%B0%8E%E8%A6%BD"><span class="nav-number">7.</span> <span class="nav-text">程式碼結構與關鍵模組導覽</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B7%B1%E5%85%A5%EF%BC%9A%E5%AF%A6%E8%B8%90%E4%B8%AD%E7%9A%84%E6%A6%82%E5%BF%B5%E8%88%87%E6%93%8D%E4%BD%9C%E5%BB%BA%E8%AD%B0"><span class="nav-number">8.</span> <span class="nav-text">深入：實踐中的概念與操作建議</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%A6%E5%8B%99%E4%B8%8A%E5%B8%B8%E8%A6%8B%E5%95%8F%E9%A1%8C%EF%BC%88%E8%88%87%E6%8E%92%E8%A7%A3%EF%BC%89"><span class="nav-number">9.</span> <span class="nav-text">實務上常見問題（與排解）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%B6%E4%BC%B8%E5%BB%BA%E8%AD%B0%EF%BC%88%E5%A6%82%E6%9E%9C%E4%BD%A0%E6%83%B3%E6%8A%8A%E5%AE%83%E7%94%A8%E5%88%B0%E6%9B%B4%E7%9C%9F%E5%AF%A6%E7%9A%84%E5%A0%B4%E6%99%AF%EF%BC%89"><span class="nav-number">10.</span> <span class="nav-text">延伸建議（如果你想把它用到更真實的場景）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B5%90%E8%AA%9E"><span class="nav-number">11.</span> <span class="nav-text">結語</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/logical-replication-checker-replication_checker_rs/";
+    this.page.identifier = "logical-replication-checker-replication_checker_rs/";
+    this.page.title = "Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>

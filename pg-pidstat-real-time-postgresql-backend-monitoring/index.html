@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 7.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I&#x2F;O, and context switch monitoring via a single SQL view.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pg_pidstat: Real-Time Per-Backend CPU, Memory, and I&#x2F;O Monitoring for PostgreSQL">
+<meta property="og:url" content="https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I&#x2F;O, and context switch monitoring via a single SQL view.">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2026-04-27T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-04-28T06:24:37.440Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Performance-Tuning">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="pgrx">
+<meta property="article:tag" content="Monitoring">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="en" href="https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="pg_pidstat,PostgreSQL-monitoring,per-backend-CPU,PostgreSQL-memory,PostgreSQL-IO,pgrx,Rust-PostgreSQL-extension,pg_stat_activity,process-monitoring,context-switches,PostgreSQL-performance">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/"},"headline":"pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL","description":"pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.","datePublished":"2026-04-27T02:00:00.000Z","dateModified":"2026-04-28T06:24:37.440Z","wordCount":1030,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/","inLanguage":"en","articleSection":"Rust","keywords":"pg_pidstat,PostgreSQL-monitoring,per-backend-CPU,PostgreSQL-memory,PostgreSQL-IO,pgrx,Rust-PostgreSQL-extension,pg_stat_activity,process-monitoring,context-switches,PostgreSQL-performance"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"Rust","item":"https://isdaniel.github.io/categories/Rust/"},{"@type":"ListItem","position":3,"name":"PostgreSQL","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/"},{"@type":"ListItem","position":4,"name":"Monitoring","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/Monitoring/"},{"@type":"ListItem","position":5,"name":"pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL","item":"https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">154</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">74</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">129</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="en">
+      <header class="post-header">
+        <h2 class="post-title">
+          pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-04-27 10:00:00" datetime="2026-04-27T10:00:00+08:00">2026-04-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-04-28 14:24:37" datetime="2026-04-28T14:24:37+08:00">2026-04-28</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/Rust/" rel="index"><span>Rust</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/" rel="index"><span>PostgreSQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/Monitoring/" rel="index"><span>Monitoring</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/pg-pidstat-real-time-postgresql-backend-monitoring/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="pg-pidstat-real-time-postgresql-backend-monitoring/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>7.6k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>7 mins.</span>
+            </span>
+            <div class="post-description">pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h1 id="pg-pidstat-Real-Time-Per-Backend-CPU-Memory-and-I-O-Monitoring-for-PostgreSQL"><a href="#pg-pidstat-Real-Time-Per-Backend-CPU-Memory-and-I-O-Monitoring-for-PostgreSQL" class="headerlink" title="pg_pidstat: Real-Time Per-Backend CPU, Memory, and I&#x2F;O Monitoring for PostgreSQL"></a>pg_pidstat: Real-Time Per-Backend CPU, Memory, and I&#x2F;O Monitoring for PostgreSQL</h1><p>When a PostgreSQL server slows down, the first question is usually: <strong>which backend is consuming resources?</strong> <code>pg_stat_activity</code> tells you what each backend is doing, but not how much CPU, memory, or disk I&#x2F;O it uses. You end up jumping between <code>top</code>, <code>pidstat</code>, and <code>pg_stat_activity</code>, manually correlating PIDs.</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/isdaniel/pg_pidstat">pg_pidstat</a> solves this by embedding OS-level process metrics directly into PostgreSQL. A single SQL view gives you per-backend CPU percentage, memory consumption, I&#x2F;O throughput, and context switch rates — all joined with the connection context you already know from <code>pg_stat_activity</code>.</p>
+<h2 id="The-Problem-Blind-Spots-in-PostgreSQL-Monitoring"><a href="#The-Problem-Blind-Spots-in-PostgreSQL-Monitoring" class="headerlink" title="The Problem: Blind Spots in PostgreSQL Monitoring"></a>The Problem: Blind Spots in PostgreSQL Monitoring</h2><p>PostgreSQL’s built-in statistics views (<code>pg_stat_activity</code>, <code>pg_stat_user_tables</code>, <code>pg_stat_io</code>) provide query-level and table-level insights, but they lack <strong>process-level OS metrics</strong>. When you need to answer questions like:</p>
+<ul>
+<li>Which backend is burning 100% CPU?</li>
+<li>Is that long-running query memory-hungry or I&#x2F;O-bound?</li>
+<li>Are context switches causing latency spikes?</li>
+</ul>
+<p>You typically resort to external tools — <code>pidstat</code>, <code>htop</code>, or custom <code>/proc</code> scrapers — and then manually join their output with <code>pg_stat_activity</code> by PID. This workflow is tedious, error-prone, and impossible to automate in pure SQL.</p>
+<p>pg_pidstat eliminates that gap entirely.</p>
+<h2 id="Key-Features"><a href="#Key-Features" class="headerlink" title="Key Features"></a>Key Features</h2><ul>
+<li><strong>Per-backend CPU usage</strong> as a percentage of total system capacity</li>
+<li><strong>Memory tracking</strong> — both percentage and absolute MB (resident set size)</li>
+<li><strong>I&#x2F;O throughput</strong> — read&#x2F;write bytes per second and IOPS</li>
+<li><strong>I&#x2F;O wait detection</strong> — flags backends blocked on disk</li>
+<li><strong>Context switch rates</strong> — voluntary and non-voluntary, per second</li>
+<li><strong>Full <code>pg_stat_activity</code> integration</strong> — all standard columns (pid, datname, usename, state, query, etc.) included</li>
+<li><strong>Background worker sampling</strong> — metrics updated every 1 second automatically</li>
+<li><strong>Lock-free reads</strong> — minimal contention with brief exclusive writes only during sampling</li>
+</ul>
+<h2 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h2><p>pg_pidstat is built with <a target="_blank" rel="noopener" href="https://github.com/pgcentralfoundation/pgrx">pgrx</a> (Rust) and consists of four modules:</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────┐</span><br><span class="line">│                    <span class="keyword">SQL</span> Interface                     │</span><br><span class="line">│          pg_pidstat <span class="keyword">view</span> + helper <span class="keyword">functions</span>           │</span><br><span class="line">│                    (activity.rs)                      │</span><br><span class="line">└──────────────────────┬──────────────────────────────┘</span><br><span class="line">                       │  per-second deltas</span><br><span class="line">┌──────────────────────▼──────────────────────────────┐</span><br><span class="line">│               Background Worker                      │</span><br><span class="line">│        Samples <span class="keyword">all</span> backends every <span class="number">1</span> second           │</span><br><span class="line">│                   (bgworker.rs)                      │</span><br><span class="line">└──────────────────────┬──────────────────────────────┘</span><br><span class="line">                       │  raw counters</span><br><span class="line">┌──────────────────────▼──────────────────────────────┐</span><br><span class="line">│           <span class="type">Double</span>-Buffered Shared Memory              │</span><br><span class="line">│        <span class="keyword">Lock</span>-free reads, up <span class="keyword">to</span> <span class="number">1024</span> backends          │</span><br><span class="line">│                    (shmem.rs)                         │</span><br><span class="line">└──────────────────────┬──────────────────────────────┘</span><br><span class="line">                       │  reads /proc/[pid]<span class="comment">/*</span></span><br><span class="line"><span class="comment">┌──────────────────────▼──────────────────────────────┐</span></span><br><span class="line"><span class="comment">│               /proc Filesystem Parser                │</span></span><br><span class="line"><span class="comment">│   /proc/[pid]/stat, statm, io, status, /proc/meminfo│</span></span><br><span class="line"><span class="comment">│                 (proc_stats.rs)                      │</span></span><br><span class="line"><span class="comment">└─────────────────────────────────────────────────────┘</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>How it works:</strong></p>
+<ol>
+<li>A background worker wakes every second and iterates over all PostgreSQL backend PIDs.</li>
+<li>For each PID, it reads <code>/proc/[pid]/stat</code>, <code>/proc/[pid]/statm</code>, <code>/proc/[pid]/io</code>, and <code>/proc/[pid]/status</code> to collect raw CPU ticks, memory pages, I&#x2F;O byte counters, and context switch counts.</li>
+<li>The raw readings are stored in a double-buffered shared memory region. The double-buffer design lets SQL queries read the previous-second snapshot without blocking the worker’s current write.</li>
+<li>When you query the <code>pg_pidstat</code> view, the <code>activity</code> module computes per-second deltas (rates) from the raw counters and joins them with <code>pg_stat_activity</code> columns.</li>
+</ol>
+<p>This design ensures <strong>zero lock contention on reads</strong> — the only exclusive lock is a brief window when the background worker swaps the active buffer.</p>
+<h2 id="Metrics-Reference"><a href="#Metrics-Reference" class="headerlink" title="Metrics Reference"></a>Metrics Reference</h2><p>The <code>pg_pidstat</code> view includes all standard <code>pg_stat_activity</code> columns plus these monitoring columns:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cpu_percent</code></td>
+<td><code>float8</code></td>
+<td>CPU usage as % of total system capacity</td>
+</tr>
+<tr>
+<td><code>memory_percent</code></td>
+<td><code>float8</code></td>
+<td>Resident memory as % of total system RAM</td>
+</tr>
+<tr>
+<td><code>memory_usage_mb</code></td>
+<td><code>float8</code></td>
+<td>Resident memory in megabytes</td>
+</tr>
+<tr>
+<td><code>io_read_bytes_per_sec</code></td>
+<td><code>float8</code></td>
+<td>Disk read throughput (bytes&#x2F;sec)</td>
+</tr>
+<tr>
+<td><code>io_write_bytes_per_sec</code></td>
+<td><code>float8</code></td>
+<td>Disk write throughput (bytes&#x2F;sec)</td>
+</tr>
+<tr>
+<td><code>io_read_ops_per_sec</code></td>
+<td><code>float8</code></td>
+<td>Read IOPS</td>
+</tr>
+<tr>
+<td><code>io_write_ops_per_sec</code></td>
+<td><code>float8</code></td>
+<td>Write IOPS</td>
+</tr>
+<tr>
+<td><code>io_wait</code></td>
+<td><code>bool</code></td>
+<td><code>true</code> if the process is in disk sleep state</td>
+</tr>
+<tr>
+<td><code>voluntary_ctxt_switches_per_sec</code></td>
+<td><code>float8</code></td>
+<td>Voluntary context switches per second</td>
+</tr>
+<tr>
+<td><code>nonvoluntary_ctxt_switches_per_sec</code></td>
+<td><code>float8</code></td>
+<td>Non-voluntary context switches per second</td>
+</tr>
+</tbody></table>
+<h2 id="Usage-Examples"><a href="#Usage-Examples" class="headerlink" title="Usage Examples"></a>Usage Examples</h2><h3 id="Find-CPU-Heavy-Backends"><a href="#Find-CPU-Heavy-Backends" class="headerlink" title="Find CPU-Heavy Backends"></a>Find CPU-Heavy Backends</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid, datname, usename, state, query,</span><br><span class="line">       cpu_percent, memory_percent, memory_usage_mb</span><br><span class="line"><span class="keyword">FROM</span> pg_pidstat</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> cpu_percent <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Identify-I-O-Intensive-Queries"><a href="#Identify-I-O-Intensive-Queries" class="headerlink" title="Identify I&#x2F;O-Intensive Queries"></a>Identify I&#x2F;O-Intensive Queries</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid, usename, state, query,</span><br><span class="line">       io_read_bytes_per_sec,</span><br><span class="line">       io_write_bytes_per_sec,</span><br><span class="line">       io_read_ops_per_sec,</span><br><span class="line">       io_write_ops_per_sec,</span><br><span class="line">       io_wait</span><br><span class="line"><span class="keyword">FROM</span> pg_pidstat</span><br><span class="line"><span class="keyword">WHERE</span> state <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> io_read_bytes_per_sec <span class="operator">+</span> io_write_bytes_per_sec <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Detect-Context-Switch-Hotspots"><a href="#Detect-Context-Switch-Hotspots" class="headerlink" title="Detect Context Switch Hotspots"></a>Detect Context Switch Hotspots</h3><p>High non-voluntary context switches indicate CPU contention — too many backends fighting for CPU time:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid, usename, query,</span><br><span class="line">       voluntary_ctxt_switches_per_sec,</span><br><span class="line">       nonvoluntary_ctxt_switches_per_sec</span><br><span class="line"><span class="keyword">FROM</span> pg_pidstat</span><br><span class="line"><span class="keyword">WHERE</span> state <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> nonvoluntary_ctxt_switches_per_sec <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Full-Troubleshooting-Dashboard"><a href="#Full-Troubleshooting-Dashboard" class="headerlink" title="Full Troubleshooting Dashboard"></a>Full Troubleshooting Dashboard</h3><p>Combine all metrics for a comprehensive view of backend resource usage:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid, datname, usename, state,</span><br><span class="line">       <span class="keyword">left</span>(query, <span class="number">80</span>) <span class="keyword">AS</span> query_preview,</span><br><span class="line">       round(cpu_percent::<span class="type">numeric</span>, <span class="number">2</span>) <span class="keyword">AS</span> cpu_pct,</span><br><span class="line">       round(memory_usage_mb::<span class="type">numeric</span>, <span class="number">1</span>) <span class="keyword">AS</span> mem_mb,</span><br><span class="line">       round((io_read_bytes_per_sec <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>)::<span class="type">numeric</span>, <span class="number">2</span>) <span class="keyword">AS</span> read_mb_s,</span><br><span class="line">       round((io_write_bytes_per_sec <span class="operator">/</span> <span class="number">1024</span> <span class="operator">/</span> <span class="number">1024</span>)::<span class="type">numeric</span>, <span class="number">2</span>) <span class="keyword">AS</span> write_mb_s,</span><br><span class="line">       io_wait,</span><br><span class="line">       round(voluntary_ctxt_switches_per_sec::<span class="type">numeric</span>, <span class="number">0</span>) <span class="keyword">AS</span> vol_cs,</span><br><span class="line">       round(nonvoluntary_ctxt_switches_per_sec::<span class="type">numeric</span>, <span class="number">0</span>) <span class="keyword">AS</span> nvol_cs</span><br><span class="line"><span class="keyword">FROM</span> pg_pidstat</span><br><span class="line"><span class="keyword">WHERE</span> state <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> cpu_percent <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Monitoring-Over-Time-with-pg-cron"><a href="#Monitoring-Over-Time-with-pg-cron" class="headerlink" title="Monitoring Over Time with pg_cron"></a>Monitoring Over Time with pg_cron</h3><p>Pair pg_pidstat with <a target="_blank" rel="noopener" href="https://github.com/citusdata/pg_cron">pg_cron</a> to build a historical resource usage table:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> backend_metrics_history (</span><br><span class="line">    captured_at timestamptz <span class="keyword">DEFAULT</span> now(),</span><br><span class="line">    pid <span class="type">int</span>,</span><br><span class="line">    datname name,</span><br><span class="line">    usename name,</span><br><span class="line">    state text,</span><br><span class="line">    cpu_percent float8,</span><br><span class="line">    memory_usage_mb float8,</span><br><span class="line">    io_read_bytes_per_sec float8,</span><br><span class="line">    io_write_bytes_per_sec float8</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Sample every 10 seconds via pg_cron</span></span><br><span class="line"><span class="keyword">SELECT</span> cron.schedule(<span class="string">&#x27;backend-metrics&#x27;</span>, <span class="string">&#x27;10 seconds&#x27;</span>,</span><br><span class="line">$$</span><br><span class="line"><span class="keyword">INSERT INTO</span> backend_metrics_history</span><br><span class="line">    (pid, datname, usename, state, cpu_percent, memory_usage_mb,</span><br><span class="line">     io_read_bytes_per_sec, io_write_bytes_per_sec)</span><br><span class="line"><span class="keyword">SELECT</span> pid, datname, usename, state, cpu_percent, memory_usage_mb,</span><br><span class="line">       io_read_bytes_per_sec, io_write_bytes_per_sec</span><br><span class="line"><span class="keyword">FROM</span> pg_pidstat <span class="keyword">WHERE</span> state <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span>;</span><br><span class="line">$$);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Why-pg-pidstat-Over-External-Monitoring"><a href="#Why-pg-pidstat-Over-External-Monitoring" class="headerlink" title="Why pg_pidstat Over External Monitoring?"></a>Why pg_pidstat Over External Monitoring?</h2><table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>External tools (pidstat, top)</th>
+<th>pg_pidstat</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PID-to-query mapping</td>
+<td>Manual correlation</td>
+<td>Automatic (joined with <code>pg_stat_activity</code>)</td>
+</tr>
+<tr>
+<td>Query interface</td>
+<td>Shell parsing &#x2F; custom scripts</td>
+<td>Standard SQL</td>
+</tr>
+<tr>
+<td>Alerting integration</td>
+<td>Requires glue code</td>
+<td>Use any SQL-based alerting</td>
+</tr>
+<tr>
+<td>Historical storage</td>
+<td>External time-series DB</td>
+<td><code>INSERT INTO ... SELECT</code> from the view</td>
+</tr>
+<tr>
+<td>Granularity</td>
+<td>Per-process only</td>
+<td>Per-backend with database context</td>
+</tr>
+<tr>
+<td>Deployment</td>
+<td>Agent on every host</td>
+<td>PostgreSQL extension — no extra process</td>
+</tr>
+</tbody></table>
+<p>The key advantage is <strong>context</strong>: knowing that PID 12345 uses 90% CPU is useful, but knowing it’s the <code>analytics</code> user running a sequential scan on the <code>orders</code> table in the <code>production</code> database is actionable.</p>
+<h2 id="Performance-Design"><a href="#Performance-Design" class="headerlink" title="Performance Design"></a>Performance Design</h2><p>pg_pidstat is designed for minimal overhead in production:</p>
+<ul>
+<li><strong>Release-mode optimization</strong>: <code>opt-level = 3</code>, fat LTO, single codegen unit</li>
+<li><strong>Lock-free reads</strong>: Double-buffered shared memory means <code>SELECT</code> from the view never blocks</li>
+<li><strong>Brief exclusive writes</strong>: Only during the buffer swap (microseconds)</li>
+<li><strong>Bounded memory</strong>: Fixed-size shared memory for up to 1024 backends</li>
+<li><strong>1-second sampling</strong>: Background worker reads <code>/proc</code> once per second — negligible system load</li>
+</ul>
+<h2 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h2><p>pg_pidstat brings OS-level process monitoring into PostgreSQL itself. Instead of correlating PIDs across <code>top</code>, <code>pidstat</code>, and <code>pg_stat_activity</code>, you get CPU, memory, I&#x2F;O, and context switch metrics in a single SQL view — with full connection context attached.</p>
+<p>For anyone running PostgreSQL on Linux and needing to quickly identify resource-heavy backends, pg_pidstat turns a multi-tool investigation into one query.</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/isdaniel/pg_pidstat">pg_pidstat GitHub Repository</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/pgcentralfoundation/pgrx">pgrx — Rust Framework for PostgreSQL Extensions</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW">PostgreSQL pg_stat_activity Documentation</a></li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/">https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-where-guard-rust-postgresql-extension\" rel="bookmark">Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</a></div>
+        <div class="popular-posts-excerpt"><p>pg_where_guard is a Rust/pgrx PostgreSQL extension that blocks unsafe UPDATE and DELETE without WHERE clauses, preventing accidental data loss</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\redis-fdw-rs\" rel="bookmark">【開源介紹】redis_fdw_rs：讓 PostgreSQL 直接查 Redis 的 FDW 擴充套件（Rust 編寫）</a></div>
+        <div class="popular-posts-excerpt"><p>介紹開源專案 redis_fdw_rs，使用 Rust 與 pgrx 實作的 Redis FDW，讓 PostgreSQL 直接查詢 Redis 資料如同操作一般資料表</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\rust-pgrx-extension-fdw\" rel="bookmark">Building a PostgreSQL Foreign Data Wrapper (FDW) in Rust with pgrx</a></div>
+        <div class="popular-posts-excerpt"><p>Learn how to build a PostgreSQL Foreign Data Wrapper (FDW) in Rust using pgrx — query external data sources as regular PostgreSQL tables</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\logical-replication-checker-replication_checker_rs\" rel="bookmark">Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)</a></div>
+        <div class="popular-posts-excerpt"><p>Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="\pg-walstream-rust-postgresql-wal-streaming\" rel="bookmark">pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust</a></div>
+        <div class="popular-posts-excerpt"><p>A high-performance Rust library for parsing and streaming PostgreSQL WAL messages via logical replication — with load testing results showing 200K+ events/sec.</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Performance-Tuning/" rel="tag"># Performance-Tuning</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+              <a href="/tags/pgrx/" rel="tag"># pgrx</a>
+              <a href="/tags/Monitoring/" rel="tag"># Monitoring</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/pg-walstream-rust-postgresql-wal-streaming/" rel="prev" title="pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust">
+      <i class="fa fa-chevron-left"></i> pg-walstream: High-Performance PostgreSQL WAL Streaming in Rust
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#pg-pidstat-Real-Time-Per-Backend-CPU-Memory-and-I-O-Monitoring-for-PostgreSQL"><span class="nav-number">1.</span> <span class="nav-text">pg_pidstat: Real-Time Per-Backend CPU, Memory, and I&#x2F;O Monitoring for PostgreSQL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#The-Problem-Blind-Spots-in-PostgreSQL-Monitoring"><span class="nav-number">1.1.</span> <span class="nav-text">The Problem: Blind Spots in PostgreSQL Monitoring</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Key-Features"><span class="nav-number">1.2.</span> <span class="nav-text">Key Features</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Architecture"><span class="nav-number">1.3.</span> <span class="nav-text">Architecture</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Metrics-Reference"><span class="nav-number">1.4.</span> <span class="nav-text">Metrics Reference</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Usage-Examples"><span class="nav-number">1.5.</span> <span class="nav-text">Usage Examples</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Find-CPU-Heavy-Backends"><span class="nav-number">1.5.1.</span> <span class="nav-text">Find CPU-Heavy Backends</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Identify-I-O-Intensive-Queries"><span class="nav-number">1.5.2.</span> <span class="nav-text">Identify I&#x2F;O-Intensive Queries</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Detect-Context-Switch-Hotspots"><span class="nav-number">1.5.3.</span> <span class="nav-text">Detect Context Switch Hotspots</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Full-Troubleshooting-Dashboard"><span class="nav-number">1.5.4.</span> <span class="nav-text">Full Troubleshooting Dashboard</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Monitoring-Over-Time-with-pg-cron"><span class="nav-number">1.5.5.</span> <span class="nav-text">Monitoring Over Time with pg_cron</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Why-pg-pidstat-Over-External-Monitoring"><span class="nav-number">1.6.</span> <span class="nav-text">Why pg_pidstat Over External Monitoring?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Performance-Design"><span class="nav-number">1.7.</span> <span class="nav-text">Performance Design</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Conclusion"><span class="nav-number">1.8.</span> <span class="nav-text">Conclusion</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#References"><span class="nav-number">1.9.</span> <span class="nav-text">References</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">129</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">74</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">154</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">648k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">9:49</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/pg-pidstat-real-time-postgresql-backend-monitoring/";
+    this.page.identifier = "pg-pidstat-real-time-postgresql-backend-monitoring/";
+    this.page.title = "pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
