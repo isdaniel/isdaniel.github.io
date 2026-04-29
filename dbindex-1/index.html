@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 7.3.0">
+<meta name="generator" content="Hexo 8.1.1">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -32,12 +32,12 @@
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
 <meta property="article:published_time" content="2020-01-20T03:12:43.000Z">
-<meta property="article:modified_time" content="2026-04-28T10:45:33.150Z">
+<meta property="article:modified_time" content="2026-04-29T00:13:36.074Z">
 <meta property="article:author" content="Daniel Shih">
-<meta property="article:tag" content="SQL-Server">
+<meta property="article:tag" content="B-Tree">
 <meta property="article:tag" content="Index">
 <meta property="article:tag" content="Performance-Tuning">
-<meta property="article:tag" content="B-Tree">
+<meta property="article:tag" content="SQL-Server">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
 
@@ -161,7 +161,7 @@
   </script>
 
 <meta name="keywords" content="SQL-Server,Index,B-Tree,Clustered-Index,Non-Clustered-Index,Statistics,Performance-Tuning">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/dbindex-1/"},"headline":"資料庫索引深入淺出(一) — SQL Server Index Fundamentals","description":"資料庫索引深入淺出第一篇：解析 Index 第一個欄位對統計值的影響、B+ Tree 結構，以及如何正確選擇查詢條件欄位建立索引","datePublished":"2020-01-20T03:12:43.000Z","dateModified":"2026-04-28T10:45:33.150Z","wordCount":1572,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/dbindex-1/","inLanguage":"zh-tw","articleSection":"SQL-Server","keywords":"SQL-Server,Index,B-Tree,Clustered-Index,Non-Clustered-Index,Statistics,Performance-Tuning"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"SQL-Server","item":"https://isdaniel.github.io/categories/SQL-Server/"},{"@type":"ListItem","position":3,"name":"Index","item":"https://isdaniel.github.io/categories/SQL-Server/Index/"},{"@type":"ListItem","position":4,"name":"資料庫索引深入淺出(一) — SQL Server Index Fundamentals","item":"https://isdaniel.github.io/dbindex-1/"}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/dbindex-1/"},"headline":"資料庫索引深入淺出(一) — SQL Server Index Fundamentals","description":"資料庫索引深入淺出第一篇：解析 Index 第一個欄位對統計值的影響、B+ Tree 結構，以及如何正確選擇查詢條件欄位建立索引","datePublished":"2020-01-20T03:12:43.000Z","dateModified":"2026-04-29T00:13:36.074Z","wordCount":1572,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/dbindex-1/","inLanguage":"zh-tw","articleSection":"SQL-Server","keywords":"SQL-Server,Index,B-Tree,Clustered-Index,Non-Clustered-Index,Statistics,Performance-Tuning"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"SQL-Server","item":"https://isdaniel.github.io/categories/SQL-Server/"},{"@type":"ListItem","position":3,"name":"Index","item":"https://isdaniel.github.io/categories/SQL-Server/Index/"},{"@type":"ListItem","position":4,"name":"資料庫索引深入淺出(一) — SQL Server Index Fundamentals","item":"https://isdaniel.github.io/dbindex-1/"}]}]}</script>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -309,7 +309,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2026-04-28 18:45:33" datetime="2026-04-28T18:45:33+08:00">2026-04-28</time>
+                <time title="Modified: 2026-04-29 08:13:36" datetime="2026-04-29T08:13:36+08:00">2026-04-29</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -504,23 +504,23 @@
   <div class="popular-posts-header">Related Posts</div>
   <ul class="popular-posts">
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\dbindex-2\" rel="bookmark">資料庫索引深入淺出(二) — Covering Index & Index Design</a></div>
+      <div class="popular-posts-title"><a href="/dbindex-2/" rel="bookmark">資料庫索引深入淺出(二) — Covering Index & Index Design</a></div>
         <div class="popular-posts-excerpt"><p>資料庫索引深入淺出第二篇：介紹 Covering Index (INCLUDE)、Filter Index、Index Intersection 與索引設計重點</p></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\join-index-improve\" rel="bookmark">JOIN範圍條件Index優化</a></div>
+      <div class="popular-posts-title"><a href="/join-index-improve/" rel="bookmark">JOIN範圍條件Index優化</a></div>
         <div class="popular-posts-excerpt"><p>解決 SQL Server JOIN 範圍條件時索引效能問題：當執行計畫預估值不準確時，如何透過 Index 設計讓 JOIN 條件範圍查詢發揮最佳效能</p></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\sqlquerystress-intro\" rel="bookmark">資料庫壓測好工具-SQLQueryStress</a></div>
+      <div class="popular-posts-title"><a href="/sqlquerystress-intro/" rel="bookmark">資料庫壓測好工具-SQLQueryStress</a></div>
         <div class="popular-posts-excerpt"><p>SQLQueryStress 資料庫壓測工具教學：在 Dev 環境模擬高併發查詢，找出 SQL Server 效能瓶頸與 Lock 問題的實戰案例</p></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\acid\" rel="bookmark">ACID</a></div>
+      <div class="popular-posts-title"><a href="/acid/" rel="bookmark">ACID</a></div>
         <div class="popular-posts-excerpt"><p>ACID 資料庫交易特性介紹：原子性、一致性、隔離性與持久性，以及 SQL Server 中 XACT_ABORT 對交易錯誤處理的影響</p></div>
     </li>
     <li class="popular-posts-item">
-      <div class="popular-posts-title"><a href="\db-heaptable\" rel="bookmark">Sqlserver不可不知道Heap Table.</a></div>
+      <div class="popular-posts-title"><a href="/db-heaptable/" rel="bookmark">Sqlserver不可不知道Heap Table.</a></div>
         <div class="popular-posts-excerpt"><p>深入解析 SQL Server Heap Table 的特性與常見問題，包含 forwarding pointer 造成的 Logic Read 增加、Allocation Scan 機制，以及何時該使用 Heap Table</p></div>
     </li>
   </ul>
@@ -554,8 +554,8 @@
           <div class="post-tags">
               <a href="/tags/SQL-Server/" rel="tag"># SQL-Server</a>
               <a href="/tags/Index/" rel="tag"># Index</a>
-              <a href="/tags/Performance-Tuning/" rel="tag"># Performance-Tuning</a>
               <a href="/tags/B-Tree/" rel="tag"># B-Tree</a>
+              <a href="/tags/Performance-Tuning/" rel="tag"># Performance-Tuning</a>
           </div>
 
         
@@ -727,14 +727,14 @@ Certifications：
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="Symbols count total">648k</span>
+    <span title="Symbols count total">646k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="Reading time total">9:49</span>
+    <span title="Reading time total">9:48</span>
 </div>
-  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v7.3.0
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.1.1
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
