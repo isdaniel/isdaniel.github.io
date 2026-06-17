@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="從 Varlena 三種 header 格式到 TOAST 切塊、compression、B-Tree 索引、storage strategy 與 detoast 流程,完整拆解 PostgreSQL 如何優雅地塞下 1GB 大欄位">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析">
+<meta property="og:url" content="https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="從 Varlena 三種 header 格式到 TOAST 切塊、compression、B-Tree 索引、storage strategy 與 detoast 流程,完整拆解 PostgreSQL 如何優雅地塞下 1GB 大欄位">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2026-06-16T06:30:00.000Z">
+<meta property="article:modified_time" content="2026-06-17T01:01:54.901Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="Performance-Tuning">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Storage">
+<meta property="article:tag" content="SystemDesign">
+<meta property="article:tag" content="TOAST">
+<meta property="article:tag" content="Varlena">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析 | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="PostgreSQL,Varlena,TOAST,The-Oversized-Attribute-Storage-Technique,varattrib_1b,varattrib_4b,varattrib_1b_e,varatt_external,pglz,lz4,chunk,TOAST_TUPLE_THRESHOLD,TOAST_MAX_CHUNK_SIZE,storage-strategy,EXTENDED,EXTERNAL,MAIN,PLAIN,detoast,expanded-datum">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/"},"headline":"深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析","description":"從 Varlena 三種 header 格式到 TOAST 切塊、compression、B-Tree 索引、storage strategy 與 detoast 流程,完整拆解 PostgreSQL 如何優雅地塞下 1GB 大欄位","datePublished":"2026-06-16T06:30:00.000Z","dateModified":"2026-06-17T01:01:54.901Z","wordCount":3342,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/","inLanguage":"zh-tw","articleSection":"PostgreSQL","keywords":"PostgreSQL,Varlena,TOAST,The-Oversized-Attribute-Storage-Technique,varattrib_1b,varattrib_4b,varattrib_1b_e,varatt_external,pglz,lz4,chunk,TOAST_TUPLE_THRESHOLD,TOAST_MAX_CHUNK_SIZE,storage-strategy,EXTENDED,EXTERNAL,MAIN,PLAIN,detoast,expanded-datum"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"PostgreSQL","item":"https://isdaniel.github.io/categories/PostgreSQL/"},{"@type":"ListItem","position":3,"name":"SystemDesign","item":"https://isdaniel.github.io/categories/PostgreSQL/SystemDesign/"},{"@type":"ListItem","position":4,"name":"深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析","item":"https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">159</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">76</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">132</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2026-06-16 14:30:00" datetime="2026-06-16T14:30:00+08:00">2026-06-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2026-06-17 09:01:54" datetime="2026-06-17T09:01:54+08:00">2026-06-17</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/PostgreSQL/" rel="index"><span>PostgreSQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/PostgreSQL/SystemDesign/" rel="index"><span>SystemDesign</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/postgresql-varlena-toast-deep-dive/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-varlena-toast-deep-dive/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>9.4k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>9 mins.</span>
+            </span>
+            <div class="post-description">從 Varlena 三種 header 格式到 TOAST 切塊、compression、B-Tree 索引、storage strategy 與 detoast 流程,完整拆解 PostgreSQL 如何優雅地塞下 1GB 大欄位</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>PostgreSQL 的單一資料頁面 (Page) 預設只有 <strong>8 KB</strong>,但實務上我們經常會塞進 JSON、長文字、圖片 base64、甚至幾十 MB 的 bytea。這些「比一個頁面還大」的欄位,為什麼可以正常運作?背後的功臣就是 <strong>Varlena</strong>(變長度資料結構)與 <strong>TOAST</strong>(The Oversized-Attribute Storage Technique)。</p>
+<p>這篇文章會把整個機制從 header bit-layout、切塊、compression、索引,一路講到 detoast 的執行流程,並補上原始 summary 中沒提到、但實務上非常重要的觀念:<strong>storage strategy</strong>、<strong>inline compression</strong>、<strong>TOAST threshold</strong>、<strong>expanded datum</strong>,以及如何用 SQL 直接觀察 TOAST 表。</p>
+<hr>
+<h2 id="一、為什麼需要-Varlena"><a href="#一、為什麼需要-Varlena" class="headerlink" title="一、為什麼需要 Varlena?"></a>一、為什麼需要 Varlena?</h2><p>C 語言的字串靠 <code>\0</code> 結尾,要知道長度就得 <code>strlen()</code> 一個一個 byte 數過去 — O(n) 而且資料中不能出現 <code>\0</code>。資料庫顯然不能這樣搞,所以 PostgreSQL 設計了一個通用的「變長度資料」結構,叫做 <strong>Varlena (Variable-length Attribute)</strong>。</p>
+<p>所有變長度型別(<code>TEXT</code>、<code>VARCHAR</code>、<code>BYTEA</code>、<code>JSON</code>、<code>JSONB</code>、<code>NUMERIC</code>、<code>ARRAY</code> 等)在磁碟與記憶體中都是 Varlena。Varlena 的核心思想很簡單:<strong>把長度資訊放在資料最前面</strong>,讀取時看一眼 header 就知道整段資料有多長,O(1) 完成。</p>
+<p>但只是「加個長度 header」還不夠 — 如果一個 30 byte 的小字串要硬塞 4 byte 的長度欄位,空間浪費太嚴重(超過 13%)。所以 PostgreSQL 為 Varlena 設計了<strong>三種 header 格式</strong>,根據資料大小自動切換,完全對開發者透明。</p>
+<hr>
+<h2 id="二、Varlena-的三種-Header-格式"><a href="#二、Varlena-的三種-Header-格式" class="headerlink" title="二、Varlena 的三種 Header 格式"></a>二、Varlena 的三種 Header 格式</h2><p>定義位於 <code>src/include/varatt.h</code>,核心結構大致如下:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">union</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> &#123;</span>                       <span class="comment">/* Normal varlena (4-byte length) */</span></span><br><span class="line">        uint32 va_header;</span><br><span class="line">        <span class="type">char</span>   va_data[FLEXIBLE_ARRAY_MEMBER];</span><br><span class="line">    &#125; va_4byte;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> &#123;</span>                       <span class="comment">/* Compressed-in-line format */</span></span><br><span class="line">        uint32 va_header;</span><br><span class="line">        uint32 va_tcinfo;          <span class="comment">/* raw size + compression method */</span></span><br><span class="line">        <span class="type">char</span>   va_data[FLEXIBLE_ARRAY_MEMBER];</span><br><span class="line">    &#125; va_compressed;</span><br><span class="line">&#125; varattrib_4b;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">    uint8  va_header;              <span class="comment">/* 1-byte short header */</span></span><br><span class="line">    <span class="type">char</span>   va_data[FLEXIBLE_ARRAY_MEMBER];</span><br><span class="line">&#125; varattrib_1b;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span>                   <span class="comment">/* TOASTed, has external storage */</span></span><br><span class="line">    uint8  va_header;              <span class="comment">/* Always 0x01 */</span></span><br><span class="line">    uint8  va_tag;                 <span class="comment">/* Type of external data */</span></span><br><span class="line">    <span class="type">char</span>   va_data[FLEXIBLE_ARRAY_MEMBER];</span><br><span class="line">&#125; varattrib_1b_e;</span><br></pre></td></tr></table></figure>
+
+<h3 id="三種格式的判別"><a href="#三種格式的判別" class="headerlink" title="三種格式的判別"></a>三種格式的判別</h3><p>PostgreSQL 用 header 的<strong>第一個 byte</strong> 做 tag dispatch:</p>
+<table>
+<thead>
+<tr>
+<th>第一 byte 的最低 2 bits</th>
+<th>格式</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>00</code></td>
+<td><code>varattrib_4b</code> (uncompressed)</td>
+<td>大資料 (≥ 127 bytes、未 compressed)</td>
+</tr>
+<tr>
+<td><code>10</code></td>
+<td><code>varattrib_4b</code> (compressed)</td>
+<td>大資料、行內 compressed</td>
+</tr>
+<tr>
+<td><code>xxxxxxx1</code> (最低 bit &#x3D; 1, header ≠ 0x01)</td>
+<td><code>varattrib_1b</code> (short)</td>
+<td>小資料 (≤ 126 bytes)</td>
+</tr>
+<tr>
+<td><code>0x01</code> (整個 byte)</td>
+<td><code>varattrib_1b_e</code> (external)</td>
+<td>已搬到 TOAST 表</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>注意:實作上是檢查最低位 bit 來分流,short header 用 1 bit 當 tag,其餘 7 bits 存長度;4-byte header 用 2 bits 當 tag,30 bits 存長度。原始 summary 提到的「2 bits 身分證」即指此處。</p>
+</blockquote>
+<h3 id="1-varattrib-1b-—-小資料的省空間設計"><a href="#1-varattrib-1b-—-小資料的省空間設計" class="headerlink" title="1. varattrib_1b — 小資料的省空間設計"></a>1. <code>varattrib_1b</code> — 小資料的省空間設計</h3><figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">7</span> bits 長度   |  <span class="number">1</span> bit <span class="keyword">tag</span></span><br><span class="line"><span class="title">┌──────────────┬─────┐</span></span><br><span class="line"><span class="title">│ length</span> (≤<span class="number">126</span>)│  <span class="number">1</span>  │</span><br><span class="line">└──────────────┴─────┘</span><br><span class="line"> + data ...</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>header 只有 <strong>1 byte</strong>,7 bits 可表示長度。</li>
+<li>「最低 bit &#x3D; 1」是其身分標記。</li>
+<li>適合小於 127 bytes 的字串(實務上閥值是 <strong>126 bytes</strong>,因為 header 自己佔 1 byte)。</li>
+</ul>
+<h3 id="2-varattrib-4b-—-一般大資料-含-inline-compression"><a href="#2-varattrib-4b-—-一般大資料-含-inline-compression" class="headerlink" title="2. varattrib_4b — 一般大資料 (含 inline compression)"></a>2. <code>varattrib_4b</code> — 一般大資料 (含 inline compression)</h3><figure class="highlight oxygene"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">30</span> bits 長度    | <span class="number">2</span> bits tag</span><br><span class="line">┌─────────────────┬─────┐</span><br><span class="line">│  length (≤<span class="number">1</span>GB)  │ <span class="number">00</span>  │   ← uncompressed</span><br><span class="line">└─────────────────┴─────┘</span><br><span class="line">┌─────────────────┬─────┐</span><br><span class="line">│  length         │ <span class="number">10</span>  │   ← compressed (header 後面多 <span class="number">4</span> bytes 描述原始大小 + compression <span class="keyword">method</span>)</span><br><span class="line">└─────────────────┴─────┘</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>header 4 bytes,可表示最大 <strong>1 GB</strong> (2^30,這也是 PostgreSQL 單一欄位的硬上限)。</li>
+<li>如果是 compressed 格式,header 後面會多一個 4-byte <code>va_tcinfo</code>,其中:<ul>
+<li>高 2 bits 是 <strong>compression method</strong> (<code>PGLZ</code> &#x3D; 00 &#x2F; <code>LZ4</code> &#x3D; 01)。</li>
+<li>低 30 bits 是 <strong>原始未 compressed 大小</strong>(decompress 時需要)。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-varattrib-1b-e-—-External-pointer-TOAST-pointer"><a href="#3-varattrib-1b-e-—-External-pointer-TOAST-pointer" class="headerlink" title="3. varattrib_1b_e — External pointer (TOAST pointer)"></a>3. <code>varattrib_1b_e</code> — External pointer (TOAST pointer)</h3><figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">┌────────┬────────┬──────── ... ────────┐</span><br><span class="line">│  <span class="number">0</span>x01  │ v<span class="built_in">a_tag</span> │  pointer payload    │</span><br><span class="line">└────────┴────────┴─────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<p>第一 byte 固定 <code>0x01</code>(7 bits 全 0、最低 bit 為 1),是個特例標記:「我不是真資料,我是個指針」。第二 byte <code>va_tag</code> 表示後面 payload 的種類,常見有:</p>
+<table>
+<thead>
+<tr>
+<th>va_tag</th>
+<th>結構</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>VARTAG_ONDISK</code> (18)</td>
+<td><code>varatt_external</code></td>
+<td>一般 on-disk TOAST 指針(最常見)</td>
+</tr>
+<tr>
+<td><code>VARTAG_INDIRECT</code> (1)</td>
+<td><code>varatt_indirect</code></td>
+<td>記憶體中的轉址指針</td>
+</tr>
+<tr>
+<td><code>VARTAG_EXPANDED_RO/RW</code> (2&#x2F;3)</td>
+<td><code>varatt_expanded</code></td>
+<td>展開後的可變物件(用於 array、JSONB 加速)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="三、TOAST-觸發條件與儲存策略"><a href="#三、TOAST-觸發條件與儲存策略" class="headerlink" title="三、TOAST 觸發條件與儲存策略"></a>三、TOAST 觸發條件與儲存策略</h2><p>很多人以為「資料只要大就會 TOAST」,實際上 PostgreSQL 是看<strong>整個 tuple 大小</strong>,而且每個欄位的處理方式由「<strong>storage strategy</strong>」決定 — 這是 summary 中沒提到、但對效能調校極重要的觀念。</p>
+<h3 id="觸發閥值"><a href="#觸發閥值" class="headerlink" title="觸發閥值"></a>觸發閥值</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> TOAST_TUPLE_THRESHOLD   2032   <span class="comment">/* TOAST_TUPLE_TARGET, ~2KB */</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOAST_TUPLE_TARGET      2032</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> TOAST_MAX_CHUNK_SIZE    1996   <span class="comment">/* 每塊約 2KB */</span></span></span><br></pre></td></tr></table></figure>
+
+<p>當一個 tuple 寫入時,只要它的大小 <strong>超過 <code>TOAST_TUPLE_THRESHOLD</code> (約 2KB,即 page 的 1&#x2F;4)</strong>,PostgreSQL 就會挑出 tuple 中標記為可壓縮 &#x2F; 可外宿的欄位,依以下順序處理直到 tuple 縮小到 target 以下:</p>
+<ol>
+<li>對最大的欄位嘗試 <strong>壓縮</strong>(若 storage 允許)。</li>
+<li>若還是太大,把最大的欄位整個 <strong>搬出去 (external)</strong>。</li>
+<li>重複 1–2 直到 tuple 達標。</li>
+</ol>
+<h3 id="四種-Storage-Strategy"><a href="#四種-Storage-Strategy" class="headerlink" title="四種 Storage Strategy"></a>四種 Storage Strategy</h3><p>每個變長度欄位都有一個 storage 屬性,可用 <code>ALTER TABLE ... ALTER COLUMN ... SET STORAGE ...</code> 調整:</p>
+<table>
+<thead>
+<tr>
+<th>Strategy</th>
+<th>Compress</th>
+<th>External</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PLAIN</code></td>
+<td>No</td>
+<td>No</td>
+<td>定長型別預設,不走 TOAST(資料必須能塞進 page)</td>
+</tr>
+<tr>
+<td><code>EXTENDED</code></td>
+<td>Yes</td>
+<td>Yes</td>
+<td><strong>變長度型別預設</strong>,先壓縮,壓完仍太大才搬出去</td>
+</tr>
+<tr>
+<td><code>EXTERNAL</code></td>
+<td>No</td>
+<td>Yes</td>
+<td>不壓縮,直接外宿(犧牲空間換取 substring&#x2F;length 速度)</td>
+</tr>
+<tr>
+<td><code>MAIN</code></td>
+<td>Yes</td>
+<td>Prefer inline</td>
+<td>先壓縮、盡量留在 main table,壓完還是太大才外宿</td>
+</tr>
+</tbody></table>
+<p>實務情境:</p>
+<ul>
+<li><strong>大量 substring 操作</strong>(如全文檢索片段)→ 設為 <code>EXTERNAL</code>,避免每次都要 decompress 整段。</li>
+<li><strong>整欄一次讀全部</strong>(如 LOB)→ 預設 <code>EXTENDED</code> 最划算。</li>
+<li><strong>小到中型欄位但偶爾很大</strong>(如 JSONB)→ 可考慮 <code>MAIN</code>,讓 hot data 留在 main table 減少 TOAST 查表。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 觀察與調整</span></span><br><span class="line"><span class="keyword">SELECT</span> attname, attstorage <span class="keyword">FROM</span> pg_attribute</span><br><span class="line"><span class="keyword">WHERE</span> attrelid <span class="operator">=</span> <span class="string">&#x27;my_table&#x27;</span>::regclass <span class="keyword">AND</span> attnum <span class="operator">&gt;</span> <span class="number">0</span>;</span><br><span class="line"><span class="comment">-- attstorage: p = PLAIN, e = EXTERNAL, x = EXTENDED, m = MAIN</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ALTER TABLE</span> my_table <span class="keyword">ALTER</span> <span class="keyword">COLUMN</span> payload <span class="keyword">SET</span> STORAGE <span class="keyword">EXTERNAL</span>;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四、外宿指針的真實結構-varatt-external"><a href="#四、外宿指針的真實結構-varatt-external" class="headerlink" title="四、外宿指針的真實結構 (varatt_external)"></a>四、外宿指針的真實結構 (<code>varatt_external</code>)</h2><p>當欄位真的被搬出去後,主表留下的不是 16 bytes,而是 <strong>18 bytes</strong> 的 <code>varatt_external</code> 結構(再加 2 bytes 的 <code>varattrib_1b_e</code> header,總共 20 bytes):</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">varatt_external</span> &#123;</span></span><br><span class="line">    int32   va_rawsize;      <span class="comment">/* 含 header 的原始大小 */</span></span><br><span class="line">    uint32  va_extinfo;      <span class="comment">/* 壓縮後大小 (30 bits) + compression method (2 bits) */</span></span><br><span class="line">    Oid     va_valueid;      <span class="comment">/* 此筆資料在 TOAST 表中的 ID */</span></span><br><span class="line">    Oid     va_toastrelid;   <span class="comment">/* 對應的 TOAST 表 OID */</span></span><br><span class="line">&#125; varatt_external;           <span class="comment">/* sizeof = 18 bytes,實際存放時要對齊 */</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意:PostgreSQL 13 之後 <code>va_extinfo</code> 把壓縮演算法的 2 bits 塞進去 (因為新增了 LZ4),這也是原始 summary 寫「16 bytes」需要修正之處。</p>
+</blockquote>
+<h3 id="4-bytes-Oid-的容量"><a href="#4-bytes-Oid-的容量" class="headerlink" title="4 bytes (Oid) 的容量"></a>4 bytes (Oid) 的容量</h3><p><code>va_valueid</code> 是 4 bytes 的 <code>Oid</code> (unsigned 32 bit),理論名額是 2^32 ≈ <strong>42 億</strong>。配合 <code>chunk_seq</code> 的 4-byte 序號,單一欄位的理論上限遠超 1 GB — 但 PostgreSQL 在程式碼層硬性限制單一變長度欄位 ≤ 1 GB (來自 <code>varattrib_4b</code> 的 30-bit 長度欄位)。</p>
+<hr>
+<h2 id="五、TOAST-表長什麼樣"><a href="#五、TOAST-表長什麼樣" class="headerlink" title="五、TOAST 表長什麼樣?"></a>五、TOAST 表長什麼樣?</h2><p>每個有變長度欄位的 user table,PostgreSQL 會<strong>自動</strong>幫它建立一張對應的 TOAST 表,位於 <code>pg_toast</code> schema:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    c.relname        <span class="keyword">AS</span> main_table,</span><br><span class="line">    t.relname        <span class="keyword">AS</span> toast_table,</span><br><span class="line">    pg_size_pretty(pg_relation_size(c.reltoastrelid)) <span class="keyword">AS</span> toast_size,</span><br><span class="line">    pg_size_pretty(pg_relation_size(c.oid))           <span class="keyword">AS</span> main_size</span><br><span class="line"><span class="keyword">FROM</span> pg_class c</span><br><span class="line"><span class="keyword">JOIN</span> pg_class t <span class="keyword">ON</span> t.oid <span class="operator">=</span> c.reltoastrelid</span><br><span class="line"><span class="keyword">WHERE</span> c.relname <span class="operator">=</span> <span class="string">&#x27;my_table&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>TOAST 表的 schema 永遠是這三欄:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE TABLE</span> pg_toast.pg_toast_<span class="operator">&lt;</span>oid<span class="operator">&gt;</span> (</span><br><span class="line">    chunk_id   oid    <span class="keyword">NOT NULL</span>,   <span class="comment">-- 對應 va_valueid</span></span><br><span class="line">    chunk_seq  <span class="type">int</span>    <span class="keyword">NOT NULL</span>,   <span class="comment">-- 0, 1, 2, ... 切塊序號</span></span><br><span class="line">    chunk_data bytea  <span class="keyword">NOT NULL</span>    <span class="comment">-- 約 2KB 的資料碎塊</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">UNIQUE</span> INDEX pg_toast_<span class="operator">&lt;</span>oid<span class="operator">&gt;</span>_index</span><br><span class="line">    <span class="keyword">ON</span> pg_toast.pg_toast_<span class="operator">&lt;</span>oid<span class="operator">&gt;</span> (chunk_id, chunk_seq);</span><br></pre></td></tr></table></figure>
+
+<p>關鍵點:</p>
+<ul>
+<li>每塊 <code>chunk_data</code> 大小是 <code>TOAST_MAX_CHUNK_SIZE ≈ 1996 bytes</code>,讓 4 塊剛好塞滿一個 8KB page (再扣掉 tuple header)。</li>
+<li><code>(chunk_id, chunk_seq)</code> 上有 <strong>unique B-Tree index</strong>,這就是高速撈塊的關鍵。</li>
+</ul>
+<hr>
+<h2 id="六、Detoast-流程-資料是怎麼被讀回來的"><a href="#六、Detoast-流程-資料是怎麼被讀回來的" class="headerlink" title="六、Detoast 流程:資料是怎麼被讀回來的"></a>六、Detoast 流程:資料是怎麼被讀回來的</h2><p>當你執行 <code>SELECT payload FROM my_table WHERE id = 1</code>,且 payload 是 128 MB 的外宿資料,引擎做的事情大致是:</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">主表 tuple</span><br><span class="line">┌──────────────────────────────────────────┐</span><br><span class="line">│ id=1 │ <span class="string">...</span>其他欄位<span class="string">...</span> │ varattrib_1b_e   │</span><br><span class="line">└──────────────────────────────┬───────────┘</span><br><span class="line">                               │ <span class="params">(va_toastrelid, <span class="attr">va_valueid</span>=9527)</span></span><br><span class="line">                               ▼</span><br><span class="line">                    pg_toast.pg_toast_xxxx</span><br><span class="line">                    ┌──────────────────────────────┐</span><br><span class="line">                    │ B-Tree <span class="params">(chunk_id, chunk_seq)</span> │</span><br><span class="line">                    └──────┬───────────────────────┘</span><br><span class="line">                           │ Index Range Scan from <span class="params">(9527, 0)</span></span><br><span class="line">                           ▼</span><br><span class="line">┌──────────┬───────────┬────────────┐</span><br><span class="line">│ chunk_id │ chunk_seq │ chunk_data │</span><br><span class="line">├──────────┼───────────┼────────────┤</span><br><span class="line">│   9527   │     0     │ [≈2KB]     │  ──┐</span><br><span class="line">│   9527   │     1     │ [≈2KB]     │    │</span><br><span class="line">│    <span class="string">...</span>   │    <span class="string">...</span>    │   <span class="string">...</span>      │    │ 依序串接</span><br><span class="line">│   9527   │  65535    │ [≈2KB]     │    │</span><br><span class="line">└──────────┴───────────┴────────────┘    ▼</span><br><span class="line">                                    [拼接 + 解壓 pglz/lz4]</span><br><span class="line">                                          │</span><br><span class="line">                                          ▼</span><br><span class="line">                                   還原 128MB 原始 bytes</span><br></pre></td></tr></table></figure>
+
+<h3 id="三個關鍵設計"><a href="#三個關鍵設計" class="headerlink" title="三個關鍵設計"></a>三個關鍵設計</h3><p><strong>1. B-Tree 一次定位</strong><br>拿著 <code>va_valueid</code> 在 unique index 上做 <code>=</code> 查詢,O(log n) 直達 <code>chunk_seq=0</code>。</p>
+<p><strong>2. Index Range Scan,不是逐塊查</strong><br>找到第一塊後,沿著 B-Tree leaf 的 sibling pointer 連續往後讀(因為 <code>(chunk_id, chunk_seq)</code> 排序),直到 <code>chunk_id</code> 變化才停。底層通常是順序 I&#x2F;O,不是隨機 I&#x2F;O。</p>
+<p><strong>3. Lazy detoast</strong><br>這點 summary 沒提:<strong>只有真的要用到欄位內容時才會 detoast</strong>。例如:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> id <span class="keyword">FROM</span> my_table <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br><span class="line"><span class="comment">-- 即使 payload 是 1GB,根本不會碰 TOAST 表</span></span><br></pre></td></tr></table></figure>
+
+<p>這就是為什麼「主表 SELECT * 很快」的真正原因 — 不只是因為指針小,而是因為<strong>指針從不主動被展開</strong>。Detoast 只發生在運算子真的需要 bytes 的那一刻 (例如 <code>length(payload)</code> 對未壓縮的 EXTERNAL 是免費的,但對 EXTENDED 就得 decompress)。</p>
+<hr>
+<h2 id="七、Inline-Compression-vs-External"><a href="#七、Inline-Compression-vs-External" class="headerlink" title="七、Inline Compression vs External"></a>七、Inline Compression vs External</h2><p>很多人混淆「壓縮」與「外宿」,其實它們是<strong>兩個獨立的步驟</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>header 是?</th>
+<th>在哪?</th>
+<th>觸發條件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>純 inline</td>
+<td><code>varattrib_4b</code> (tag&#x3D;00)</td>
+<td>主表 tuple</td>
+<td>小 tuple,完全不動</td>
+</tr>
+<tr>
+<td>Inline compressed</td>
+<td><code>varattrib_4b</code> (tag&#x3D;10)</td>
+<td>主表 tuple</td>
+<td>tuple 超過 threshold,壓完仍能塞下</td>
+</tr>
+<tr>
+<td>External uncompressed</td>
+<td><code>varattrib_1b_e</code></td>
+<td>TOAST 表</td>
+<td>storage &#x3D; EXTERNAL,或 EXTENDED 但壓不下去</td>
+</tr>
+<tr>
+<td>External compressed</td>
+<td><code>varattrib_1b_e</code></td>
+<td>TOAST 表</td>
+<td>EXTENDED &#x2F; MAIN,壓縮後仍超過 target</td>
+</tr>
+</tbody></table>
+<p>注意:<strong>External 的資料本身也可以是壓縮的</strong>。<code>varatt_external</code> 裡的 <code>va_extinfo</code> 同時記錄壓縮後大小與演算法,讓 detoast 時知道要不要解壓。</p>
+<h3 id="壓縮演算法-pglz-vs-lz4"><a href="#壓縮演算法-pglz-vs-lz4" class="headerlink" title="壓縮演算法:pglz vs lz4"></a>壓縮演算法:pglz vs lz4</h3><p>PostgreSQL 14 之後支援兩種演算法,可在 column 層級指定:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER TABLE</span> my_table <span class="keyword">ALTER</span> <span class="keyword">COLUMN</span> payload <span class="keyword">SET</span> COMPRESSION lz4;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>pglz (預設)</th>
+<th>lz4</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>壓縮速度</td>
+<td>較慢</td>
+<td><strong>約 4–5 倍快</strong></td>
+</tr>
+<tr>
+<td>解壓速度</td>
+<td>較慢</td>
+<td><strong>約 10 倍快</strong></td>
+</tr>
+<tr>
+<td>壓縮率</td>
+<td>略好 (≈ 5–10%)</td>
+<td>略差</td>
+</tr>
+<tr>
+<td>需要編譯選項</td>
+<td>內建</td>
+<td><code>--with-lz4</code></td>
+</tr>
+</tbody></table>
+<p>對於寫多讀多、且 CPU 比 I&#x2F;O 緊的場景,LZ4 幾乎是無腦選擇。只有極度在意壓縮率(冷資料、空間敏感)才該留著 pglz。</p>
+<hr>
+<h2 id="八、實用-SQL-觀察-TOAST-的真實樣貌"><a href="#八、實用-SQL-觀察-TOAST-的真實樣貌" class="headerlink" title="八、實用 SQL:觀察 TOAST 的真實樣貌"></a>八、實用 SQL:觀察 TOAST 的真實樣貌</h2><h3 id="1-看一張表的-TOAST-表佔用"><a href="#1-看一張表的-TOAST-表佔用" class="headerlink" title="1. 看一張表的 TOAST 表佔用"></a>1. 看一張表的 TOAST 表佔用</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    relname,</span><br><span class="line">    pg_size_pretty(pg_table_size(oid))   <span class="keyword">AS</span> table_size,</span><br><span class="line">    pg_size_pretty(pg_relation_size(oid)) <span class="keyword">AS</span> heap_size,</span><br><span class="line">    pg_size_pretty(pg_relation_size(reltoastrelid)) <span class="keyword">AS</span> toast_size,</span><br><span class="line">    pg_size_pretty(pg_indexes_size(oid)) <span class="keyword">AS</span> index_size</span><br><span class="line"><span class="keyword">FROM</span> pg_class</span><br><span class="line"><span class="keyword">WHERE</span> relkind <span class="operator">=</span> <span class="string">&#x27;r&#x27;</span> <span class="keyword">AND</span> reltoastrelid <span class="operator">&lt;&gt;</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> pg_table_size(oid) <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-直接戳-TOAST-表-進階-需-superuser"><a href="#2-直接戳-TOAST-表-進階-需-superuser" class="headerlink" title="2. 直接戳 TOAST 表 (進階,需 superuser)"></a>2. 直接戳 TOAST 表 (進階,需 superuser)</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 看某個 chunk_id 被切成幾塊</span></span><br><span class="line"><span class="keyword">SELECT</span> chunk_id, <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">AS</span> chunks, <span class="built_in">sum</span>(<span class="keyword">octet_length</span>(chunk_data)) <span class="keyword">AS</span> bytes</span><br><span class="line"><span class="keyword">FROM</span> pg_toast.pg_toast_16384</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> chunk_id</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> bytes <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-判斷某筆資料有沒有被-TOAST"><a href="#3-判斷某筆資料有沒有被-TOAST" class="headerlink" title="3. 判斷某筆資料有沒有被 TOAST"></a>3. 判斷某筆資料有沒有被 TOAST</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    id,</span><br><span class="line">    pg_column_size(payload)         <span class="keyword">AS</span> stored_size,    <span class="comment">-- 含 header、壓縮後</span></span><br><span class="line">    <span class="keyword">octet_length</span>(payload)           <span class="keyword">AS</span> logical_size,   <span class="comment">-- 邏輯長度</span></span><br><span class="line">    pg_column_compression(payload)  <span class="keyword">AS</span> compression     <span class="comment">-- &#x27;pglz&#x27; / &#x27;lz4&#x27; / NULL</span></span><br><span class="line"><span class="keyword">FROM</span> my_table <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p>如果 <code>stored_size &lt;&lt; logical_size</code>,代表有壓縮;如果 <code>stored_size</code> 只有十幾 bytes 但 <code>logical_size</code> 很大,就是外宿了。</p>
+<hr>
+<h2 id="九、Expanded-Datum-summary-沒提到的記憶體加速機制"><a href="#九、Expanded-Datum-summary-沒提到的記憶體加速機制" class="headerlink" title="九、Expanded Datum:summary 沒提到的記憶體加速機制"></a>九、Expanded Datum:summary 沒提到的記憶體加速機制</h2><p>當你在 PL&#x2F;pgSQL 裡反覆對一個 array 或 JSONB 做修改,每次都「decompress → 修改 → 重新壓縮」會很慘。於是 PostgreSQL 9.5 引入了 <strong>expanded datum</strong> (<code>VARTAG_EXPANDED_RW</code>):</p>
+<ul>
+<li>第一次使用時,把資料攤平成一個記憶體中可直接操作的物件 (e.g., array 變成真的 C array)。</li>
+<li>在 query 執行期間,所有修改都直接在這個展開物件上完成。</li>
+<li>寫回磁碟時才重新序列化、壓縮、TOAST。</li>
+</ul>
+<p>這對 array 的 <code>array_append</code>、JSONB 的 <code>jsonb_set</code> 等操作幫助巨大。Expanded datum 也是 <code>varattrib_1b_e</code> 的一種特例 — 你會看到一個「指針」,但它指向的不是 TOAST 表,而是記憶體中的展開物件。</p>
+<hr>
+<h2 id="十、設計哲學總結"><a href="#十、設計哲學總結" class="headerlink" title="十、設計哲學總結"></a>十、設計哲學總結</h2><p>PostgreSQL 的 Varlena &#x2F; TOAST 設計可以用三句話概括:</p>
+<ol>
+<li><strong>小資料零成本</strong> — 短 header 讓 99% 的字串只多付 1 byte 的代價。</li>
+<li><strong>大資料對 OLTP 友善</strong> — 主表只留 20 bytes 指針,讓 <code>SELECT id FROM ...</code> 等不需要該欄位的查詢完全不受影響。</li>
+<li><strong>Lazy &amp; Composable</strong> — 壓縮、外宿、展開三個正交機制,可根據 workload 用 storage strategy 與 compression method 自由組合。</li>
+</ol>
+<p>當你下次看到 PostgreSQL 一張表的 size 是「1 MB 主表 + 800 MB TOAST + 100 MB index」時,你會知道那是正常的:它不是 bug,而是讓主表保持精瘦、把肥肉外掛出去的精密設計。</p>
+<hr>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><table>
+<thead>
+<tr>
+<th>元件</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>varattrib_1b</code></td>
+<td>小字串的省空間 header (1 byte)</td>
+</tr>
+<tr>
+<td><code>varattrib_4b</code></td>
+<td>一般 &#x2F; 壓縮資料的 header (4 bytes)</td>
+</tr>
+<tr>
+<td><code>varattrib_1b_e</code></td>
+<td>外宿 &#x2F; expanded 的 tag</td>
+</tr>
+<tr>
+<td><code>varatt_external</code></td>
+<td>主表中的 18 byte TOAST 指針</td>
+</tr>
+<tr>
+<td><code>pg_toast.*</code></td>
+<td>切塊存放的 side table</td>
+</tr>
+<tr>
+<td><code>(chunk_id, chunk_seq)</code> B-Tree</td>
+<td>高速回組碎塊的索引</td>
+</tr>
+<tr>
+<td>Storage strategy</td>
+<td>控制是否壓縮 &#x2F; 外宿</td>
+</tr>
+<tr>
+<td>Compression method</td>
+<td>pglz vs lz4 的權衡</td>
+</tr>
+<tr>
+<td>Expanded datum</td>
+<td>記憶體層的加速</td>
+</tr>
+</tbody></table>
+<p>理解這套設計後,你不只能在出問題時看懂 <code>pg_column_size</code>、<code>pg_relation_size</code> 的真正含義,還能透過調整 storage 與 compression 為自己的 workload 榨出最後一滴效能。</p>
+<hr>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li>PostgreSQL 原始碼 <code>src/include/varatt.h</code>、<code>src/backend/access/common/toast_internals.c</code></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/storage-toast.html">PostgreSQL Docs — TOAST</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/storage-page-layout.html">PostgreSQL Docs — Storage Page Layout</a></li>
+<li>相關文章: <a href="https://isdaniel.github.io/pgrx-postgresql-extension-mechanism-deep-dive/">深入 pgrx 機制:用 Rust 撰寫 PostgreSQL Extension 的底層原理與實戰</a></li>
+<li>相關文章: <a href="https://isdaniel.github.io/postgresql-wal-introduce/">PostgreSQL WAL (Write-Ahead Logging) 機制介紹</a></li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/">https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pg-pidstat-real-time-postgresql-backend-monitoring/" rel="bookmark">pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL</a></div>
+        <div class="popular-posts-excerpt"><p>pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pgrx-postgresql-extension-mechanism-deep-dive/" rel="bookmark">深入 pgrx 機制：用 Rust 撰寫 PostgreSQL Extension 的底層原理與實戰</a></div>
+        <div class="popular-posts-excerpt"><p>從零開始拆解 pgrx 如何讓 Rust 與 C 寫的 PostgreSQL 完美互通,並以 timescale-extension-utils-rs 為例,帶初學者了解 pg_fn!、pg_agg!、Datum 轉換、MemoryContext 與 longjmp 處理的完整機制</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pgtuner-mcp-ai-powered-postgresql-performance/" rel="bookmark">AI-Powered PostgreSQL Performance Tuning with MCP - Introducing pgtuner_mcp</a></div>
+        <div class="popular-posts-excerpt"><p>pgtuner_mcp is an MCP server for AI-driven PostgreSQL performance analysis, tuning advice, and health checks from your development workflow</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/azure-flexible-longterm-backup/" rel="bookmark">Azure PostgreSQL Flexible long term backup with Managed Identity</a></div>
+        <div class="popular-posts-excerpt"><p>Step-by-step guide to configure long-term backup (beyond 35 days) on Azure PostgreSQL Flexible Server using Managed Identity, pg_dump, and Azure Blob Storage</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/logical-replication-checker-replication_checker_rs/" rel="bookmark">Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)</a></div>
+        <div class="popular-posts-excerpt"><p>Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Performance-Tuning/" rel="tag"># Performance-Tuning</a>
+              <a href="/tags/SystemDesign/" rel="tag"># SystemDesign</a>
+              <a href="/tags/Storage/" rel="tag"># Storage</a>
+              <a href="/tags/TOAST/" rel="tag"># TOAST</a>
+              <a href="/tags/Varlena/" rel="tag"># Varlena</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/pgrx-postgresql-extension-mechanism-deep-dive/" rel="prev" title="深入 pgrx 機制：用 Rust 撰寫 PostgreSQL Extension 的底層原理與實戰">
+      <i class="fa fa-chevron-left"></i> 深入 pgrx 機制：用 Rust 撰寫 PostgreSQL Extension 的底層原理與實戰
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%82%BA%E4%BB%80%E9%BA%BC%E9%9C%80%E8%A6%81-Varlena"><span class="nav-number">2.</span> <span class="nav-text">一、為什麼需要 Varlena?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81Varlena-%E7%9A%84%E4%B8%89%E7%A8%AE-Header-%E6%A0%BC%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">二、Varlena 的三種 Header 格式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E7%A8%AE%E6%A0%BC%E5%BC%8F%E7%9A%84%E5%88%A4%E5%88%A5"><span class="nav-number">3.1.</span> <span class="nav-text">三種格式的判別</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-varattrib-1b-%E2%80%94-%E5%B0%8F%E8%B3%87%E6%96%99%E7%9A%84%E7%9C%81%E7%A9%BA%E9%96%93%E8%A8%AD%E8%A8%88"><span class="nav-number">3.2.</span> <span class="nav-text">1. varattrib_1b — 小資料的省空間設計</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-varattrib-4b-%E2%80%94-%E4%B8%80%E8%88%AC%E5%A4%A7%E8%B3%87%E6%96%99-%E5%90%AB-inline-compression"><span class="nav-number">3.3.</span> <span class="nav-text">2. varattrib_4b — 一般大資料 (含 inline compression)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-varattrib-1b-e-%E2%80%94-External-pointer-TOAST-pointer"><span class="nav-number">3.4.</span> <span class="nav-text">3. varattrib_1b_e — External pointer (TOAST pointer)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81TOAST-%E8%A7%B8%E7%99%BC%E6%A2%9D%E4%BB%B6%E8%88%87%E5%84%B2%E5%AD%98%E7%AD%96%E7%95%A5"><span class="nav-number">4.</span> <span class="nav-text">三、TOAST 觸發條件與儲存策略</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%B8%E7%99%BC%E9%96%A5%E5%80%BC"><span class="nav-number">4.1.</span> <span class="nav-text">觸發閥值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%9B%E7%A8%AE-Storage-Strategy"><span class="nav-number">4.2.</span> <span class="nav-text">四種 Storage Strategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%A4%96%E5%AE%BF%E6%8C%87%E9%87%9D%E7%9A%84%E7%9C%9F%E5%AF%A6%E7%B5%90%E6%A7%8B-varatt-external"><span class="nav-number">5.</span> <span class="nav-text">四、外宿指針的真實結構 (varatt_external)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-bytes-Oid-%E7%9A%84%E5%AE%B9%E9%87%8F"><span class="nav-number">5.1.</span> <span class="nav-text">4 bytes (Oid) 的容量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81TOAST-%E8%A1%A8%E9%95%B7%E4%BB%80%E9%BA%BC%E6%A8%A3"><span class="nav-number">6.</span> <span class="nav-text">五、TOAST 表長什麼樣?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81Detoast-%E6%B5%81%E7%A8%8B-%E8%B3%87%E6%96%99%E6%98%AF%E6%80%8E%E9%BA%BC%E8%A2%AB%E8%AE%80%E5%9B%9E%E4%BE%86%E7%9A%84"><span class="nav-number">7.</span> <span class="nav-text">六、Detoast 流程:資料是怎麼被讀回來的</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E5%80%8B%E9%97%9C%E9%8D%B5%E8%A8%AD%E8%A8%88"><span class="nav-number">7.1.</span> <span class="nav-text">三個關鍵設計</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81Inline-Compression-vs-External"><span class="nav-number">8.</span> <span class="nav-text">七、Inline Compression vs External</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A3%93%E7%B8%AE%E6%BC%94%E7%AE%97%E6%B3%95-pglz-vs-lz4"><span class="nav-number">8.1.</span> <span class="nav-text">壓縮演算法:pglz vs lz4</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E5%AF%A6%E7%94%A8-SQL-%E8%A7%80%E5%AF%9F-TOAST-%E7%9A%84%E7%9C%9F%E5%AF%A6%E6%A8%A3%E8%B2%8C"><span class="nav-number">9.</span> <span class="nav-text">八、實用 SQL:觀察 TOAST 的真實樣貌</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E7%9C%8B%E4%B8%80%E5%BC%B5%E8%A1%A8%E7%9A%84-TOAST-%E8%A1%A8%E4%BD%94%E7%94%A8"><span class="nav-number">9.1.</span> <span class="nav-text">1. 看一張表的 TOAST 表佔用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E7%9B%B4%E6%8E%A5%E6%88%B3-TOAST-%E8%A1%A8-%E9%80%B2%E9%9A%8E-%E9%9C%80-superuser"><span class="nav-number">9.2.</span> <span class="nav-text">2. 直接戳 TOAST 表 (進階,需 superuser)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E5%88%A4%E6%96%B7%E6%9F%90%E7%AD%86%E8%B3%87%E6%96%99%E6%9C%89%E6%B2%92%E6%9C%89%E8%A2%AB-TOAST"><span class="nav-number">9.3.</span> <span class="nav-text">3. 判斷某筆資料有沒有被 TOAST</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81Expanded-Datum-summary-%E6%B2%92%E6%8F%90%E5%88%B0%E7%9A%84%E8%A8%98%E6%86%B6%E9%AB%94%E5%8A%A0%E9%80%9F%E6%A9%9F%E5%88%B6"><span class="nav-number">10.</span> <span class="nav-text">九、Expanded Datum:summary 沒提到的記憶體加速機制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8D%81%E3%80%81%E8%A8%AD%E8%A8%88%E5%93%B2%E5%AD%B8%E7%B8%BD%E7%B5%90"><span class="nav-number">11.</span> <span class="nav-text">十、設計哲學總結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">12.</span> <span class="nav-text">小結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#References"><span class="nav-number">13.</span> <span class="nav-text">References</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">132</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">76</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">159</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">689k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">10:27</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.1.2
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/";
+    this.page.identifier = "postgresql-varlena-toast-deep-dive/";
+    this.page.title = "深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
