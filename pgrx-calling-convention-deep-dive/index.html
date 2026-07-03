@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="用一個最簡單的 #[pg_extern] 函式當主角，追到 pgrx 最底層的 ABI trait，把 Rust 型別與 PostgreSQL Datum 之間的完整轉換機制講清楚。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL">
+<meta property="og:url" content="https://isdaniel.github.io/pgrx-calling-convention-deep-dive/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="用一個最簡單的 #[pg_extern] 函式當主角，追到 pgrx 最底層的 ABI trait，把 Rust 型別與 PostgreSQL Datum 之間的完整轉換機制講清楚。">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2026-07-03T13:15:30.000Z">
+<meta property="article:modified_time" content="2026-07-03T14:47:22.610Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="Datum">
+<meta property="article:tag" content="FFI">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Rust">
+<meta property="article:tag" content="SystemDesign">
+<meta property="article:tag" content="pgrx">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/pgrx-calling-convention-deep-dive/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/pgrx-calling-convention-deep-dive/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/pgrx-calling-convention-deep-dive/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="pgrx,Rust,PostgreSQL,Datum,FromDatum,IntoDatum,ArgAbi,RetAbi,BoxRet,calling-convention,呼叫慣例,SRF,Set-Returning-Function,varlena,TOAST,palloc,MemoryContext,pg_extern">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/pgrx-calling-convention-deep-dive/"},"headline":"深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL","description":"用一個最簡單的 #[pg_extern] 函式當主角，追到 pgrx 最底層的 ABI trait，把 Rust 型別與 PostgreSQL Datum 之間的完整轉換機制講清楚。","datePublished":"2026-07-03T13:15:30.000Z","dateModified":"2026-07-03T14:47:22.610Z","wordCount":4127,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/pgrx-calling-convention-deep-dive/","inLanguage":"zh-tw","articleSection":"Rust","keywords":"pgrx,Rust,PostgreSQL,Datum,FromDatum,IntoDatum,ArgAbi,RetAbi,BoxRet,calling-convention,呼叫慣例,SRF,Set-Returning-Function,varlena,TOAST,palloc,MemoryContext,pg_extern"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"Rust","item":"https://isdaniel.github.io/categories/Rust/"},{"@type":"ListItem","position":3,"name":"PostgreSQL","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/"},{"@type":"ListItem","position":4,"name":"pgrx","item":"https://isdaniel.github.io/categories/Rust/PostgreSQL/pgrx/"},{"@type":"ListItem","position":5,"name":"深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL","item":"https://isdaniel.github.io/pgrx-calling-convention-deep-dive/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">160</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">76</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">133</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-07-03 21:15:30 / Modified: 22:47:22" datetime="2026-07-03T21:15:30+08:00">2026-07-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/Rust/" rel="index"><span>Rust</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/" rel="index"><span>PostgreSQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/Rust/PostgreSQL/pgrx/" rel="index"><span>pgrx</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/pgrx-calling-convention-deep-dive/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="pgrx-calling-convention-deep-dive/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>11k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>10 mins.</span>
+            </span>
+            <div class="post-description">用一個最簡單的 #[pg_extern] 函式當主角，追到 pgrx 最底層的 ABI trait，把 Rust 型別與 PostgreSQL Datum 之間的完整轉換機制講清楚。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>PostgreSQL 是 C 寫的，它不認識 Rust。但 <a target="_blank" rel="noopener" href="https://github.com/pgcentralfoundation/pgrx">pgrx</a> 卻能讓你只寫三行 Rust，就得到一個和原生 C extension 同等地位的 SQL 函式。這中間到底發生了什麼？</p>
+<p>本文用一個最簡單的 <code>#[pg_extern]</code> 函式當主角，一路追到 pgrx 最底層的 ABI trait，把「Rust 型別 ↔ PostgreSQL Datum」的完整轉換機制講清楚。讀完你會理解 pgrx 的四個核心 trait（<code>FromDatum</code> &#x2F; <code>IntoDatum</code> &#x2F; <code>ArgAbi</code> &#x2F; <code>RetAbi</code>）各自的職責，以及巨集生成的 wrapper 是怎麼把它們串起來的。</p>
+<blockquote>
+<p>對照的原始碼版本：<strong>pgrx 0.19.1</strong>。行號可能隨版本變動，但結構穩定。</p>
+<p>這篇是我先前 <a href="https://isdaniel.github.io/pgrx-postgresql-extension-mechanism-deep-dive/">《深入 pgrx 機制：用 Rust 撰寫 PostgreSQL Extension 的底層原理與實戰》</a> 的延伸：前一篇談的是「Rust 怎麼跟 C 寫的 PostgreSQL 互通」（ABI、Magic Block、bindgen），這篇則聚焦「一個值怎麼在函式邊界進出」。</p>
+</blockquote>
+<hr>
+<h2 id="一、心智模型：Datum-是一個「萬用信封」"><a href="#一、心智模型：Datum-是一個「萬用信封」" class="headerlink" title="一、心智模型：Datum 是一個「萬用信封」"></a>一、心智模型：Datum 是一個「萬用信封」</h2><p>PostgreSQL 在函式邊界傳遞的唯一貨幣是 <strong>Datum</strong>——可以想成一個「8 bytes 的萬用信封」：</p>
+<ul>
+<li>型別很小（<code>int4</code>）：信封裡直接裝著值。</li>
+<li>型別很大（<code>text</code>、<code>array</code>、<code>jsonb</code>）：信封裡裝的是一個<strong>指標</strong>，指向記憶體某處真正的資料。</li>
+</ul>
+<p>PG 呼叫你的函式時，遞給你一疊信封（包在 <code>FunctionCallInfo</code> 裡）；你算完後，也要把答案塞回一個信封還給它。</p>
+<p><strong>pgrx 做的全部事情</strong>，就是幫你自動完成兩個方向的信封拆裝：</p>
+<ol>
+<li><strong>拆信封</strong>：Datum → 好用的 Rust 型別（<code>&amp;str</code>）</li>
+<li><strong>裝信封</strong>：Rust 答案（<code>String</code>）→ Datum</li>
+</ol>
+<p>你寫的業務邏輯夾在中間，乾乾淨淨完全不碰信封。這就是 pgrx 的價值。</p>
+<hr>
+<h2 id="二、主角登場"><a href="#二、主角登場" class="headerlink" title="二、主角登場"></a>二、主角登場</h2><p>以 <code>pgrx-examples/strings/src/lib.rs</code> 裡最單純的函式為例：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[pg_extern]</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">to_lowercase</span>(input: &amp;<span class="type">str</span>) <span class="punctuation">-&gt;</span> <span class="type">String</span> &#123;</span><br><span class="line">    input.<span class="title function_ invoke__">to_lowercase</span>()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 SQL 端：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> to_lowercase(<span class="string">&#x27;HELLO&#x27;</span>);   <span class="comment">-- =&gt; &#x27;hello&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>它剛好同時用到「參數拆信封」與「回傳裝信封」兩個方向，是完美的教材。整條呼叫鏈的全景：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">psql: <span class="keyword">SELECT</span> to_lowercase(<span class="string">&#x27;HELLO&#x27;</span>);</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">① PostgreSQL 執行器</span><br><span class="line">   準備好 FunctionCallInfo（那疊信封），呼叫 C ABI 函式指標</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">② to_lowercase_wrapper()   ← #[pg_extern] 巨集「自動生成」的那層</span><br><span class="line">   - 從 fcinfo 拿出第 <span class="number">0</span> 個 Datum</span><br><span class="line">   - 【拆信封】Datum ──► &amp;str</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">③ 你手寫的 to_lowercase(<span class="keyword">input</span>: &amp;str) -&gt; String</span><br><span class="line">        <span class="keyword">input</span>.to_lowercase()              （純 Rust，沒 PG 的事）</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">② 回到 <span class="keyword">wrapper</span></span><br><span class="line">   - 【裝信封】String ──► Datum</span><br><span class="line">   - <span class="keyword">return</span> Datum 給 PostgreSQL</span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">① PostgreSQL 拿到結果 → <span class="string">&#x27;hello&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>三個角色：<strong>① PG 執行器</strong>（別人的）、<strong>② wrapper</strong>（巨集生的，你看不到但很重要）、<strong>③ 你的函式</strong>。以下逐段拆解。</p>
+<hr>
+<h2 id="三、-pg-extern-巨集生成了什麼"><a href="#三、-pg-extern-巨集生成了什麼" class="headerlink" title="三、#[pg_extern] 巨集生成了什麼"></a>三、<code>#[pg_extern]</code> 巨集生成了什麼</h2><p>你只寫了 3 行，<code>#[pg_extern]</code>（一個 proc-macro）在<strong>編譯時</strong>幫你多生成一個「翻譯官」wrapper 函式。為什麼需要它？因為 PG 只會呼叫「長得像 C 函式、吃 <code>fcinfo</code> 吐 <code>Datum</code>」的東西，你的 <code>fn(&amp;str) -&gt; String</code> 簽名 PG 根本沒辦法直接呼叫。</p>
+<p>真實生成的 wrapper 核心（<code>pgrx-sql-entity-graph/src/pg_extern/mod.rs</code>，已簡化排版）：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">_internal_wrapper</span>&lt;<span class="string">&#x27;fcx&gt;(fcinfo: &amp;mut FcInfo&lt;&#x27;</span>fcx&gt;) <span class="punctuation">-&gt;</span> Datum&lt;<span class="string">&#x27;fcx&gt; &#123;</span></span><br><span class="line"><span class="string">    unsafe &#123;</span></span><br><span class="line"><span class="string">        // 問回傳型別：這次該「跑函式」還是「恢復 SRF 狀態」？</span></span><br><span class="line"><span class="string">        let call_flow = &lt;RetTy as RetAbi&gt;::check_and_prepare(fcinfo);</span></span><br><span class="line"><span class="string">        let result = match call_flow &#123;</span></span><br><span class="line"><span class="string">            CallCx::WrappedFn(mcx) =&gt; &#123;</span></span><br><span class="line"><span class="string">                let mut mcx = PgMemoryContexts::For(mcx);</span></span><br><span class="line"><span class="string">                let _args = &amp;mut fcinfo.args();</span></span><br><span class="line"><span class="string">                let call_result = mcx.switch_to(|_| &#123;</span></span><br><span class="line"><span class="string">                    // ← 逐參數拆信封（見第六節）</span></span><br><span class="line"><span class="string">                    // ← 呼叫你的函式</span></span><br><span class="line"><span class="string">                &#125;);</span></span><br><span class="line"><span class="string">                RetAbi::to_ret(call_result)</span></span><br><span class="line"><span class="string">            &#125;</span></span><br><span class="line"><span class="string">            CallCx::RestoreCx =&gt; &lt;RetTy as RetAbi&gt;::ret_from_fcx(fcinfo),</span></span><br><span class="line"><span class="string">        &#125;;</span></span><br><span class="line"><span class="string">        &lt;RetTy as RetAbi&gt;::box_ret_in(fcinfo, result) // ← 裝信封（見第四節）</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>動手驗證</strong>：<code>cargo install cargo-expand</code>，在 <code>pgrx-examples/strings/</code> 跑 <code>cargo expand</code>，就能親眼看到這個 wrapper 被生出來。這是理解 pgrx 最有價值的一步。</p>
+</blockquote>
+<p>除了生 wrapper，<code>#[pg_extern]</code> 還記錄「這個函式的 SQL 長相」，之後 <code>cargo pgrx schema</code> 用它產生 <code>CREATE FUNCTION to_lowercase(text) RETURNS text ...</code>。這部分屬於 <code>pgrx-sql-entity-graph</code>，本文不展開。</p>
+<hr>
+<h2 id="四、拆信封：FromDatum"><a href="#四、拆信封：FromDatum" class="headerlink" title="四、拆信封：FromDatum"></a>四、拆信封：<code>FromDatum</code></h2><p><code>FromDatum</code>（<code>pgrx/src/datum/from.rs</code>）是「值轉換」層，核心一個方法：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">trait</span> <span class="title class_">FromDatum</span>: <span class="built_in">Sized</span> &#123;</span><br><span class="line">    <span class="keyword">unsafe</span> <span class="keyword">fn</span> <span class="title function_">from_polymorphic_datum</span>(</span><br><span class="line">        datum: pg_sys::Datum,   <span class="comment">// 信封</span></span><br><span class="line">        is_null: <span class="type">bool</span>,          <span class="comment">// 是不是 SQL NULL</span></span><br><span class="line">        typoid: pg_sys::Oid,    <span class="comment">// 型別 OID（多型才需要）</span></span><br><span class="line">    ) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;<span class="keyword">Self</span>&gt;;          <span class="comment">// 拆出來的 Rust 值；NULL → None</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>「給我一個信封 + 它是不是 NULL，我還你 <code>Option&lt;你的型別&gt;</code>。」<code>None</code> 就代表 SQL 的 <code>NULL</code>——這是 pgrx 處理 NULL 的統一手法。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span>&lt;<span class="string">&#x27;a&gt; FromDatum for &amp;&#x27;</span>a <span class="type">str</span> &#123;</span><br><span class="line">    <span class="keyword">unsafe</span> <span class="keyword">fn</span> <span class="title function_">from_polymorphic_datum</span>(datum, is_null, _) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;&amp;<span class="string">&#x27;a str&gt; &#123;</span></span><br><span class="line"><span class="string">        if is_null || datum.is_null() &#123;</span></span><br><span class="line"><span class="string">            None                              // NULL → None</span></span><br><span class="line"><span class="string">        &#125; else &#123;</span></span><br><span class="line"><span class="string">            // text 是變長型別(varlena)，可能被壓縮或搬到 TOAST 表，</span></span><br><span class="line"><span class="string">            // pg_detoast_datum_packed 把它「解壓 / 拉回來」</span></span><br><span class="line"><span class="string">            let varlena = pg_sys::pg_detoast_datum_packed(datum.cast_mut_ptr());</span></span><br><span class="line"><span class="string">            // 把 varlena 內容當 UTF-8 包成 &amp;str（不複製，直接借用 PG 的記憶體）</span></span><br><span class="line"><span class="string">            Some(convert_varlena_to_str_memoized(varlena))</span></span><br><span class="line"><span class="string">        &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>這裡藏著三個必懂的 PostgreSQL 機制：</p>
+<ol>
+<li><strong>varlena</strong>：<code>text</code> &#x2F; <code>bytea</code> &#x2F; <code>array</code> 這種變長型別，記憶體佈局是「4-byte 長度標頭 + 資料」。信封裡的指標指向的就是這個結構。</li>
+<li><strong>TOAST &#x2F; detoast</strong>：字串很大時 PG 會壓縮、甚至存到另一張表。所以不能直接讀信封裡的指標，必須先 <code>detoast</code> 還原。這就是為什麼 <code>int4</code> 的 <code>FromDatum</code> 一行搞定，而 <code>&amp;str</code> 要多這一步。（想深入 varlena &#x2F; TOAST 的記憶體佈局，可參考我另一篇 <a href="https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/">《PostgreSQL Varlena 與 TOAST 機制深度解析》</a>。）</li>
+<li><strong>零複製借用</strong>：回傳的 <code>&amp;&#39;a str</code> 直接指向 PG 記憶體，沒有 copy，所以帶生命週期 <code>&#39;a</code>。快，但不能讓它活過那塊記憶體——這也是 pgrx 型別到處都是 lifetime 的原因。</li>
+</ol>
+<blockquote>
+<p><strong>借用 vs 複製</strong>：同檔案下方的 <code>impl FromDatum for String</code> 會<strong>複製一份</strong>到 Rust 自己管理的記憶體。<code>&amp;str</code> &#x3D; 借 PG 記憶體，快但短命；<code>String</code> &#x3D; 複製一份，慢但你自己擁有。這個取捨貫穿整個 pgrx。</p>
+</blockquote>
+<hr>
+<h2 id="五、裝信封：IntoDatum-→-BoxRet-→-RetAbi"><a href="#五、裝信封：IntoDatum-→-BoxRet-→-RetAbi" class="headerlink" title="五、裝信封：IntoDatum → BoxRet → RetAbi"></a>五、裝信封：<code>IntoDatum</code> → <code>BoxRet</code> → <code>RetAbi</code></h2><p>回傳方向比想像中多一層。<strong>你的 <code>IntoDatum</code> 不是被 wrapper 直接呼叫的</strong>，中間隔著 <code>BoxRet</code> &#x2F; <code>RetAbi</code>。</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">你的函式 <span class="keyword">return</span> String</span><br><span class="line">      │</span><br><span class="line">      ▼</span><br><span class="line">① RetAbi      ← 回傳位置的「總 ABI 協定」（處理單值 / 多列 SRF 所有情況）</span><br><span class="line">      │  String 走最單純那條，靠 blanket impl 轉包</span><br><span class="line">      ▼</span><br><span class="line">② BoxRet      ← 「把單一 Rust 值裝成 Datum」的簡化協定</span><br><span class="line">      │  String 的 BoxRet 實作 = 呼叫你的 into_datum()</span><br><span class="line">      ▼</span><br><span class="line">③ IntoDatum   ← 你實現的這個，純粹做「值 → Datum」轉換</span><br><span class="line">      │</span><br><span class="line">      ▼</span><br><span class="line">   <span class="keyword">Option</span>&lt;Datum&gt;   （<span class="keyword">Some</span>=有值, <span class="keyword">None</span>=<span class="keyword">SQL</span> <span class="keyword">NULL</span>）</span><br><span class="line">      │</span><br><span class="line">      ▼</span><br><span class="line">④ return_raw_datum / return_null   ← 把結果 + <span class="keyword">null</span> 旗標寫回 fcinfo</span><br><span class="line">      │</span><br><span class="line">      ▼</span><br><span class="line">   交還 pg_sys::Datum 給 PostgreSQL</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-1-IntoDatum：純值轉換"><a href="#5-1-IntoDatum：純值轉換" class="headerlink" title="5.1 IntoDatum：純值轉換"></a>5.1 <code>IntoDatum</code>：純值轉換</h3><p><code>String</code> 的實作（<code>datum/into.rs:262</code> 的巨集）：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">IntoDatum</span> <span class="keyword">for</span> <span class="title class_">String</span> &#123;</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">into_datum</span>(<span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;pg_sys::Datum&gt; &#123;</span><br><span class="line">        <span class="keyword">self</span>.<span class="title function_ invoke__">as_bytes</span>().<span class="title function_ invoke__">into_datum</span>()          <span class="comment">// 轉包給 &amp;[u8] 的實作</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">type_oid</span>() <span class="punctuation">-&gt;</span> pg_sys::Oid &#123; pg_sys::TEXTOID &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>真正幹活的 <code>&amp;[u8]::into_datum</code></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">into_datum</span>(<span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;pg_sys::Datum&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">len</span> = <span class="keyword">self</span>.<span class="title function_ invoke__">len</span>() + VARHDRSZ;          <span class="comment">// 資料長度 + 4 bytes 標頭</span></span><br><span class="line">    <span class="comment">// ★ 用 palloc，不是 Rust 的 malloc！</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">varlena</span> = pg_sys::<span class="title function_ invoke__">palloc</span>(len) <span class="keyword">as</span> *<span class="keyword">mut</span> pg_sys::varlena;</span><br><span class="line">    <span class="title function_ invoke__">set_varsize_4b</span>(varlena, len);             <span class="comment">// 把長度寫進 varlena 標頭</span></span><br><span class="line">    std::ptr::<span class="title function_ invoke__">copy_nonoverlapping</span>(<span class="keyword">self</span>.<span class="title function_ invoke__">as_ptr</span>(), 資料區, <span class="keyword">self</span>.<span class="title function_ invoke__">len</span>());</span><br><span class="line">    <span class="title function_ invoke__">Some</span>(pg_sys::Datum::<span class="title function_ invoke__">from</span>(varlena))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>最關鍵的 PostgreSQL 機制：<code>palloc</code> &#x2F; MemoryContext。</strong></p>
+<blockquote>
+<p>你回傳給 PG 的東西，<strong>必須用 <code>palloc</code> 分配</strong>，不能用 Rust 的 <code>Box</code> &#x2F; <code>malloc</code>。因為 PG 用它自己的「記憶體上下文（MemoryContext）」管生命週期——查詢結束時整包釋放。若你用 Rust heap 給它，PG 不知道怎麼回收，就會洩漏或 crash。</p>
+<p><strong>進 PG 的東西走 palloc；純 Rust 內部運算走 Rust heap。</strong> 這是貫穿全 pgrx 的第二個取捨。</p>
+</blockquote>
+<h3 id="5-2-BoxRet：把-IntoDatum-接上函式邊界"><a href="#5-2-BoxRet：把-IntoDatum-接上函式邊界" class="headerlink" title="5.2 BoxRet：把 IntoDatum 接上函式邊界"></a>5.2 <code>BoxRet</code>：把 <code>IntoDatum</code> 接上函式邊界</h3><p><code>IntoDatum</code> 是通用轉換，不知道 fcinfo 存在。但「從 PG 函式回傳」還要處理 NULL 旗標。pgrx 用一個 macro 幫一票有 <code>IntoDatum</code> 的型別自動生出 <code>BoxRet</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">macro_rules!</span> impl_repackage_into_datum &#123;</span><br><span class="line">    ($($boxable:ty),*) =&gt; &#123;</span><br><span class="line">        $(  <span class="keyword">unsafe</span> <span class="keyword">impl</span> <span class="title class_">BoxRet</span> <span class="keyword">for</span> $boxable &#123;</span><br><span class="line">                <span class="keyword">unsafe</span> <span class="keyword">fn</span> <span class="title function_">box_into</span>&lt;<span class="string">&#x27;fcx&gt;(self, fcinfo: &amp;mut FcInfo&lt;&#x27;</span>fcx&gt;) <span class="punctuation">-&gt;</span> Datum&lt;<span class="string">&#x27;fcx&gt; &#123;</span></span><br><span class="line"><span class="string">                    match self.into_datum() &#123;          // ★★ 呼叫你的 IntoDatum ★★</span></span><br><span class="line"><span class="string">                        Some(datum) =&gt; unsafe &#123; fcinfo.return_raw_datum(datum) &#125;,</span></span><br><span class="line"><span class="string">                        None        =&gt; fcinfo.return_null(),</span></span><br><span class="line"><span class="string">                    &#125;</span></span><br><span class="line"><span class="string">                &#125;</span></span><br><span class="line"><span class="string">          &#125;)*</span></span><br><span class="line"><span class="string">    &#125;;</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">impl_repackage_into_datum! &#123; String, CString, Vec&lt;u8&gt;, char, Json, JsonB, Uuid, ... &#125;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>這行 <code>match self.into_datum()</code> 就是「協同」發生的地方。</strong></p>
+<blockquote>
+<p>實務重點：如果你為一個新型別實作了 <code>IntoDatum</code>，它<strong>還不能直接當回傳值</strong>，因為缺 <code>BoxRet</code>。最省事的方式就是把型別加進這個 <code>impl_repackage_into_datum!</code> 清單。</p>
+</blockquote>
+<h3 id="5-3-NULL-是旗標，不是值"><a href="#5-3-NULL-是旗標，不是值" class="headerlink" title="5.3 NULL 是旗標，不是值"></a>5.3 NULL 是旗標，不是值</h3><p><code>box_into</code> 把 <code>Option&lt;Datum&gt;</code> 翻譯成 PG 機制：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Some 路徑（callconv.rs:743）</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="keyword">fn</span> <span class="title function_">return_raw_datum</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, datum) <span class="punctuation">-&gt;</span> Datum&lt;<span class="string">&#x27;fcx&gt; &#123;</span></span><br><span class="line"><span class="string">    *self.set_return_is_null() = false;   // 告訴 PG：這次回傳「不是」NULL</span></span><br><span class="line"><span class="string">    mem::transmute(datum)</span></span><br><span class="line"><span class="string">&#125;</span></span><br><span class="line"><span class="string">// None 路徑（callconv.rs:723）</span></span><br><span class="line"><span class="string">pub fn return_null(&amp;mut self) -&gt; Datum&lt;&#x27;</span>fcx&gt; &#123;</span><br><span class="line">    <span class="keyword">unsafe</span> &#123; *<span class="keyword">self</span>.<span class="title function_ invoke__">set_return_is_null</span>() = <span class="literal">true</span> &#125;;   <span class="comment">// 告訴 PG：這次回傳「是」NULL</span></span><br><span class="line">    Datum::<span class="title function_ invoke__">null</span>()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>PostgreSQL 判斷回傳是不是 NULL，<strong>不看 Datum 內容</strong>，而是看 <code>fcinfo-&gt;isnull</code> 這個獨立布林欄位。所以「回傳 NULL」&#x3D; 設 <code>isnull = true</code>，Datum 給什麼都無所謂。這就是為什麼不能讓 <code>into_datum</code> 直接對接 PG，中間一定要有 <code>box_into</code> 這個「同時管 Datum 和 isnull」的協調者。</p>
+</blockquote>
+<hr>
+<h2 id="六、RetAbi-到底扛了什麼髒活：SRF"><a href="#六、RetAbi-到底扛了什麼髒活：SRF" class="headerlink" title="六、RetAbi 到底扛了什麼髒活：SRF"></a>六、<code>RetAbi</code> 到底扛了什麼髒活：SRF</h2><p><code>RetAbi</code> 比 <code>BoxRet</code> 複雜得多，而它的複雜度 <strong>90% 來自 SRF（Set-Returning Function，回傳多列的函式）</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> split_table(<span class="string">&#x27;a,b,c&#x27;</span>, <span class="string">&#x27;,&#x27;</span>);   <span class="comment">-- 回傳 3 列</span></span><br></pre></td></tr></table></figure>
+
+<p>對應的 Rust：<code>fn split_table(...) -&gt; TableIterator&lt;...&gt;</code>。</p>
+<h3 id="6-1-PostgreSQL-的-SRF-協定：Value-Per-Call"><a href="#6-1-PostgreSQL-的-SRF-協定：Value-Per-Call" class="headerlink" title="6.1 PostgreSQL 的 SRF 協定：Value-Per-Call"></a>6.1 PostgreSQL 的 SRF 協定：Value-Per-Call</h3><p>PG <strong>不支援</strong>「你一次 return 一個 Vec，我收下」。它用「<strong>每列呼叫一次</strong>」協定：</p>
+<blockquote>
+<p>PG：「給我第一列。」→ 函式被呼叫，回傳 row 1，然後<strong>整個函式結束、堆疊清空</strong>。<br>PG：「給我下一列。」→ <strong>同一個函式又從頭被呼叫一次</strong>，回傳 row 2。<br>…重複 N 次…<br>你：「沒了。」→ 回傳 done 訊號，PG 停止。</p>
+</blockquote>
+<p>問題：函式每次從頭跑，區域變數全沒了，「我上次吐到第幾列」的狀態存哪？</p>
+<p>PG 的答案：給你一塊<strong>跨呼叫存活的記憶體</strong>（<code>FuncCallContext</code> + <code>multi_call_memory_ctx</code>），叫你把 iterator 塞進去；下次呼叫再撈回來續跑。<strong><code>RetAbi</code> 的全部髒活就是管這個生命週期。</strong></p>
+<h3 id="6-2-RetAbi-每個方法對應的髒活"><a href="#6-2-RetAbi-每個方法對應的髒活" class="headerlink" title="6.2 RetAbi 每個方法對應的髒活"></a>6.2 <code>RetAbi</code> 每個方法對應的髒活</h3><p>對照 <code>TableIterator</code> 的實作 ：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>髒活</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>check_fcinfo_and_prepare</code></td>
+<td>問 PG「這是第幾次呼叫？」首次 → 開跨呼叫記憶體、回 <code>WrappedFn</code>；續集 → 回 <code>RestoreCx</code></td>
+</tr>
+<tr>
+<td><code>to_ret</code></td>
+<td>把使用者的 iterator 轉成內部 <code>Step</code> 狀態機，順便先 <code>next()</code> 一次確認空不空</td>
+</tr>
+<tr>
+<td><code>move_into_fcinfo_fcx</code></td>
+<td><strong>把 iterator 存進跨呼叫記憶體</strong>（<code>leak_and_drop_on_delete</code>：搬進 PG 記憶體並登記「這塊被刪時要 drop 這個 Rust 物件」）</td>
+</tr>
+<tr>
+<td><code>ret_from_fcinfo_fcx</code></td>
+<td><strong>續集時把 iterator 撈回來</strong>，<code>next()</code> 抽下一列</td>
+</tr>
+<tr>
+<td><code>box_ret_in_fcinfo</code></td>
+<td>把這一列裝成 Datum，並 <code>srf_return_next</code> 撥「還有下一列」旗標</td>
+</tr>
+<tr>
+<td><code>finish_call_fcinfo</code></td>
+<td><code>srf_return_done</code> 撥「結束」旗標，PG 才停止呼叫並清記憶體（觸發 Rust drop）</td>
+</tr>
+</tbody></table>
+<p><code>CallCx</code> 這個 enum 就是給 wrapper 的方向盤：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">CallCx</span> &#123;</span><br><span class="line">    RestoreCx,                        <span class="comment">// 續集：跳過使用者函式，去撈狀態</span></span><br><span class="line">    <span class="title function_ invoke__">WrappedFn</span>(pg_sys::MemoryContext), <span class="comment">// 首次：切到這個記憶體、跑使用者函式</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-3-兩條生命週期並排看"><a href="#6-3-兩條生命週期並排看" class="headerlink" title="6.3 兩條生命週期並排看"></a>6.3 兩條生命週期並排看</h3><table>
+<thead>
+<tr>
+<th>階段</th>
+<th><code>String</code>（單值，走 <code>BoxRet</code>）</th>
+<th><code>TableIterator</code>（SRF，走完整 <code>RetAbi</code>）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PG 呼叫次數</td>
+<td><strong>1 次</strong></td>
+<td><strong>N+1 次</strong>（N 列 + 1 次收尾）</td>
+</tr>
+<tr>
+<td>跑使用者函式</td>
+<td>每次都跑</td>
+<td><strong>只有第一次跑</strong>，之後不跑</td>
+</tr>
+<tr>
+<td>狀態保存</td>
+<td>不需要</td>
+<td><code>move_into_fcinfo_fcx</code> 存 iterator</td>
+</tr>
+<tr>
+<td>狀態恢復</td>
+<td>不需要</td>
+<td><code>ret_from_fcinfo_fcx</code> 撈 iterator</td>
+</tr>
+<tr>
+<td>每次回傳</td>
+<td><code>box_into</code> → 一個 Datum</td>
+<td><code>box_ret_in_fcinfo</code> → 一列 + <code>srf_return_next</code></td>
+</tr>
+<tr>
+<td>收尾</td>
+<td>無</td>
+<td><code>finish_call_fcinfo</code> → <code>srf_return_done</code></td>
+</tr>
+</tbody></table>
+<p>這就是為什麼 <code>String</code> 只需簡化版 <code>BoxRet</code>，而 <code>TableIterator</code> 需要完整 <code>RetAbi</code>。<code>BoxRet</code> 本質上是「把 <code>RetAbi</code> 除 <code>box_into</code> 外的方法全給空實作」的那條 blanket impl。</p>
+<blockquote>
+<p><strong>最硬的髒活</strong>是「Rust 物件跨 C 函式呼叫存活 + 正確 Drop」。<code>leak_and_drop_on_delete</code> 把 iterator 搬進 PG 記憶體並掛上解構子——這是手寫 C extension 最容易洩漏 &#x2F; crash 的地方，<code>RetAbi</code> 全包了。</p>
+</blockquote>
+<h3 id="6-4-附帶：Result-的回傳"><a href="#6-4-附帶：Result-的回傳" class="headerlink" title="6.4 附帶：Result&lt;T, E&gt; 的回傳"></a>6.4 附帶：<code>Result&lt;T, E&gt;</code> 的回傳</h3><p>pgrx 讓你能寫 <code>-&gt; Result&lt;String, MyError&gt;</code>。它的 <code>to_ret</code> 裡呼叫 <code>unwrap_or_report</code>：若是 <code>Err</code>，轉成 PostgreSQL 的 <code>ereport</code> 錯誤（SQL 端看到錯誤並中止交易），否則解包 <code>Ok</code> 值繼續走正常回傳。<strong>所以 pgrx 函式回傳 <code>Result</code> 的 <code>Err</code> &#x3D; PG 端的 ERROR。</strong></p>
+<hr>
+<h2 id="七、參數方向：與回傳對稱的-ArgAbi"><a href="#七、參數方向：與回傳對稱的-ArgAbi" class="headerlink" title="七、參數方向：與回傳對稱的 ArgAbi"></a>七、參數方向：與回傳對稱的 <code>ArgAbi</code></h2><p>回頭看第三節 wrapper 裡的參數拆解。參數方向有一套跟回傳完全對稱的 ABI trait，叫 <code>ArgAbi</code>。</p>
+<h3 id="7-1-巨集怎麼生「拆信封」語句"><a href="#7-1-巨集怎麼生「拆信封」語句" class="headerlink" title="7.1 巨集怎麼生「拆信封」語句"></a>7.1 巨集怎麼生「拆信封」語句</h3><p>wrapper 生成邏輯：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ① 每個參數的綁定名：input → input_（加底線避開名稱衝突，是個 workaround）</span></span><br><span class="line"><span class="keyword">let</span> <span class="variable">arg_pats</span> = args.<span class="title function_ invoke__">iter</span>().<span class="title function_ invoke__">map</span>(|v| format_ident!(<span class="string">&quot;&#123;&#125;_&quot;</span>, &amp;v.pat)).<span class="title function_ invoke__">collect</span>();</span><br><span class="line"><span class="comment">// ② 參數迭代器變數名：_args</span></span><br><span class="line"><span class="keyword">let</span> <span class="variable">args_ident</span> = Ident::<span class="title function_ invoke__">new</span>(<span class="string">&quot;_args&quot;</span>, ...);</span><br><span class="line"><span class="comment">// ③ 每個參數生一句「掏出下一個、解箱、失敗就 panic」</span></span><br><span class="line"><span class="keyword">let</span> <span class="variable">arg_fetches</span> = arg_pats.<span class="title function_ invoke__">iter</span>().<span class="title function_ invoke__">map</span>(|pat| quote!&#123;</span><br><span class="line">    <span class="keyword">let</span> #pat = #args_ident.<span class="title function_ invoke__">next_arg_unchecked</span>()</span><br><span class="line">        .<span class="title function_ invoke__">unwrap_or_else</span>(|| <span class="built_in">panic!</span>(<span class="string">&quot;unboxing &#123;&#125; argument failed&quot;</span>, <span class="built_in">stringify!</span>(#pat)));</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p><code>quote!</code> 的重複語法只有一條規則：</p>
+<figure class="highlight leaf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">#</span><span class="params">(#變數)</span>*      → 逐元素展開，之間「沒有分隔符」</span><br><span class="line"><span class="punctuation">#</span><span class="params">(#變數)</span>,*     → 逐元素展開，之間用「逗號」分隔</span><br></pre></td></tr></table></figure>
+
+<p>對 <code>substring(input: &amp;str, start: i32, end: i32)</code>，逐參數拆解會展開成三句 <code>let</code>，再展開成 <code>substring(input_, start_, end_)</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="variable">input_</span> = _args.<span class="title function_ invoke__">next_arg_unchecked</span>().<span class="title function_ invoke__">unwrap_or_else</span>(|| <span class="built_in">panic!</span>(...));</span><br><span class="line"><span class="keyword">let</span> <span class="variable">start_</span> = _args.<span class="title function_ invoke__">next_arg_unchecked</span>().<span class="title function_ invoke__">unwrap_or_else</span>(|| <span class="built_in">panic!</span>(...));</span><br><span class="line"><span class="keyword">let</span> <span class="variable">end_</span>   = _args.<span class="title function_ invoke__">next_arg_unchecked</span>().<span class="title function_ invoke__">unwrap_or_else</span>(|| <span class="built_in">panic!</span>(...));</span><br><span class="line"><span class="title function_ invoke__">substring</span>(input_, start_, end_)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>為什麼需要這道拆解？</strong> wrapper 從 PG 拿到的是 <code>fcinfo</code>（一坨裸信封），不是打好型別的 Rust 值。你的函式要 <code>&amp;str</code> 不是 <code>Datum</code>。這道「拆信封」工序就是：每個參數生一句 <code>let</code>，把第 i 個裸 Datum 掏出來、解箱成正確型別的綁定。</p>
+<p><strong>漂亮的細節</strong>：<code>next_arg_unchecked()</code> 沒寫 <code>::&lt;&amp;str&gt;</code>。型別靠 Rust 從後面 <code>to_lowercase(input_)</code> 的簽名<strong>反推</strong>回來——巨集完全不用知道參數型別，交給編譯器。這就是這句能對所有型別通用的原因。</p>
+</blockquote>
+<h3 id="7-2-ArgAbi-→-FromDatum-的接線"><a href="#7-2-ArgAbi-→-FromDatum-的接線" class="headerlink" title="7.2 ArgAbi → FromDatum 的接線"></a>7.2 <code>ArgAbi</code> → <code>FromDatum</code> 的接線</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">_args.next_arg_unchecked::&lt;&amp;<span class="type">str</span>&gt;()</span><br><span class="line">        │  callconv.rs:<span class="number">940</span></span><br><span class="line">        ▼</span><br><span class="line">Args::<span class="title function_ invoke__">next</span>() → 取出第 i 個 <span class="title function_ invoke__">Arg</span>(fcinfo, i, &amp;NullableDatum)  <span class="comment">// &#123;value: Datum, isnull&#125;</span></span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">&lt;&amp;<span class="type">str</span> <span class="keyword">as</span> ArgAbi&gt;::<span class="title function_ invoke__">unbox_arg_unchecked</span>(arg)   <span class="comment">// ArgAbi = 參數位置的 ABI 協定</span></span><br><span class="line">        │  （&amp;<span class="type">str</span> 由 argue_from_datum! 巨集生成，callconv.rs:<span class="number">253</span>）</span><br><span class="line">        ▼</span><br><span class="line">arg.unbox_arg_using_from_datum::&lt;&amp;<span class="type">str</span>&gt;()      <span class="comment">// callconv.rs:887</span></span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">&lt;&amp;<span class="type">str</span> <span class="keyword">as</span> FromDatum&gt;::<span class="title function_ invoke__">from_datum</span>(datum, isnull)  <span class="comment">// 第四節那個 detoast + 借用</span></span><br><span class="line">        │</span><br><span class="line">        ▼</span><br><span class="line">      &amp;<span class="type">str</span>（借用 PG 記憶體）</span><br></pre></td></tr></table></figure>
+
+<p>橋接點 <code>unbox_arg_using_from_datum</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="keyword">fn</span> <span class="title function_">unbox_arg_using_from_datum</span>&lt;T: FromDatum&gt;(<span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Option</span>&lt;T&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> T::GET_TYPOID &#123;</span><br><span class="line">        T::<span class="title function_ invoke__">from_polymorphic_datum</span>(<span class="keyword">self</span>.<span class="number">2</span>.value, <span class="keyword">self</span>.<span class="title function_ invoke__">is_null</span>(), <span class="keyword">self</span>.<span class="title function_ invoke__">raw_oid</span>())  <span class="comment">// 多型</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        T::<span class="title function_ invoke__">from_datum</span>(<span class="keyword">self</span>.<span class="number">2</span>.value, <span class="keyword">self</span>.<span class="title function_ invoke__">is_null</span>())     <span class="comment">// 一般：detoast + 借用</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>Args</code> 就是「把 PG 那疊信封做成 Rust 迭代器」，<code>next_arg_unchecked</code> 每叫一次吐一個 <code>Arg</code>，交給 <code>ArgAbi</code> 解箱。</p>
+<hr>
+<h2 id="八、收束：pgrx-呼叫慣例的四格大圖"><a href="#八、收束：pgrx-呼叫慣例的四格大圖" class="headerlink" title="八、收束：pgrx 呼叫慣例的四格大圖"></a>八、收束：pgrx 呼叫慣例的四格大圖</h2><p>這是理解 pgrx 的最終地圖，值得背下來：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>值轉換層（通用、到處用）</th>
+<th>ABI 層（只在函式邊界、管 fcinfo）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>參數方向（進）</strong></td>
+<td><code>FromDatum::from_datum</code> 拆信封</td>
+<td><code>ArgAbi::unbox_arg_unchecked</code></td>
+</tr>
+<tr>
+<td><strong>回傳方向（出）</strong></td>
+<td><code>IntoDatum::into_datum</code> 裝信封</td>
+<td><code>BoxRet::box_into</code> &#x2F; <code>RetAbi</code>（含 SRF）</td>
+</tr>
+</tbody></table>
+<p>兩個關鍵洞察：</p>
+<ol>
+<li><p><strong>內圈（<code>FromDatum</code> &#x2F; <code>IntoDatum</code>）是純資料轉換</strong>，跟 fcinfo 無關，所以 SPI 傳參、建 array、composite type 也都在用它們——通用。<strong>外圈（<code>ArgAbi</code> &#x2F; <code>BoxRet</code>）是函式邊界專屬的 ABI</strong>，負責 fcinfo 髒活（null 旗標、參數迭代、pass-by-ref&#x2F;value、SRF 多列、生命週期），再把值轉換轉包給內圈。</p>
+</li>
+<li><p><strong>唯一不對稱的地方是 <code>RetAbi</code></strong>：因為 PG「回傳多列」比「吃多個參數」複雜得多——參數永遠一次給齊，回傳卻可能分 N 次。所以進的方向只有 <code>ArgAbi</code> 一個 trait，出的方向卻有 <code>BoxRet</code> + <code>RetAbi</code> 兩個。</p>
+</li>
+</ol>
+<hr>
+<h2 id="九、給想貢獻-pgrx-的人：實務清單"><a href="#九、給想貢獻-pgrx-的人：實務清單" class="headerlink" title="九、給想貢獻 pgrx 的人：實務清單"></a>九、給想貢獻 pgrx 的人：實務清單</h2><ul>
+<li>想讓一個新型別能當<strong>參數</strong>：實作 <code>FromDatum</code>，並確保有對應的 <code>ArgAbi</code>（多數走 <code>argue_from_datum!</code> 或 borrow-based 的 blanket impl）。</li>
+<li>想讓一個新型別能當<strong>回傳值</strong>：實作 <code>IntoDatum</code>，並把它掛上 <code>BoxRet</code>（最省事：加進 <code>impl_repackage_into_datum!</code> 清單）。光有 <code>IntoDatum</code> 不夠。</li>
+<li>回傳多列：實作 <code>Iterator</code> 並用 <code>SetOfIterator</code> &#x2F; <code>TableIterator</code> 包起來，<code>RetAbi</code> 的 SRF 生命週期它們已經幫你處理好。</li>
+<li>測試一定要用 <code>#[pg_test]</code>（在真實 PG 裡跑），純 <code>#[test]</code> 碰不到 PG 內部。</li>
+<li>動 unsafe 前先讀 repo 根目錄的 <code>SAFETY.md</code>，PR review 主要卡在這裡。</li>
+</ul>
+<hr>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>pgrx 看似魔法，拆開後其實只是四個 trait 分工合作：<strong>內圈的 <code>FromDatum</code> &#x2F; <code>IntoDatum</code> 負責純值轉換，外圈的 <code>ArgAbi</code> &#x2F; <code>RetAbi</code> 負責函式邊界的 ABI 髒活</strong>，中間靠 <code>#[pg_extern]</code> 巨集生成的 wrapper 串起來。</p>
+<p>理解這條「一個值如何進出 PostgreSQL」的鏈路後，你不但能看懂 pgrx 生成的程式碼，也能自己為新型別擴充參數與回傳支援——甚至讀懂手寫 C extension 為什麼那麼容易在記憶體管理上翻車。</p>
+<hr>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li><a href="https://isdaniel.github.io/pgrx-postgresql-extension-mechanism-deep-dive/">深入 pgrx 機制：用 Rust 撰寫 PostgreSQL Extension 的底層原理與實戰</a></li>
+<li><a href="https://isdaniel.github.io/postgresql-varlena-toast-deep-dive/">PostgreSQL Varlena 與 TOAST 機制深度解析</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/xfunc-c.html#XFUNC-C-V1-CALLING">PostgreSQL: Version 1 Calling Conventions</a></li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/pgrx-calling-convention-deep-dive/">https://isdaniel.github.io/pgrx-calling-convention-deep-dive/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pgrx-postgresql-extension-mechanism-deep-dive/" rel="bookmark">深入 pgrx 機制：用 Rust 撰寫 PostgreSQL Extension 的底層原理與實戰</a></div>
+        <div class="popular-posts-excerpt"><p>從零開始拆解 pgrx 如何讓 Rust 與 C 寫的 PostgreSQL 完美互通,並以 timescale-extension-utils-rs 為例,帶初學者了解 pg_fn!、pg_agg!、Datum 轉換、MemoryContext 與 longjmp 處理的完整機制</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pg-pidstat-real-time-postgresql-backend-monitoring/" rel="bookmark">pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL</a></div>
+        <div class="popular-posts-excerpt"><p>pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pg-where-guard-rust-postgresql-extension/" rel="bookmark">Building Safe PostgreSQL Extensions with Rust - Introducing pg_where_guard</a></div>
+        <div class="popular-posts-excerpt"><p>pg_where_guard is a Rust/pgrx PostgreSQL extension that blocks unsafe UPDATE and DELETE without WHERE clauses, preventing accidental data loss</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/redis-fdw-rs/" rel="bookmark">【開源介紹】redis_fdw_rs：讓 PostgreSQL 直接查 Redis 的 FDW 擴充套件（Rust 編寫）</a></div>
+        <div class="popular-posts-excerpt"><p>介紹開源專案 redis_fdw_rs，使用 Rust 與 pgrx 實作的 Redis FDW，讓 PostgreSQL 直接查詢 Redis 資料如同操作一般資料表</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/rust-pgrx-extension-fdw/" rel="bookmark">Building a PostgreSQL Foreign Data Wrapper (FDW) in Rust with pgrx</a></div>
+        <div class="popular-posts-excerpt"><p>Learn how to build a PostgreSQL Foreign Data Wrapper (FDW) in Rust using pgrx — query external data sources as regular PostgreSQL tables</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Rust/" rel="tag"># Rust</a>
+              <a href="/tags/SystemDesign/" rel="tag"># SystemDesign</a>
+              <a href="/tags/pgrx/" rel="tag"># pgrx</a>
+              <a href="/tags/Datum/" rel="tag"># Datum</a>
+              <a href="/tags/FFI/" rel="tag"># FFI</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/postgresql-varlena-toast-deep-dive/" rel="prev" title="深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析">
+      <i class="fa fa-chevron-left"></i> 深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%BF%83%E6%99%BA%E6%A8%A1%E5%9E%8B%EF%BC%9ADatum-%E6%98%AF%E4%B8%80%E5%80%8B%E3%80%8C%E8%90%AC%E7%94%A8%E4%BF%A1%E5%B0%81%E3%80%8D"><span class="nav-number">2.</span> <span class="nav-text">一、心智模型：Datum 是一個「萬用信封」</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E4%B8%BB%E8%A7%92%E7%99%BB%E5%A0%B4"><span class="nav-number">3.</span> <span class="nav-text">二、主角登場</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81-pg-extern-%E5%B7%A8%E9%9B%86%E7%94%9F%E6%88%90%E4%BA%86%E4%BB%80%E9%BA%BC"><span class="nav-number">4.</span> <span class="nav-text">三、#[pg_extern] 巨集生成了什麼</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E6%8B%86%E4%BF%A1%E5%B0%81%EF%BC%9AFromDatum"><span class="nav-number">5.</span> <span class="nav-text">四、拆信封：FromDatum</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E8%A3%9D%E4%BF%A1%E5%B0%81%EF%BC%9AIntoDatum-%E2%86%92-BoxRet-%E2%86%92-RetAbi"><span class="nav-number">6.</span> <span class="nav-text">五、裝信封：IntoDatum → BoxRet → RetAbi</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-1-IntoDatum%EF%BC%9A%E7%B4%94%E5%80%BC%E8%BD%89%E6%8F%9B"><span class="nav-number">6.1.</span> <span class="nav-text">5.1 IntoDatum：純值轉換</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-2-BoxRet%EF%BC%9A%E6%8A%8A-IntoDatum-%E6%8E%A5%E4%B8%8A%E5%87%BD%E5%BC%8F%E9%82%8A%E7%95%8C"><span class="nav-number">6.2.</span> <span class="nav-text">5.2 BoxRet：把 IntoDatum 接上函式邊界</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-3-NULL-%E6%98%AF%E6%97%97%E6%A8%99%EF%BC%8C%E4%B8%8D%E6%98%AF%E5%80%BC"><span class="nav-number">6.3.</span> <span class="nav-text">5.3 NULL 是旗標，不是值</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AD%E3%80%81RetAbi-%E5%88%B0%E5%BA%95%E6%89%9B%E4%BA%86%E4%BB%80%E9%BA%BC%E9%AB%92%E6%B4%BB%EF%BC%9ASRF"><span class="nav-number">7.</span> <span class="nav-text">六、RetAbi 到底扛了什麼髒活：SRF</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#6-1-PostgreSQL-%E7%9A%84-SRF-%E5%8D%94%E5%AE%9A%EF%BC%9AValue-Per-Call"><span class="nav-number">7.1.</span> <span class="nav-text">6.1 PostgreSQL 的 SRF 協定：Value-Per-Call</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-2-RetAbi-%E6%AF%8F%E5%80%8B%E6%96%B9%E6%B3%95%E5%B0%8D%E6%87%89%E7%9A%84%E9%AB%92%E6%B4%BB"><span class="nav-number">7.2.</span> <span class="nav-text">6.2 RetAbi 每個方法對應的髒活</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-3-%E5%85%A9%E6%A2%9D%E7%94%9F%E5%91%BD%E9%80%B1%E6%9C%9F%E4%B8%A6%E6%8E%92%E7%9C%8B"><span class="nav-number">7.3.</span> <span class="nav-text">6.3 兩條生命週期並排看</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-4-%E9%99%84%E5%B8%B6%EF%BC%9AResult-%E7%9A%84%E5%9B%9E%E5%82%B3"><span class="nav-number">7.4.</span> <span class="nav-text">6.4 附帶：Result&lt;T, E&gt; 的回傳</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%83%E3%80%81%E5%8F%83%E6%95%B8%E6%96%B9%E5%90%91%EF%BC%9A%E8%88%87%E5%9B%9E%E5%82%B3%E5%B0%8D%E7%A8%B1%E7%9A%84-ArgAbi"><span class="nav-number">8.</span> <span class="nav-text">七、參數方向：與回傳對稱的 ArgAbi</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#7-1-%E5%B7%A8%E9%9B%86%E6%80%8E%E9%BA%BC%E7%94%9F%E3%80%8C%E6%8B%86%E4%BF%A1%E5%B0%81%E3%80%8D%E8%AA%9E%E5%8F%A5"><span class="nav-number">8.1.</span> <span class="nav-text">7.1 巨集怎麼生「拆信封」語句</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-2-ArgAbi-%E2%86%92-FromDatum-%E7%9A%84%E6%8E%A5%E7%B7%9A"><span class="nav-number">8.2.</span> <span class="nav-text">7.2 ArgAbi → FromDatum 的接線</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%AB%E3%80%81%E6%94%B6%E6%9D%9F%EF%BC%9Apgrx-%E5%91%BC%E5%8F%AB%E6%85%A3%E4%BE%8B%E7%9A%84%E5%9B%9B%E6%A0%BC%E5%A4%A7%E5%9C%96"><span class="nav-number">9.</span> <span class="nav-text">八、收束：pgrx 呼叫慣例的四格大圖</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%9D%E3%80%81%E7%B5%A6%E6%83%B3%E8%B2%A2%E7%8D%BB-pgrx-%E7%9A%84%E4%BA%BA%EF%BC%9A%E5%AF%A6%E5%8B%99%E6%B8%85%E5%96%AE"><span class="nav-number">10.</span> <span class="nav-text">九、給想貢獻 pgrx 的人：實務清單</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">11.</span> <span class="nav-text">小結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#References"><span class="nav-number">12.</span> <span class="nav-text">References</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">133</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">76</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">160</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">701k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">10:37</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.1.2
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/pgrx-calling-convention-deep-dive/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/pgrx-calling-convention-deep-dive/";
+    this.page.identifier = "pgrx-calling-convention-deep-dive/";
+    this.page.title = "深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
