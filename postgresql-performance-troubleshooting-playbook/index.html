@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 8.1.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <meta name="google-site-verification" content="B1Arsk082X06o3qvKP_qic1VrLSMoObkZ5neSPLhBVs">
+  <meta name="msvalidate.01" content="403A0439B14E6B3CB803CE7ADE4234FB">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"isdaniel.github.io","root":"/","scheme":"Gemini","version":"7.7.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  
+<meta name="description" content="一套可實作的 PostgreSQL 效能排查：用 wait event、pg_stat_statements、EXPLAIN 由上而下定位高 CPU、高記憶體、慢查詢、鎖等待與表膨脹問題，每個症狀都附上可直接執行的 SQL。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PostgreSQL 效能調校實戰：從高 CPU、高記憶體到慢查詢的排查">
+<meta property="og:url" content="https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/index.html">
+<meta property="og:site_name" content="石頭的coding之路">
+<meta property="og:description" content="一套可實作的 PostgreSQL 效能排查：用 wait event、pg_stat_statements、EXPLAIN 由上而下定位高 CPU、高記憶體、慢查詢、鎖等待與表膨脹問題，每個症狀都附上可直接執行的 SQL。">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
+<meta property="article:published_time" content="2026-07-31T13:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T03:57:00.863Z">
+<meta property="article:author" content="Daniel Shih">
+<meta property="article:tag" content="EXPLAIN">
+<meta property="article:tag" content="Performance-Tuning">
+<meta property="article:tag" content="PostgreSQL">
+<meta property="article:tag" content="Troubleshooting">
+<meta property="article:tag" content="pg_stat_statements">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://isdaniel.github.io/images/default-og-image.png">
+
+
+<link rel="canonical" href="https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true
+  };
+</script>
+
+
+  <link rel="alternate" hreflang="zh-Hant-TW" href="https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/">
+
+<link rel="alternate" hreflang="x-default" href="https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/">
+
+
+
+
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+
+<link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
+
+  <title>PostgreSQL 效能調校實戰：從高 CPU、高記憶體到慢查詢的排查 | 石頭的coding之路</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZKF58CMZ8X');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528"
+     crossorigin="anonymous"></script>
+  <script async custom-element="amp-auto-ads"
+        src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js">
+  </script>
+  <meta name="google-adsense-account" content="ca-pub-9964202165342528">
+
+  <style>
+    /* Full-screen overlay */
+    #adblock-overlay {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.85);
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      padding-top: 20%;
+    }
+
+    #adblock-overlay h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+
+    #adblock-overlay p {
+      font-size: 1.2em;
+    }
+  </style>
+  <script>
+    /*document.addEventListener("DOMContentLoaded", function () {
+      const overlay = document.getElementById("adblock-overlay");
+
+      const adScript = document.createElement("script");
+      adScript.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9964202165342528";
+      adScript.async = true;
+      adScript.crossOrigin = "anonymous";
+
+      adScript.onerror = function () {
+        console.warn("Adblock detected — showing full-page overlay.");
+        overlay.style.display = "block";
+        document.body.style.overflow = "hidden"; // prevent scroll
+      };
+
+      document.head.appendChild(adScript);
+    });*/
+  </script>
+
+<meta name="keywords" content="PostgreSQL,效能調校,performance-tuning,高CPU,高記憶體,慢查詢,pg_stat_statements,EXPLAIN,ANALYZE,wait-event,pg_stat_activity,work_mem,autovacuum,lock,blocking,cache-hit-ratio,PgBouncer,troubleshooting">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/"},"headline":"PostgreSQL 效能調校實戰：從高 CPU、高記憶體到慢查詢的排查","description":"一套可實作的 PostgreSQL 效能排查：用 wait event、pg_stat_statements、EXPLAIN 由上而下定位高 CPU、高記憶體、慢查詢、鎖等待與表膨脹問題，每個症狀都附上可直接執行的 SQL。","datePublished":"2026-07-31T13:30:00.000Z","dateModified":"2026-07-31T03:57:00.863Z","wordCount":5291,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/","inLanguage":"zh-tw","articleSection":"PostgreSQL","keywords":"PostgreSQL,效能調校,performance-tuning,高CPU,高記憶體,慢查詢,pg_stat_statements,EXPLAIN,ANALYZE,wait-event,pg_stat_activity,work_mem,autovacuum,lock,blocking,cache-hit-ratio,PgBouncer,troubleshooting"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"PostgreSQL","item":"https://isdaniel.github.io/categories/PostgreSQL/"},{"@type":"ListItem","position":3,"name":"Performance-Tuning","item":"https://isdaniel.github.io/categories/PostgreSQL/Performance-Tuning/"},{"@type":"ListItem","position":4,"name":"PostgreSQL 效能調校實戰：從高 CPU、高記憶體到慢查詢的排查","item":"https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/"}]}]}</script>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  
+  <div id="adblock-overlay">
+    <h1>🚫 Ad Blocker Detected</h1>
+    <p>Please disable your AD blocker to continue using this site. Ads help us keep the content free! please press keyboard F5 to refresh page after disabled AD blocker</p>
+    <p>請關閉廣告攔截器以繼續使用本網站。廣告有助於我們保證內容免費。謝謝! 關閉後請按 F5 刷新頁面</p>
+  </div>
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">石頭的coding之路</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <h1 class="site-subtitle" itemprop="description">好點子沒價值，有價值的是把好點子實現</h1>
+      
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-course">
+
+    <a href="/Course/" rel="section"><i class="fa fa-fw fa-book"></i>Course</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>Tags<span class="badge">163</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>Categories<span class="badge">77</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>Archives<span class="badge">134</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article class="post-block " lang="zh-tw">
+      <header class="post-header">
+        <h2 class="post-title">
+          PostgreSQL 效能調校實戰：從高 CPU、高記憶體到慢查詢的排查
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2026-07-31 21:30:00 / Modified: 11:57:00" datetime="2026-07-31T21:30:00+08:00">2026-07-31</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span>
+                  <a href="/categories/PostgreSQL/" rel="index"><span>PostgreSQL</span></a>
+                </span>
+                  , 
+                <span>
+                  <a href="/categories/PostgreSQL/Performance-Tuning/" rel="index"><span>Performance-Tuning</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/postgresql-performance-troubleshooting-playbook/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="postgresql-performance-troubleshooting-playbook/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="Symbols count in article">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">Symbols count in article: </span>
+              <span>16k</span>
+            </span>
+            <span class="post-meta-item" title="Reading time">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">Reading time &asymp;</span>
+              <span>15 mins.</span>
+            </span>
+            <div class="post-description">一套可實作的 PostgreSQL 效能排查：用 wait event、pg_stat_statements、EXPLAIN 由上而下定位高 CPU、高記憶體、慢查詢、鎖等待與表膨脹問題，每個症狀都附上可直接執行的 SQL。</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>當 PostgreSQL 效能變差時，最常見的錯誤是「憑感覺」直接跳到某個 SQL 去猜哪裡慢。真正有效率的排查方式是 <strong>由上而下 (top-down)</strong>：先看作業系統與實例層級的指標（哪個資源、哪個時間點被打爆），再看 <strong>wait event</strong>（backend 到底卡在哪一類瓶頸），最後才進到 <strong>query 層級</strong> 去針對元凶做 <code>EXPLAIN</code>。</p>
+<p>其他相關基礎可以搭配我之前寫的文章一起看：</p>
+<ul>
+<li><a href="https://isdaniel.github.io/postgresql-cost-factor-tuning/">postgresql 執行計畫重要因子 (成本因子調教)</a></li>
+<li><a href="https://isdaniel.github.io/postgresql-autovacuum/">Postgresql AutoVacuum 介紹</a></li>
+<li><a href="https://isdaniel.github.io/postgresql-wal-introduce/">PostgreSQL WAL 介紹</a></li>
+</ul>
+<h2 id="前置作業：先把觀測能力打開"><a href="#前置作業：先把觀測能力打開" class="headerlink" title="前置作業：先把觀測能力打開"></a>前置作業：先把觀測能力打開</h2><p>在做任何 query 層級的診斷之前，下面這些參數必須先就位，否則很多統計表根本沒資料。</p>
+<ul>
+<li><strong><code>pg_stat_statements</code></strong>：要先加進 <code>shared_preload_libraries</code>、<strong>重啟</strong> DB（分配共享記憶體，reload 不夠），再在目標 DB 執行 <code>CREATE EXTENSION pg_stat_statements;</code>。</li>
+<li><strong><code>track_activities = on</code></strong>（預設開）：<code>pg_stat_activity</code> 才會回報 <code>state</code>、<code>query</code>、<code>wait_event</code>。</li>
+<li><strong><code>track_counts = on</code></strong>（預設開）：<code>pg_stat_user_*</code>、<code>pg_statio_*</code>、<code>pg_stat_database</code> 的計數器才會累積，否則「未使用索引」、「cache hit ratio」查出來都是空的。</li>
+<li><strong><code>track_io_timing = on</code></strong>（預設關）：<code>pg_stat_statements</code> 與 <code>EXPLAIN (BUFFERS)</code> 的 <strong>I&#x2F;O 時間</strong>欄位才有值（block 數量欄位一直都有）。這個有額外開銷，正式環境開之前先壓測。</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- postgresql.conf</span></span><br><span class="line">shared_preload_libraries <span class="operator">=</span> <span class="string">&#x27;pg_stat_statements&#x27;</span></span><br><span class="line">track_io_timing <span class="operator">=</span> <span class="keyword">on</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 重啟後在目標 DB 執行</span></span><br><span class="line"><span class="keyword">CREATE</span> EXTENSION IF <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> pg_stat_statements;</span><br></pre></td></tr></table></figure>
+
+<h2 id="排查方法論：三層由上而下定位"><a href="#排查方法論：三層由上而下定位" class="headerlink" title="排查方法論：三層由上而下定位"></a>排查方法論：三層由上而下定位</h2><table>
+<thead>
+<tr>
+<th>層級</th>
+<th>問「什麼」</th>
+<th>工具</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Tier 1 — OS &#x2F; 實例指標</td>
+<td><strong>何時</strong>、<strong>哪個資源</strong>被打爆</td>
+<td>CPU% &#x2F; IOPS &#x2F; Throughput、<code>top</code>、<code>iostat</code>、<code>vmstat</code>、<code>pg_stat_database</code></td>
+</tr>
+<tr>
+<td>Tier 2 — Wait event</td>
+<td>backend <strong>卡在哪一類瓶頸</strong></td>
+<td><code>pg_stat_activity.wait_event_type</code></td>
+</tr>
+<tr>
+<td>Tier 3 — Query 層級</td>
+<td><strong>哪一條</strong> SQL 是元凶</td>
+<td><code>pg_stat_statements</code>、<code>EXPLAIN (ANALYZE, BUFFERS)</code></td>
+</tr>
+</tbody></table>
+<p>Tier 2 是很多人忽略但最關鍵的一層。判讀 <code>wait_event_type</code> 先看「類別」：</p>
+<table>
+<thead>
+<tr>
+<th><code>wait_event_type</code></th>
+<th>代表的瓶頸類別</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>NULL</code> 且 <code>state=&#39;active&#39;</code></td>
+<td><strong>On-CPU</strong> — backend 正在真的跑（CPU-bound）。PostgreSQL 沒有一個叫 <code>&#39;CPU&#39;</code> 的 wait type，on-CPU 是靠「active + 沒有 wait event」推論出來的</td>
+</tr>
+<tr>
+<td><code>Lock</code></td>
+<td>重量級鎖競爭（例如 <code>wait_event=&#39;relation&#39;</code> 卡在 table lock）</td>
+</tr>
+<tr>
+<td><code>LWLock</code></td>
+<td>共享記憶體結構競爭（例如 <code>ProcArray</code>）</td>
+</tr>
+<tr>
+<td><code>IO</code> &#x2F; <code>BufferPin</code></td>
+<td>儲存 &#x2F; buffer 瓶頸</td>
+</tr>
+<tr>
+<td><code>Client</code></td>
+<td>在等應用程式 &#x2F; 網路 — <strong>不是</strong> DB 的瓶頸</td>
+</tr>
+<tr>
+<td><code>IPC</code></td>
+<td>在等另一個 backend</td>
+</tr>
+<tr>
+<td><code>Activity</code> &#x2F; <code>Timeout</code></td>
+<td>設計上就在閒置的背景程序 — <strong>不是</strong>使用者查詢問題</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>重要觀念</strong>：<code>wait_event</code> 是 <strong>瞬時取樣 (point-in-time)</strong>，不是累積時間。單看一次快照只知道「此刻」誰在等。要把時間歸因到 CPU &#x2F; IO &#x2F; Lock，必須 <strong>反覆取樣</strong>（例如每秒一次）或用擴充套件。</p>
+</blockquote>
+<p>下面這條快照查詢會把所有 client backend 依「瓶頸類別」分桶，是排查第一步最好用的一條：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    <span class="keyword">CASE</span></span><br><span class="line">        <span class="keyword">WHEN</span> wait_event_type <span class="keyword">IS</span> <span class="keyword">NULL</span>                            <span class="keyword">THEN</span> <span class="string">&#x27;CPU/Running (no wait)&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> wait_event_type <span class="keyword">IN</span> (<span class="string">&#x27;Lock&#x27;</span>, <span class="string">&#x27;LWLock&#x27;</span>, <span class="string">&#x27;BufferPin&#x27;</span>) <span class="keyword">THEN</span> <span class="string">&#x27;Lock/Contention&#x27;</span></span><br><span class="line">        <span class="keyword">WHEN</span> wait_event_type <span class="operator">=</span> <span class="string">&#x27;IO&#x27;</span>                             <span class="keyword">THEN</span> <span class="string">&#x27;IO&#x27;</span></span><br><span class="line">        <span class="keyword">ELSE</span> <span class="string">&#x27;Wait: &#x27;</span> <span class="operator">||</span> wait_event_type</span><br><span class="line">    <span class="keyword">END</span>                                            <span class="keyword">AS</span> bottleneck_class,</span><br><span class="line">    <span class="built_in">coalesce</span>(wait_event, <span class="string">&#x27;(none)&#x27;</span>)                 <span class="keyword">AS</span> wait_event,</span><br><span class="line">    <span class="built_in">count</span>(<span class="operator">*</span>)                                       <span class="keyword">AS</span> backends,</span><br><span class="line">    string_agg(<span class="keyword">DISTINCT</span> state, <span class="string">&#x27;, &#x27;</span>)               <span class="keyword">AS</span> states</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity</span><br><span class="line"><span class="keyword">WHERE</span> backend_type <span class="operator">=</span> <span class="string">&#x27;client backend&#x27;</span></span><br><span class="line">  <span class="keyword">AND</span> pid <span class="operator">&lt;&gt;</span> pg_backend_pid()</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> <span class="number">1</span>, <span class="number">2</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> backends <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<p>判讀：如果 <code>CPU/Running</code> 這桶 backend 數量爆多 → 往 <a href="#%E9%AB%98-CPU-%E6%8E%92%E6%9F%A5">高 CPU</a> 走；<code>Lock/Contention</code> 多 → 往 <a href="#%E9%8E%96%E8%88%87-Blocking-%E6%8E%92%E6%9F%A5">鎖與 blocking</a> 走；<code>IO</code> 多 → 往 <a href="#Cache-hit-ratio-%E8%88%87-I-O-%E6%8E%92%E6%9F%A5">cache hit 與 I&#x2F;O</a> 走。</p>
+<h2 id="高-CPU-排查"><a href="#高-CPU-排查" class="headerlink" title="高 CPU 排查"></a>高 CPU 排查</h2><p>持續高 CPU 常見成因：(a) 單條很貴的查詢、(b) 便宜但呼叫超頻繁的查詢、(c) long transaction &#x2F; idle-in-transaction、(d) 連線數過多、(e) 統計資訊過期或表膨脹逼出爛執行計畫。</p>
+<h3 id="找「每次執行最貴」的查詢（mean-exec-time）"><a href="#找「每次執行最貴」的查詢（mean-exec-time）" class="headerlink" title="找「每次執行最貴」的查詢（mean_exec_time）"></a>找「每次執行最貴」的查詢（mean_exec_time）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> userid::regrole, dbid, query, mean_exec_time</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_statements</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> mean_exec_time <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="找「總成本最高」的查詢（total-exec-time）"><a href="#找「總成本最高」的查詢（total-exec-time）" class="headerlink" title="找「總成本最高」的查詢（total_exec_time）"></a>找「總成本最高」的查詢（total_exec_time）</h3><p>這個抓的是「單次便宜、但被呼叫幾萬次」那種累積殺手：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> userid::regrole, dbid, total_exec_time, query</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_statements</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> total_exec_time <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>版本雷點</strong>：PG13 以後請用 <code>mean_exec_time</code> &#x2F; <code>total_exec_time</code>。舊名 <code>mean_time</code> &#x2F; <code>total_time</code> 在 PG13 被 <strong>移除</strong>（拆成 <code>*_exec_time</code> + <code>*_plan_time</code>），所以 Postgres 12 那組用 <code>mean_time</code> &#x2F; <code>total_time</code> 的查詢在 v13+ 會直接報錯。</p>
+</blockquote>
+<h3 id="總時間-每條的-cache-命中率"><a href="#總時間-每條的-cache-命中率" class="headerlink" title="總時間 + 每條的 cache 命中率"></a>總時間 + 每條的 cache 命中率</h3><p>一次看出「哪條 SQL 花最多時間、而且 cache 命中率差」：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> query,</span><br><span class="line">       calls,</span><br><span class="line">       total_exec_time,</span><br><span class="line">       <span class="keyword">rows</span>,</span><br><span class="line">       <span class="number">100.0</span> <span class="operator">*</span> shared_blks_hit <span class="operator">/</span> <span class="built_in">nullif</span>(shared_blks_hit <span class="operator">+</span> shared_blks_read, <span class="number">0</span>) <span class="keyword">AS</span> hit_percent</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_statements</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> total_exec_time <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">5</span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>hit_percent</code> 偏低代表這條查詢一直在讀 disk（cache miss），通常是缺索引或工作集超過 <code>shared_buffers</code>。</p>
+<h3 id="找「穩定慢」的查詢（過濾掉一次性偶發）"><a href="#找「穩定慢」的查詢（過濾掉一次性偶發）" class="headerlink" title="找「穩定慢」的查詢（過濾掉一次性偶發）"></a>找「穩定慢」的查詢（過濾掉一次性偶發）</h3><p><code>calls &gt; 50</code> 濾掉偶發，看平均 &#x2F; 最大 &#x2F; 標準差：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> query,</span><br><span class="line">       calls,</span><br><span class="line">       mean_exec_time,</span><br><span class="line">       max_exec_time,</span><br><span class="line">       stddev_exec_time,</span><br><span class="line">       <span class="keyword">rows</span>::<span class="type">numeric</span> <span class="operator">/</span> <span class="built_in">nullif</span>(calls, <span class="number">0</span>) <span class="keyword">AS</span> mean_rows</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_statements</span><br><span class="line"><span class="keyword">WHERE</span> calls <span class="operator">&gt;</span> <span class="number">50</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> mean_exec_time <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">20</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="看「當下正在跑」的查詢與它在等什麼"><a href="#看「當下正在跑」的查詢與它在等什麼" class="headerlink" title="看「當下正在跑」的查詢與它在等什麼"></a>看「當下正在跑」的查詢與它在等什麼</h3><p><code>state=&#39;active&#39;</code> 且 <code>wait_event_type IS NULL</code> 的那一列，就是你正在燒 CPU 的查詢：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid,</span><br><span class="line">       now() <span class="operator">-</span> query_start <span class="keyword">AS</span> query_duration,</span><br><span class="line">       now() <span class="operator">-</span> xact_start  <span class="keyword">AS</span> xact_duration,</span><br><span class="line">       state,</span><br><span class="line">       wait_event_type,</span><br><span class="line">       wait_event,</span><br><span class="line">       query</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity</span><br><span class="line"><span class="keyword">WHERE</span> state <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span></span><br><span class="line">  <span class="keyword">AND</span> pid <span class="operator">&lt;&gt;</span> pg_backend_pid()</span><br><span class="line">  <span class="keyword">AND</span> backend_type <span class="operator">=</span> <span class="string">&#x27;client backend&#x27;</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> query_start <span class="keyword">ASC</span>;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>想只看長時間跑的，加上 <code>AND now() - query_start &gt; interval &#39;5 seconds&#39;</code>。</p>
+</blockquote>
+<h3 id="揪出跑超過-5-秒的-long-running-query，並抓它的-EXPLAIN"><a href="#揪出跑超過-5-秒的-long-running-query，並抓它的-EXPLAIN" class="headerlink" title="揪出跑超過 5 秒的 long-running query，並抓它的 EXPLAIN"></a>揪出跑超過 5 秒的 long-running query，並抓它的 EXPLAIN</h3><p>排查慢查詢最實戰的一步：先用 <code>pg_stat_activity</code> 撈出 <strong>已經跑超過 5 秒</strong> 的查詢（門檻自己調），拿到它的 <code>pid</code> 與完整 SQL，再對那條 SQL 跑 <code>EXPLAIN</code> 看它為什麼慢。</p>
+<p><strong>Step 1：撈出跑超過 5 秒、當下 active 的查詢</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid,</span><br><span class="line">       now() <span class="operator">-</span> query_start           <span class="keyword">AS</span> running_for,   <span class="comment">-- 這條查詢已經跑多久</span></span><br><span class="line">       state,</span><br><span class="line">       wait_event_type,</span><br><span class="line">       wait_event,</span><br><span class="line">       query</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity</span><br><span class="line"><span class="keyword">WHERE</span> state <span class="operator">=</span> <span class="string">&#x27;active&#x27;</span></span><br><span class="line">  <span class="keyword">AND</span> backend_type <span class="operator">=</span> <span class="string">&#x27;client backend&#x27;</span></span><br><span class="line">  <span class="keyword">AND</span> pid <span class="operator">&lt;&gt;</span> pg_backend_pid()</span><br><span class="line">  <span class="keyword">AND</span> now() <span class="operator">-</span> query_start <span class="operator">&gt;</span> <span class="type">interval</span> <span class="string">&#x27;5 seconds&#x27;</span>        <span class="comment">-- 只看跑超過 5 秒的</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> running_for <span class="keyword">DESC</span>;</span><br></pre></td></tr></table></figure>
+
+<p>判讀：<code>running_for</code> 由大到小排，最上面那條就是「跑最久還沒結束」的元凶。搭配 <code>wait_event_type</code> 判斷它卡在什麼——<code>NULL</code> 代表正在燒 CPU（多半是缺索引 &#x2F; 爛計畫）；<code>Lock</code> 代表被別人擋住（跳到<a href="#%E9%8E%96%E8%88%87-Blocking-%E6%8E%92%E6%9F%A5">鎖與 Blocking</a>）；<code>IO</code> 代表在等磁碟。</p>
+<blockquote>
+<p><code>query</code> 欄位預設會被 <code>track_activity_query_size</code>（預設 1024 bytes）截斷，長 SQL 會看不全，必要時可調大這個參數（需重啟）。</p>
+</blockquote>
+<p><strong>Step 2：對這條慢查詢跑 EXPLAIN</strong></p>
+<p>從 Step 1 拿到完整 <code>query</code> 後，把它貼到 <code>EXPLAIN</code> 裡分析。先用 <strong>不帶 <code>ANALYZE</code></strong> 的版本（只看預估計畫、不會真的執行，安全）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN (VERBOSE, SETTINGS) <span class="operator">&lt;</span>把上面查到的 query 貼進來<span class="operator">&gt;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>如果這條查詢可以安全地再跑一次（純 <code>SELECT</code>、或你能接受它實際執行），再用 <code>ANALYZE</code> 拿到真實執行時間與 buffer 命中狀況，這才看得出「預估 vs 實際」的落差：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN (ANALYZE, BUFFERS, VERBOSE) <span class="operator">&lt;</span>同一條 query<span class="operator">&gt;</span>;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>對 <code>INSERT</code> &#x2F; <code>UPDATE</code> &#x2F; <code>DELETE</code> 用 <code>ANALYZE</code> 會真的改到資料</strong>，一定要包在交易裡（見<a href="#%E6%85%A2%E6%9F%A5%E8%A9%A2%E5%88%86%E6%9E%90%EF%BC%9A%E8%AE%80%E6%87%82-EXPLAIN-ANALYZE-BUFFERS">慢查詢分析</a>）：<code>BEGIN; EXPLAIN (ANALYZE, BUFFERS) &lt;DML&gt;; ROLLBACK;</code></p>
+</blockquote>
+<p><strong>Step 3（可選）：確定是元凶且影響線上，就先取消它</strong></p>
+<p>用 Step 1 查到的 <code>pid</code> 取消它（優先 <code>pg_cancel_backend</code>，只取消查詢、保留連線）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pg_cancel_backend(<span class="number">12345</span>);   <span class="comment">-- 換成 Step 1 查到的 pid</span></span><br></pre></td></tr></table></figure>
+
+
+<h3 id="找-long-transaction-idle-in-transaction"><a href="#找-long-transaction-idle-in-transaction" class="headerlink" title="找 long transaction &#x2F; idle-in-transaction"></a>找 long transaction &#x2F; idle-in-transaction</h3><p>這類 session 會一直卡住 CPU、持鎖、並釘住 xmin horizon 讓 VACUUM 無法回收（延伸閱讀：<a href="https://isdaniel.github.io/postgresql-autovacuum/">Postgresql AutoVacuum 介紹</a>）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid, usename, datname, state, wait_event_type,</span><br><span class="line">       now() <span class="operator">-</span> xact_start  <span class="keyword">AS</span> xact_duration,</span><br><span class="line">       now() <span class="operator">-</span> query_start <span class="keyword">AS</span> query_duration,</span><br><span class="line">       query</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity</span><br><span class="line"><span class="keyword">WHERE</span> pid <span class="operator">&lt;&gt;</span> pg_backend_pid()</span><br><span class="line">  <span class="keyword">AND</span> backend_type <span class="operator">=</span> <span class="string">&#x27;client backend&#x27;</span></span><br><span class="line">  <span class="keyword">AND</span> state <span class="keyword">IN</span> (<span class="string">&#x27;idle in transaction&#x27;</span>, <span class="string">&#x27;active&#x27;</span>)</span><br><span class="line">  <span class="keyword">AND</span> xact_start <span class="keyword">IS</span> <span class="keyword">NOT NULL</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> xact_duration <span class="keyword">DESC</span> <span class="keyword">NULLS LAST</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="看連線數分佈（連線太多-CPU-記憶體雙重負擔）"><a href="#看連線數分佈（連線太多-CPU-記憶體雙重負擔）" class="headerlink" title="看連線數分佈（連線太多 &#x3D; CPU + 記憶體雙重負擔）"></a>看連線數分佈（連線太多 &#x3D; CPU + 記憶體雙重負擔）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> state, <span class="built_in">count</span>(<span class="operator">*</span>)</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity</span><br><span class="line"><span class="keyword">WHERE</span> pid <span class="operator">&lt;&gt;</span> pg_backend_pid()</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> state</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> state <span class="keyword">ASC</span>;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>背景輔助程序的 <code>state</code> 是 <code>NULL</code>，會多出一列，屬正常現象。</p>
+</blockquote>
+<h3 id="高-CPU-的處置"><a href="#高-CPU-的處置" class="headerlink" title="高 CPU 的處置"></a>高 CPU 的處置</h3><ul>
+<li><strong>貴的查詢</strong>：拿 <code>EXPLAIN (ANALYZE, BUFFERS)</code> 分析（見<a href="#%E6%85%A2%E6%9F%A5%E8%A9%A2%E5%88%86%E6%9E%90%EF%BC%9A%E8%AE%80%E6%87%82-EXPLAIN-ANALYZE-BUFFERS">慢查詢分析</a>），補索引 &#x2F; 更新統計 &#x2F; 改寫 SQL。</li>
+<li><strong>連線太多、短連線頻繁</strong>：前面架 <strong>PgBouncer</strong> 連線池（transaction 模式），不要一味調高 <code>max_connections</code>。</li>
+<li><strong>已知某個 PID 是元凶要處理</strong>：優先用 <code>pg_cancel_backend</code>（送 SIGINT，只取消當前查詢、保留 session），不行再用 <code>pg_terminate_backend</code>（送 SIGTERM，直接砍掉整個 backend 並 rollback）：</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pg_cancel_backend(<span class="number">12345</span>);     <span class="comment">-- 溫和：取消當前查詢</span></span><br><span class="line"><span class="keyword">SELECT</span> pg_terminate_backend(<span class="number">12345</span>);  <span class="comment">-- 強硬：砍掉整個 session（會 rollback 進行中的工作）</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="高記憶體排查"><a href="#高記憶體排查" class="headerlink" title="高記憶體排查"></a>高記憶體排查</h2><blockquote>
+<p>高記憶體不像高 CPU 有那麼多現成的診斷 SQL 可以排名——它主要是「參數配置」問題（<code>work_mem</code>、<code>max_connections</code> 的乘法效應），SQL 層面能看到徵兆的只有 <code>EXPLAIN (ANALYZE, BUFFERS)</code> 裡的 sort&#x2F;hash 溢出。所以本節重點在「哪些參數會吃記憶體、怎麼避免 OOM」。</p>
+</blockquote>
+<h3 id="work-mem-溢出陷阱（最大的記憶體風險）"><a href="#work-mem-溢出陷阱（最大的記憶體風險）" class="headerlink" title="work_mem 溢出陷阱（最大的記憶體風險）"></a><code>work_mem</code> 溢出陷阱（最大的記憶體風險）</h3><p><code>work_mem</code> 是 <strong>每個 sort &#x2F; hash 運算、每條查詢、每個連線</strong> 各自分配的，最壞情況會相乘：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">最壞情況記憶體 = work_mem × (單條查詢的 sort/hash 運算數) × 併發連線數</span><br></pre></td></tr></table></figure>
+
+<p>預設 4 MB。會吃 <code>work_mem</code> 的：<code>ORDER BY</code>、<code>DISTINCT</code>、merge join（sort）；hash join、hash aggregate、<code>IN</code> 子查詢（hash）。在 <code>max_connections</code> 很大時把 <code>work_mem</code> 全域調高，很容易乘出 OOM。<strong>正確做法是針對特定重查詢在 session &#x2F; role 層級調高</strong>，而不是全域。</p>
+<blockquote>
+<p><code>hash_mem_multiplier</code>（預設 2.0）會再把 hash 類運算的記憶體上限放大成 <code>work_mem × 2.0</code>。</p>
+</blockquote>
+<h3 id="連線太多-→-用-PgBouncer-而不是調高-max-connections"><a href="#連線太多-→-用-PgBouncer-而不是調高-max-connections" class="headerlink" title="連線太多 → 用 PgBouncer 而不是調高 max_connections"></a>連線太多 → 用 PgBouncer 而不是調高 max_connections</h3><p>PostgreSQL 是 <strong>process-per-connection</strong> 模型，每個 backend 都可能吃掉 <code>work_mem</code> &#x2F; <code>temp_buffers</code>，所以 <code>max_connections</code> 是直接的記憶體乘數。要服務大量 client，正確做法是前面架 <strong>PgBouncer</strong>（transaction pooling），讓後端只用少量連線就能撐住上萬個 client 連線。</p>
+<p>使用 PgBouncer 時要注意 pool 模式與 prepared statement 的相容性：</p>
+<ul>
+<li><strong>statement pool 模式與 prepared statement 不相容</strong>。</li>
+<li><strong>transaction 模式</strong> 只有在 <code>max_prepared_statements &gt; 0</code>（預設 0）時才支援 protocol-level 的 prepared statement。</li>
+<li>若是用託管服務（managed service）內建的 PgBouncer，通常會另外開一個埠（常見是 <strong>6432</strong>），且不一定所有規格層都支援，實際以你的服務規格為準。</li>
+</ul>
+<h3 id="唯一能看到記憶體徵兆的查詢：EXPLAIN-BUFFERS"><a href="#唯一能看到記憶體徵兆的查詢：EXPLAIN-BUFFERS" class="headerlink" title="唯一能看到記憶體徵兆的查詢：EXPLAIN + BUFFERS"></a>唯一能看到記憶體徵兆的查詢：EXPLAIN + BUFFERS</h3><p>單純 <code>EXPLAIN ANALYZE</code> 看不到記憶體，要加 <code>BUFFERS</code>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN (ANALYZE, VERBOSE, BUFFERS) <span class="operator">&lt;</span>your_query<span class="operator">&gt;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>判讀重點在 sort 節點：</p>
+<ul>
+<li><code>Sort Method: quicksort  Memory: NNNkB</code> → 塞得進 <code>work_mem</code>，很好。</li>
+<li><code>Sort Method: external merge  Disk: NNNkB</code> → <strong>溢出到硬碟</strong>，代表 <code>work_mem</code> 不夠。</li>
+</ul>
+<blockquote>
+<p><strong>版本雷點</strong>：專門顯示 planner 記憶體的 <code>EXPLAIN (MEMORY)</code> 是 <strong>PG17 才有</strong>，v13–16 不能用。但每個 Sort &#x2F; Hash 節點的記憶體用量，<code>ANALYZE</code> 本來就會印出來。</p>
+</blockquote>
+<h3 id="相關記憶體參數"><a href="#相關記憶體參數" class="headerlink" title="相關記憶體參數"></a>相關記憶體參數</h3><table>
+<thead>
+<tr>
+<th>參數</th>
+<th>預設</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>maintenance_work_mem</code></td>
+<td>64 MB</td>
+<td>VACUUM &#x2F; CREATE INDEX &#x2F; ADD FK 用；可設得比 <code>work_mem</code> 大。但它是每個 autovacuum worker 的上限 → autovacuum 實際吃 <code>maintenance_work_mem × autovacuum_max_workers</code></td>
+</tr>
+<tr>
+<td><code>autovacuum_work_mem</code></td>
+<td>-1</td>
+<td><code>-1</code> &#x3D; 繼承 <code>maintenance_work_mem</code>；<code>maintenance_work_mem</code> 設很大時，設一個明確較小值來壓 autovacuum 併發記憶體</td>
+</tr>
+<tr>
+<td><code>shared_buffers</code></td>
+<td>128 MB</td>
+<td>全域單一分配（非每連線）；建議 ~25% RAM，別超過 ~40%；<strong>改了要重啟</strong></td>
+</tr>
+<tr>
+<td><code>temp_buffers</code></td>
+<td>8 MB</td>
+<td>每個 session 給暫存表用；屬每連線記憶體</td>
+</tr>
+</tbody></table>
+<h2 id="慢查詢分析：讀懂-EXPLAIN-ANALYZE-BUFFERS"><a href="#慢查詢分析：讀懂-EXPLAIN-ANALYZE-BUFFERS" class="headerlink" title="慢查詢分析：讀懂 EXPLAIN (ANALYZE, BUFFERS)"></a>慢查詢分析：讀懂 EXPLAIN (ANALYZE, BUFFERS)</h2><p>推薦的完整寫法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN (ANALYZE, BUFFERS, VERBOSE, SETTINGS) <span class="operator">&lt;</span>query<span class="operator">&gt;</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>有寫入時再加 <code>WAL</code>（需搭配 <code>ANALYZE</code>）。</li>
+<li><code>SETTINGS</code> 只印出「和預設值不同」的 planner GUC（空的代表全預設）。</li>
+</ul>
+<h3 id="怎麼讀輸出"><a href="#怎麼讀輸出" class="headerlink" title="怎麼讀輸出"></a>怎麼讀輸出</h3><ul>
+<li><strong>預估值</strong>：<code>(cost=STARTUP..TOTAL rows=N width=W)</code> — cost 是 <strong>無單位</strong> 的 planner 估算值（以 <code>seq_page_cost=1.0</code> 為基準），<strong>永遠不要拿 cost 去跟實際 ms 比</strong>。想深入理解 cost 怎麼算出來，可看我的 <a href="https://isdaniel.github.io/postgresql-cost-factor-tuning/">成本因子調教</a>。</li>
+<li><strong>實際值（ANALYZE）</strong>：<code>(actual time=STARTUP..TOTAL rows=N loops=L)</code> — 真實毫秒與執行次數。</li>
+<li><strong>BUFFERS</strong>：<code>shared hit</code> &#x3D; 命中 cache（省了讀取）、<code>read</code> &#x3D; 從 disk 讀（miss）、<code>dirtied</code> &#x3D; 這次改髒的 block、<code>written</code> &#x3D; 被這個 backend 逐出的髒 block。</li>
+</ul>
+<h3 id="爛執行計畫的訊號（診斷清單）"><a href="#爛執行計畫的訊號（診斷清單）" class="headerlink" title="爛執行計畫的訊號（診斷清單）"></a>爛執行計畫的訊號（診斷清單）</h3><ol>
+<li><strong>預估 rows vs 實際 rows 差 10～1000 倍以上</strong> — <em>最重要的訊號</em>。代表 planner 的選擇性統計爛了，通常導致選錯 join 型態（該用 hash join 卻跑 nested loop）。<strong>修法</strong>：<code>ANALYZE</code>、調高 <code>default_statistics_target</code>（或對特定欄位 <code>ALTER TABLE ... ALTER COLUMN ... SET STATISTICS</code>）、建 extended statistics。</li>
+<li><strong><code>loops &gt; 1</code></strong> — 印出來的 <code>actual time</code> 與 <code>rows</code> 是 <strong>每次執行的平均值</strong>，要乘上 <code>loops</code> 才是真正總量。一個看起來很便宜、卻被跑一萬次的內層節點，可能才是真正的瓶頸（超級常見的誤判）。</li>
+<li><strong><code>Sort Method: external merge  Disk: NkB</code></strong>（或 Hash 節點分成多個 batch）→ 溢出到 disk → <strong>調高 <code>work_mem</code></strong>。</li>
+<li><strong>大表上出現 <code>Seq Scan</code> 且 <code>Rows Removed by Filter</code> 很大</strong> → 缺索引 &#x2F; 索引沒被用到。（但小表的 Seq Scan 是正確的，要看表大小 + 過濾掉的行數判斷，不是看到節點名就下結論。）</li>
+<li><strong>BUFFERS 裡 <code>read</code> 遠大於 <code>hit</code></strong> → cache 太冷或工作集超過 <code>shared_buffers</code>。</li>
+</ol>
+<h3 id="對-DML-做-EXPLAIN-ANALYZE-一定要包在交易裡"><a href="#對-DML-做-EXPLAIN-ANALYZE-一定要包在交易裡" class="headerlink" title="對 DML 做 EXPLAIN ANALYZE 一定要包在交易裡"></a>對 DML 做 EXPLAIN ANALYZE 一定要包在交易裡</h3><p><code>EXPLAIN ANALYZE</code> 會 <strong>真的執行</strong> 語句（含 INSERT&#x2F;UPDATE&#x2F;DELETE&#x2F;DDL 的副作用！），所以分析寫入語句時務必包起來：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span>;</span><br><span class="line">EXPLAIN (ANALYZE, BUFFERS, WAL) <span class="keyword">DELETE</span> <span class="keyword">FROM</span> tenk1 <span class="keyword">WHERE</span> unique1 <span class="operator">&lt;</span> <span class="number">100</span>;</span><br><span class="line"><span class="keyword">ROLLBACK</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="auto-explain：抓那些「當下重現不了」的慢查詢"><a href="#auto-explain：抓那些「當下重現不了」的慢查詢" class="headerlink" title="auto_explain：抓那些「當下重現不了」的慢查詢"></a>auto_explain：抓那些「當下重現不了」的慢查詢</h3><p>正式環境裡有些慢查詢你無法在 psql 手動重現，這時用 <code>auto_explain</code> 自動把超過門檻的查詢計畫寫進 log：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># postgresql.conf</span></span><br><span class="line">shared_preload_libraries = <span class="string">&#x27;auto_explain&#x27;</span></span><br><span class="line">auto_explain.log_min_duration = 0      <span class="comment"># 記錄的最小執行時間 (ms)，0 = 全記錄</span></span><br><span class="line">auto_explain.log_analyze = <span class="literal">true</span>        <span class="comment"># 記錄 EXPLAIN ANALYZE (false 只會是 ANALYZE)</span></span><br><span class="line">auto_explain.log_buffers = <span class="literal">true</span>        <span class="comment"># 需要 log_analyze = true 才有用</span></span><br><span class="line">auto_explain.log_timing = <span class="literal">true</span></span><br><span class="line">auto_explain.log_nested_statements = <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>正式環境請 <strong>不要</strong> 開 <code>log_statement</code> &#x2F; <code>log_duration</code> 去記全部語句，那會把 log 灌爆；用 <code>auto_explain</code> 針對慢查詢才對。</p>
+</blockquote>
+<h2 id="鎖與-Blocking-排查"><a href="#鎖與-Blocking-排查" class="headerlink" title="鎖與 Blocking 排查"></a>鎖與 Blocking 排查</h2><p>當 <a href="#%E6%8E%92%E6%9F%A5%E6%96%B9%E6%B3%95%E8%AB%96%EF%BC%9A%E4%B8%89%E5%B1%A4%E7%94%B1%E4%B8%8A%E8%80%8C%E4%B8%8B%E5%AE%9A%E4%BD%8D">方法論</a> 那條快照查詢顯示 <code>Lock/Contention</code> 一堆時，就進來這一節。關於各種 lock 模式的互斥對照，可以搭配我的 <a href="https://isdaniel.github.io/dblock-1/">dblock 系列</a> 一起看。</p>
+<h3 id="快速看誰被鎖住"><a href="#快速看誰被鎖住" class="headerlink" title="快速看誰被鎖住"></a>快速看誰被鎖住</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid, wait_event_type, wait_event</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity</span><br><span class="line"><span class="keyword">WHERE</span> wait_event_type <span class="operator">=</span> <span class="string">&#x27;Lock&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Blocking-樹：被鎖的-backend-↔-鎖住它的-backend"><a href="#Blocking-樹：被鎖的-backend-↔-鎖住它的-backend" class="headerlink" title="Blocking 樹：被鎖的 backend ↔ 鎖住它的 backend"></a>Blocking 樹：被鎖的 backend ↔ 鎖住它的 backend</h3><p><code>pg_blocking_pids()</code>（PG9.6+）是關鍵，直接把「誰被誰擋住」攤開：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> blocked.pid              <span class="keyword">AS</span> blocked_pid,</span><br><span class="line">       blocked.usename          <span class="keyword">AS</span> blocked_user,</span><br><span class="line">       blocked.query            <span class="keyword">AS</span> blocked_query,</span><br><span class="line">       blocking.pid             <span class="keyword">AS</span> blocking_pid,</span><br><span class="line">       blocking.usename         <span class="keyword">AS</span> blocking_user,</span><br><span class="line">       blocking.state           <span class="keyword">AS</span> blocking_state,</span><br><span class="line">       blocking.query           <span class="keyword">AS</span> blocking_query,</span><br><span class="line">       now() <span class="operator">-</span> blocking.xact_start <span class="keyword">AS</span> blocking_xact_age</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity <span class="keyword">AS</span> blocked</span><br><span class="line"><span class="keyword">JOIN</span> <span class="keyword">LATERAL</span> <span class="built_in">unnest</span>(pg_blocking_pids(blocked.pid)) <span class="keyword">AS</span> b(blocking_pid) <span class="keyword">ON</span> <span class="literal">true</span></span><br><span class="line"><span class="keyword">JOIN</span> pg_stat_activity <span class="keyword">AS</span> blocking <span class="keyword">ON</span> blocking.pid <span class="operator">=</span> b.blocking_pid</span><br><span class="line"><span class="keyword">WHERE</span> blocked.wait_event_type <span class="operator">=</span> <span class="string">&#x27;Lock&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="直接看-pg-locks（過濾未授予的鎖-正在等的）"><a href="#直接看-pg-locks（過濾未授予的鎖-正在等的）" class="headerlink" title="直接看 pg_locks（過濾未授予的鎖 &#x3D; 正在等的）"></a>直接看 pg_locks（過濾未授予的鎖 &#x3D; 正在等的）</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> l.pid, l.locktype, l.mode, l.granted,</span><br><span class="line">       l.relation::regclass <span class="keyword">AS</span> relation,</span><br><span class="line">       a.state, a.query</span><br><span class="line"><span class="keyword">FROM</span> pg_locks l</span><br><span class="line"><span class="keyword">JOIN</span> pg_stat_activity a <span class="keyword">ON</span> a.pid <span class="operator">=</span> l.pid</span><br><span class="line"><span class="keyword">WHERE</span> <span class="keyword">NOT</span> l.granted</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> l.pid;</span><br></pre></td></tr></table></figure>
+
+<h3 id="揪出-idle-in-transaction-元凶"><a href="#揪出-idle-in-transaction-元凶" class="headerlink" title="揪出 idle-in-transaction 元凶"></a>揪出 idle-in-transaction 元凶</h3><p>這類 session 開著交易不 commit，會持鎖 + 釘住 xmin horizon 擋住 VACUUM 清理，<code>backend_xmin</code> 越舊問題越大：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> pid,</span><br><span class="line">       state,</span><br><span class="line">       now() <span class="operator">-</span> xact_start   <span class="keyword">AS</span> xact_age,</span><br><span class="line">       now() <span class="operator">-</span> state_change <span class="keyword">AS</span> idle_duration,</span><br><span class="line">       wait_event_type,</span><br><span class="line">       wait_event,</span><br><span class="line">       backend_xmin,</span><br><span class="line">       query <span class="keyword">AS</span> last_query</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_activity</span><br><span class="line"><span class="keyword">WHERE</span> state <span class="keyword">IN</span> (<span class="string">&#x27;idle in transaction&#x27;</span>, <span class="string">&#x27;idle in transaction (aborted)&#x27;</span>)</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> xact_start <span class="keyword">ASC</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>處置</strong>：設 <code>idle_in_transaction_session_timeout</code>（例如 <code>&#39;5min&#39;</code>，預設 0 &#x3D; 停用）自動終止這類 session；或對特定 PID 用 <code>pg_terminate_backend(pid)</code>。另外 <code>deadlock_timeout</code>（預設 1s）控制 backend 等多久才觸發死鎖偵測，也決定 <code>log_lock_waits = on</code> 何時記錄 Lock 等待。</p>
+<h2 id="Cache-hit-ratio-與-I-O-排查"><a href="#Cache-hit-ratio-與-I-O-排查" class="headerlink" title="Cache hit ratio 與 I&#x2F;O 排查"></a>Cache hit ratio 與 I&#x2F;O 排查</h2><blockquote>
+<p>這裡的 “read” 指「不在 <code>shared_buffers</code>」，它仍可能命中 OS page cache，所以 ratio 沒到 0.99 不代表一定有物理磁碟 I&#x2F;O。健康的 OLTP 通常 &gt; 0.99。</p>
+</blockquote>
+<blockquote>
+<p><strong>注意整數除法陷阱</strong>：社群常見的 cache-hit 片段常直接 <code>bigint / bigint</code>，這是 <strong>整數除法</strong>，結果會被截成 <code>0</code>。下面全部都有 <code>::numeric</code> 轉型。</p>
+</blockquote>
+<h3 id="資料庫層級-cache-命中率"><a href="#資料庫層級-cache-命中率" class="headerlink" title="資料庫層級 cache 命中率"></a>資料庫層級 cache 命中率</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    datname,</span><br><span class="line">    blks_read,</span><br><span class="line">    blks_hit,</span><br><span class="line">    round(blks_hit::<span class="type">numeric</span> <span class="operator">/</span> <span class="built_in">nullif</span>(blks_hit <span class="operator">+</span> blks_read, <span class="number">0</span>), <span class="number">4</span>) <span class="keyword">AS</span> cache_hit_ratio</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_database</span><br><span class="line"><span class="keyword">WHERE</span> datname <span class="operator">=</span> current_database();</span><br></pre></td></tr></table></figure>
+
+<h3 id="Heap-Index-命中率"><a href="#Heap-Index-命中率" class="headerlink" title="Heap &#x2F; Index 命中率"></a>Heap &#x2F; Index 命中率</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- Heap (資料表本體)</span></span><br><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    <span class="built_in">sum</span>(heap_blks_read) <span class="keyword">AS</span> heap_read,</span><br><span class="line">    <span class="built_in">sum</span>(heap_blks_hit)  <span class="keyword">AS</span> heap_hit,</span><br><span class="line">    <span class="built_in">sum</span>(heap_blks_hit)::<span class="type">numeric</span></span><br><span class="line">        <span class="operator">/</span> <span class="built_in">nullif</span>(<span class="built_in">sum</span>(heap_blks_hit) <span class="operator">+</span> <span class="built_in">sum</span>(heap_blks_read), <span class="number">0</span>) <span class="keyword">AS</span> ratio</span><br><span class="line"><span class="keyword">FROM</span> pg_statio_user_tables;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- Index</span></span><br><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    <span class="built_in">sum</span>(idx_blks_read) <span class="keyword">AS</span> idx_read,</span><br><span class="line">    <span class="built_in">sum</span>(idx_blks_hit)  <span class="keyword">AS</span> idx_hit,</span><br><span class="line">    <span class="built_in">sum</span>(idx_blks_hit)::<span class="type">numeric</span></span><br><span class="line">      <span class="operator">/</span> <span class="built_in">nullif</span>(<span class="built_in">sum</span>(idx_blks_hit) <span class="operator">+</span> <span class="built_in">sum</span>(idx_blks_read), <span class="number">0</span>) <span class="keyword">AS</span> ratio</span><br><span class="line"><span class="keyword">FROM</span> pg_statio_user_indexes;</span><br></pre></td></tr></table></figure>
+
+<p>命中率長期偏低 → 工作集超過 <code>shared_buffers</code> → 調高 <code>shared_buffers</code>（~25% RAM）並把 <code>effective_cache_size</code> 設實際一點，讓 planner 願意選 index scan。</p>
+<h3 id="逐條查詢的-I-O-元凶"><a href="#逐條查詢的-I-O-元凶" class="headerlink" title="逐條查詢的 I&#x2F;O 元凶"></a>逐條查詢的 I&#x2F;O 元凶</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> query, calls, shared_blks_read, shared_blks_hit,</span><br><span class="line">       shared_blks_dirtied, shared_blks_written,</span><br><span class="line">       temp_blks_read, temp_blks_written</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_statements</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> shared_blks_read <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">20</span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>shared_blks_read</code> 高 &#x3D; cache miss 多；<code>temp_blks_*</code> 高 &#x3D; <code>work_mem</code> 溢出到 disk。</p>
+<blockquote>
+<p><strong>版本雷點</strong>：想用 I&#x2F;O <strong>時間</strong> 排序（需 <code>track_io_timing = on</code>），欄位名稱依版本不同：v13–16 是 <code>blk_read_time</code> &#x2F; <code>blk_write_time</code>；PG17+ 改名成 <code>shared_blk_read_time</code> &#x2F; <code>shared_blk_write_time</code>。v13–16 請用前者：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> query, calls, blk_read_time, blk_write_time,</span><br><span class="line">       blk_read_time <span class="operator">+</span> blk_write_time <span class="keyword">AS</span> total_io_time</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_statements</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> total_io_time <span class="keyword">DESC</span></span><br><span class="line">LIMIT <span class="number">20</span>;</span><br></pre></td></tr></table></figure></blockquote>
+<h3 id="找沒被用到的索引（浪費寫入與記憶體）"><a href="#找沒被用到的索引（浪費寫入與記憶體）" class="headerlink" title="找沒被用到的索引（浪費寫入與記憶體）"></a>找沒被用到的索引（浪費寫入與記憶體）</h3><p>沒用到的索引會拖慢寫入、佔記憶體、還會排擠 cache。<code>idx_scan = 0</code> 就是候選：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    n.nspname                                      <span class="keyword">AS</span> schemaname,</span><br><span class="line">    c.relname                                      <span class="keyword">AS</span> tablename,</span><br><span class="line">    c.reltuples::<span class="type">bigint</span>                            <span class="keyword">AS</span> num_rows,</span><br><span class="line">    pg_size_pretty(pg_relation_size(c.oid))        <span class="keyword">AS</span> table_size,</span><br><span class="line">    psai.indexrelname                              <span class="keyword">AS</span> index_name,</span><br><span class="line">    pg_size_pretty(pg_relation_size(i.indexrelid)) <span class="keyword">AS</span> index_size,</span><br><span class="line">    <span class="keyword">CASE</span> <span class="keyword">WHEN</span> i.indisunique <span class="keyword">THEN</span> <span class="string">&#x27;Y&#x27;</span> <span class="keyword">ELSE</span> <span class="string">&#x27;N&#x27;</span> <span class="keyword">END</span>  <span class="keyword">AS</span> &quot;unique&quot;,</span><br><span class="line">    psai.idx_scan                                  <span class="keyword">AS</span> number_of_scans</span><br><span class="line"><span class="keyword">FROM</span> pg_class c</span><br><span class="line">    <span class="keyword">JOIN</span> pg_namespace n <span class="keyword">ON</span> n.oid <span class="operator">=</span> c.relnamespace</span><br><span class="line">    <span class="keyword">JOIN</span> pg_index i <span class="keyword">ON</span> c.oid <span class="operator">=</span> i.indrelid</span><br><span class="line">    <span class="keyword">JOIN</span> pg_stat_all_indexes psai <span class="keyword">ON</span> i.indexrelid <span class="operator">=</span> psai.indexrelid</span><br><span class="line"><span class="keyword">WHERE</span> c.relkind <span class="keyword">IN</span> (<span class="string">&#x27;r&#x27;</span>, <span class="string">&#x27;p&#x27;</span>)</span><br><span class="line">  <span class="keyword">AND</span> n.nspname <span class="keyword">NOT</span> <span class="keyword">IN</span> (<span class="string">&#x27;pg_catalog&#x27;</span>, <span class="string">&#x27;information_schema&#x27;</span>)</span><br><span class="line">  <span class="comment">-- AND psai.idx_scan = 0        -- 取消註解可只看「完全沒用到」的索引</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> <span class="number">1</span>, <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>刪索引前務必注意</strong>：這些統計是從上次 <code>pg_stat_reset</code> 起才累積的；replica 上的 <code>idx_scan</code> 是分開計數的（主庫沒用到的索引，可能在讀取副本上有在用）；<strong>絕對不要</strong>因此刪掉 unique &#x2F; PK &#x2F; 約束用的索引。</p>
+</blockquote>
+<h2 id="表膨脹與-Autovacuum-排查"><a href="#表膨脹與-Autovacuum-排查" class="headerlink" title="表膨脹與 Autovacuum 排查"></a>表膨脹與 Autovacuum 排查</h2><p>統計資訊過期與 dead tuple 膨脹會拖爛執行計畫、抬高 CPU。原理與觸發時機我在 <a href="https://isdaniel.github.io/postgresql-autovacuum/">Postgresql AutoVacuum 介紹</a> 有完整說明，這裡給排查用的查詢。</p>
+<h3 id="Dead-tuple-膨脹排名"><a href="#Dead-tuple-膨脹排名" class="headerlink" title="Dead tuple &#x2F; 膨脹排名"></a>Dead tuple &#x2F; 膨脹排名</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">    schemaname,</span><br><span class="line">    relname,</span><br><span class="line">    n_live_tup,</span><br><span class="line">    n_dead_tup,</span><br><span class="line">    <span class="keyword">CASE</span> <span class="keyword">WHEN</span> n_live_tup <span class="operator">&gt;</span> <span class="number">0</span></span><br><span class="line">         <span class="keyword">THEN</span> round(n_dead_tup::<span class="type">numeric</span> <span class="operator">/</span> n_live_tup, <span class="number">4</span>)</span><br><span class="line">         <span class="keyword">ELSE</span> <span class="keyword">NULL</span></span><br><span class="line">    <span class="keyword">END</span> <span class="keyword">AS</span> dead_tuple_ratio,</span><br><span class="line">    last_vacuum,</span><br><span class="line">    last_autovacuum,</span><br><span class="line">    last_analyze,</span><br><span class="line">    last_autoanalyze</span><br><span class="line"><span class="keyword">FROM</span> pg_stat_user_tables</span><br><span class="line"><span class="keyword">WHERE</span> n_dead_tup <span class="operator">&gt;</span> <span class="number">0</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> n_dead_tup <span class="keyword">DESC</span>, dead_tuple_ratio <span class="keyword">DESC</span> <span class="keyword">NULLS LAST</span>;</span><br></pre></td></tr></table></figure>
+
+<p>判讀：<code>n_dead_tup</code> 大、<code>dead_tuple_ratio</code> 高，且 <code>last_autovacuum</code> 很舊或空 → autovacuum 在這張熱表上沒跟上。</p>
+<p><strong>短期手動修</strong>（語法所有版本通用）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">VACUUM ANALYZE <span class="operator">&lt;</span><span class="keyword">table</span><span class="operator">&gt;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Autovacuum 關鍵參數</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>參數</th>
+<th>預設</th>
+<th>建議</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>autovacuum</code></td>
+<td>on</td>
+<td>保持開啟</td>
+</tr>
+<tr>
+<td><code>autovacuum_vacuum_scale_factor</code></td>
+<td>0.2</td>
+<td>大熱表調到 ~0.05–0.1（固定 20% 對大表太粗，資料量越大越難觸發）</td>
+</tr>
+<tr>
+<td><code>autovacuum_max_workers</code></td>
+<td>3</td>
+<td>會乘上 autovacuum 總記憶體（見 <code>maintenance_work_mem</code>）</td>
+</tr>
+<tr>
+<td><code>autovacuum_vacuum_cost_delay</code> &#x2F; <code>_cost_limit</code></td>
+<td>2ms &#x2F; -1(→200)</td>
+<td>寫入量大時降低 delay &#x2F; 提高 limit，讓 autovacuum 跟得上</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>也可以 <strong>針對單張表</strong> 設定閾值，例如 <code>ALTER TABLE t SET (autovacuum_vacuum_scale_factor = 0.02);</code>，細節見 autovacuum 那篇。</p>
+</blockquote>
+<h2 id="關鍵設定參數速查表"><a href="#關鍵設定參數速查表" class="headerlink" title="關鍵設定參數速查表"></a>關鍵設定參數速查表</h2><p>下表預設值為 PostgreSQL 上游預設；若跑在託管服務或雲端，實際值通常會依機器規格（vCore &#x2F; 記憶體）自動調整，以你環境查到的 <code>SHOW &lt;參數&gt;;</code> 為準。</p>
+<table>
+<thead>
+<tr>
+<th>參數</th>
+<th>預設</th>
+<th>作用 &#x2F; 影響</th>
+<th>建議</th>
+<th>需重啟</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>shared_buffers</code></td>
+<td>128 MB</td>
+<td>全域 buffer cache（單一分配），決定 cache-hit ratio</td>
+<td>~25% RAM，別超過 ~40%</td>
+<td><strong>是</strong></td>
+</tr>
+<tr>
+<td><code>work_mem</code></td>
+<td>4 MB</td>
+<td><strong>每 sort&#x2F;hash 運算、每查詢、每連線</strong> 溢出前的記憶體</td>
+<td>最壞 &#x3D; <code>work_mem × ops × connections</code>；針對重查詢在 session&#x2F;role 層調高，別全域</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>hash_mem_multiplier</code></td>
+<td>2.0</td>
+<td>hash 類運算的 <code>work_mem</code> 倍數</td>
+<td>調高可減少 hash 溢出，但也放大 work_mem 風險</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>effective_cache_size</code></td>
+<td>4 GB</td>
+<td><strong>純 planner 提示</strong>（不分配任何記憶體），影響是否偏好 index scan</td>
+<td>專用機設 ~50–75% RAM</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>maintenance_work_mem</code></td>
+<td>64 MB</td>
+<td>VACUUM &#x2F; CREATE INDEX &#x2F; ADD FK</td>
+<td>可比 <code>work_mem</code> 大；乘上 <code>autovacuum_max_workers</code> 才是 autovacuum 總量</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>max_connections</code></td>
+<td>100</td>
+<td>最大併發連線，<strong>直接的記憶體乘數</strong></td>
+<td>別靠調高它服務大量 client，前面架 <strong>PgBouncer</strong></td>
+<td><strong>是</strong></td>
+</tr>
+<tr>
+<td><code>random_page_cost</code></td>
+<td>4.0</td>
+<td>成本模型：隨機讀一頁的相對成本（相對 <code>seq_page_cost=1.0</code>）</td>
+<td>SSD &#x2F; cache 熱的工作負載調到 ~1.1，讓 planner 偏好 index scan</td>
+<td>否 (reload)</td>
+</tr>
+<tr>
+<td><code>default_statistics_target</code></td>
+<td>100</td>
+<td><code>ANALYZE</code> 收集的欄位統計解析度</td>
+<td>預估與實際 rows 差很多時調高並重新 <code>ANALYZE</code></td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>track_io_timing</code></td>
+<td>off</td>
+<td>開啟 block I&#x2F;O <strong>時間</strong> 統計</td>
+<td>要分辨 CPU-bound vs I&#x2F;O-bound 時開；有開銷</td>
+<td>否 (reload)</td>
+</tr>
+<tr>
+<td><code>idle_in_transaction_session_timeout</code></td>
+<td>0 (關)</td>
+<td>自動終止卡在 idle-in-transaction 的 session</td>
+<td>設 <code>&#39;5min&#39;</code> 避免它持鎖 &#x2F; 釘住 xmin 擋 VACUUM</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>pg_stat_statements.max</code>（預設 5000）：超過時會淘汰最少執行的項目，長尾查詢會悄悄消失，改它要 <strong>重啟</strong>；<code>.track = all</code> 可看到 PL&#x2F;pgSQL 函式內部的查詢；<code>.track_planning</code>（預設 off）開了才有 plan-time 欄位（有額外開銷）。</p>
+</blockquote>
+<h2 id="小結"><a href="#小結" class="headerlink" title="小結"></a>小結</h2><p>整套排查手冊的核心就一句話：<strong>由上而下，先分類再定位</strong>。</p>
+<ol>
+<li><strong>Tier 1</strong>：看 OS &#x2F; 實例指標，確定是哪個資源、哪個時間點。</li>
+<li><strong>Tier 2</strong>：用 <code>pg_stat_activity</code> 的 <code>wait_event_type</code> 把 backend 分桶（CPU &#x2F; Lock &#x2F; IO），決定往哪個方向查——這一步最省時間，卻最常被跳過。</li>
+<li><strong>Tier 3</strong>：用 <code>pg_stat_statements</code> 排名找元凶，再用 <code>EXPLAIN (ANALYZE, BUFFERS)</code> 針對單條查詢驗證。</li>
+</ol>
+<p>幾個最容易踩的雷再提醒一次：</p>
+<ul>
+<li><code>wait_event</code> 是 <strong>瞬時取樣</strong>，要看趨勢得反覆取樣。</li>
+<li><code>EXPLAIN ANALYZE</code> 讀 <code>loops</code> 時記得 <strong>actual time &#x2F; rows 是每次平均</strong>，要乘 <code>loops</code>。</li>
+<li><code>EXPLAIN ANALYZE</code> 對 DML <strong>會真的執行</strong>，一定包 <code>BEGIN ... ROLLBACK</code>。</li>
+<li>PG13 之後 <code>pg_stat_statements</code> 用 <code>total_exec_time</code>（不是 <code>total_time</code>）；<code>pg_wait_events</code>、<code>EXPLAIN (MEMORY)</code> 是 PG17 才有。</li>
+<li>調 <code>work_mem</code> 前先想清楚 <strong>× ops × connections</strong> 的乘法，避免 OOM。</li>
+</ul>
+<p>把這幾條查詢存成書籤，下次線上出事時就能照著症狀一路查下去，而不是憑感覺瞎猜。</p>
+<h2 id="References"><a href="#References" class="headerlink" title="References"></a>References</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/postgresql/troubleshoot/how-to-high-cpu-utilization?tabs=mean-postgres13,total-postgres13">Troubleshoot high CPU utilization (Microsoft Learn)</a></li>
+<li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-tw/azure/postgresql/troubleshoot/how-to-high-memory-utilization">Troubleshoot high memory utilization (Microsoft Learn)</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/pgstatstatements.html">PostgreSQL Docs — pg_stat_statements</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/monitoring-stats.html">PostgreSQL Docs — Monitoring Statistics (pg_stat_activity &#x2F; wait events)</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/using-explain.html">PostgreSQL Docs — Using EXPLAIN</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.postgresql.org/wiki/Index_Maintenance">PostgreSQL Wiki — Index Maintenance</a></li>
+<li><a target="_blank" rel="noopener" href="https://wiki.postgresql.org/wiki/Lock_Monitoring">PostgreSQL Wiki — Lock Monitoring</a></li>
+</ul>
+<p><strong>此文作者</strong>：Daniel Shih(石頭)<br /><strong>此文地址</strong>： <a href="https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/">https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/</a> <br /><strong>版權聲明</strong>：本博客所有文章除特別聲明外，均採用 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/3.0/tw/">CC BY-NC-SA 3.0 TW</a> 許可協議。轉載請註明出處！</p>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pg-pidstat-real-time-postgresql-backend-monitoring/" rel="bookmark">pg_pidstat: Real-Time Per-Backend CPU, Memory, and I/O Monitoring for PostgreSQL</a></div>
+        <div class="popular-posts-excerpt"><p>pg_pidstat is a Rust-based PostgreSQL extension that adds real-time per-backend CPU, memory, I/O, and context switch monitoring via a single SQL view.</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/pgtuner-mcp-ai-powered-postgresql-performance/" rel="bookmark">AI-Powered PostgreSQL Performance Tuning with MCP - Introducing pgtuner_mcp</a></div>
+        <div class="popular-posts-excerpt"><p>pgtuner_mcp is an MCP server for AI-driven PostgreSQL performance analysis, tuning advice, and health checks from your development workflow</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/postgresql-varlena-toast-deep-dive/" rel="bookmark">深入 PostgreSQL 變長度資料儲存：Varlena 與 TOAST 機制完整解析</a></div>
+        <div class="popular-posts-excerpt"><p>從 Varlena 三種 header 格式到 TOAST 切塊、compression、B-Tree 索引、storage strategy 與 detoast 流程,完整拆解 PostgreSQL 如何優雅地塞下 1GB 大欄位</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/azure-flexible-longterm-backup/" rel="bookmark">Azure PostgreSQL Flexible long term backup with Managed Identity</a></div>
+        <div class="popular-posts-excerpt"><p>Step-by-step guide to configure long-term backup (beyond 35 days) on Azure PostgreSQL Flexible Server using Managed Identity, pg_dump, and Azure Blob Storage</p></div>
+    </li>
+    <li class="popular-posts-item">
+      <div class="popular-posts-title"><a href="/logical-replication-checker-replication_checker_rs/" rel="bookmark">Rust 實作的 PostgreSQL logical replication checker (replication_checker_rs)</a></div>
+        <div class="popular-posts-excerpt"><p>Rust 實作的 PostgreSQL logical replication 協議解析工具，可建立 replication slot 並即時顯示資料變更，適合學習與驗證複寫設定</p></div>
+    </li>
+  </ul>
+<div style="text-align: center;">
+    如果本文對您幫助很大，可<a href="https://www.jkos.com/">街口支付</a>斗內鼓勵石頭^^
+</div>
+
+<img src="/images/donation-qr.png">
+
+        
+
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+            <div class="social-item">
+              <a target="_blank" class="social-link" href="/atom.xml">
+                <span class="icon">
+                  <i class="fa fa-rss"></i>
+                </span>
+
+                <span class="label">RSS</span>
+              </a>
+            </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/PostgreSQL/" rel="tag"># PostgreSQL</a>
+              <a href="/tags/Performance-Tuning/" rel="tag"># Performance-Tuning</a>
+              <a href="/tags/Troubleshooting/" rel="tag"># Troubleshooting</a>
+              <a href="/tags/pg-stat-statements/" rel="tag"># pg_stat_statements</a>
+              <a href="/tags/EXPLAIN/" rel="tag"># EXPLAIN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/pgrx-calling-convention-deep-dive/" rel="prev" title="深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL">
+      <i class="fa fa-chevron-left"></i> 深入 pgrx 呼叫慣例：一個 Rust 值如何進出 PostgreSQL
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E7%BD%AE%E4%BD%9C%E6%A5%AD%EF%BC%9A%E5%85%88%E6%8A%8A%E8%A7%80%E6%B8%AC%E8%83%BD%E5%8A%9B%E6%89%93%E9%96%8B"><span class="nav-number">2.</span> <span class="nav-text">前置作業：先把觀測能力打開</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%92%E6%9F%A5%E6%96%B9%E6%B3%95%E8%AB%96%EF%BC%9A%E4%B8%89%E5%B1%A4%E7%94%B1%E4%B8%8A%E8%80%8C%E4%B8%8B%E5%AE%9A%E4%BD%8D"><span class="nav-number">3.</span> <span class="nav-text">排查方法論：三層由上而下定位</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AB%98-CPU-%E6%8E%92%E6%9F%A5"><span class="nav-number">4.</span> <span class="nav-text">高 CPU 排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%BE%E3%80%8C%E6%AF%8F%E6%AC%A1%E5%9F%B7%E8%A1%8C%E6%9C%80%E8%B2%B4%E3%80%8D%E7%9A%84%E6%9F%A5%E8%A9%A2%EF%BC%88mean-exec-time%EF%BC%89"><span class="nav-number">4.1.</span> <span class="nav-text">找「每次執行最貴」的查詢（mean_exec_time）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%BE%E3%80%8C%E7%B8%BD%E6%88%90%E6%9C%AC%E6%9C%80%E9%AB%98%E3%80%8D%E7%9A%84%E6%9F%A5%E8%A9%A2%EF%BC%88total-exec-time%EF%BC%89"><span class="nav-number">4.2.</span> <span class="nav-text">找「總成本最高」的查詢（total_exec_time）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B8%BD%E6%99%82%E9%96%93-%E6%AF%8F%E6%A2%9D%E7%9A%84-cache-%E5%91%BD%E4%B8%AD%E7%8E%87"><span class="nav-number">4.3.</span> <span class="nav-text">總時間 + 每條的 cache 命中率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%BE%E3%80%8C%E7%A9%A9%E5%AE%9A%E6%85%A2%E3%80%8D%E7%9A%84%E6%9F%A5%E8%A9%A2%EF%BC%88%E9%81%8E%E6%BF%BE%E6%8E%89%E4%B8%80%E6%AC%A1%E6%80%A7%E5%81%B6%E7%99%BC%EF%BC%89"><span class="nav-number">4.4.</span> <span class="nav-text">找「穩定慢」的查詢（過濾掉一次性偶發）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9C%8B%E3%80%8C%E7%95%B6%E4%B8%8B%E6%AD%A3%E5%9C%A8%E8%B7%91%E3%80%8D%E7%9A%84%E6%9F%A5%E8%A9%A2%E8%88%87%E5%AE%83%E5%9C%A8%E7%AD%89%E4%BB%80%E9%BA%BC"><span class="nav-number">4.5.</span> <span class="nav-text">看「當下正在跑」的查詢與它在等什麼</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%AA%E5%87%BA%E8%B7%91%E8%B6%85%E9%81%8E-5-%E7%A7%92%E7%9A%84-long-running-query%EF%BC%8C%E4%B8%A6%E6%8A%93%E5%AE%83%E7%9A%84-EXPLAIN"><span class="nav-number">4.6.</span> <span class="nav-text">揪出跑超過 5 秒的 long-running query，並抓它的 EXPLAIN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%BE-long-transaction-idle-in-transaction"><span class="nav-number">4.7.</span> <span class="nav-text">找 long transaction &#x2F; idle-in-transaction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9C%8B%E9%80%A3%E7%B7%9A%E6%95%B8%E5%88%86%E4%BD%88%EF%BC%88%E9%80%A3%E7%B7%9A%E5%A4%AA%E5%A4%9A-CPU-%E8%A8%98%E6%86%B6%E9%AB%94%E9%9B%99%E9%87%8D%E8%B2%A0%E6%93%94%EF%BC%89"><span class="nav-number">4.8.</span> <span class="nav-text">看連線數分佈（連線太多 &#x3D; CPU + 記憶體雙重負擔）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98-CPU-%E7%9A%84%E8%99%95%E7%BD%AE"><span class="nav-number">4.9.</span> <span class="nav-text">高 CPU 的處置</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AB%98%E8%A8%98%E6%86%B6%E9%AB%94%E6%8E%92%E6%9F%A5"><span class="nav-number">5.</span> <span class="nav-text">高記憶體排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#work-mem-%E6%BA%A2%E5%87%BA%E9%99%B7%E9%98%B1%EF%BC%88%E6%9C%80%E5%A4%A7%E7%9A%84%E8%A8%98%E6%86%B6%E9%AB%94%E9%A2%A8%E9%9A%AA%EF%BC%89"><span class="nav-number">5.1.</span> <span class="nav-text">work_mem 溢出陷阱（最大的記憶體風險）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%A3%E7%B7%9A%E5%A4%AA%E5%A4%9A-%E2%86%92-%E7%94%A8-PgBouncer-%E8%80%8C%E4%B8%8D%E6%98%AF%E8%AA%BF%E9%AB%98-max-connections"><span class="nav-number">5.2.</span> <span class="nav-text">連線太多 → 用 PgBouncer 而不是調高 max_connections</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%94%AF%E4%B8%80%E8%83%BD%E7%9C%8B%E5%88%B0%E8%A8%98%E6%86%B6%E9%AB%94%E5%BE%B5%E5%85%86%E7%9A%84%E6%9F%A5%E8%A9%A2%EF%BC%9AEXPLAIN-BUFFERS"><span class="nav-number">5.3.</span> <span class="nav-text">唯一能看到記憶體徵兆的查詢：EXPLAIN + BUFFERS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B8%E9%97%9C%E8%A8%98%E6%86%B6%E9%AB%94%E5%8F%83%E6%95%B8"><span class="nav-number">5.4.</span> <span class="nav-text">相關記憶體參數</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%85%A2%E6%9F%A5%E8%A9%A2%E5%88%86%E6%9E%90%EF%BC%9A%E8%AE%80%E6%87%82-EXPLAIN-ANALYZE-BUFFERS"><span class="nav-number">6.</span> <span class="nav-text">慢查詢分析：讀懂 EXPLAIN (ANALYZE, BUFFERS)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%8E%E9%BA%BC%E8%AE%80%E8%BC%B8%E5%87%BA"><span class="nav-number">6.1.</span> <span class="nav-text">怎麼讀輸出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%88%9B%E5%9F%B7%E8%A1%8C%E8%A8%88%E7%95%AB%E7%9A%84%E8%A8%8A%E8%99%9F%EF%BC%88%E8%A8%BA%E6%96%B7%E6%B8%85%E5%96%AE%EF%BC%89"><span class="nav-number">6.2.</span> <span class="nav-text">爛執行計畫的訊號（診斷清單）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%8D-DML-%E5%81%9A-EXPLAIN-ANALYZE-%E4%B8%80%E5%AE%9A%E8%A6%81%E5%8C%85%E5%9C%A8%E4%BA%A4%E6%98%93%E8%A3%A1"><span class="nav-number">6.3.</span> <span class="nav-text">對 DML 做 EXPLAIN ANALYZE 一定要包在交易裡</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#auto-explain%EF%BC%9A%E6%8A%93%E9%82%A3%E4%BA%9B%E3%80%8C%E7%95%B6%E4%B8%8B%E9%87%8D%E7%8F%BE%E4%B8%8D%E4%BA%86%E3%80%8D%E7%9A%84%E6%85%A2%E6%9F%A5%E8%A9%A2"><span class="nav-number">6.4.</span> <span class="nav-text">auto_explain：抓那些「當下重現不了」的慢查詢</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%8E%96%E8%88%87-Blocking-%E6%8E%92%E6%9F%A5"><span class="nav-number">7.</span> <span class="nav-text">鎖與 Blocking 排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%AB%E9%80%9F%E7%9C%8B%E8%AA%B0%E8%A2%AB%E9%8E%96%E4%BD%8F"><span class="nav-number">7.1.</span> <span class="nav-text">快速看誰被鎖住</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Blocking-%E6%A8%B9%EF%BC%9A%E8%A2%AB%E9%8E%96%E7%9A%84-backend-%E2%86%94-%E9%8E%96%E4%BD%8F%E5%AE%83%E7%9A%84-backend"><span class="nav-number">7.2.</span> <span class="nav-text">Blocking 樹：被鎖的 backend ↔ 鎖住它的 backend</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E7%9C%8B-pg-locks%EF%BC%88%E9%81%8E%E6%BF%BE%E6%9C%AA%E6%8E%88%E4%BA%88%E7%9A%84%E9%8E%96-%E6%AD%A3%E5%9C%A8%E7%AD%89%E7%9A%84%EF%BC%89"><span class="nav-number">7.3.</span> <span class="nav-text">直接看 pg_locks（過濾未授予的鎖 &#x3D; 正在等的）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8F%AA%E5%87%BA-idle-in-transaction-%E5%85%83%E5%87%B6"><span class="nav-number">7.4.</span> <span class="nav-text">揪出 idle-in-transaction 元凶</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Cache-hit-ratio-%E8%88%87-I-O-%E6%8E%92%E6%9F%A5"><span class="nav-number">8.</span> <span class="nav-text">Cache hit ratio 與 I&#x2F;O 排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%B3%87%E6%96%99%E5%BA%AB%E5%B1%A4%E7%B4%9A-cache-%E5%91%BD%E4%B8%AD%E7%8E%87"><span class="nav-number">8.1.</span> <span class="nav-text">資料庫層級 cache 命中率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Heap-Index-%E5%91%BD%E4%B8%AD%E7%8E%87"><span class="nav-number">8.2.</span> <span class="nav-text">Heap &#x2F; Index 命中率</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%90%E6%A2%9D%E6%9F%A5%E8%A9%A2%E7%9A%84-I-O-%E5%85%83%E5%87%B6"><span class="nav-number">8.3.</span> <span class="nav-text">逐條查詢的 I&#x2F;O 元凶</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%89%BE%E6%B2%92%E8%A2%AB%E7%94%A8%E5%88%B0%E7%9A%84%E7%B4%A2%E5%BC%95%EF%BC%88%E6%B5%AA%E8%B2%BB%E5%AF%AB%E5%85%A5%E8%88%87%E8%A8%98%E6%86%B6%E9%AB%94%EF%BC%89"><span class="nav-number">8.4.</span> <span class="nav-text">找沒被用到的索引（浪費寫入與記憶體）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E8%86%A8%E8%84%B9%E8%88%87-Autovacuum-%E6%8E%92%E6%9F%A5"><span class="nav-number">9.</span> <span class="nav-text">表膨脹與 Autovacuum 排查</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Dead-tuple-%E8%86%A8%E8%84%B9%E6%8E%92%E5%90%8D"><span class="nav-number">9.1.</span> <span class="nav-text">Dead tuple &#x2F; 膨脹排名</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%9C%E9%8D%B5%E8%A8%AD%E5%AE%9A%E5%8F%83%E6%95%B8%E9%80%9F%E6%9F%A5%E8%A1%A8"><span class="nav-number">10.</span> <span class="nav-text">關鍵設定參數速查表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%B5%90"><span class="nav-number">11.</span> <span class="nav-text">小結</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#References"><span class="nav-number">12.</span> <span class="nav-text">References</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Daniel Shih"
+      src="https://avatars0.githubusercontent.com/u/9159452?s=460&v=4">
+  <p class="site-author-name" itemprop="name">Daniel Shih</p>
+  <div class="site-description" itemprop="description">專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">77</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">163</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/isdaniel" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;isdaniel" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:dog8300228@gmail.com" title="Email → mailto:dog8300228@gmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>Email</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.facebook.com/profile.php?id=100001400319136" title="FaceBook → https:&#x2F;&#x2F;www.facebook.com&#x2F;profile.php?id&#x3D;100001400319136" rel="noopener" target="_blank"><i class="fa fa-fw fa-facebook"></i>FaceBook</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://stackoverflow.com/users/5176071/d-shih" title="StackOverflow → https:&#x2F;&#x2F;stackoverflow.com&#x2F;users&#x2F;5176071&#x2F;d-shih" rel="noopener" target="_blank"><i class="fa fa-fw fa-stack-overflow"></i>StackOverflow</a>
+      </span>
+  </div>
+
+
+
+<p><a href="https://stackoverflow.com/users/5176071/d-shih"><img alt="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" height="58" src="https://stackoverflow.com/users/flair/5176071.png?theme=dark" title="profile for D-Shih at Stack Overflow, Q&amp;A for professional and enthusiast programmers" width="208" /> </a></p>
+
+<div>
+<a href="https://info.flagcounter.com/tORe"><img src="https://s01.flagcounter.com/count/tORe/bg_F1FF29/txt_000000/border_9DCCC4/columns_2/maxflags_10/viewers_0/labels_1/pageviews_1/flags_0/percent_0/" alt="Flag Counter" border="0"></a>
+</div>
+
+Certifications：
+
+<div data-iframe-width="150" data-iframe-height="270" data-share-badge-id="41c9e6a3-2a37-49e1-9a53-37e0bfa9e6e1" data-share-badge-host="https://www.credly.com"></div><script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
+
+<amp-auto-ads type="adsense"
+        data-ad-client="ca-pub-9964202165342528">
+</amp-auto-ads>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2026</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Daniel Shih</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="Symbols count total">717k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">10:52</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v8.1.2
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.2
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri == 'https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://danielshih.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://isdaniel.github.io/postgresql-performance-troubleshooting-playbook/";
+    this.page.identifier = "postgresql-performance-troubleshooting-playbook/";
+    this.page.title = "PostgreSQL 效能調校實戰：從高 CPU、高記憶體到慢查詢的排查";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://danielshih.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+</body>
+</html>
