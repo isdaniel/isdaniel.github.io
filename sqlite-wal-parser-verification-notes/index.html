@@ -25,14 +25,14 @@
   
 <meta name="description" content="把 SQLite -wal 檔正確解析成 frame 與 commit 邊界的驗證記錄，並揭露官方文件在 salt、checksum、checkpoint 時機等關鍵處的錯誤">
 <meta property="og:type" content="article">
-<meta property="og:title" content="寫一個 SQLite WAL Parser 的完整驗證記錄：當官方文件是錯的">
+<meta property="og:title" content="寫一個 SQLite WAL Parser">
 <meta property="og:url" content="https://isdaniel.github.io/sqlite-wal-parser-verification-notes/index.html">
 <meta property="og:site_name" content="石頭的coding之路">
 <meta property="og:description" content="把 SQLite -wal 檔正確解析成 frame 與 commit 邊界的驗證記錄，並揭露官方文件在 salt、checksum、checkpoint 時機等關鍵處的錯誤">
 <meta property="og:locale" content="zh_TW">
 <meta property="og:image" content="https://isdaniel.github.io/images/default-og-image.png">
 <meta property="article:published_time" content="2026-08-05T13:30:00.000Z">
-<meta property="article:modified_time" content="2026-08-05T07:28:54.261Z">
+<meta property="article:modified_time" content="2026-08-05T10:10:26.494Z">
 <meta property="article:author" content="Daniel Shih">
 <meta property="article:tag" content="Database">
 <meta property="article:tag" content="SQLite">
@@ -70,7 +70,7 @@
 
 <link rel="alternate" type="application/atom+xml" title="石頭的coding之路" href="https://isdaniel.github.io/atom.xml">
 
-  <title>寫一個 SQLite WAL Parser 的完整驗證記錄：當官方文件是錯的 | 石頭的coding之路</title>
+  <title>寫一個 SQLite WAL Parser | 石頭的coding之路</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZKF58CMZ8X"></script>
     <script>
@@ -162,7 +162,7 @@
   </script>
 
 <meta name="keywords" content="SQLite,WAL,Write-Ahead-Logging,wal-parser,checksum,salt,checkpoint,starvation,nBackfill,mxFrame,frame,commit-boundary,no_std,fileformat2,walformat,libsqlite3-sys,stale-salt,PRAGMA-wal_checkpoint,SQLITE_FCNTL_RESERVE_BYTES,sector-padding,page-size">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/sqlite-wal-parser-verification-notes/"},"headline":"寫一個 SQLite WAL Parser 的完整驗證記錄：當官方文件是錯的","description":"把 SQLite -wal 檔正確解析成 frame 與 commit 邊界的驗證記錄，並揭露官方文件在 salt、checksum、checkpoint 時機等關鍵處的錯誤","datePublished":"2026-08-05T13:30:00.000Z","dateModified":"2026-08-05T07:28:54.261Z","wordCount":6626,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/sqlite-wal-parser-verification-notes/","inLanguage":"zh-tw","articleSection":"SQLite","keywords":"SQLite,WAL,Write-Ahead-Logging,wal-parser,checksum,salt,checkpoint,starvation,nBackfill,mxFrame,frame,commit-boundary,no_std,fileformat2,walformat,libsqlite3-sys,stale-salt,PRAGMA-wal_checkpoint,SQLITE_FCNTL_RESERVE_BYTES,sector-padding,page-size"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"SQLite","item":"https://isdaniel.github.io/categories/SQLite/"},{"@type":"ListItem","position":3,"name":"SystemDesign","item":"https://isdaniel.github.io/categories/SQLite/SystemDesign/"},{"@type":"ListItem","position":4,"name":"寫一個 SQLite WAL Parser 的完整驗證記錄：當官方文件是錯的","item":"https://isdaniel.github.io/sqlite-wal-parser-verification-notes/"}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"石頭的coding之路","url":"https://isdaniel.github.io","description":"專注於 PostgreSQL、軟體工程、原始碼與 AI 的技術筆記與實作分享","inLanguage":"zh-tw"},{"@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://isdaniel.github.io/sqlite-wal-parser-verification-notes/"},"headline":"寫一個 SQLite WAL Parser","description":"把 SQLite -wal 檔正確解析成 frame 與 commit 邊界的驗證記錄，並揭露官方文件在 salt、checksum、checkpoint 時機等關鍵處的錯誤","datePublished":"2026-08-05T13:30:00.000Z","dateModified":"2026-08-05T10:10:26.494Z","wordCount":6554,"author":{"@type":"Person","name":"Daniel Shih","url":"https://isdaniel.github.io/about/","sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih","https://www.linkedin.com/in/bing-shiu-shih-a63151b5/","https://www.facebook.com/profile.php?id=100001400319136"]},"publisher":{"@type":"Organization","name":"石頭的coding之路","url":"https://isdaniel.github.io/","logo":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/apple-touch-icon-next.png"},"sameAs":["https://github.com/isdaniel","https://stackoverflow.com/users/5176071/d-shih"]},"image":{"@type":"ImageObject","url":"https://isdaniel.github.io/images/default-og-image.png"},"url":"https://isdaniel.github.io/sqlite-wal-parser-verification-notes/","inLanguage":"zh-tw","articleSection":"SQLite","keywords":"SQLite,WAL,Write-Ahead-Logging,wal-parser,checksum,salt,checkpoint,starvation,nBackfill,mxFrame,frame,commit-boundary,no_std,fileformat2,walformat,libsqlite3-sys,stale-salt,PRAGMA-wal_checkpoint,SQLITE_FCNTL_RESERVE_BYTES,sector-padding,page-size"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://isdaniel.github.io"},{"@type":"ListItem","position":2,"name":"SQLite","item":"https://isdaniel.github.io/categories/SQLite/"},{"@type":"ListItem","position":3,"name":"SystemDesign","item":"https://isdaniel.github.io/categories/SQLite/SystemDesign/"},{"@type":"ListItem","position":4,"name":"寫一個 SQLite WAL Parser","item":"https://isdaniel.github.io/sqlite-wal-parser-verification-notes/"}]}]}</script>
 </head>
 
 <body itemscope itemtype="http://schema.org/WebPage">
@@ -293,7 +293,7 @@
   <article class="post-block " lang="zh-tw">
       <header class="post-header">
         <h2 class="post-title">
-          寫一個 SQLite WAL Parser 的完整驗證記錄：當官方文件是錯的
+          寫一個 SQLite WAL Parser
         </h2>
 
         <div class="post-meta">
@@ -304,7 +304,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2026-08-05 21:30:00 / Modified: 15:28:54" datetime="2026-08-05T21:30:00+08:00">2026-08-05</time>
+              <time title="Created: 2026-08-05 21:30:00 / Modified: 18:10:26" datetime="2026-08-05T21:30:00+08:00">2026-08-05</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -467,11 +467,7 @@
 <p>實際驗證一條 chain：</p>
 <figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">frame   seed（來源）                   算出              檔案裡存的</span><br><span class="line">  <span class="number">1</span>     (c0780944, 3f17b724) header    (de3ecc9d, ...)   同左  OK</span><br><span class="line">  <span class="number">2</span>     (de3ecc9d, 5d2c46e0) frame <span class="number">1</span>   (<span class="number">68b39233</span>, ...)   同左  OK</span><br><span class="line">  <span class="number">3</span>     (<span class="number">68b39233</span>, 281b0f4c) frame <span class="number">2</span>   (161fdd33, ...)   同左  OK</span><br><span class="line">  <span class="number">4</span>     (161fdd33, a303ab26) frame <span class="number">3</span>   (f7d14d86, ...)   同左  OK</span><br></pre></td></tr></table></figure>
 
-<p>這裡有第一個文件錯誤。<code>wal.c</code> 中 <code>walDecodeFrame</code> 上方的註解寫「the first <strong>16</strong> bytes of this frame-header」，但同一個檔案的第 985 行寫的是：</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">walChecksumBytes(nativeCksum, aFrame, <span class="number">8</span>, aCksum, aCksum);</span><br></pre></td></tr></table></figure>
 
-<p><code>nByte = 8</code>。註解錯了，程式碼是對的。<code>fileformat2.html</code> §4.2 這次反而站在正確的一邊。</p>
-<hr>
 <h2 id="二、最重要的一件事：檔案大小不等於有效-frame-數"><a href="#二、最重要的一件事：檔案大小不等於有效-frame-數" class="headerlink" title="二、最重要的一件事：檔案大小不等於有效 frame 數"></a>二、最重要的一件事：檔案大小不等於有效 frame 數</h2><p>這是整個專案的核心風險，也是我花最多時間驗證的一點。</p>
 <p>SQLite 的 WAL 是<strong>原地重用</strong>的。checkpoint 把內容 backfill 進主資料庫之後，下一次寫入會 reset WAL 並從 frame 1 重新開始寫——但上一代的 frame 位元組還躺在檔案裡，唯一的區別只有 salt 對不上。</p>
 <p>實測：寫 5 個 frame，跑 <code>PRAGMA wal_checkpoint(PASSIVE)</code>，再寫 1 筆。</p>
@@ -503,9 +499,7 @@
 <h3 id="這個坑咬人的方式"><a href="#這個坑咬人的方式" class="headerlink" title="這個坑咬人的方式"></a>這個坑咬人的方式</h3><p>假設你在步驟 4 的時間點寫一個備份工具去讀這個檔案。你算 <code>(2176 - 32) / 536 = 4</code>，拿到 4 個 frame，依序套用到 page 2：</p>
 <figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">套用 slot<span class="number"> 1 </span>→ page<span class="number"> 2 </span>= &#123;bob, ALICE_UPDATED&#125;</span><br><span class="line">套用 slot<span class="number"> 2 </span>→ page<span class="number"> 2 </span>= &#123;&#125;</span><br><span class="line">套用 slot<span class="number"> 3 </span>→ page<span class="number"> 2 </span>= &#123;alice&#125;</span><br><span class="line">套用 slot<span class="number"> 4 </span>→ page<span class="number"> 2 </span>= &#123;ALICE_UPDATED&#125;     最終結果</span><br></pre></td></tr></table></figure>
 
-<p>備份出來的資料庫：有 ALICE_UPDATED，沒有 bob。</p>
-<p>bob 是剛剛才寫進去的，不見了。而 slot 3 的 <code>alice</code> 是兩代以前、已經被 UPDATE 掉、又已經被 checkpoint 進主檔的資料，它從墳墓裡爬出來影響了結果。</p>
-<p>沒有錯誤訊息、沒有 panic，<code>PRAGMA integrity_check</code> 也會回 <code>ok</code>，因為產出的確實是一個結構合法的資料庫。</p>
+<p>備份出來的資料庫：有 ALICE_UPDATED，沒有 bob。 bob 是剛剛才寫進去的，不見了。而 slot 3 的 <code>alice</code> 是兩代以前、已經被 UPDATE 掉、又已經被 checkpoint 進主檔的資料，它從墳墓裡爬出來影響了結果。 沒有錯誤訊息、沒有 panic，<code>PRAGMA integrity_check</code> 也會回 <code>ok</code>，因為產出的確實是一個結構合法的資料庫。</p>
 <hr>
 <h2 id="三、salt-到底什麼時候變"><a href="#三、salt-到底什麼時候變" class="headerlink" title="三、salt 到底什麼時候變"></a>三、salt 到底什麼時候變</h2><p>這是文件錯得最嚴重的地方。</p>
 <p><code>fileformat2.html</code> §4.1 的表格寫：</p>
@@ -1211,7 +1205,7 @@ Certifications：
   var disqus_config = function() {
     this.page.url = "https://isdaniel.github.io/sqlite-wal-parser-verification-notes/";
     this.page.identifier = "sqlite-wal-parser-verification-notes/";
-    this.page.title = "寫一個 SQLite WAL Parser 的完整驗證記錄：當官方文件是錯的";
+    this.page.title = "寫一個 SQLite WAL Parser";
     };
   NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
     if (window.DISQUS) {
